@@ -13,15 +13,15 @@ jobs:
           repository: mozilla/hubs
           path: './hubs'
       - name: build rawhubs (unconfigured hubs and admin)
-        run: |
-          export BASE_ASSETS_PATH="{{rawhubs-base-assets-path}}"
-          cd hubs && npm ci && npm run build
-          cd admin && npm ci && npm run build && cp -R dist/* ../dist && cd ..
-          mkdir -p dist/pages && mv dist/*.html dist/pages && mv dist/hub.service.js dist/pages && mv dist/schema.toml dist/pages
-      - name: push to s3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.turkeycfg_aws_id }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.turkeycfg_aws_key }}
-          AWS_DEFAULT_REGION: us-east-1
+          AWS_DEFAULT_REGION: us-east-1      
         run: |
+          export BASE_ASSETS_PATH="{{rawhubs-base-assets-path}}"
+          cd hubs && npm ci > /dev/null && npm run build > /dev/null
+          cd admin && npm ci > /dev/null && npm run build > /dev/null && cp -R dist/* ../dist && cd ..
+          mkdir -p dist/pages && mv dist/*.html dist/pages && mv dist/hub.service.js dist/pages && mv dist/schema.toml dist/pages
+          ls -lha
           aws s3 sync ./dist s3://turkeycfg/rawhubs
+
