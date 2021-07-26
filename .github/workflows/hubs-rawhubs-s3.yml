@@ -17,7 +17,7 @@ jobs:
           export BASE_ASSETS_PATH="{{rawhubs-base-assets-path}}"
           cd hubs && npm ci && npm run build
           cd admin && npm ci && npm run build && cp -R dist/* ../dist && cd ..
-          run mkdir -p dist/pages && mv dist/*.html dist/pages && mv dist/hub.service.js dist/pages && mv dist/schema.toml dist/pages
+          mkdir -p dist/pages && mv dist/*.html dist/pages && mv dist/hub.service.js dist/pages && mv dist/schema.toml dist/pages
       - name: push to s3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.turkeycfg_aws_id }}
