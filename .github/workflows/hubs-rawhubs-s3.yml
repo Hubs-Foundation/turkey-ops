@@ -23,7 +23,7 @@ jobs:
           cd admin && npm ci > /dev/null && npm run build > /dev/null && cp -R dist/* ../dist && cd ..
           mkdir -p dist/pages && mv dist/*.html dist/pages && mv dist/hub.service.js dist/pages && mv dist/schema.toml dist/pages
           
-          echo "rearrange files"
+          echo "[info] rearrange files"
           mkdir rawhubs
           mv dist/pages rawhubs
           mv dist/assets rawhubs
@@ -31,6 +31,9 @@ jobs:
           mv dist/favicon.ico rawhubs/pages
           
           tree rawhubs
+          
+          aws s3 rm --recursive s3://turkeycfg/rawhubs > /dev/null
+          aws s3 sync ./rawhubs s3://turkeycfg/rawhubs > /dev/null
 
           
 
