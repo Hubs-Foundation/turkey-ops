@@ -25,4 +25,6 @@ jobs:
           aws s3 rm --recursive s3://turkeycfg/rawhubs > /dev/null
           aws s3 sync ./dist/assets s3://turkeycfg/rawhubs/assets > /dev/null
           aws s3 sync ./dist/pages s3://turkeycfg/rawhubs/pages > /dev/null
+          aws s3 sync ./dist s3://turkeycfg/rawhubs-dist > /dev/null
+          
 
