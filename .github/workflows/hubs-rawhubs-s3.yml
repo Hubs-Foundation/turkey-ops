@@ -22,10 +22,15 @@ jobs:
           cd hubs && npm ci > /dev/null && npm run build > /dev/null
           cd admin && npm ci > /dev/null && npm run build > /dev/null && cp -R dist/* ../dist && cd ..
           mkdir -p dist/pages && mv dist/*.html dist/pages && mv dist/hub.service.js dist/pages && mv dist/schema.toml dist/pages
-          aws s3 rm --recursive s3://turkeycfg/rawhubs > /dev/null
-          aws s3 sync ./dist/assets s3://turkeycfg/rawhubs/assets > /dev/null
-          aws s3 sync ./dist/pages s3://turkeycfg/rawhubs/pages > /dev/null
-          aws s3 sync ./dist/react-components s3://turkeycfg/rawhubs/pages/react-components > /dev/null
-          aws s3 sync ./dist/favicon.ico s3://turkeycfg/rawhubs/pages/favicon.ico > /dev/null
+          
+          echo "rearrange files"
+          mkdir rawhubs
+          mv dist/pages rawhubs
+          mv dist/assets rawhubs
+          mv dist/react-components rawhubs/pages
+          mv dist/favicon.ico rawhubs/pages
+          
+          tree rawhubs
+
           
 
