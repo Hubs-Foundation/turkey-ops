@@ -43,7 +43,6 @@ jobs:
           
       - name: repackage-docker-with-certs
         run: |
-          cd ./ret
           cat > Dockerfile << EOL
           from alpine/openssl:latest as builder
           workdir /certs
@@ -55,7 +54,6 @@ jobs:
           run chown -R hab:hab ./* && ls -lha
           entrypoint bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum
           EOL
-          sudo chmod 777 Dockerfile        
           docker build -t ${{ env.BIO_PKG_ORG }}/reticulum:latest .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker tag ${{ env.BIO_PKG_ORG }}/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
