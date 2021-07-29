@@ -16,6 +16,7 @@ jobs:
           path: './ret'
       - name: pkg-build-push
         run: |
+          sudo docker --version
           cd ./ret
           org="biome-sh";repo="biome"
           ver=$(curl -s https://api.github.com/repos/$org/$repo/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
@@ -24,10 +25,10 @@ jobs:
           curl -L -o bio.gz $dl;
           tar -xf bio.gz;./bio --version
           
-          ./bio origin key generate dummy1
-          HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg build .          
-          HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg export container ./results/*.hart
-          docker images
+          sudo ./bio origin key generate dummy1
+          sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg build . > /dev/null
+          sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg export container ./results/*.hart
+          sudo docker images
 
 
 
