@@ -12,4 +12,4 @@ run chown -R hab:hab ./* && ls -lha
 # run echo 'bash /init.sh run mozillareality/reticulum' >> /entrypoint.sh
 # run cat /entrypoint.sh
 # entrypoint bash /entrypoint.sh
-entrypoint bash /init.sh run mozillareality/reticulum
+entrypoint bash /init.sh run dummy1/reticulum
