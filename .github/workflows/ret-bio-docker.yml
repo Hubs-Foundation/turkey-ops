@@ -1,5 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
+name: ret-bio-docker
 on:
   workflow_dispatch:
 
@@ -15,6 +16,7 @@ jobs:
           path: './ret'
       - name: pkg-build-push
         run: |
+          cd ./ret
           org="biome-sh";repo="biome"
           ver=$(curl -s https://api.github.com/repos/$org/$repo/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
           dl="https://github.com/$org/$repo/releases/download/$ver/bio-$ver-x86_64-linux.tar.gz"
