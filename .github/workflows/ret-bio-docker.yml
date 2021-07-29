@@ -44,7 +44,7 @@ jobs:
       - name: extra-infra-configs
         run: |
           cd ./this/ret-cfgs
-          docker build -n dummy1/reticulum:latest .          
+          docker build -t dummy1/reticulum:latest .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker tag dummy1/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
           sudo docker images
