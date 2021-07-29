@@ -43,6 +43,7 @@ jobs:
           
       - name: repackage-docker-with-certs
         run: |
+          mkdir tmp && cd tmp
           cat > Dockerfile << EOL
           from alpine/openssl:latest as builder
           workdir /certs
