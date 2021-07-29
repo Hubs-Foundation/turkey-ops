@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      BIO_PKG_ORG: dummy1
 
     steps:
       - name: checkout-ret
@@ -14,7 +16,6 @@ jobs:
         with:
           repository: mozilla/reticulum
           path: './ret'
-
       - name: make-dockerfile
         run: |
           cd ./ret
@@ -23,19 +24,18 @@ jobs:
           workdir /certs
           run openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout ssl.key -out ssl.pem -subj '/CN=hubs'
           run cp ssl.pem ssl-chain.pem
-          from dummy1/reticulum
+          from ${{ env.BIO_PKG_ORIGIN }}/reticulum
           WORKDIR /hab/svc/reticulum/files
           copy --from=builder /certs .
           run chown -R hab:hab ./* && ls -lha
-          entrypoint bash /init.sh run dummy1/reticulum
+          entrypoint bash /init.sh run ${{ env.BIO_PKG_ORIGIN }}/reticulum
           EOL
       - name: extra-code-hacks
         run: |
           cd ./ret/habitat/config/
           echo '[ret."Elixir.Ret.Meta"]'>>config.toml
           echo 'phx_host = "{{ cfg.ret.phx_host }}"'>>config.toml
-          cat config.toml
-          
+          cat config.toml          
       - name: bio-pkg-build
         run: |          
           sudo docker --version
@@ -47,18 +47,17 @@ jobs:
           curl -L -o bio.gz $dl;
           tar -xf bio.gz;./bio --version
           
-          sudo ./bio origin key generate dummy1
-          sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg build . > /dev/null
-          sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg export container ./results/*.hart > /dev/null
+          sudo ./bio origin key generate ${{ env.BIO_PKG_ORIGIN }}
+          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORIGIN }} HAB_ORIGIN=${{ env.BIO_PKG_ORIGIN }} ./bio pkg build . > /dev/null
+          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORIGIN }} HAB_ORIGIN=${{ env.BIO_PKG_ORIGIN }} ./bio pkg export container ./results/*.hart > /dev/null
           
-          sudo docker images
-          
+          sudo docker images          
       - name: extra-infra-configs
         run: |
           cd ./ret
-          docker build -t dummy1/reticulum:latest .          
+          docker build -t ${{ env.BIO_PKG_ORIGIN }}/reticulum:latest .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          sudo docker tag dummy1/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
+          sudo docker tag ${{ env.BIO_PKG_ORIGIN }}/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
           sudo docker images
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/ret:latest
           
