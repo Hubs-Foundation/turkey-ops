@@ -30,6 +30,7 @@ jobs:
           run chown -R hab:hab ./* && ls -lha
           entrypoint bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum
           EOL
+          sudo chmod 777 Dockerfile
       - name: extra-code-hacks
         run: |
           cd ./ret/habitat/config/
