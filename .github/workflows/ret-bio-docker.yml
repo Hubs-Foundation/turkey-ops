@@ -9,16 +9,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout-this
-        uses: actions/checkout@v2
-        with:
-          path: './this'
       - name: checkout-ret
         uses: actions/checkout@v2
         with:
           repository: mozilla/reticulum
           path: './ret'
-          
+
+      - name: make-dockerfile
+        run: |
+          cd ./ret
+          cat > Dockerfile << EOL
+          from alpine/openssl:latest as builder
+          workdir /certs
+          run openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout ssl.key -out ssl.pem -subj '/CN=hubs'
+          run cp ssl.pem ssl-chain.pem
+          from dummy1/reticulum
+          WORKDIR /hab/svc/reticulum/files
+          copy --from=builder /certs .
+          run chown -R hab:hab ./* && ls -lha
+          entrypoint bash /init.sh run dummy1/reticulum
+          EOL
       - name: extra-code-hacks
         run: |
           cd ./ret/habitat/config/
@@ -45,7 +55,7 @@ jobs:
           
       - name: extra-infra-configs
         run: |
-          cd ./this/ret-cfgs
+          cd ./ret
           docker build -t dummy1/reticulum:latest .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker tag dummy1/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
