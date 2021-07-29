@@ -24,11 +24,11 @@ jobs:
           workdir /certs
           run openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout ssl.key -out ssl.pem -subj '/CN=hubs'
           run cp ssl.pem ssl-chain.pem
-          from ${{ env.BIO_PKG_ORIGIN }}/reticulum
+          from ${{ env.BIO_PKG_ORG }}/reticulum
           WORKDIR /hab/svc/reticulum/files
           copy --from=builder /certs .
           run chown -R hab:hab ./* && ls -lha
-          entrypoint bash /init.sh run ${{ env.BIO_PKG_ORIGIN }}/reticulum
+          entrypoint bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum
           EOL
       - name: extra-code-hacks
         run: |
@@ -47,17 +47,17 @@ jobs:
           curl -L -o bio.gz $dl;
           tar -xf bio.gz;./bio --version
           
-          sudo ./bio origin key generate ${{ env.BIO_PKG_ORIGIN }}
-          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORIGIN }} HAB_ORIGIN=${{ env.BIO_PKG_ORIGIN }} ./bio pkg build . > /dev/null
-          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORIGIN }} HAB_ORIGIN=${{ env.BIO_PKG_ORIGIN }} ./bio pkg export container ./results/*.hart > /dev/null
+          sudo ./bio origin key generate ${{ env.BIO_PKG_ORG }}
+          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORG }} HAB_ORIGIN=${{ env.BIO_PKG_ORG }} ./bio pkg build . > /dev/null
+          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORG }} HAB_ORIGIN=${{ env.BIO_PKG_ORG }} ./bio pkg export container ./results/*.hart > /dev/null
           
           sudo docker images          
       - name: extra-infra-configs
         run: |
           cd ./ret
-          docker build -t ${{ env.BIO_PKG_ORIGIN }}/reticulum:latest .          
+          docker build -t ${{ env.BIO_PKG_ORG }}/reticulum:latest .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          sudo docker tag ${{ env.BIO_PKG_ORIGIN }}/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
+          sudo docker tag ${{ env.BIO_PKG_ORG }}/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
           sudo docker images
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/ret:latest
           
