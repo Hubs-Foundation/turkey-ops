@@ -45,7 +45,7 @@ jobs:
         run: |
           cd ./this/ret-cfgs
           docker build -t dummy1/reticulum:latest .          
-          echo ${{ secrets.DOCKER_HUB_PWD }} | docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker tag dummy1/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
           sudo docker images
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/ret:latest
