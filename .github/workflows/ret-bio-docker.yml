@@ -9,15 +9,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: checkout-this
+        uses: actions/checkout@v2
+        with:
+          path: '/this'
       - name: checkout-ret
         uses: actions/checkout@v2
         with:
           repository: mozilla/reticulum
-          path: './ret'
-      - name: pkg-build-push
+          path: '/ret'
+          
+      - name: extra-code-hacks
         run: |
+          cd /ret/lib/ret
+          sed -i 's/phx_host: module_config(:phx_host)/phx_host: System.get_env("LB_FQDN")/g' meta.ex
+          
+      - name: bio-pkg-build
+        run: |          
           sudo docker --version
-          cd ./ret
+          cd /ret
           org="biome-sh";repo="biome"
           ver=$(curl -s https://api.github.com/repos/$org/$repo/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
           dl="https://github.com/$org/$repo/releases/download/$ver/bio-$ver-x86_64-linux.tar.gz"
@@ -25,10 +35,18 @@ jobs:
           curl -L -o bio.gz $dl;
           tar -xf bio.gz;./bio --version
           
-          sudo ./bio origin key generate dummy1
-          sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg build . > /dev/null
-          sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg export container ./results/*.hart
-          sudo docker images
-
+          sudo ./bio origin key generate dummy1          
+          sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg build . > /dev/null          
+          sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg export container ./results/*.hart        
+          
+      - name: extra-infra-configs
+        run: |
+          cd /this/ret-cfgs
+          docker build -n dummy1/reticulum:latest .          
+          echo ${{ secrets.DOCKERHUB_PWD }} | docker login --username ${{ secrets.DOCKERHUB_USR }} --password-stdin             
+          sudo docker tag dummy1/reticulum:latest ${{ secrets.DOCKERHUB_USR }}/ret:latest        
+          sudo docker push ${{ secrets.DOCKERHUB_USR }}/ret:latest
+          
+          
 
 
