@@ -21,8 +21,6 @@ jobs:
           
       - name: extra-code-hacks
         run: |
-          #cd ./ret/lib/ret
-          #sed -i 's/phx_host: module_config(:phx_host)/phx_host: System.get_env("LB_FQDN")/g' meta.ex
           cd ./ret/habitat/config/
           echo '[ret."Elixir.Ret.Meta"]'>>config.toml
           echo 'phx_host = "{{ cfg.ret.phx_host }}"'>>config.toml
