@@ -15,8 +15,33 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: mozilla/reticulum
-          path: './ret'
-      - name: make-dockerfile
+          path: './ret'          
+          
+      - name: add-extra-hab-configs
+        run: |
+          cd ./ret/habitat/config/
+          cat >> config.toml << EOL
+          {{#if cfg.ret.phx_host}}
+          [ret."Elixir.Ret.Meta"]'>>config.toml
+          phx_host = "{{ cfg.ret.phx_host }}"
+          {{/if}}
+          EOL
+          
+      - name: bio-pkg-build-export
+        run: |          
+          sudo docker --version
+          cd ./ret
+          org="biome-sh";repo="biome"
+          ver=$(curl -s https://api.github.com/repos/$org/$repo/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
+          dl="https://github.com/$org/$repo/releases/download/$ver/bio-$ver-x86_64-linux.tar.gz"
+          echo "[info] getting bio from: $dl"
+          curl -L -o bio.gz $dl;
+          tar -xf bio.gz;./bio --version          
+          sudo ./bio origin key generate ${{ env.BIO_PKG_ORG }}
+          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORG }} HAB_ORIGIN=${{ env.BIO_PKG_ORG }} ./bio pkg build . > /dev/null
+          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORG }} HAB_ORIGIN=${{ env.BIO_PKG_ORG }} ./bio pkg export container ./results/*.hart > /dev/null
+          
+      - name: repackage-docker-with-certs
         run: |
           cd ./ret
           cat > Dockerfile << EOL
@@ -30,32 +55,7 @@ jobs:
           run chown -R hab:hab ./* && ls -lha
           entrypoint bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum
           EOL
-          sudo chmod 777 Dockerfile
-      - name: extra-code-hacks
-        run: |
-          cd ./ret/habitat/config/
-          echo '[ret."Elixir.Ret.Meta"]'>>config.toml
-          echo 'phx_host = "{{ cfg.ret.phx_host }}"'>>config.toml
-          cat config.toml          
-      - name: bio-pkg-build
-        run: |          
-          sudo docker --version
-          cd ./ret
-          org="biome-sh";repo="biome"
-          ver=$(curl -s https://api.github.com/repos/$org/$repo/releases/latest | grep "tag_name" | awk '{print substr($2, 2, length($2)-3)}')
-          dl="https://github.com/$org/$repo/releases/download/$ver/bio-$ver-x86_64-linux.tar.gz"
-          echo "[info] getting bio from: $dl"
-          curl -L -o bio.gz $dl;
-          tar -xf bio.gz;./bio --version
-          
-          sudo ./bio origin key generate ${{ env.BIO_PKG_ORG }}
-          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORG }} HAB_ORIGIN=${{ env.BIO_PKG_ORG }} ./bio pkg build . > /dev/null
-          sudo HAB_ORIGIN_KEYS=${{ env.BIO_PKG_ORG }} HAB_ORIGIN=${{ env.BIO_PKG_ORG }} ./bio pkg export container ./results/*.hart > /dev/null
-          
-          sudo docker images          
-      - name: extra-infra-configs
-        run: |
-          cd ./ret
+          sudo chmod 777 Dockerfile        
           docker build -t ${{ env.BIO_PKG_ORG }}/reticulum:latest .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker tag ${{ env.BIO_PKG_ORG }}/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:latest    
