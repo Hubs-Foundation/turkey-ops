@@ -39,6 +39,8 @@ jobs:
           sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg build . > /dev/null
           sudo HAB_ORIGIN_KEYS=dummy1 HAB_ORIGIN=dummy1 ./bio pkg export container ./results/*.hart > /dev/null
           
+          sudo docker images
+          
       - name: extra-infra-configs
         run: |
           cd ./this/ret-cfgs
