@@ -22,7 +22,7 @@ jobs:
           cd ./ret/habitat/config/
           cat >> config.toml << EOL
           {{#if cfg.meta.phx_host}}
-          [ret."Elixir.Ret.Meta"]'>>config.toml
+          [ret."Elixir.Ret.Meta"]
           phx_host = "{{ cfg.meta.phx_host }}"
           {{/if}}
           EOL
