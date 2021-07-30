@@ -21,11 +21,12 @@ jobs:
         run: |
           cd ./ret/habitat/config/
           cat >> config.toml << EOL
-          {{#if cfg.ret.phx_host}}
+          {{#if cfg.meta.phx_host}}
           [ret."Elixir.Ret.Meta"]'>>config.toml
-          phx_host = "{{ cfg.ret.phx_host }}"
+          phx_host = "{{ cfg.meta.phx_host }}"
           {{/if}}
           EOL
+          cat config.toml
           
       - name: bio-pkg-build-export
         run: |          
