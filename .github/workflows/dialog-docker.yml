@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: dlg-docker
+name: dialog-docker
 
 on:
   workflow_dispatch:
@@ -10,14 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout-dlg
+      - name: checkout-dialog
         uses: actions/checkout@v2
         with:
           repository: mozilla/dialog
-          path: './dlg'   
+          path: './dialog'   
 
       - name: docker
         run: |
+          cd ./dialog
           cat > Dockerfile << EOL
           from node:lts as build
           workdir /app
@@ -30,5 +31,5 @@ jobs:
           cmd echo $perms_key > /app/certs/perms.pub.pem && INTERACTIVE=nope npm start
           EOL
           
-          docker build -t ${{ secrets.DOCKER_HUB_USR }}/dlg:latest .          
-          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/dlg:latest
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/dialog:latest .          
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/dialog:latest
