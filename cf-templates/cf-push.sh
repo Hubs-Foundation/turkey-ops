@@ -1,0 +1,1 @@
+aws s3 sync --exclude "*" --include "*.yaml" . s3://turkeycfg/cf
