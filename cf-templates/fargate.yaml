@@ -195,7 +195,7 @@ Resources:
         UnhealthyThresholdCount: 2
         HealthyThresholdCount: 2        
         Matcher:
-          HttpCode: 200,301,302
+          HttpCode: 200,301,302,404
   hpaTGTret:
       Type: AWS::ApplicationAutoScaling::ScalableTarget
       Properties:
