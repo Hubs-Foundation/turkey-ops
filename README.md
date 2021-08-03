@@ -21,12 +21,12 @@ contains:
 nested cloudformation templates used as part of turkey's orchestration process
 ### orchestrator
 a golang service does the following:
-(atm)
+#### (atm)
 - handles a POST at /TurkeyDeployAWS
 - reads a json input for aws creds and config overrides
 - deploys turkey on aws, from infra to code to configs
 - report status
-(eventually)
+#### (eventually)
 should act as a broker between turkey's frontend (console / mgmt ui) and infra backend, by serving all infra/ops related endpoints such as:
 - deployments and deletions
 - queries (status / logs / usages / billings )
