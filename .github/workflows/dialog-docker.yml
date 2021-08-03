@@ -19,7 +19,7 @@ jobs:
       - name: docker
         run: |
           cd ./dialog
-          cat > Dockerfile << EOL
+          cat > Dockerfile << 'EOL'
           from node:lts as build
           workdir /app
           copy . .
