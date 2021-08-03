@@ -29,7 +29,7 @@ jobs:
           workdir /app
           copy --from=build /app /app
           cmd echo $perms_key > /app/certs/perms.pub.pem && INTERACTIVE=nope npm start
-          EOL
-          
-          docker build -t ${{ secrets.DOCKER_HUB_USR }}/dialog:latest .          
+          EOL          
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/dialog:latest . > /dev/null
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/dialog:latest
