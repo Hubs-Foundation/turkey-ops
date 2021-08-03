@@ -6,4 +6,4 @@
 
 ## then to run:
 
-`docker run -p 888:888 tops` and check http://localhost:888/
+`docker run -p 888:888 tops` and goto http://localhost:888/
