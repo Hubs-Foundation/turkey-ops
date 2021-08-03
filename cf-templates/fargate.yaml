@@ -189,6 +189,7 @@ Resources:
         TargetType: ip
         VpcId: !Ref VPC      
         HealthCheckProtocol : HTTPS
+        HealthCheckPort : 4000
         HealthCheckPath: /api/v1/meta
         HealthCheckIntervalSeconds: 120
         UnhealthyThresholdCount: 2
@@ -305,12 +306,13 @@ Resources:
         TargetType: ip
         VpcId: !Ref VPC      
         HealthCheckProtocol : HTTPS
+        HealthCheckPort : 4443
         HealthCheckPath: /
         HealthCheckIntervalSeconds: 120
         UnhealthyThresholdCount: 2
         HealthyThresholdCount: 2        
         Matcher:
-          HttpCode: 200,301,302          
+          HttpCode: 200,301,302,404
   httpsLISTENERdlgAdm:
       Type: AWS::ElasticLoadBalancingV2::Listener
       Properties:
@@ -334,12 +336,13 @@ Resources:
         TargetType: ip
         VpcId: !Ref VPC      
         HealthCheckProtocol : HTTPS
+        HealthCheckPort : 4443
         HealthCheckPath: /
         HealthCheckIntervalSeconds: 120
         UnhealthyThresholdCount: 2
         HealthyThresholdCount: 2        
         Matcher:
-          HttpCode: 200,301,302                 
+          HttpCode: 200,301,302,404
 
   hpaTGTdlg:
       Type: AWS::ApplicationAutoScaling::ScalableTarget
