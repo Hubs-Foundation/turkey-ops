@@ -1,0 +1,34 @@
+# This is a basic workflow to help you get started with Actions
+
+name: dlg-docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout-dlg
+        uses: actions/checkout@v2
+        with:
+          repository: mozilla/dialog
+          path: './dlg'   
+
+      - name: docker
+        run: |
+          cat > Dockerfile << EOL
+          from node:lts as build
+          workdir /app
+          copy . .
+          run mkdir certs && openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout certs/privkey.pem -out certs/fullchain.pem -subj '/CN=dialog'
+          run npm ci
+          from node:lts-slim
+          workdir /app
+          copy --from=build /app /app
+          cmd echo $perms_key > /app/certs/perms.pub.pem && INTERACTIVE=nope npm start
+          EOL
+          
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/dlg:latest .          
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/dlg:latest
