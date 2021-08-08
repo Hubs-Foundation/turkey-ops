@@ -61,8 +61,8 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		}
 		userData["cf_turkeyDomain"] = turkeyDomain
 
-		cfS3Folder := "https://s3.amazonaws.com/" + turkeycfg_s3_bucket + "/" + turkeyEnv + "/cf/"
-		userData["cf_cfS3Folder"] = turkeyDomain
+		cfS3Folder := "https://s3.amazonaws.com/" + turkeycfg_s3_bucket + "/cf/" + turkeyEnv + "/"
+		userData["cf_cfS3Folder"] = cfS3Folder
 
 		cfParams, err := parseCFparams(userData)
 		if err != nil {

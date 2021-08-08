@@ -33,7 +33,7 @@ Parameters:
     Default: docker.io/tanfarming/ret
   IMGdlg:
     Type: String
-    Default: docker.io/tanfarming/dialog    
+    Default: docker.io/tanfarming/dialog:dev
   HttpsCertArn:
     Type: String
   retConfigSsmArn:
@@ -59,13 +59,17 @@ Resources:
   ContainerSGpub:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Join ['-', [!Ref mainStackName, podSG, alb]]
+      GroupDescription: !Join ['-', [!Ref mainStackName, podSG, pub]]
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 65535
           CidrIp: 0.0.0.0/0
+        - IpProtocol: udp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0          
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:

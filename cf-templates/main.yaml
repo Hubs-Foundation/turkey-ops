@@ -7,7 +7,7 @@ Parameters:
     Default: asdf123
   cfS3Folder:
     Type: String
-    Default: https://s3.amazonaws.com/turkeycfg/cf/
+    Default: https://s3.amazonaws.com/turkeycfg/cf/<env>
   VpcCIDR:
     Type: String
     Default: 10.100.0.0/16    
@@ -23,9 +23,12 @@ Parameters:
   PrivateSubnet2CIDR:
     Type: String
     Default: 10.100.101.0/24
-  # HealthCheckPath:
-  #   Type: String
-  #   Default: /healthz
+  IMGret:  
+    Type: String
+    Default: docker.io/tanfarming/ret
+  IMGdlg:
+    Type: String
+    Default: docker.io/tanfarming/dialog:dev    
   hpaMINcontainers:
     Type: Number
     Default: 1
@@ -197,7 +200,9 @@ Resources:
         # PrivateSubnet1: !GetAtt nw.Outputs.PrivateSubnet1
         # PrivateSubnet2: !GetAtt nw.Outputs.PrivateSubnet2
         PublicSubnet1: !GetAtt nw.Outputs.PublicSubnet1
-        PublicSubnet2: !GetAtt nw.Outputs.PublicSubnet2        
+        PublicSubnet2: !GetAtt nw.Outputs.PublicSubnet2   
+        IMGret: !Ref IMGret
+        IMGdlg: !Ref IMGdlg
         hpaMINcontainers: !Ref hpaMINcontainers
         hpaMAXcontainers: !Ref hpaMAXcontainers
         hpaTargetValue: !Ref hpaTargetValue
