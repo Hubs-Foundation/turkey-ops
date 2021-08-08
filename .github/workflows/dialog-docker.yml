@@ -41,6 +41,6 @@ jobs:
           run cat /init.sh
           cmd bash /init.sh
           EOL
-          docker build -t ${{ secrets.DOCKER_HUB_USR }}/dialog:latest . > /dev/null
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/dialog:dev . > /dev/null
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/dialog:latest
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/dialog:dev
