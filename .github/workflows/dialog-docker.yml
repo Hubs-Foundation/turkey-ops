@@ -19,7 +19,8 @@ jobs:
       - name: docker
         run: |
           cd ./dialog
-          cat > Dockerfile << 'EOL'          
+          
+          cat > Dockerfile << 'EOL'
           from node:lts as build
           workdir /app
           copy . .
@@ -30,16 +31,17 @@ jobs:
           copy --from=build /app /app
           run apt-get update && apt-get install -y jq curl dnsutils
           run echo ' \n\
-            printf "%b" "$perms_key">/app/certs/perms.pub.pem \n\      
-            head -3 /app/certs/perms.pub.pem \n\            
+            printf "%b" "$perms_key">/app/certs/perms.pub.pem \n\
+            head -3 /app/certs/perms.pub.pem \n\
             curl ${ECS_CONTAINER_METADATA_URI_V4}/task \n\
-            export MEDIASOUP_ANNOUNCED_IP=$(dig +short myip.opendns.com @resolver1.opendns.com) \n\
+            export MEDIASOUP_ANNOUNCED_IP=$(dig TXT +short o-o.myaddr.l.google.com @ns1.google.com) \n\
             echo "MEDIASOUP_ANNOUNCED_IP: $MEDIASOUP_ANNOUNCED_IP" \n\
             export INTERACTIVE=nope \n\
             npm start' >> /init.sh
           run cat /init.sh
           cmd bash /init.sh
-          EOL          
+          EOL
+          
           docker build -t ${{ secrets.DOCKER_HUB_USR }}/dialog:dev . > /dev/null
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/dialog:dev
