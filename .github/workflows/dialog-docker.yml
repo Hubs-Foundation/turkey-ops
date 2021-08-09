@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PUB_IP_CURL: https://ipinfo.io/ip
+      
 
     steps:
       - name: checkout-dialog
@@ -34,7 +37,7 @@ jobs:
             printf "%b" "$perms_key">/app/certs/perms.pub.pem \n\
             head -3 /app/certs/perms.pub.pem \n\
             curl ${ECS_CONTAINER_METADATA_URI_V4}/task \n\
-            export MEDIASOUP_ANNOUNCED_IP=$(dig TXT +short o-o.myaddr.l.google.com @ns1.google.com) \n\
+            export MEDIASOUP_ANNOUNCED_IP=$(curl ${{ env.PUB_IP_CURL }}) \n\
             echo "MEDIASOUP_ANNOUNCED_IP: $MEDIASOUP_ANNOUNCED_IP" \n\
             export INTERACTIVE=nope \n\
             npm start' >> /init.sh
