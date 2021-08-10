@@ -37,7 +37,7 @@ jobs:
           run cat /init.sh && chmod +x /init.sh
           user nobody:nogroup
           volume ["/var/lib/coturn"]
-          cmd bash /init.sh
+          cmd /init.sh
           EOL
           docker build -t ${{ secrets.DOCKER_HUB_USR }}/coturn:dev .
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
