@@ -1,5 +1,3 @@
-# This is a basic workflow to help you get started with Actions
-
 name: coturn-docker
 
 on:
@@ -21,7 +19,6 @@ jobs:
           from node:lts as build
           workdir /certs
           run mkdir certs && openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout certs/key.pem -out certs/cert.pem -subj '/CN=dialog'
-
           from node:coturn:alpine
           copy --from=build /certs /certs
           run echo ' \n\
@@ -39,3 +36,6 @@ jobs:
           run cat /init.sh
           cmd bash /init.sh
           EOL
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/coturn:dev . > /dev/null
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:dev          
