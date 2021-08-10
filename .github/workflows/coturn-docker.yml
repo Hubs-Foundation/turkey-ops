@@ -17,7 +17,6 @@ jobs:
           
           cat > Dockerfile << 'EOL'
           from node:lts as build
-          workdir /certs
           run mkdir certs && openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout certs/key.pem -out certs/cert.pem -subj '/CN=dialog'
           from coturn/coturn:alpine
           copy --from=build /certs /certs
