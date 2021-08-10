@@ -22,20 +22,22 @@ jobs:
           from coturn/coturn:alpine
           copy --from=build /certs /certs
           user root:root
-          run echo ' \n\
-            tls-listening-port=5349 > /etc/turnserver.conf \n\
-            cert=/app/key.pem >> /etc/turnserver.conf \n\
-            pkey=/app/cert.pem >> /etc/turnserver.conf \n\
-            export internalIp="0.0.0.0" >> /etc/turnserver.conf \n\
-            export externalIp="$(curl ${{ env.PUB_IP_CURL }})" >> /etc/turnserver.conf \n\
-            echo realm=$coturn_realm >> /etc/turnserver.conf \n\
-            echo listening-ip=$internalIp >> /etc/turnserver.conf \n\
-            echo relay-ip=$externalIp >> /etc/turnserver.conf \n\
-            echo external-ip=$externalIp >> /etc/turnserver.conf \n\
-            echo allowed-peer-ip=$externalIp >> /etc/turnserver.conf \n\
-            /usr/local/bin/docker-entrypoint.sh' >> /init.sh
+          run apk add curl
+          run printf ' \n\
+              export internalIp="0.0.0.0" \n\
+              export externalIp="$(curl ${{ env.PUB_IP_CURL }})" \n\
+              echo "externalIp: $externalIp" \n\
+              echo "tls-listening-port=5349" > /etc/turnserver.conf \n\
+              echo "cert=/app/key.pem" >> /etc/turnserver.conf \n\
+              echo "pkey=/app/cert.pem" >> /etc/turnserver.conf \n\
+              echo "realm=$coturn_realm" >> /etc/turnserver.conf \n\
+              echo "listening-ip=$internalIp" >> /etc/turnserver.conf \n\
+              echo "relay-ip=$externalIp" >> /etc/turnserver.conf \n\
+              echo "external-ip=$externalIp" >> /etc/turnserver.conf \n\
+              echo "allowed-peer-ip=$externalIp" >> /etc/turnserver.conf \n\
+              /usr/local/bin/docker-entrypoint.sh --log-file=stdout' >> /init.sh
           run cat /init.sh && chmod +x /init.sh
-          user nobody:nogroup
+          # user nobody:nogroup
           volume ["/var/lib/coturn"]
           cmd /init.sh
           EOL
