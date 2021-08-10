@@ -36,6 +36,6 @@ jobs:
           run cat /init.sh
           cmd bash /init.sh
           EOL
-          docker build -t ${{ secrets.DOCKER_HUB_USR }}/coturn:dev .
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/coturn:dev . > /dev/null
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:dev          
