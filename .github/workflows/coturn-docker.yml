@@ -13,14 +13,13 @@ jobs:
     steps:
       - name: docker
         run: |
-          mkdir _tmp
-          cd _tmp
+          mkdir _tmp && cd _tmp
           
           cat > Dockerfile << 'EOL'
           from node:lts as build
           workdir /certs
           run mkdir certs && openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout certs/key.pem -out certs/cert.pem -subj '/CN=dialog'
-          from node:coturn:alpine
+          from coturn:alpine
           copy --from=build /certs /certs
           run echo ' \n\
             tls-listening-port=5349 > /etc/turnserver.conf \n\
