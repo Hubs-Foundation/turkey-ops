@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: docker
         run: |
-          cd ./dialog
+          mkdir tmp && cd tmp
           
           cat > Dockerfile << 'EOL'
           from node:lts as build
