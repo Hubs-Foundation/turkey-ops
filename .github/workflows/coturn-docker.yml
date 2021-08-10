@@ -28,8 +28,8 @@ jobs:
               export externalIp="$(curl ${{ env.PUB_IP_CURL }})" \n\
               echo "externalIp: $externalIp" \n\
               echo "tls-listening-port=5349" > /etc/turnserver.conf \n\
-              echo "cert=/app/key.pem" >> /etc/turnserver.conf \n\
-              echo "pkey=/app/cert.pem" >> /etc/turnserver.conf \n\
+              echo "cert=/certs/key.pem" >> /etc/turnserver.conf \n\
+              echo "pkey=/certs/cert.pem" >> /etc/turnserver.conf \n\
               echo "realm=$coturn_realm" >> /etc/turnserver.conf \n\
               echo "listening-ip=$internalIp" >> /etc/turnserver.conf \n\
               echo "relay-ip=$externalIp" >> /etc/turnserver.conf \n\
