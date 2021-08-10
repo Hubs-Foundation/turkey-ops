@@ -21,7 +21,8 @@ jobs:
           run mkdir certs && openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout certs/key.pem -out certs/cert.pem -subj '/CN=dialog'
           from coturn/coturn:alpine
           copy --from=build /certs /certs
-          run sudo echo ' \n\
+          user root:root
+          run echo ' \n\
             tls-listening-port=5349 > /etc/turnserver.conf \n\
             cert=/app/key.pem >> /etc/turnserver.conf \n\
             pkey=/app/cert.pem >> /etc/turnserver.conf \n\
@@ -33,7 +34,9 @@ jobs:
             echo external-ip=$externalIp >> /etc/turnserver.conf \n\
             echo allowed-peer-ip=$externalIp >> /etc/turnserver.conf \n\
             bash /usr/local/bin/docker-entrypoint.sh' >> /usr/local/bin/init.sh
-          run sudo cat /init.sh && sudo chmod +x /init.sh          
+          run cat /init.sh && chmod +x /init.sh
+          user nobody:nogroup
+          volume ["/var/lib/coturn"]
           cmd bash /init.sh
           EOL
           docker build -t ${{ secrets.DOCKER_HUB_USR }}/coturn:dev .
