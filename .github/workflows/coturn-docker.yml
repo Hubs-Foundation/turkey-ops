@@ -33,7 +33,7 @@ jobs:
               echo "pkey=/certs/key.pem" >> /etc/turnserver.conf \n\
               echo "realm=$coturn_realm" >> /etc/turnserver.conf \n\
               echo "listening-ip=$internalIp" >> /etc/turnserver.conf \n\
-              echo "relay-ip=$externalIp" >> /etc/turnserver.conf \n\
+              echo "relay-ip=$internalIp" >> /etc/turnserver.conf \n\
               echo "external-ip=$externalIp" >> /etc/turnserver.conf \n\
               echo "allowed-peer-ip=$externalIp" >> /etc/turnserver.conf \n\
               cat /etc/turnserver.conf \n\
