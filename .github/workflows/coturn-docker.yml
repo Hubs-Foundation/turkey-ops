@@ -23,7 +23,7 @@ jobs:
           user root:root
           run apk add curl
           run printf ' \n\
-              export internalIp="0.0.0.0" \n\
+              export internalIp="$(ip a | grep -Eo "inet (addr:)?([0-9]*\.){3}[0-9]*" | grep -Eo "([0-9]*\.){3}[0-9]*" | grep -v "127.0.0.1")" \n\
               echo "internalIp: $internalIp" \n\              
               export externalIp="$(curl ${{ env.PUB_IP_CURL }})" \n\
               echo "externalIp: $externalIp" \n\
@@ -33,7 +33,7 @@ jobs:
               echo "pkey=/certs/key.pem" >> /etc/turnserver.conf \n\
               echo "realm=$coturn_realm" >> /etc/turnserver.conf \n\
               echo "listening-ip=$internalIp" >> /etc/turnserver.conf \n\
-              echo "relay-ip=$internalIp" >> /etc/turnserver.conf \n\
+              echo "relay-ip=$externalIp" >> /etc/turnserver.conf \n\
               echo "external-ip=$externalIp" >> /etc/turnserver.conf \n\
               echo "allowed-peer-ip=$externalIp" >> /etc/turnserver.conf \n\
               cat /etc/turnserver.conf \n\
