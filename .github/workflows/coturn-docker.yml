@@ -33,7 +33,7 @@ jobs:
             echo relay-ip=$externalIp >> /etc/turnserver.conf \n\
             echo external-ip=$externalIp >> /etc/turnserver.conf \n\
             echo allowed-peer-ip=$externalIp >> /etc/turnserver.conf \n\
-            bash /usr/local/bin/docker-entrypoint.sh' >> /init.sh
+            /usr/local/bin/docker-entrypoint.sh' >> /init.sh
           run cat /init.sh && chmod +x /init.sh
           user nobody:nogroup
           volume ["/var/lib/coturn"]
