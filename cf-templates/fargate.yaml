@@ -470,7 +470,7 @@ Resources:
             Value: 0
         TargetType: ip
         VpcId: !Ref VPC      
-        HealthCheckProtocol : HTTPS
+        HealthCheckProtocol : HTTP
         HealthCheckPort :  1111
         HealthCheckPath: /
         HealthCheckIntervalSeconds: 120
