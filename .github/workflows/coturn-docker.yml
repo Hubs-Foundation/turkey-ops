@@ -29,7 +29,7 @@ jobs:
               echo "REALM=$REALM" \n\
               export internalIp="$(ip a | grep -Eo "inet (addr:)?([0-9]*\.){3}[0-9]*" | grep -Eo "([0-9]*\.){3}[0-9]*" | grep -v "127.0.0.1" | head -1)" \n\
               echo "internalIp: $internalIp" \n\              
-              export externalIp="$(curl ${{ env.PUB_IP_CURL }}))" \n\
+              export externalIp="$(curl ${{ env.PUB_IP_CURL }})" \n\
               echo "externalIp: $externalIp" \n\
               echo "realm=$REALM" > /etc/turnserver.conf \n\              
               echo "no-udp=true" >> /etc/turnserver.conf \n\              
