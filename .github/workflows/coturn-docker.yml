@@ -8,13 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PUB_IP_CURL: https://ipinfo.io/ip
-
-
     steps:
-      - name: docker
+      - name: making <GITHUB_RUN_ID> tagged docker image
         run: |
-          mkdir _tmp && cd _tmp
-          
+          echo "build and push the docker image with tag <GITHUB_RUN_ID>"
+          mkdir _tmp && cd _tmp          
           cat > Dockerfile << 'EOL'
           from node:lts as build
           run mkdir certs && openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout certs/key.pem -out certs/cert.pem -subj '/CN=dialog'
@@ -57,11 +55,34 @@ jobs:
           volume ["/var/lib/coturn"]
           cmd /init.sh
           EOL
-          docker build -t ${{ secrets.DOCKER_HUB_USR }}/coturn:dev .
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_ID .
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:dev          
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_ID
 
+  push-dev:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: dev
+    steps:
+      - name: pull <GITHUB_RUN_ID>, re-tag to dev, push
+        run: |
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
+          docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_ID .
+          docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_ID ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
+          docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
 
-#         echo "allowed-peer-ip=$externalIp" >> /etc/turnserver.conf \n\
-#         export internalIp="$(ip a | grep -Eo "inet (addr:)?([0-9]*\.){3}[0-9]*" | grep -Eo "([0-9]*\.){3}[0-9]*" | grep -v "127.0.0.1")" \n\
+  push-prod:
+    runs-on: ubuntu-latest
+    needs: push-dev
+    environment:
+      name: prod
+    steps:
+      - name: pull <GITHUB_RUN_ID>, re-tag to prod, push
+        run: |
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
+          docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:dev .
+          docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:dev ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
+          docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
+
 
