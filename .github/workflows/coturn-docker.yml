@@ -70,7 +70,7 @@ jobs:
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER
           docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
-          docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
 
   push-prod:
     runs-on: ubuntu-latest
@@ -83,6 +83,6 @@ jobs:
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER
           docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
-          docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
 
 
