@@ -68,7 +68,7 @@ jobs:
       - name: pull <GITHUB_RUN_ID>, re-tag to dev, push
         run: |
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_ID .
+          docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_ID
           docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_ID ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
           docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
 
@@ -81,7 +81,7 @@ jobs:
       - name: pull <GITHUB_RUN_ID>, re-tag to prod, push
         run: |
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:dev .
+          docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
           docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:dev ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
           docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
 
