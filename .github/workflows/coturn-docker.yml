@@ -82,7 +82,7 @@ jobs:
         run: |
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER
-          docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
+          docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
 
 
