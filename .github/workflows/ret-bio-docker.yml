@@ -48,7 +48,7 @@ jobs:
           cat > Dockerfile << EOL
           from alpine/openssl:latest as builder
           workdir /certs
-          run openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout ssl.key -out ssl.pem -subj '/CN=hubs'
+          run openssl req -x509 -newkey rsa:2048 -sha256 -days 36500 -nodes -keyout ssl.key -out ssl.pem -subj '/CN=hubs'
           run cp ssl.pem ssl-chain.pem
           from ${{ env.BIO_PKG_ORG }}/reticulum
           WORKDIR /hab/svc/reticulum/files
