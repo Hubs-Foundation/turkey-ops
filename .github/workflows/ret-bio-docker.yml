@@ -53,8 +53,8 @@ jobs:
           from ${{ env.BIO_PKG_ORG }}/reticulum
           WORKDIR /hab/svc/reticulum/files
           copy --from=builder /certs .
-          run chown -R hab:hab ./* && ls -lha
-          entrypoint bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum
+          run chown -R hab:hab ./* && ls -lha          
+          entrypoint NODE_NAME=$HOSTNAME bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum
           EOL
           docker build -t ${{ env.BIO_PKG_ORG }}/reticulum:latest .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
