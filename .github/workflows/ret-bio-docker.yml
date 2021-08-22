@@ -56,7 +56,7 @@ jobs:
           run chown -R hab:hab ./* && ls -lha
           run printf 'while true; do { res="HTTP/1.1 200 OK\\r\\n";echo -e $res; } | nc -l 1111; done' > /healthcheck.sh && chmod +x /healthcheck.sh
           run printf ' \n\  
-            #/healthcheck.sh& \n\
+            /healthcheck.sh& \n\
             export NODE_NAME="\$HOSTNAME" \n\
             export NODE_COOKIE="UmV0aWN1bHVt" \n\
             echo "pg2: \$NODE_NAME(\$NODE_COOKIE)" \n\ 
