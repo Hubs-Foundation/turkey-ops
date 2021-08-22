@@ -54,10 +54,14 @@ jobs:
           WORKDIR /hab/svc/reticulum/files
           copy --from=builder /certs .
           run chown -R hab:hab ./* && ls -lha
-          run printf ' \n\
+          run printf 'while true; do { res="HTTP/1.1 200 OK\\r\\n";echo -e $res; } | nc -l -q 1 1111; done' > /healthcheck.sh && chmod +x /healthcheck.sh
+          run printf '
+            \n\
+            /healthcheck.sh& \n\
             export NODE_NAME="\$HOSTNAME" \n\
             export NODE_COOKIE="UmV0aWN1bHVt" \n\
-            bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum' >> /run.sh
+            bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum \n\' 
+            > /run.sh
           run cat /run.sh
           entrypoint bash /run.sh
           EOL
