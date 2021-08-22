@@ -59,8 +59,7 @@ jobs:
             /healthcheck.sh& \n\
             export NODE_NAME="\$HOSTNAME" \n\
             export NODE_COOKIE="UmV0aWN1bHVt" \n\
-            bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum \n\' 
-            > /run.sh
+            bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum \n\' > /run.sh
           run cat /run.sh
           entrypoint bash /run.sh
           EOL
