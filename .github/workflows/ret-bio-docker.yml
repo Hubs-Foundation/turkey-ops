@@ -54,13 +54,7 @@ jobs:
           WORKDIR /hab/svc/reticulum/files
           copy --from=builder /certs .
           run chown -R hab:hab ./* && ls -lha
-          run echo ' \n\
-            export NODE_NAME="$HOSTNAME" \n\
-            export NODE_COOKIE="UmV0aWN1bHVt" \n\
-            echo "NODE_NAME: $NODE_NAME, NODE_COOKIE: $NODE_COOKIE" \n\
-            bash /init.sh run ${{ env.BIO_PKG_ORG }}/reticulum' >> /run.sh          
-          run cat /run.sh
-          cmd bash /run.sh
+          cmd NODE_NAME="$HOSTNAME" NODE_COOKIE="UmV0aWN1bHVt" /init.sh
           EOL
           docker build -t ${{ env.BIO_PKG_ORG }}/reticulum:latest .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
