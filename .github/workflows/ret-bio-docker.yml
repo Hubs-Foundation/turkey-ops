@@ -54,7 +54,7 @@ jobs:
           WORKDIR /hab/svc/reticulum/files
           copy --from=builder /certs .
           run chown -R hab:hab ./* && ls -lha
-          run printf 'while true; do { res="HTTP/1.1 200 OK\\r\\n";echo -e $res; } | nc -l 1111; done' > /healthcheck.sh && chmod +x /healthcheck.sh
+          run printf 'while true; do (echo -e "HTTP/1.1 200 OK\r\n") | nc -lp 1111; done' > /healthcheck.sh && chmod +x /healthcheck.sh
           run printf ' \n\  
             /healthcheck.sh& \n\
             #export NODE_NAME="\$HOSTNAME" \n\
