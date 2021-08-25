@@ -2,7 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
   mainStackName:
-    Type: String    
+    Type: String
+  turkeyDomain:
+    Type: String
   VPC:
     Type: String
   # PrivateSubnet1:
@@ -33,7 +35,10 @@ Parameters:
     Default: docker.io/tanfarming/ret
   IMGdlg:
     Type: String
-    Default: docker.io/tanfarming/dialog    
+    Default: docker.io/tanfarming/dialog:dev
+  IMGcoturn:    
+    Type: String
+    Default: docker.io/tanfarming/coturn:dev
   HttpsCertArn:
     Type: String
   retConfigSsmArn:
@@ -46,16 +51,30 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Ref mainStackName
-  ContainerSecurityGroup:
+  ContainerSGalb:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Join ['-', [!Ref mainStackName, podSG]]
+      GroupDescription: !Join ['-', [!Ref mainStackName, podSG, alb]]
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 0
           ToPort: 65535
           SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+  ContainerSGpub:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join ['-', [!Ref mainStackName, podSG, pub]]
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+        - IpProtocol: udp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0          
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -146,7 +165,7 @@ Resources:
               - !Ref PublicSubnet1
               - !Ref PublicSubnet2
             SecurityGroups:
-              - !Ref ContainerSecurityGroup
+              - !Ref ContainerSGalb
         LoadBalancers:
           - ContainerName: ret
             ContainerPort: 4000
@@ -253,7 +272,7 @@ Resources:
             Options:
               awslogs-region: !Ref AWS::Region
               awslogs-group: !Ref logGRPdlg
-              awslogs-stream-prefix: ecs              
+              awslogs-stream-prefix: ecs   
   SVCdlg:
       Type: AWS::ECS::Service
       DependsOn:
@@ -275,7 +294,7 @@ Resources:
               - !Ref PublicSubnet1
               - !Ref PublicSubnet2
             SecurityGroups:
-              - !Ref ContainerSecurityGroup
+              - !Ref ContainerSGpub
         LoadBalancers:
           - ContainerName: dlg
             ContainerPort: 4443
@@ -365,7 +384,121 @@ Resources:
           ScaleInCooldown: 600
           ScaleOutCooldown: 60
           TargetValue: !Ref hpaTargetValue 
-
+##############################################################
+################# service: coturn  ########################
+##############################################################
+  logGRPcoturn:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: !Join ['-', [/ecs/, !Ref mainStackName, coturn]]
+  tskDEFcoturn:
+      Type: AWS::ECS::TaskDefinition
+      DependsOn: logGRPcoturn
+      Properties:
+        Family: !Join ['-', [!Ref mainStackName, coturn]]
+        NetworkMode: awsvpc
+        RequiresCompatibilities:
+            - FARGATE
+        Cpu: 256
+        Memory: 1GB
+        ExecutionRoleArn: !Ref ExecutionRole
+        TaskRoleArn: !Ref TaskRole
+        ContainerDefinitions:
+        - Name: coturn
+          Image: !Ref IMGcoturn
+          PortMappings:
+            - ContainerPort: 5349
+            - ContainerPort: 1111
+          Environment:
+            - Name: paramsName
+              Value: !Ref mainStackName
+            - Name: REALM
+              Value: !Sub ${mainStackName}.${turkeyDomain}
+            - Name: PSQL
+              Value: postgresql://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref logGRPcoturn
+              awslogs-stream-prefix: ecs   
+  SVCcoturn:
+      Type: AWS::ECS::Service
+      DependsOn:
+      - httpsLISTENERcoturn
+      Properties: 
+        ServiceName: !Join ['-', [!Ref mainStackName, coturn]]
+        Cluster: !Ref Cluster
+        TaskDefinition: !Ref tskDEFcoturn
+        DeploymentConfiguration:
+          MinimumHealthyPercent: 100
+          MaximumPercent: 200
+        DesiredCount: 1
+        HealthCheckGracePeriodSeconds: 60
+        LaunchType: FARGATE
+        NetworkConfiguration: 
+          AwsvpcConfiguration:
+            AssignPublicIp: ENABLED
+            Subnets:
+              - !Ref PublicSubnet1
+              - !Ref PublicSubnet2
+            SecurityGroups:
+              - !Ref ContainerSGpub
+        LoadBalancers:
+          - ContainerName: coturn
+            ContainerPort: 5349
+            TargetGroupArn: !Ref TGcoturn
+  httpsLISTENERcoturn:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        DefaultActions:
+          - TargetGroupArn: !Ref TGcoturn
+            Type: forward
+        LoadBalancerArn: !Ref ALB
+        Port: 5349
+        Protocol: HTTPS
+        Certificates:
+          - CertificateArn: !Ref HttpsCertArn
+  TGcoturn:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+        Name: !Join ['-', [!Ref mainStackName, TGcoturn]]
+        Port: 5349
+        Protocol: HTTPS
+        TargetGroupAttributes:
+          - Key: deregistration_delay.timeout_seconds
+            Value: 0
+        TargetType: ip
+        VpcId: !Ref VPC      
+        HealthCheckProtocol : HTTP
+        HealthCheckPort :  1111
+        HealthCheckPath: /
+        HealthCheckIntervalSeconds: 120
+        UnhealthyThresholdCount: 2
+        HealthyThresholdCount: 2        
+        Matcher:
+          HttpCode: 200-499
+  hpaTGTcoturn:
+      Type: AWS::ApplicationAutoScaling::ScalableTarget
+      Properties:
+        MinCapacity: !Ref hpaMINcontainers
+        MaxCapacity: !Ref hpaMAXcontainers
+        ResourceId: !Join ['/', [service, !Ref Cluster, !GetAtt SVCcoturn.Name]]
+        ScalableDimension: ecs:service:DesiredCount
+        ServiceNamespace: ecs
+        RoleARN: !Ref AutoScalingRole
+  hpaPOLICYcoturn:
+      Type: AWS::ApplicationAutoScaling::ScalingPolicy
+      Properties:
+        PolicyName: !Join ['-', [!Ref mainStackName, hpa-cpu-coturn]]
+        PolicyType: TargetTrackingScaling
+        ScalingTargetId: !Ref hpaTGTcoturn
+        TargetTrackingScalingPolicyConfiguration:
+          PredefinedMetricSpecification:
+            PredefinedMetricType: ECSServiceAverageCPUUtilization
+          ScaleInCooldown: 600
+          ScaleOutCooldown: 60
+          TargetValue: !Ref hpaTargetValue 
 
 Outputs:
   albDNSname:

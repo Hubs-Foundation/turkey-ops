@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
+var turkeyEnv = "dev"
 var turkeycfg_s3_bucket = "turkeycfg"
 var turkeyDomain = "quackstack.net"
 
@@ -60,13 +61,20 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		}
 		userData["cf_turkeyDomain"] = turkeyDomain
 
+		cfS3Folder := "https://s3.amazonaws.com/" + turkeycfg_s3_bucket + "/cf/" + turkeyEnv + "/"
+		userData["cf_cfS3Folder"] = cfS3Folder
+
 		cfParams, err := parseCFparams(userData)
 		if err != nil {
 			sess.PushMsg("ERROR @ parseCFparams: " + err.Error())
 		}
+		cfTags := []*cloudformation.Tag{
+			{Key: aws.String("customer-id"), Value: aws.String("not-yet-place-holder-only")},
+			{Key: aws.String("turkeyEnv"), Value: aws.String(turkeyEnv)},
+		}
 
 		go func() {
-			err = awss.CreateCFstack(stackName, "https://s3.amazonaws.com/"+turkeycfg_s3_bucket+"/cf/main.yaml", cfParams)
+			err = awss.CreateCFstack(stackName, cfS3Folder+"main.yaml", cfParams, cfTags)
 			if err != nil {
 				sess.PushMsg("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
 				return

@@ -36,7 +36,8 @@ func BuildCFlink(region, stackID string) string {
 	return "https://" + region + ".console.aws.amazon.com/cloudformation/home?region=" + region + "#/stacks/stackinfo?stackId=" + stackID
 }
 
-func (as AwsSvs) CreateCFstack(stackName string, templateURL string, params []*cloudformation.Parameter) error {
+func (as AwsSvs) CreateCFstack(stackName string, templateURL string, params []*cloudformation.Parameter, tags []*cloudformation.Tag) error {
+
 	svc := cloudformation.New(as.Sess)
 
 	input := &cloudformation.CreateStackInput{
@@ -44,6 +45,7 @@ func (as AwsSvs) CreateCFstack(stackName string, templateURL string, params []*c
 		StackName:    aws.String(stackName),
 		Capabilities: []*string{aws.String("CAPABILITY_NAMED_IAM")},
 		Parameters:   params,
+		Tags:         tags,
 	}
 	_, err := svc.CreateStack(input)
 	if err != nil {
