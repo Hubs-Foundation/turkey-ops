@@ -66,9 +66,9 @@ jobs:
           EOL
           docker build -t ${{ env.BIO_PKG_ORG }}/reticulum:$GITHUB_RUN_NUMBER .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          sudo docker tag ${{ env.BIO_PKG_ORG }}/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/ret:$GITHUB_RUN_NUMBER    
+          sudo docker tag ${{ env.BIO_PKG_ORG }}/reticulum:latest ${{ secrets.DOCKER_HUB_USR }}/reticulum:$GITHUB_RUN_NUMBER    
           sudo docker images
-          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/ret:$GITHUB_RUN_NUMBER
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/reticulum:$GITHUB_RUN_NUMBER
           
 
   push-dev:
