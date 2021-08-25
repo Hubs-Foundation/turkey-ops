@@ -1,4 +1,4 @@
-name: coturn-docker
+name: coturn
 
 on:
   workflow_dispatch:
