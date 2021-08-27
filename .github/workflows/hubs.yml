@@ -51,7 +51,8 @@ jobs:
             nginx -g "daemon off;" \n\n' > /run.sh
           run cat /run.sh
           entrypoint bash /run.sh
-          EOL          
-          
-          
+          EOL
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/hubs:dev
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/hubs:dev
           
