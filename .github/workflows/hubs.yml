@@ -49,7 +49,7 @@ jobs:
           run printf ' \n\  
             /healthcheck.sh& \n\
             nginx -g "daemon off;" \n\n' > /run.sh
-          run cat /run.sh
+          run chmod +x /run.sh && cat /run.sh
           entrypoint /run.sh
           EOL
           docker build -t ${{ secrets.DOCKER_HUB_USR }}/hubs:dev .
