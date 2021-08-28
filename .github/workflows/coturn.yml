@@ -1,0 +1,90 @@
+name: coturn
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PUB_IP_CURL: https://ipinfo.io/ip
+    steps:
+      - name: making <GITHUB_RUN_NUMBER> tagged docker image
+        run: |
+          echo "build and push the docker image with tag <GITHUB_RUN_NUMBER>"
+          mkdir _tmp && cd _tmp          
+          cat > Dockerfile << 'EOL'
+          from node:lts as build
+          run mkdir certs && openssl req -x509 -newkey rsa:4096 -sha256 -days 36500 -nodes -keyout certs/key.pem -out certs/cert.pem -subj '/CN=dialog'
+          from coturn/coturn:alpine
+          copy --from=build /certs /certs
+          user root:root
+          run apk add curl netcat-openbsd
+          run printf 'while true; do { res="HTTP/1.1 200 OK\\r\\n";echo -e $res; } | nc -l -q 1 1111 > /dev/null; done' > /healthcheck.sh && chmod +x /healthcheck.sh
+          run printf 'set -m \n\
+              /healthcheck.sh& \n\
+              echo "PSQL=$PSQL" \n\
+              echo "REALM=$REALM" \n\
+              export internalIp="$(ip a | grep -Eo "inet (addr:)?([0-9]*\.){3}[0-9]*" | grep -Eo "([0-9]*\.){3}[0-9]*" | grep -v "127.0.0.1" | head -1)" \n\
+              echo "internalIp: $internalIp" \n\              
+              export externalIp="$(curl ${{ env.PUB_IP_CURL }})" \n\
+              echo "externalIp: $externalIp" \n\
+              echo "realm=$REALM" > /etc/turnserver.conf \n\              
+              echo "no-udp=true" >> /etc/turnserver.conf \n\              
+              echo "no-tcp=true" >> /etc/turnserver.conf \n\              
+              echo "no-dtls=false" >> /etc/turnserver.conf \n\              
+              echo "no-tls=false" >> /etc/turnserver.conf \n\              
+              echo "no-auth-pings=true" >> /etc/turnserver.conf \n\              
+              echo "no-dynamic-ip-list=true" >> /etc/turnserver.conf \n\              
+              echo "no-dynamic-realms=true" >> /etc/turnserver.conf \n\              
+              echo "min-port=49152" >> /etc/turnserver.conf \n\              
+              echo "max-port=51609" >> /etc/turnserver.conf \n\              
+              echo "tls-listening-port=5349" >> /etc/turnserver.conf \n\
+              echo "###psql-schema=coturn" >> /etc/turnserver.conf \n\              
+              echo "use-auth-secret=true" >> /etc/turnserver.conf \n\              
+              echo "cert=/certs/cert.pem" >> /etc/turnserver.conf \n\
+              echo "pkey=/certs/key.pem" >> /etc/turnserver.conf \n\
+              echo "listening-ip=$internalIp" >> /etc/turnserver.conf \n\
+              echo "relay-ip=$internalIp" >> /etc/turnserver.conf \n\
+              echo "external-ip=$externalIp" >> /etc/turnserver.conf \n\              
+              cat /etc/turnserver.conf \n\
+              echo "####################################################" \n\   
+              turnserver --log-file=stdout --lt-cred-mech --psql-userdb=$PSQL ' >> /init.sh && chmod +x /init.sh
+          run cat /init.sh
+          # user nobody:nogroup
+          volume ["/var/lib/coturn"]
+          cmd /init.sh
+          EOL
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER .
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER
+
+  push-dev:
+    name: push to :dev
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: dev
+    steps:
+      - name: pull, re-tag dev, push
+        run: |
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
+          docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER
+          docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:dev
+
+  push-prod:
+    name: push to :prod
+    runs-on: ubuntu-latest
+    needs: push-dev
+    environment:
+      name: prod
+    steps:
+      - name: pull, re-tag prod, push
+        run: |
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
+          docker pull ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER
+          docker tag ${{ secrets.DOCKER_HUB_USR }}/coturn:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/coturn:prod
+
+
