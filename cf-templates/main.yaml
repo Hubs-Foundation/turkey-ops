@@ -25,13 +25,13 @@ Parameters:
     Default: 10.100.101.0/24
   IMGret:  
     Type: String
-    Default: docker.io/tanfarming/ret
+    Default: docker.io/mozillareality/reticulum:dev
   IMGdlg:
     Type: String
-    Default: docker.io/tanfarming/dialog:dev
+    Default: docker.io/mozillareality/dialog:dev
   IMGcoturn:
     Type: String
-    Default: docker.io/tanfarming/coturn:dev
+    Default: docker.io/mozillareality/coturn:dev
   hpaMINcontainers:
     Type: Number
     Default: 1

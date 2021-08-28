@@ -1,0 +1,149 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: traefik-ingress-lb
+  namespace: turkeydev
+  labels:
+    k8s-app: traefik-ingress-lb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: traefik-ingress-lb
+  template:
+    metadata:
+      labels:
+        k8s-app: traefik-ingress-lb
+        name: traefik-ingress-lb
+    spec:
+      serviceAccountName: traefik-ingress-lb
+      terminationGracePeriodSeconds: 60
+      containers:
+      - image: traefik:v2.5
+        imagePullPolicy: Always
+        name: traefik-ingress-lb
+        args:
+        - --serversTransport.insecureSkipVerify=true
+        - --providers.kubernetesingress=true       
+        - --providers.kubernetescrd
+        - --entryPoints.cdn.address=:1080
+        - --entryPoints.traefik.address=:808        
+        - --api
+        - --api.insecure
+        - --accesslog
+        - --log.level=INFO
+        - --pilot.dashboard=false
+        # - --ping=true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-lb
+  namespace: turkeydev
+spec:
+  type: LoadBalancer
+  selector:
+    k8s-app: traefik-ingress-lb
+  ports:
+  - name: traefik
+    port: 808
+    targetPort: 808    
+  - name: https
+    port: 443
+    targetPort: 1080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hubs
+  namespace: turkeydev
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: turkeydev-rewrite4cdn@kubernetescrd
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  rules:
+  - host: localhost
+    http:
+      paths:
+      - path: /_cdn/files/
+        pathType: Prefix
+        backend:
+          service:
+            name: reticulum
+            port: 
+              number: 4000        
+      - path: /_cdn/http
+        pathType: Prefix
+        backend:
+          service:
+            name: reticulum
+            port: 
+              number: 4000                  
+      - path: /_cdn
+        pathType: Prefix
+        backend:
+          service:
+            name: hubs
+            port: 
+              number: 8080
+###########################################################################################
+################################### middlewares ###########################################
+###########################################################################################
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: rewrite4cdn
+  namespace: turkeydev
+spec:
+  stripPrefix:
+    prefixes: 
+      - /_cdn
+###########################################################################################
+################################### RBAC ###########################################
+###########################################################################################
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: traefik-ingress-lb
+  namespace: turkeydev
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: traefik-ingress-lb
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: traefik-ingress-lb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: traefik-ingress-lb
+subjects:
+- kind: ServiceAccount
+  name: traefik-ingress-lb
+  namespace: turkeydev 

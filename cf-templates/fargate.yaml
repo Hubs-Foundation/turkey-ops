@@ -32,20 +32,22 @@ Parameters:
     Default: 65
   IMGret:  
     Type: String
-    Default: docker.io/tanfarming/ret
   IMGdlg:
     Type: String
-    Default: docker.io/tanfarming/dialog:dev
   IMGcoturn:    
     Type: String
-    Default: docker.io/tanfarming/coturn:dev
   HttpsCertArn:
     Type: String
   retConfigSsmArn:
     Type: String
   permsKeySsmArn:
     Type: String
-    
+
+Outputs:
+  albDNSname:
+    Description: albDNSname
+    Value: !GetAtt ALB.DNSName
+
 Resources:  
   Cluster:
     Type: AWS::ECS::Cluster
@@ -170,6 +172,20 @@ Resources:
           - ContainerName: ret
             ContainerPort: 4000
             TargetGroupArn: !Ref TGret
+        ServiceRegistries:
+          - RegistryArn: !GetAtt retSvcDiscSvc.Arn
+  retSvcDiscNs:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: !Sub ${mainStackName}-ret
+      Vpc: !Ref VPC
+  retSvcDiscSvc:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: !Sub ${mainStackName}-ret
+      DnsConfig:
+        DnsRecords: [{Type: A, TTL: "10"}]
+        NamespaceId: !Ref retSvcDiscNs
   httpLISTENERret:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -236,6 +252,7 @@ Resources:
           ScaleInCooldown: 600
           ScaleOutCooldown: 60
           TargetValue: !Ref hpaTargetValue 
+
 ##############################################################
 ################# service: dlg  ########################
 ##############################################################
@@ -500,7 +517,4 @@ Resources:
           ScaleOutCooldown: 60
           TargetValue: !Ref hpaTargetValue 
 
-Outputs:
-  albDNSname:
-    Description: albDNSname
-    Value: !GetAtt ALB.DNSName
+

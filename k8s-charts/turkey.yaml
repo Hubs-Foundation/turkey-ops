@@ -1,0 +1,197 @@
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   name: turkeydev
+# ---
+########################################################################
+###################### reticulum #######################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reticulum
+  namespace: turkeydev
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: reticulum
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: 
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: reticulum
+    spec:
+      containers:
+        - image: mozillareality/reticulum:dev
+          imagePullPolicy: Always
+          name: reticulum
+          livenessProbe:
+            httpGet:
+              path: "http://reticulum.turkeydev"
+              port: 1111
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reticulum
+  namespace: turkeydev
+spec:
+  ports:
+  - name: https-reticulum
+    port: 4000
+    targetPort: 4000
+  selector:
+    app: reticulum            
+---
+########################################################################
+######################   hubs   ########################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hubs
+  namespace: turkeydev
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: hubs
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: 
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: hubs
+    spec:
+      containers:
+        - image: mozillareality/hubs:dev
+          imagePullPolicy: Always
+          name: hubs
+          livenessProbe:
+            httpGet:
+              path: "http://hubs.turkeydev"
+              port: 1111
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubs
+  namespace: turkeydev
+spec:
+  ports:
+  - name: https-hubs
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: hubs
+---
+########################################################################
+######################   dialog   ######################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dialog
+  namespace: turkeydev
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: dialog                                          
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate                                   
+    rollingUpdate: 
+      maxUnavailable: 1                                   
+      maxSurge: 1                                         
+  template:
+    metadata:
+      labels:
+        app: dialog
+    spec:
+      containers:
+        - image: mozillareality/dialog:dev
+          imagePullPolicy: Always
+          name: dialog
+          livenessProbe:
+            httpGet:
+              path: "http://dialog.turkeydev"
+              port: 1111
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dialog
+  namespace: turkeydev
+spec:
+  ports:
+  - name: dialog
+    port: 4443
+    targetPort: 4443
+  - name: dialog-adm
+    port: 7000
+    targetPort: 7000
+  selector:
+    app: dialog            
+---
+########################################################################
+######################   coturn   ######################################
+########################################################################
+apiVersion: apps/v1
+kind: DaemonSet                                          
+metadata:
+  name: coturn
+  namespace: turkeydev
+spec:
+  selector:
+    matchLabels:
+      app: coturn                                          
+  minReadySeconds: 15                                      
+  template:
+    metadata:
+      labels:
+        app: coturn
+    spec:
+      containers:
+        - image: mozillareality/coturn:dev
+          imagePullPolicy: Always
+          name: coturn
+          livenessProbe:
+            httpGet:
+              path: "http://coturn.turkeydev"
+              port: 1111
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coturn
+  namespace: turkeydev
+spec:
+  ports:
+  - name: coturn
+    port: 5349
+    targetPort: 5349
+  selector:
+    app: coturn

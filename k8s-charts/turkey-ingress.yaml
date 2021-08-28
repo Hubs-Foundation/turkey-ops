@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkey-cdn
+  namespace: turkeydev
+  annotations:
+    traefik.ingress.kubernetes.io/rule-type: "PathPrefixStrip"
+    traefik.ingress.kubernetes.io/rewrite-target: "/"
+spec:
+  rules:
+  - host: localhost
+    http:
+      paths:
+      - path: /_cdn/files/*
+        backend:
+          serviceName: turkey
+          servicePort: 443
+      - path: /_cdn/http*
+        backend:
+          serviceName: turkey
+          servicePort: 443
+      - path: /_cdn/*
+        backend:
+          serviceName: turkey
+          servicePort: 8443   
+
+
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   name: pleo-antaeus
+#   namespace: turkeydev
+#   annotations:
+#     traefik.ingress.kubernetes.io/rule-type: "PathPrefixStrip"
+#     traefik.ingress.kubernetes.io/rewrite-target: "/"
+# spec:
+#   rules:
+#   - host: localhost
+#     http:
+#       paths:
+#       - path: /pleohw
+#         backend:
+#           serviceName: pleo-antaeus
+#           servicePort: http        
