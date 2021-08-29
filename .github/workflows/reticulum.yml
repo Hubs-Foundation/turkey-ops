@@ -64,7 +64,7 @@ jobs:
           run cat /run.sh
           entrypoint bash /run.sh
           EOL
-          docker build -t ${{ env.DOCKER_HUB_USR }}/reticulum:$GITHUB_RUN_NUMBER .          
+          docker build -t ${{ secrets.DOCKER_HUB_USR }}/reticulum:$GITHUB_RUN_NUMBER .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker images
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/reticulum:$GITHUB_RUN_NUMBER
