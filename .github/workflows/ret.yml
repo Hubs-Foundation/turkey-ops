@@ -48,6 +48,7 @@ jobs:
           exec /ret/bin/ret foreground ' > /run.sh
           cmd bash /run.sh
           EOL
+          cat Dockerfile
           docker build -t ${{ secrets.DOCKER_HUB_USR }}/ret:$GITHUB_RUN_NUMBER .          
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker images
