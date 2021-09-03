@@ -20,7 +20,7 @@ jobs:
       - name: docker
         run: |
           cd ret
-          cat > Dockerfile << EOL
+          cat > Dockerfile << 'EOL'
           FROM elixir:1.8-alpine as builder
           RUN apk add --no-cache nodejs yarn git build-base
           copy . .
