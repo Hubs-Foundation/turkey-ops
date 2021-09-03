@@ -53,8 +53,9 @@ jobs:
             for f in /www/hubs/*.html; do \n\
               for var in $(printenv); do \n\
                 var=$(echo $var | cut -d"=" -f1 ); prefix="turkeyCfg_"; \n\
-                #[[ $var == $prefix* ]] && sed -i "s/$anchor/ <meta name=\"env:${var#$prefix}\" content=\"${!var}\"\/> $anchor/" index.html; done \n\
+                #[[ $var == $prefix* ]] && sed -i "s/$anchor/ <meta name=\"env:${var#$prefix}\" content=\"${!var}\"\/> $anchor/" index.html; \n\
                 echo "${var#$prefix}:${!var}" \n\
+              done \n\
             done \n\
             /healthcheck.sh& \n\
             nginx -g "daemon off;" \n\n' > /run.sh
