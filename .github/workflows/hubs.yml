@@ -40,6 +40,7 @@ jobs:
           from alpine/openssl as builder
           run mkdir /ssl && openssl req -x509 -newkey rsa:2048 -sha256 -days 36500 -nodes -keyout /ssl/key -out /ssl/cert -subj '/CN=hubs'
           from nginx:alpine
+          run apk add bash
           run mkdir /ssl && mkdir -p /www/hubs && mkdir -p /www/hubs/pages && mkdir -p /www/hubs/assets
           copy --from=builder /ssl /ssl
           copy ./pages /www/hubs/pages
@@ -53,14 +54,14 @@ jobs:
             for f in /www/hubs/*.html; do \n\
               for var in $(printenv); do \n\
                 var=$(echo $var | cut -d"=" -f1 ); prefix="turkeyCfg_"; \n\
-                #[[ $var == $prefix* ]] && sed -i "s/$anchor/ <meta name=\"env:${var#$prefix}\" content=\"${!var}\"\/> $anchor/" index.html; \n\
+                [[ $var == $prefix* ]] && sed -i "s/$anchor/ <meta name=\"env:${var#$prefix}\" content=\"${!var}\"\/> $anchor/" index.html; \n\
                 echo "${var#$prefix}:${!var}" \n\
               done \n\
             done \n\
             /healthcheck.sh& \n\
             nginx -g "daemon off;" \n\n' > /run.sh
           run chmod +x /run.sh && cat /run.sh
-          entrypoint /run.sh
+          cmd bash /run.sh
           EOL
           docker build -t ${{ secrets.DOCKER_HUB_USR }}/hubs:dev .
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin
