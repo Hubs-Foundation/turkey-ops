@@ -16,10 +16,10 @@ jobs:
         with:
           repository: mozilla/reticulum
           ref: feature/turkey
-          path: '/ret'
+          path: './ret'
       - name: docker
         run: |
-          cd /ret
+          cd ./ret && ls -lha
           cat > Dockerfile << 'EOL'
           FROM elixir:1.8-alpine as builder
           RUN apk add --no-cache nodejs yarn git build-base
