@@ -49,7 +49,6 @@ jobs:
           run printf ' \n\  
             find /www/hubs/ -type f -name *.html -exec sed -i "s/{{rawhubs-base-assets-path}}/https:\/\/${SUB_DOMAIN}.${DOMAIN}\/hubs/g" {} \; \n\
             find /www/hubs/ -type f -name *.css -exec sed -i "s/{{rawhubs-base-assets-path}}/https:\/\/${SUB_DOMAIN}.${DOMAIN}\/hubs/g" {} \; \n\
-            
             /healthcheck.sh& \n\
             nginx -g "daemon off;" \n\n' > /run.sh
           run chmod +x /run.sh && cat /run.sh
