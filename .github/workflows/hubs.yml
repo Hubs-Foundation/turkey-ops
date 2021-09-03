@@ -36,7 +36,7 @@ jobs:
       - name: wrap in nginx container
         run: |
           cd ./hubs/rawhubs/
-          cat > Dockerfile << EOL
+          cat > Dockerfile << 'EOL'
           from alpine/openssl as builder
           run mkdir /ssl && openssl req -x509 -newkey rsa:2048 -sha256 -days 36500 -nodes -keyout /ssl/key -out /ssl/cert -subj '/CN=hubs'
           from nginx:alpine
