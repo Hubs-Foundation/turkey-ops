@@ -49,6 +49,12 @@ jobs:
           run printf ' \n\  
             find /www/hubs/ -type f -name *.html -exec sed -i "s/{{rawhubs-base-assets-path}}/https:\/\/${SUB_DOMAIN}.${DOMAIN}\/hubs/g" {} \; \n\
             find /www/hubs/ -type f -name *.css -exec sed -i "s/{{rawhubs-base-assets-path}}/https:\/\/${SUB_DOMAIN}.${DOMAIN}\/hubs/g" {} \; \n\
+            anchor="<!-- DO NOT REMOVE\/EDIT THIS COMMENT - META_TAGS -->" \n\
+            for f in /www/hubs/*.html; do \n\
+              for var in $(printenv); do \n\
+                var=$(echo $var | cut -d"=" -f1 ); prefix="turkeyCfg_"; \n\
+                [[ $var == $prefix* ]] && sed -i "s/$anchor/<meta name=\"env:${var#$prefix}\" content=\"${!var}\"\/>$anchor/" index.html; done \n\
+            done
             /healthcheck.sh& \n\
             nginx -g "daemon off;" \n\n' > /run.sh
           run chmod +x /run.sh && cat /run.sh
