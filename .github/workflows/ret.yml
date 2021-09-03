@@ -24,7 +24,7 @@ jobs:
           FROM elixir:1.8-alpine as builder
           RUN apk add --no-cache nodejs yarn git build-base
           copy . .
-          RUN mix local.hex --force && mix local.rebar --force && mix deps.get --only turkey
+          RUN mix local.hex --force && mix local.rebar --force && mix deps.get
           run mix deps.clean mime --build && rm -rf _build && mix compile
           run MIX_ENV=turkey mix distillery.release
           run cp ./rel/config.toml ./_build/turkey/rel/ret/config.toml
