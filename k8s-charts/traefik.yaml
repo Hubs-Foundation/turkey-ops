@@ -60,27 +60,26 @@ spec:
   ports:
   - name: https
     port: 443
-    targetPort: 1080
-  - name: traefik
-    port: 808
-    targetPort: 808    
+    targetPort: 1080   
   - name: internal
     port: 444
     targetPort: 1081
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: traefik
-#   namespace: traefik
-# spec:
-#   type: ClusterIP
-#   selector:
-#     k8s-app: traefik-ingress-lb
-#   ports:
-#   - name: https
-#     port: 444
-#     targetPort: 808
+  # - name: traefik
+  #   port: 808
+  #   targetPort: 808     
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  selector:
+    k8s-app: traefik-ingress-lb
+  ports:
+  - name: http
+    port: 444
+    targetPort: 808
 ################### middlewares ##########################
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -92,28 +91,28 @@ spec:
   stripPrefix:
     prefixes: 
       - /_cdn    
-# ################### dashboard ingress ##########################
-# ---
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: traefik
-#   namespace: traefik
-#   annotations:
-#     # kubernetes.io/ingress.class: traefik
-#     traefik.ingress.kubernetes.io/router.entrypoints: internal
-# spec:
-#   rules:
-#   - host: z-dev.myhubs.net
-#     http:
-#       paths:
-#       - path: /
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: traefik
-#             port: 
-#               number: 444 
+################### dashboard ingress ##########################
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik
+  namespace: traefik
+  annotations:
+    # kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: internal
+spec:
+  rules:
+  - host: z-dev.myhubs.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: traefik
+            port: 
+              number: 444 
 
 ####################################################################################
 ################################### RBAC ###########################################
