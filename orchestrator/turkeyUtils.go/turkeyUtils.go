@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"io/ioutil"
 	"main/utils"
 	"net/url"
@@ -49,7 +50,7 @@ func DeployKeys(awss *utils.AwsSvs, stackName, targetBucket string) error {
 	// }
 
 	err = filepath.Walk(tmpWorkDir,
-		func(path string, info os.FileInfo, err error) error {
+		func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -235,7 +236,7 @@ func MakeKeys(stackName, workDir string) error {
 	// 	panic(err)
 	// }
 
-	//drop the timestap string in bio key file names
+	//drop the timestamp string in bio key file names
 	files, err := ioutil.ReadDir(workDir)
 	if err != nil {
 		panic(err)

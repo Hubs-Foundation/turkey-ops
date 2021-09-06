@@ -14,7 +14,7 @@ var Root = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	t, err := template.ParseFiles("./_templates/root.html")
+	t, err := template.ParseFiles("./_statics/root.html")
 	if err != nil {
 		utils.Logger.Panic("failed to parse root.html template -- " + err.Error())
 	}

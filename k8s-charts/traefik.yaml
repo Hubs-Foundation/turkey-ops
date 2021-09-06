@@ -31,42 +31,45 @@ spec:
         - --serversTransport.insecureSkipVerify=true
         - --providers.kubernetesingress=true       
         - --providers.kubernetescrd
-        - --entryPoints.lb.address=:1080
-        - --entrypoints.lb.http.tls.certResolver=letsencrypt
-        - --entryPoints.internal.address=:1081
-        - --entryPoints.traefik.address=:808
+        - --entryPoints.https.address=:443
+        # - --entryPoints.http.address=:80        
+        # - --entrypoints.http.http.redirections.entryPoint.permanent=https
+        - --entryPoints.internal.address=:444
+        - --entryPoints.traefik.address=:1080
         - --api
         - --api.insecure
         - --accesslog
         - --log.level=INFO
         - --pilot.dashboard=false
-        # - --ping=true
-        - --certificatesresolvers.letsencrypt.acme.tlschallenge
-        - --certificatesresolvers.letsencrypt.acme.email=gtan@mozilla.com
-        - --certificatesresolvers.letsencrypt.acme.storage=acme.json
-        # Please note that this is the staging Let's Encrypt server.
-        # Once you get things working, you should remove that whole line altogether.
-        # - --certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory              
+        # # # - --ping=true
+        # - --certificatesresolvers.letsencrypt.acme.tlschallenge
+        # - --certificatesresolvers.letsencrypt.acme.email=gtan@mozilla.com
+        # - --certificatesresolvers.letsencrypt.acme.storage=acme.json        
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: lb
   namespace: traefik
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:558986605633:certificate/47d305ab-f861-470b-a837-98ca52a76e17
 spec:
   type: LoadBalancer
   selector:
     k8s-app: traefik-ingress-lb
   ports:
+  # - name: http
+  #   port: 80
+  #   targetPort: 80
   - name: https
     port: 443
-    targetPort: 1080   
+    targetPort: 443   
   - name: internal
     port: 444
-    targetPort: 1081
-  # - name: traefik
-  #   port: 808
-  #   targetPort: 808     
+    targetPort: 444  
+  - name: dashboard-test
+    port: 1080
+    targetPort: 1080
 ---
 apiVersion: v1
 kind: Service
@@ -77,43 +80,60 @@ spec:
   selector:
     k8s-app: traefik-ingress-lb
   ports:
-  - name: http
+  - name: dashboard
     port: 444
-    targetPort: 808
-################### middlewares ##########################
+    targetPort: 1080
 ---
 apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: rewrite4cdn
-  namespace: traefik
-spec:
-  stripPrefix:
-    prefixes: 
-      - /_cdn    
-################### dashboard ingress ##########################
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+kind: IngressRoute
 metadata:
   name: traefik
   namespace: traefik
   annotations:
-    # kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/router.entrypoints: internal
+    ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
 spec:
-  rules:
-  - host: z-dev.myhubs.net
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: traefik
-            port: 
-              number: 444 
-
+  entryPoints:
+    - internal
+  routes:
+  - kind: Rule
+    match: Host(`traefik.myhubs.net`) && PathPrefix(`/`)
+    # middlewares:                    
+    # - name: internal-ip-whitelist             
+    #   namespace: traefik            
+    services:                       
+    - kind: Service
+      name: traefik
+      namespace: traefik
+      passHostHeader: true
+      port: 444
+      # responseForwarding:
+      #   flushInterval: 1ms
+      # scheme: https
+      # serversTransport: transport
+################### middlewares ##########################
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: rewrite4cdn
+#   namespace: traefik
+# spec:
+#   stripPrefix:
+#     prefixes: 
+#       - /_cdn    
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: internal-ip-whitelist
+#   namespace: traefik
+# spec:
+#   ipWhiteList:
+#     sourceRange:
+#       # - 10.0.0.0/16
+#       - 73.53.171.231/32  # gtan@mozilla.com
+#     # ipStrategy:
+#     #   depth: 2
 ####################################################################################
 ################################### RBAC ###########################################
 ####################################################################################
