@@ -68,6 +68,7 @@ function AWSBtnClicked() {
 
 function K8sBtnClicked() {
   subdomain=document.getElementById("subdomain").value
+  userid=document.getElementById("userid").value
   kubeCfg=document.getElementById("kubeCfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {
@@ -75,7 +76,7 @@ function K8sBtnClicked() {
       res = this.responseText;
     }
   };
-  xhttp.open("POST", "/TurkeyDeployK8s?subdomain="+subdomain, true);
+  xhttp.open("POST", "/TurkeyDeployK8s?userid="+userid+"&subdomain="+subdomain, true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(kubeCfg);
 }

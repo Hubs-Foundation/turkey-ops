@@ -106,10 +106,7 @@ spec:
       namespace: traefik
       passHostHeader: true
       port: 444
-      # responseForwarding:
-      #   flushInterval: 1ms
-      # scheme: https
-      # serversTransport: transport
+
 ################### middlewares ##########################
 # ---
 # apiVersion: traefik.containo.us/v1alpha1
