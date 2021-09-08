@@ -3,9 +3,9 @@ WORKDIR /app
 COPY . .
 RUN GOOS=linux GOARCH=amd64 go build -ldflags "-c -w -s -linkmode external -extldflags -static"
 
-#getting turkey k8s chart yaml
-workdir /app/_files
-COPY ../k8s-charts/turkey.yaml turkey.yaml
+# #getting turkey k8s chart yaml
+# workdir /app/_files
+# COPY ../k8s-charts/turkey.yaml turkey.yaml
 
 # #gettting bio
 # WORKDIR /app/_tools
