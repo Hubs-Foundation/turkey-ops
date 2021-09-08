@@ -52,18 +52,10 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		//try to get k8s config from r.body
 		cfg, err := clientcmd.RESTConfigFromKubeConfig(rBodyBytes)
 		if err != nil {
-			// panic(err.Error())
-			//see if we are using incluster config
-			_map, err := utils.ParseJsonReqBody(r.Body)
-			if err == nil {
-				apikey, found := _map["apikey"]
-				if found {
-					if apikey == "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
-						cfg, err = rest.InClusterConfig()
-						if err != nil {
-							panic(err.Error())
-						}
-					}
+			if string(rBodyBytes) == "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
+				cfg, err = rest.InClusterConfig()
+				if err != nil {
+					panic(err.Error())
 				}
 			}
 		}

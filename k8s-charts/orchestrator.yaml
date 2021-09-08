@@ -49,7 +49,7 @@ spec:
     spec:
       serviceAccountName: orchestrator-sa
       containers:
-      - image: mozillareality/turkey-orc:9
+      - image: mozillareality/turkeyorc:15
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         livenessProbe:
