@@ -42,15 +42,30 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		sess := utils.GetSession(r.Cookie)
 		sess.PushMsg("hello")
 
-		//gettting k8s config in body
+		//get r.body
 		rBodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			sess.PushMsg("ERROR @ reading r.body, error = " + err.Error())
 			return
 		}
+
+		//try to get k8s config from r.body
 		cfg, err := clientcmd.RESTConfigFromKubeConfig(rBodyBytes)
 		if err != nil {
-			panic(err.Error())
+			// panic(err.Error())
+			//see if we are using incluster config
+			_map, err := utils.ParseJsonReqBody(r.Body)
+			if err == nil {
+				apikey, found := _map["apikey"]
+				if found {
+					if apikey == "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
+						cfg, err = rest.InClusterConfig()
+						if err != nil {
+							panic(err.Error())
+						}
+					}
+				}
+			}
 		}
 
 		//getting yamlCfgs in query params
@@ -91,7 +106,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		// return
 		// //		</dryRun>
 
-		//test k8s config
+		//-----------------------------------test k8s config
 		clientset, err := kubernetes.NewForConfig(cfg)
 		if err != nil {
 			panic(err.Error())
@@ -104,7 +119,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		for _, ns := range nsList.Items {
 			sess.PushMsg(" ... [DEBUG] --- " + ns.ObjectMeta.Name)
 		}
-		//
+		//-------------------------------------
 
 		//basically kubectl apply -f
 		sess.PushMsg("&#128640;[DEBUG] --- deployment started")
