@@ -48,7 +48,7 @@ spec:
         app: turkey-orc
     spec:
       containers:
-      - image: mozillareality/turkey-orc:5      
+      - image: mozillareality/turkey-orc:9
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         livenessProbe:
