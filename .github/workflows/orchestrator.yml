@@ -15,10 +15,10 @@ jobs:
       - name: docker build
         run: |
           cd ./orchestrator
-          docker build -t mozillareality/turkey-orc:$GITHUB_RUN_NUMBER .
+          docker build -t mozillareality/turkeyorc:$GITHUB_RUN_NUMBER .
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
           sudo docker images
-          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:$GITHUB_RUN_NUMBER          
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:$GITHUB_RUN_NUMBER          
   push-dev:
     runs-on: ubuntu-latest
     needs: build
@@ -28,9 +28,9 @@ jobs:
       - name: pull <GITHUB_RUN_NUMBER>, re-tag to dev, push
         run: |
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          docker pull ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:$GITHUB_RUN_NUMBER
-          docker tag ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:dev
-          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:dev
+          docker pull ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:$GITHUB_RUN_NUMBER
+          docker tag ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:dev
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:dev
   push-prod:
     runs-on: ubuntu-latest
     needs: push-dev
@@ -40,6 +40,6 @@ jobs:
       - name: pull <GITHUB_RUN_NUMBER>, re-tag to prod, push
         run: |
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username ${{ secrets.DOCKER_HUB_USR }} --password-stdin             
-          docker pull ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:$GITHUB_RUN_NUMBER
-          docker tag ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:prod
-          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/turkey-orc:prod
+          docker pull ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:$GITHUB_RUN_NUMBER
+          docker tag ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:prod
+          sudo docker push ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:prod
