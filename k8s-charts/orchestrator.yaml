@@ -47,6 +47,7 @@ spec:
       labels:
         app: turkey-orc
     spec:
+      serviceAccountName: orchestrator-sa
       containers:
       - image: mozillareality/turkey-orc:9
         imagePullPolicy: IfNotPresent
@@ -73,3 +74,58 @@ spec:
     targetPort: 888
   selector:
     app: turkey-orc
+
+####################################################################################
+################################### RBAC ###########################################
+####################################################################################
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orchestrator-sa
+  namespace: orchestrator
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: orchestrator-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - namespaces
+  - pods
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - statefulsets
+  - replicasets
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: orchestrator-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: orchestrator-role
+subjects:
+- kind: ServiceAccount
+  name: orchestrator-sa
+  namespace: orchestrator     
