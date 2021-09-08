@@ -32,19 +32,22 @@ spec:
         - --providers.kubernetesingress=true       
         - --providers.kubernetescrd
         - --entryPoints.https.address=:443
-        # - --entryPoints.http.address=:80        
-        # - --entrypoints.http.http.redirections.entryPoint.permanent=https
-        - --entryPoints.internal.address=:444
+        - --entryPoints.https.forwardedHeaders.insecure=true
         - --entryPoints.traefik.address=:1080
         - --api
         - --api.insecure
         - --accesslog
         - --log.level=INFO
         - --pilot.dashboard=false
+        # - --entryPoints.web.address=:80
+        # - --entrypoints.web.http.redirections.entryPoint.to=https
+        # - --entrypoints.web.http.redirections.entryPoint.scheme=https
+        # - --entrypoints.web.http.redirections.entrypoint.permanent=true
         # # # - --ping=true
         # - --certificatesresolvers.letsencrypt.acme.tlschallenge
         # - --certificatesresolvers.letsencrypt.acme.email=gtan@mozilla.com
-        # - --certificatesresolvers.letsencrypt.acme.storage=acme.json        
+        # - --certificatesresolvers.letsencrypt.acme.storage=acme.json
+        
 ---
 apiVersion: v1
 kind: Service
@@ -64,24 +67,24 @@ spec:
   - name: https
     port: 443
     targetPort: 443   
-  - name: internal
-    port: 444
-    targetPort: 444  
-  - name: dashboard-test
-    port: 1080
-    targetPort: 1080
+  # - name: internal
+  #   port: 444
+  #   targetPort: 444  
+  # - name: dashboard-test
+  #   port: 1080
+  #   targetPort: 1080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: traefik
+  name: dashboard
   namespace: traefik
 spec:
   selector:
     k8s-app: traefik-ingress-lb
   ports:
   - name: dashboard
-    port: 444
+    port: 1080
     targetPort: 1080
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -89,11 +92,12 @@ kind: IngressRoute
 metadata:
   name: traefik
   namespace: traefik
-  annotations:
-    ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
+  # annotations:
+  #   ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
 spec:
   entryPoints:
-    - internal
+    - https
+    # - web
   routes:
   - kind: Rule
     match: Host(`traefik.myhubs.net`) && PathPrefix(`/`)
@@ -102,12 +106,13 @@ spec:
     #   namespace: traefik            
     services:                       
     - kind: Service
-      name: traefik
+      name: dashboard
       namespace: traefik
       passHostHeader: true
-      port: 444
+      port: 1080
 
 ################### middlewares ##########################
+
 # ---
 # apiVersion: traefik.containo.us/v1alpha1
 # kind: Middleware
