@@ -21,6 +21,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/kubernetes"
 )
 
 type yamlCfg struct {
@@ -98,17 +99,19 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			panic(err.Error())
 		}
-		sess.PushMsg("&#128640;[DEBUG] --- good k8s config because i can list namespaces:")
+		sess.PushMsg("&#129311;[DEBUG] --- good k8s config because i can list namespaces:")
 		for _, ns := range nsList.Items {
-			sess.PushMsg("&#128640;[DEBUG] --- " + ns.ObjectMeta.Name)
+			sess.PushMsg(" ... [DEBUG] --- " + ns.ObjectMeta.Name)
 		}
 //
 
 		//basically kubectl apply -f
+		sess.PushMsg("&#128640;[DEBUG] --- deployment started")
 		err = ssa_k8sChartYaml(turkeyUserId, k8sChartYaml, cfg)
 		if err != nil {
 			panic(err.Error())
 		}
+		sess.PushMsg("&#128640;[DEBUG] --- deployment completed")
 
 		// clientset, err := kubernetes.NewForConfig(cfg)
 		// if err != nil {
