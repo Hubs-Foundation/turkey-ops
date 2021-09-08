@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auth
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: auth
+  labels:
+    app: keycloak
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: 8443
+  selector:
+    app: keycloak
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: auth
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:15.0.1
+        env:
+        - name: KEYCLOAK_USER
+          value: "admin"
+        - name: KEYCLOAK_PASSWORD
+          value: "W6hnz9B9mRqL6yKP"
+        - name: PROXY_ADDRESS_FORWARDING
+          value: "true"
+        - name: KEYCLOAK_FRONTEND_URL
+          value: https://kc.myhubs.net/auth
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          httpGet:
+            path: /auth/realms/master
+            port: 8080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: keycloak
+  namespace: auth
+  # annotations:
+  #   ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
+spec:
+  entryPoints:
+    - https
+  routes:
+  - kind: Rule
+    match: Host(`kc.myhubs.net`) && PathPrefix(`/`)
+    middlewares:
+    - name: keycloak-bug-fix
+      namespace: auth    
+    services:
+    - kind: Service
+      name: keycloak
+      namespace: auth
+      # passHostHeader: true
+      port: 8443
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: keycloak-bug-fix
+  namespace: auth
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+#       Upgrade: 1
+#       Connection: "upgrade"
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   name: keycloak
+#   namespace: auth
+#   annotations:
+#     traefik.ingress.kubernetes.io/router.entrypoints: https  
+# spec:
+#   tls:
+#     - hosts:
+#       - auth.myhubs.net
+#   rules:
+#   - host: auth.myhubs.net
+#     http:
+#       paths:
+#       - backend:
+#           serviceName: keycloak
+#           servicePort: 8443
