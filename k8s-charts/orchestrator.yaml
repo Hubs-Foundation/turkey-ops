@@ -7,7 +7,7 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: turkey-orc
-  namespace: tools
+  namespace: orchestrator
   annotations:
     ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
 spec:
@@ -35,7 +35,7 @@ apiVersion: apps/v1
 kind: Deployment                                          
 metadata:
   name: turkey-orc
-  namespace: dev0
+  namespace: orchestrator
 spec:
   replicas: 1
   selector:
@@ -48,18 +48,18 @@ spec:
         app: turkey-orc
     spec:
       containers:
+      - image: mozillareality/turkey-orc:5      
+        imagePullPolicy: IfNotPresent
+        name: turkey-orc
+        livenessProbe:
+          httpGet:
+            path: "http://turkey-orc.orchestrator"
+            port: 888
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
       imagePullSecrets:
-      - name: regcred
-        - image: mozillareality/turkey-orc:5      
-          imagePullPolicy: IfNotPresent
-          name: turkey-orc
-          livenessProbe:
-            httpGet:
-              path: "http://turkey-orc.orchestrator"
-              port: 888
-            initialDelaySeconds: 20
-            timeoutSeconds: 1
-            periodSeconds: 120
+      - name: regcred      
 ---
 apiVersion: v1
 kind: Service

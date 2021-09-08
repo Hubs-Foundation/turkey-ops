@@ -89,6 +89,21 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		// return
 		// //		</dryRun>
 
+//test k8s config
+		clientset, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			panic(err.Error())
+		}
+		nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			panic(err.Error())
+		}
+		sess.PushMsg("&#128640;[DEBUG] --- good k8s config because i can list namespaces:")
+		for _, ns := range nsList.Items {
+			sess.PushMsg("&#128640;[DEBUG] --- " + ns.ObjectMeta.Name)
+		}
+//
+
 		//basically kubectl apply -f
 		err = ssa_k8sChartYaml(turkeyUserId, k8sChartYaml, cfg)
 		if err != nil {
