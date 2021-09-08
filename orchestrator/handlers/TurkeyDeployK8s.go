@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"main/utils"
 	"net/http"
@@ -18,10 +19,10 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/kubernetes"
 )
 
 type yamlCfg struct {
@@ -90,7 +91,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		// return
 		// //		</dryRun>
 
-//test k8s config
+		//test k8s config
 		clientset, err := kubernetes.NewForConfig(cfg)
 		if err != nil {
 			panic(err.Error())
@@ -103,12 +104,13 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		for _, ns := range nsList.Items {
 			sess.PushMsg(" ... [DEBUG] --- " + ns.ObjectMeta.Name)
 		}
-//
+		//
 
 		//basically kubectl apply -f
 		sess.PushMsg("&#128640;[DEBUG] --- deployment started")
 		err = ssa_k8sChartYaml(turkeyUserId, k8sChartYaml, cfg)
 		if err != nil {
+			sess.PushMsg("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 			panic(err.Error())
 		}
 		sess.PushMsg("&#128640;[DEBUG] --- deployment completed")
