@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: orchestrator
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: turkey-orc
+  namespace: tools
+  annotations:
+    ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
+spec:
+  entryPoints:
+    - https
+  routes:
+  - kind: Rule
+    match: Host(`orc.myhubs.net`) && PathPrefix(`/`)
+    services:
+    - kind: Service
+      name: turkey-orc
+      passHostHeader: true
+      port: 888
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: regcred
+  namespace: orchestrator
+data:
+  .dockerconfigjson: ewoJImF1dGhzIjogewoJCSJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOiB7CgkJCSJhdXRoIjogImJXOTZhV3hzWVhKbFlXeHBkSGs2Y21Wd2IzSjBJR0psWjJGMElIWmxjM1J0Wlc1MElHRnNkbVZ2YkdGeUlHTnNiM1JvIgoJCX0KCX0KfQ==
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: apps/v1
+kind: Deployment                                          
+metadata:
+  name: turkey-orc
+  namespace: dev0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turkey-orc                                          
+  minReadySeconds: 15                                      
+  template:
+    metadata:
+      labels:
+        app: turkey-orc
+    spec:
+      containers:
+      imagePullSecrets:
+      - name: regcred
+        - image: mozillareality/turkey-orc:5      
+          imagePullPolicy: IfNotPresent
+          name: turkey-orc
+          livenessProbe:
+            httpGet:
+              path: "http://turkey-orc.orchestrator"
+              port: 888
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: turkey-orc
+  namespace: orchestrator
+spec:
+  ports:
+  - name: http
+    port: 888
+    targetPort: 888
+  selector:
+    app: turkey-orc
