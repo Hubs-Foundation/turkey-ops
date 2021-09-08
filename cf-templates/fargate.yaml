@@ -51,6 +51,11 @@ Resources:
     Type: AWS::ECS::Cluster
     Properties:
       ClusterName: !Ref mainStackName
+  SvcDiscNs:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: !Ref mainStackName
+      Vpc: !Ref VPC      
   ContainerSGalb:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -145,31 +150,40 @@ Resources:
               awslogs-group: !Ref logGRPret
               awslogs-stream-prefix: ecs
   SVCret:
-      Type: AWS::ECS::Service
-      DependsOn:
-      - httpsLISTENERret
-      Properties: 
-        ServiceName: !Join ['-', [!Ref mainStackName, ret]]
-        Cluster: !Ref Cluster
-        TaskDefinition: !Ref tskDEFret
-        DeploymentConfiguration:
-          MinimumHealthyPercent: 100
-          MaximumPercent: 200
-        DesiredCount: 1
-        HealthCheckGracePeriodSeconds: 60
-        LaunchType: FARGATE
-        NetworkConfiguration: 
-          AwsvpcConfiguration:
-            AssignPublicIp: ENABLED
-            Subnets:
-              - !Ref PublicSubnet1
-              - !Ref PublicSubnet2
-            SecurityGroups:
-              - !Ref ContainerSGalb
-        LoadBalancers:
-          - ContainerName: ret
-            ContainerPort: 4000
-            TargetGroupArn: !Ref TGret
+    Type: AWS::ECS::Service
+    DependsOn:
+    - httpsLISTENERret
+    Properties: 
+      ServiceName: !Join ['-', [!Ref mainStackName, ret]]
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref tskDEFret
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnet1
+            - !Ref PublicSubnet2
+          SecurityGroups:
+            - !Ref ContainerSGalb
+      LoadBalancers:
+        - ContainerName: ret
+          ContainerPort: 4000
+          TargetGroupArn: !Ref TGret
+      ServiceRegistries:
+        - RegistryArn: !GetAtt retSvcDiscSvc.Arn
+  retSvcDiscSvc:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: reticulum
+      DnsConfig:
+        DnsRecords: [{Type: A, TTL: "10"}]
+        NamespaceId: !Ref SvcDiscNs
   httpLISTENERret:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -244,64 +258,73 @@ Resources:
       Properties:
         LogGroupName: !Join ['-', [/ecs/, !Ref mainStackName, dlg]]
   tskDEFdlg:
-      Type: AWS::ECS::TaskDefinition
-      DependsOn: logGRPdlg
-      Properties:
-        Family: !Join ['-', [!Ref mainStackName, dlg]]
-        NetworkMode: awsvpc
-        RequiresCompatibilities:
-            - FARGATE
-        Cpu: 256
-        Memory: 1GB
-        ExecutionRoleArn: !Ref ExecutionRole
-        TaskRoleArn: !Ref TaskRole
-        ContainerDefinitions:
-        - Name: dlg
-          Image: !Ref IMGdlg
-          PortMappings:
-            - ContainerPort: 4443
-            - ContainerPort: 7000
-          Environment:
-            - Name: paramsName
-              Value: !Ref mainStackName
-          Secrets:
-            - Name: perms_key
-              ValueFrom: !Ref permsKeySsmArn
-          LogConfiguration:
-            LogDriver: awslogs
-            Options:
-              awslogs-region: !Ref AWS::Region
-              awslogs-group: !Ref logGRPdlg
-              awslogs-stream-prefix: ecs   
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: logGRPdlg
+    Properties:
+      Family: !Join ['-', [!Ref mainStackName, dlg]]
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+          - FARGATE
+      Cpu: 256
+      Memory: 1GB
+      ExecutionRoleArn: !Ref ExecutionRole
+      TaskRoleArn: !Ref TaskRole
+      ContainerDefinitions:
+      - Name: dlg
+        Image: !Ref IMGdlg
+        PortMappings:
+          - ContainerPort: 4443
+          - ContainerPort: 7000
+        Environment:
+          - Name: paramsName
+            Value: !Ref mainStackName
+        Secrets:
+          - Name: perms_key
+            ValueFrom: !Ref permsKeySsmArn
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-region: !Ref AWS::Region
+            awslogs-group: !Ref logGRPdlg
+            awslogs-stream-prefix: ecs              
   SVCdlg:
-      Type: AWS::ECS::Service
-      DependsOn:
-      - httpsLISTENERdlg
-      Properties: 
-        ServiceName: !Join ['-', [!Ref mainStackName, dlg]]
-        Cluster: !Ref Cluster
-        TaskDefinition: !Ref tskDEFdlg
-        DeploymentConfiguration:
-          MinimumHealthyPercent: 100
-          MaximumPercent: 200
-        DesiredCount: 1
-        HealthCheckGracePeriodSeconds: 60
-        LaunchType: FARGATE
-        NetworkConfiguration: 
-          AwsvpcConfiguration:
-            AssignPublicIp: ENABLED
-            Subnets:
-              - !Ref PublicSubnet1
-              - !Ref PublicSubnet2
-            SecurityGroups:
-              - !Ref ContainerSGpub
-        LoadBalancers:
-          - ContainerName: dlg
-            ContainerPort: 4443
-            TargetGroupArn: !Ref TGdlg
-          - ContainerName: dlg
-            ContainerPort: 7000
-            TargetGroupArn: !Ref TGdlgAdm
+    Type: AWS::ECS::Service
+    DependsOn:
+    - httpsLISTENERdlg
+    Properties: 
+      ServiceName: !Join ['-', [!Ref mainStackName, dlg]]
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref tskDEFdlg
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnet1
+            - !Ref PublicSubnet2
+          SecurityGroups:
+            - !Ref ContainerSGpub
+      LoadBalancers:
+        - ContainerName: dlg
+          ContainerPort: 4443
+          TargetGroupArn: !Ref TGdlg
+        - ContainerName: dlg
+          ContainerPort: 7000
+          TargetGroupArn: !Ref TGdlgAdm
+      ServiceRegistries:
+        - RegistryArn: !GetAtt dlgSvcDiscSvc.Arn
+  dlgSvcDiscSvc:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: dialog
+      DnsConfig:
+        DnsRecords: [{Type: A, TTL: "10"}]
+        NamespaceId: !Ref SvcDiscNs
   httpsLISTENERdlg:
       Type: AWS::ElasticLoadBalancingV2::Listener
       Properties:
@@ -423,31 +446,40 @@ Resources:
               awslogs-group: !Ref logGRPcoturn
               awslogs-stream-prefix: ecs   
   SVCcoturn:
-      Type: AWS::ECS::Service
-      DependsOn:
-      - httpsLISTENERcoturn
-      Properties: 
-        ServiceName: !Join ['-', [!Ref mainStackName, coturn]]
-        Cluster: !Ref Cluster
-        TaskDefinition: !Ref tskDEFcoturn
-        DeploymentConfiguration:
-          MinimumHealthyPercent: 100
-          MaximumPercent: 200
-        DesiredCount: 1
-        HealthCheckGracePeriodSeconds: 60
-        LaunchType: FARGATE
-        NetworkConfiguration: 
-          AwsvpcConfiguration:
-            AssignPublicIp: ENABLED
-            Subnets:
-              - !Ref PublicSubnet1
-              - !Ref PublicSubnet2
-            SecurityGroups:
-              - !Ref ContainerSGpub
-        LoadBalancers:
-          - ContainerName: coturn
-            ContainerPort: 5349
-            TargetGroupArn: !Ref TGcoturn
+    Type: AWS::ECS::Service
+    DependsOn:
+    - httpsLISTENERcoturn
+    Properties: 
+      ServiceName: !Join ['-', [!Ref mainStackName, coturn]]
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref tskDEFcoturn
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      HealthCheckGracePeriodSeconds: 60
+      LaunchType: FARGATE
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - !Ref PublicSubnet1
+            - !Ref PublicSubnet2
+          SecurityGroups:
+            - !Ref ContainerSGpub
+      LoadBalancers:
+        - ContainerName: coturn
+          ContainerPort: 5349
+          TargetGroupArn: !Ref TGcoturn
+      ServiceRegistries:
+        - RegistryArn: !GetAtt turnSvcDiscSvc.Arn
+  turnSvcDiscSvc:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Name: turn
+      DnsConfig:
+        DnsRecords: [{Type: A, TTL: "10"}]
+        NamespaceId: !Ref SvcDiscNs            
   httpsLISTENERcoturn:
       Type: AWS::ElasticLoadBalancingV2::Listener
       Properties:

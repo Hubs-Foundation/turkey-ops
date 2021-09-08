@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>oneBtn</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+    
+  </head>
+  <body>
+
+  <nav class="navbar navbar-expand-sm bg-secondary navbar-secondary ">
+    <form class="form-inline ml-auto">
+      <!-- <input type="text" class="form-control mr-sm-2" id="usr" placeholder="Enter username">
+      <input type="password" class="form-control mr-sm-2" id="pwd" placeholder="Enter password"> -->
+      <button type="login" class="btn btn-primary">login</button>
+    </form>    
+  </nav>
+
+  <div class="container mh-80  shadow p-3 mb-3" style="margin-top:2%">
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link active" data-toggle="tab" href="#deployK8s">deployK8s</a>
+      </li>       
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#deployAWS">deployAWS</a>
+      </li>           
+      <li class="nav-item">
+        <a class="nav-link" data-toggle="tab" href="#menu2">Menu 2</a>
+      </li>
+    </ul>
+    <div class="tab-content">
+      <div id="deployK8s" class="container tab-pane active"><br>
+        <div class = "container">
+          <div class="row" id="console">
+            <div class="col-sm-6">
+              <p><b>How it works:</b>
+                <br># line 1
+                <br># line 2
+                <br># line 3
+                <br># line 4
+              </p>
+              <p><b>To use:</b><br>
+                1. put k8s cluster context ( <button type="button" class="btn btn-outline-info btn-sm" id="K8sEx" >example</button> ) in configBox<br>
+                2. Click: <button type="button" class="btn btn-danger btn-lg btn-block" id="K8sBtn" style="width: auto; max-width: 75%;">THE BUTTON</button></p>
+            </div>
+            <div class="col-sm-6">
+              <label for="input"><b>subdomain:</b></label>
+              <input type="text" class="form-control text-white-50 bg-dark" id="subdomain" placeholder="">
+              <label for="input"><b>userid:</b></label>
+              <input type="text" class="form-control text-white-50 bg-dark" id="userid" placeholder="">
+              <label for="input"><b>configBox:</b></label>
+              <textarea class="form-control text-white-50 bg-dark" rows="10" id="kubeCfg" style="font-size:small; white-space:pre" spellcheck="false"></textarea>   
+            </div>
+          </div>
+        </div>   
+      </div>          
+      <div id="deployAWS" class="container tab-pane fade"><br>
+        <div class = "container">
+          <div class="row" id="console">
+            <div class="col-sm-6">
+              <p><b>How it works:</b>
+                <br># it runs a cloudformation(CF) template on an aws account
+                <br># it will create a random code name for the CF stack
+                <br># the CF template's input parameters can optionally be overridden
+                <br># the CF template's output parameter will be saved in a ssm parameter
+              </p>
+              <p><b>To use:</b><br>
+                <!-- 1. put configs  <a href="#" data-toggle="onebtndep-popover" >(example)</a> in configBox<br> -->
+                1. put configs ( <button type="button" class="btn btn-outline-info btn-sm" id="AWSEx" >example</button> ) in configBox<br>
+                2. Click: <button type="button" class="btn btn-danger btn-lg btn-block" id="AWSBtn" style="width: auto; max-width: 75%;">THE BUTTON</button></p>
+            </div>
+            <div class="col-sm-6">
+              <label for="input"><b>configBox:</b></label>
+              <textarea class="form-control text-white-50 bg-dark" rows="12" id="AWSInput" style="font-size:small; white-space:pre" spellcheck="false"></textarea>   
+            </div>
+          </div>
+        </div>        
+      </div>
+      <div id="menu2" class="container tab-pane fade"><br>
+        <h5>Menu 2</h5>
+        not used yet
+      </div>
+    </div>
+  </div>
+  
+  <div class="container shadow p-3 mb-3" style="margin-top:3%">
+    <nav class="navbar navbar-expand-sm bg-secondary navbar-secondary" style="margin-top:0%;">
+      <div readonly class="form-control text-warning bg-dark mh-75" id="divLogBoard" style="overflow:auto; font-size:small;height: auto; max-height: 25vh;"></div>
+    </nav>
+  </div>
+  
+
+  
+  </body>
+
+  <script type='text/javascript' src='_statics/script.js'></script>
+  
+</html>
+
