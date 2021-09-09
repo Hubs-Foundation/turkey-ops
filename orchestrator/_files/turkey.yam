@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{.Subdomain}}
+  name: hc-{{.Subdomain}}
   labels:
     UserId: {{.UserId}}
 ---
@@ -14,7 +14,7 @@ metadata:
   name: turkey
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: https
 spec:
@@ -63,7 +63,7 @@ metadata:
   name: configs
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 stringData:
   NODE_COOKIE: foobar
   SUB_DOMAIN: {{.Subdomain}}
@@ -85,7 +85,7 @@ metadata:
   name: reticulum
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1
   selector:
@@ -190,7 +190,7 @@ metadata:
   name: ret
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 spec:
   clusterIP: None
   ports:
@@ -209,7 +209,7 @@ metadata:
   name: hubs
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1 
   selector:
@@ -282,7 +282,7 @@ metadata:
   name: hubs
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 spec:
   clusterIP: None
   ports:
@@ -301,7 +301,7 @@ metadata:
   name: dialog
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1 
   selector:
@@ -343,7 +343,7 @@ metadata:
   name: dialog
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 spec:
   ports:
   - name: dialog
@@ -364,7 +364,7 @@ metadata:
   name: coturn
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 spec:
   selector:
     matchLabels:
@@ -400,7 +400,7 @@ metadata:
   name: coturn
   labels:
     UserId: {{.UserId}}
-  namespace: {{.Subdomain}}
+  namespace: hc-{{.Subdomain}}
 spec:
   ports:
   - name: coturn
