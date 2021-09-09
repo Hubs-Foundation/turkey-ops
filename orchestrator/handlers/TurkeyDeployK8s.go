@@ -19,7 +19,6 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
@@ -53,14 +52,14 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		cfg, err := clientcmd.RESTConfigFromKubeConfig(rBodyBytes)
 		if err != nil {
 			if string(rBodyBytes) == "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
-				sess.PushMsg("... using InClusterConfig")
+				sess.PushMsg("&#9989; ... using InClusterConfig")
 				cfg, err = rest.InClusterConfig()
-				if err != nil {
-					panic(err.Error())
-				}
 			}
 		}
-
+		if cfg == nil {
+			sess.PushMsg("ERROR" + err.Error())
+			panic(err.Error())
+		}
 		//getting yamlCfgs in query params
 		_userid, found := r.URL.Query()["userid"]
 		if !found || len(_userid) != 1 {
@@ -98,21 +97,22 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		// fmt.Println(k8sChartYaml)
 		// return
 		// //		</dryRun>
+		sess.PushMsg("&#129311; ... k8s.cfg.ServerName: " + cfg.ServerName)
 
-		//-----------------------------------test k8s config
-		clientset, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			panic(err.Error())
-		}
-		nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			panic(err.Error())
-		}
-		sess.PushMsg("&#129311;[DEBUG] --- good k8s config because i can list namespaces:")
-		for _, ns := range nsList.Items {
-			sess.PushMsg(" ... [DEBUG] --- " + ns.ObjectMeta.Name)
-		}
-		//-------------------------------------
+		// //-----------------------------------test k8s config
+		// clientset, err := kubernetes.NewForConfig(cfg)
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+		// if err != nil {
+		// 	panic(err.Error())
+		// }
+		// sess.PushMsg("&#129311;[DEBUG] --- good k8s config because i can list namespaces:")
+		// for _, ns := range nsList.Items {
+		// 	sess.PushMsg(" ... [DEBUG] --- " + ns.ObjectMeta.Name)
+		// }
+		// //-------------------------------------
 
 		//basically kubectl apply -f
 		sess.PushMsg("&#128640;[DEBUG] --- deployment started")
