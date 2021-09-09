@@ -32,6 +32,7 @@ jobs:
           docker tag ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:$GITHUB_RUN_NUMBER ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:dev
           sudo docker push ${{ secrets.DOCKER_HUB_USR }}/turkeyorc:dev
   push-prod:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: push-dev
     environment:
