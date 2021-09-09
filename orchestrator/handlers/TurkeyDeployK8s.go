@@ -53,6 +53,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		cfg, err := clientcmd.RESTConfigFromKubeConfig(rBodyBytes)
 		if err != nil {
 			if string(rBodyBytes) == "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
+				sess.PushMsg("... using InClusterConfig")
 				cfg, err = rest.InClusterConfig()
 				if err != nil {
 					panic(err.Error())
