@@ -97,7 +97,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		// fmt.Println(k8sChartYaml)
 		// return
 		// //		</dryRun>
-		sess.PushMsg("&#129311; ... k8s.cfg.ServerName: " + cfg.ServerName)
+		sess.PushMsg("&#129311; ... k8s.cfg.ServerName: " + cfg.Host)
 
 		// //-----------------------------------test k8s config
 		// clientset, err := kubernetes.NewForConfig(cfg)
