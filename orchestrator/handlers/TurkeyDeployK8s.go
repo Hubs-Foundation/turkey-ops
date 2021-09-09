@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"main/utils"
 	"net/http"
@@ -21,7 +22,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 type yamlCfg struct {
@@ -39,7 +39,6 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		}
 
 		sess := utils.GetSession(r.Cookie)
-		sess.PushMsg("hello")
 
 		//get r.body
 		rBodyBytes, err := ioutil.ReadAll(r.Body)
@@ -48,18 +47,14 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
+		if string(rBodyBytes) != "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
+			return
+		}
+		sess.PushMsg("hello")
 		//try to get k8s config from r.body
-		cfg, err := clientcmd.RESTConfigFromKubeConfig(rBodyBytes)
-		if err != nil {
-			if string(rBodyBytes) == "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
-				sess.PushMsg("&#9989; ... using InClusterConfig")
-				cfg, err = rest.InClusterConfig()
-			}
-		}
-		if cfg == nil {
-			sess.PushMsg("ERROR" + err.Error())
-			panic(err.Error())
-		}
+		// cfg, err := clientcmd.RESTConfigFromKubeConfig(rBodyBytes)
+		// if err != nil {
+
 		//getting yamlCfgs in query params
 		_userid, found := r.URL.Query()["userid"]
 		if !found || len(_userid) != 1 {
@@ -92,27 +87,35 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		var buf bytes.Buffer
 		t.Execute(&buf, _data)
 		k8sChartYaml := buf.String()
+		//<debugging>
+		if turkeyUserId == "_r.dump" {
+			headerBytes, _ := json.Marshal(r.Header)
+			sess.PushMsg(string(headerBytes))
+			cookieMap := make(map[string]string)
+			for _, c := range r.Cookies() {
+				cookieMap[c.Name] = c.Value
+			}
+			cookieJson, _ := json.Marshal(cookieMap)
+			sess.PushMsg(string(cookieJson))
 
-		// //		<dryRun>
-		// fmt.Println(k8sChartYaml)
-		// return
-		// //		</dryRun>
+			return
+		}
+		if turkeyUserId == "_gimmechart" {
+			w.Header().Set("Content-Disposition", "attachment; filename="+turkeySubdomain+".yaml")
+			w.Header().Set("Content-Type", "text/plain")
+			io.Copy(w, strings.NewReader(k8sChartYaml))
+			return
+		}
+		//</debugging>
+
+		sess.PushMsg("&#9989; ... using InClusterConfig")
+		cfg, err := rest.InClusterConfig()
+		// }
+		if cfg == nil {
+			sess.PushMsg("ERROR" + err.Error())
+			panic(err.Error())
+		}
 		sess.PushMsg("&#129311; k8s.cfg.Host == " + cfg.Host)
-
-		// //-----------------------------------test k8s config
-		// clientset, err := kubernetes.NewForConfig(cfg)
-		// if err != nil {
-		// 	panic(err.Error())
-		// }
-		// nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-		// if err != nil {
-		// 	panic(err.Error())
-		// }
-		// sess.PushMsg("&#129311;[DEBUG] --- good k8s config because i can list namespaces:")
-		// for _, ns := range nsList.Items {
-		// 	sess.PushMsg(" ... [DEBUG] --- " + ns.ObjectMeta.Name)
-		// }
-		// //-------------------------------------
 
 		//basically kubectl apply -f
 		sess.PushMsg("&#128640;[DEBUG] --- deployment started")
