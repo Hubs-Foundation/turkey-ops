@@ -121,7 +121,8 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			sess.PushMsg("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 			panic(err.Error())
 		}
-		sess.PushMsg("&#128640;[DEBUG] --- deployment completed")
+		skipadminLink := "https://" + turkeySubdomain + "." + turkeyDomain + "?skipadmin"
+		sess.PushMsg("&#128640;[DEBUG] --- deployment completed for: <a href=\"" + skipadminLink + "\" target=\"_blank\"><b>")
 
 		// clientset, err := kubernetes.NewForConfig(cfg)
 		// if err != nil {

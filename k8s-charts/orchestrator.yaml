@@ -101,10 +101,14 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: orchestrator-rb
+# roleRef:
+#   apiGroup: rbac.authorization.k8s.io
+#   kind: ClusterRole
+#   name: orchestrator-role
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: orchestrator-role
+  name: cluster-admin  
 subjects:
 - kind: ServiceAccount
   name: orchestrator-sa
