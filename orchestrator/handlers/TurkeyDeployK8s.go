@@ -88,7 +88,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		t.Execute(&buf, _data)
 		k8sChartYaml := buf.String()
 		//<debugging>
-		if turkeyUserId == "_r.dump" {
+		if turkeyUserId == "dev_dump" {
 			headerBytes, _ := json.Marshal(r.Header)
 			sess.PushMsg(string(headerBytes))
 			cookieMap := make(map[string]string)
@@ -100,7 +100,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 
 			return
 		}
-		if turkeyUserId == "_gimmechart" {
+		if turkeyUserId == "dev_gimmechart" {
 			w.Header().Set("Content-Disposition", "attachment; filename="+turkeySubdomain+".yaml")
 			w.Header().Set("Content-Type", "text/plain")
 			io.Copy(w, strings.NewReader(k8sChartYaml))
