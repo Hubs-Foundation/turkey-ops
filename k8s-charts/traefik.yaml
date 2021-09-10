@@ -69,6 +69,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443,4443
 spec:
   type: LoadBalancer
+  externalTrafficPolicy: Local
   selector:
     k8s-app: traefik-ingress-lb
   ports:

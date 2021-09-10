@@ -5,11 +5,13 @@ metadata:
   labels:
     UserId: {{.UserId}}
 ---
-### ingress ### -assets and ret on port 443 (traefik: entrypoint.https)
+######################################################################################
+###################################### ingress #######################################
+######################################################################################  
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: turkey
+  name: turkey-https
   labels:
     UserId: {{.UserId}}
   namespace: hc-{{.Subdomain}}
@@ -50,25 +52,29 @@ spec:
           service:
             name: ret
             port: 
-              number: 4000    
+              number: 4000
 ---
-### ingress ### dialog on port 4443 (traefik: entrypoint.https2)
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: turkey-https2
+  labels:
+    UserId: {{.UserId}}
   namespace: hc-{{.Subdomain}}
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: https2
 spec:
-  entryPoints:
-    - https2
-  routes:
-  - kind: Rule
-    match: Host(`{{.Subdomain}}.{{.Domain}}`) && PathPrefix(`/`)
-    services:
-    - kind: Service
-      name: dialog
-      passHostHeader: true
-      port: 4443                         
+  rules:
+  - host: {{.Subdomain}}.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dialog
+            port: 
+              number: 4443
 ---
 ########################################################################
 ###################### configs #########################################
@@ -335,9 +341,15 @@ spec:
         app: dialog
     spec:
       containers:
-        - image: mozillareality/dialog:dev
+        - image: mozillareality/dialog:5
           imagePullPolicy: Always
           name: dialog
+          env:
+          - name: perms_key
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: PERMS_KEY          
           livenessProbe:
             httpGet:
               path: "http://dialog.{{.Subdomain}}"
@@ -362,10 +374,10 @@ metadata:
   namespace: hc-{{.Subdomain}}
 spec:
   ports:
-  - name: dialog
+  - name: https-dialog
     port: 4443
     targetPort: 4443
-  - name: dialog-adm
+  - name: https-dialog-adm
     port: 7000
     targetPort: 7000
   selector:
@@ -375,13 +387,14 @@ spec:
 ######################   coturn   ######################################
 ########################################################################
 apiVersion: apps/v1
-kind: DaemonSet                                          
+kind: Deployment                                          
 metadata:
   name: coturn
   labels:
     UserId: {{.UserId}}
   namespace: hc-{{.Subdomain}}
 spec:
+  replicas: 1 
   selector:
     matchLabels:
       app: coturn                                          
@@ -419,7 +432,7 @@ metadata:
   namespace: hc-{{.Subdomain}}
 spec:
   ports:
-  - name: coturn
+  - name: https-coturn
     port: 5349
     targetPort: 5349
   selector:
