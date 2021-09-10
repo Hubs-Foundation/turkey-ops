@@ -1,0 +1,439 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hc-dev0
+  labels:
+    UserId: dev_gimmechart
+---
+######################################################################################
+###################################### ingress #######################################
+######################################################################################  
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkey-https
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: https
+spec:
+  rules:
+  - host: dev0-assets.myhubs.net
+    http:
+      paths:
+      - path: /files/
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000
+      - path: /http
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hubs
+            port: 
+              number: 8080
+  - host: dev0.myhubs.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkey-https2
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: https2
+spec:
+  rules:
+  - host: dev0.myhubs.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dialog
+            port: 
+              number: 4443
+---
+########################################################################
+###################### configs #########################################
+########################################################################  
+apiVersion: v1
+kind: Secret
+metadata:
+  name: configs
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+stringData:
+  NODE_COOKIE: foobar
+  SUB_DOMAIN: dev0
+  DOMAIN: myhubs.net
+  DB_USER: postgres
+  DB_PASS: itjfHE4HuS
+  DB_NAME: ret_dev
+  DB_HOST: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+  GUARDIAN_KEY: strongSecret#1
+  PERMS_KEY: -----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBAAKCAQEA3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf\\n/otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD+F\\noHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD+UfOCMctlwudNSs+AkmiP\\nSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj+Oa/ZQVH44lmPI9Ih0OakXWpIfOob3X0\\nXqcdywlMVI2hzBR3JNodRjyEz33p6E//lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIa\\ncr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqwIDAQABAoIBAQCgwy/hbK9wo3MU\\nTNRrdzaTob6b/l1jfanUgRYEYl/WyYAu9ir0JhcptVwERmYGNVIoBRQfQClaSHjo\\n0L1/b74aO5oe1rR8Yhh+yL1gWz9gRT0hyEr7paswkkhsmiY7+3m5rxsrfinlM+6+\\nJ7dsSi3U0ofOBbZ4kvAeEz/Y3OaIOUbQraP312hQnTVQ3kp7HNi9GcLK9rq2mASu\\nO0DxDHXdZMsRN1K4tOKRZDsKGAEfL2jKN7+ndvsDhb4mAQaVKM8iw+g5O4HDA8uB\\nmwycaWhjilZWEyUyqvXE8tOMLS59sq6i1qrf8zIMWDOizebF/wnrQ42kzt5kQ0ZJ\\nwCPOC3sxAoGBAO6KfWr6WsXD6phnjVXXi+1j3azRKJGQorwQ6K3bXmISdlahngas\\nmBGBmI7jYTrPPeXAHUbARo/zLcbuGCf1sPipkAHYVC8f9aUbA205BREB15jNyXr3\\nXzhR/ronbn0VeR9iRua2FZjVChz22fdz9MvRJiinP8agYIQ4LovDk3lzAoGBAO1E\\nrZpOuv3TMQffPaPemWuvMYfZLgx2/AklgYqSoi683vid9HEEAdVzNWMRrOg0w5EH\\nWMEMPwJTYvy3xIgcFmezk5RMHTX2J32JzDJ8Y/uGf1wMrdkt3LkPRfuGepEDDtBa\\nrUSO/MeGXLu5p8QByUZkvTLJ4rJwF2HZBUehrm3pAoGBANg1+tveNCyRGbAuG/M0\\nvgXbwO+FXWojWP1xrhT3gyMNbOm079FI20Ty3F6XRmfRtF7stRyN5udPGaz33jlJ\\n/rBEsNybQiK8qyCNzZtQVYFG1C4SSI8GbO5Vk7cTSphhwDlsEKvJWuX+I36BWKts\\nFPQwjI/ImIvmjdUKP1Y7XQ51AoGBALWa5Y3ASRvStCqkUlfFH4TuuWiTcM2VnN+b\\nV4WrKnu/kKKWs+x09rpbzjcf5kptaGrvRp2sM+Yh0RhByCmt5fBF4OWXRJxy5lMO\\nT78supJgpcbc5YvfsJvs9tHIYrPvtT0AyrI5B33od74wIhrCiz5YCQCAygVuCleY\\ndpQXSp1RAoGBAKjasot7y/ErVxq7LIpGgoH+XTxjvMsj1JwlMeK0g3sjnun4g4oI\\nPBtpER9QaSFi2OeYPklJ2g2yvFcVzj/pFk/n1Zd9pWnbU+JIXBYaHTjmktLeZHsb\\nrTEKATo+Y1Alrhpr/z7gXXDfuKKXHkVRiper1YRAxELoLJB8r7LWeuIb\\n-----END RSA PRIVATE KEY-----
+  PHX_KEY: strongSecret#2
+---
+########################################################################
+###################### reticulum #######################################
+########################################################################  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reticulum
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reticulum
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: 
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: reticulum
+    spec:
+      containers:
+        - name: reticulum
+          image: mozillareality/ret:17
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NS
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: turkeyCfg_NODE_COOKIE
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: NODE_COOKIE
+          - name: turkeyCfg_SUB_DOMAIN
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: SUB_DOMAIN
+          - name: turkeyCfg_DOMAIN
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: DOMAIN
+          - name: turkeyCfg_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: DB_USER
+          - name: turkeyCfg_DB_PASS
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: DB_PASS
+          - name: turkeyCfg_DB_NAME
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: DB_NAME
+          - name: turkeyCfg_DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: DB_HOST
+          - name: turkeyCfg_GUARDIAN_KEY
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: GUARDIAN_KEY
+          - name: turkeyCfg_PERMS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: PERMS_KEY
+          - name: turkeyCfg_PHX_KEY
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: PHX_KEY
+          livenessProbe:
+            httpGet:
+              path: "http://reticulum.dev0"
+              port: 1111
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 0.8
+            requests:
+              memory: 128Mi
+              cpu: 0.2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ret
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+spec:
+  clusterIP: None
+  ports:
+  - name: https-reticulum
+    port: 4000
+    targetPort: 4000
+  selector:
+    app: reticulum
+---
+########################################################################
+######################   hubs   ########################################
+########################################################################  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hubs
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: hubs
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: 
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: hubs
+    spec:
+      containers:
+        - name: hubs
+          image: mozillareality/hubs:19
+          imagePullPolicy: Always
+          env:
+          - name: SUB_DOMAIN
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: SUB_DOMAIN
+          - name: DOMAIN
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: DOMAIN          
+          - name: turkeyCfg_postgrest_server
+            value: 
+          - name: turkeyCfg_thumbnail_server
+            value: notyet
+          - name: turkeyCfg_base_assets_path
+            value: https://dev0-assets.myhubs.net/hubs/
+          - name: turkeyCfg_non_cors_proxy_domains
+            value: dev0.myhubs.net,dev0-assets.myhubs.net
+          - name: turkeyCfg_reticulum_server
+            value: dev0.myhubs.net
+          - name: turkeyCfg_cors_proxy_server
+            value: 
+          - name: turkeyCfg_ga_tracking_id
+            value: 
+          - name: turkeyCfg_shortlink_domain
+            value: notyet
+          - name: turkeyCfg_ita_server
+            value: 
+          - name: turkeyCfg_sentry_dsn
+            value: 
+          livenessProbe:
+            httpGet:
+              path: "http://hubs.dev0"
+              port: 1111
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 0.8
+            requests:
+              memory: 64Mi
+              cpu: 0.1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubs
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+spec:
+  clusterIP: None
+  ports:
+  - name: https-hubs
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: hubs
+---
+########################################################################
+######################   dialog   ######################################
+########################################################################  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dialog
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: dialog                                          
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate                                   
+    rollingUpdate: 
+      maxUnavailable: 1                                   
+      maxSurge: 1                                         
+  template:
+    metadata:
+      labels:
+        app: dialog
+    spec:
+      containers:
+        - image: mozillareality/dialog:5
+          imagePullPolicy: Always
+          name: dialog
+          env:
+          - name: perms_key
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: PERMS_KEY          
+          livenessProbe:
+            httpGet:
+              path: "http://dialog.dev0"
+              port: 1111
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 0.8
+            requests:
+              memory: 64Mi
+              cpu: 0.1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dialog
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+spec:
+  ports:
+  - name: https-dialog
+    port: 4443
+    targetPort: 4443
+  - name: https-dialog-adm
+    port: 7000
+    targetPort: 7000
+  selector:
+    app: dialog            
+---
+########################################################################
+######################   coturn   ######################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment                                          
+metadata:
+  name: coturn
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: coturn                                          
+  minReadySeconds: 15                                      
+  template:
+    metadata:
+      labels:
+        app: coturn
+    spec:
+      containers:
+        - image: mozillareality/coturn:dev
+          imagePullPolicy: Always
+          name: coturn
+          livenessProbe:
+            httpGet:
+              path: "http://coturn.dev0"
+              port: 1111
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+            periodSeconds: 120
+          resources:
+            limits:
+              memory: 512Mi
+              cpu: 0.8
+            requests:
+              memory: 64Mi
+              cpu: 0.1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coturn
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+spec:
+  ports:
+  - name: https-coturn
+    port: 5349
+    targetPort: 5349
+  selector:
+    app: coturn
