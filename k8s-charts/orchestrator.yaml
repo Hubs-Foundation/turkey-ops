@@ -8,8 +8,8 @@ kind: IngressRoute
 metadata:
   name: turkey-orc
   namespace: orchestrator
-  annotations:
-    ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
+  # annotations:
+  #   ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
 spec:
   entryPoints:
     - https
@@ -49,7 +49,7 @@ spec:
     spec:
       serviceAccountName: orchestrator-sa
       containers:
-      - image: mozillareality/turkeyorc:24
+      - image: mozillareality/turkeyorc:25
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         livenessProbe:

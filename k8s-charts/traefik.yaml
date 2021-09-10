@@ -21,33 +21,40 @@ spec:
         k8s-app: traefik-ingress-lb
         name: traefik-ingress-lb
     spec:
+      # hostNetwork: true
       serviceAccountName: traefik-ingress-lb
       terminationGracePeriodSeconds: 60
       containers:
       - image: traefik:v2.5
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: traefik-ingress-lb
         args:
         - --serversTransport.insecureSkipVerify=true
-        - --providers.kubernetesingress=true       
+        - --providers.kubernetesingress=true
         - --providers.kubernetescrd
-        - --entryPoints.https.address=:443
-        - --entryPoints.https.forwardedHeaders.insecure=true
         - --entryPoints.traefik.address=:1080
+        - --entryPoints.https.address=:443
+        - --entrypoints.https.http.tls=true
+        - --entryPoints.https.forwardedHeaders.insecure=true
+        - --entryPoints.https2.address=:4443
+        - --entrypoints.https2.http.tls=true
+        - --entryPoints.https2.forwardedHeaders.insecure=true
         - --api
         - --api.insecure
         - --accesslog
         - --log.level=INFO
         - --pilot.dashboard=false
-        # - --entryPoints.web.address=:80
-        # - --entrypoints.web.http.redirections.entryPoint.to=https
-        # - --entrypoints.web.http.redirections.entryPoint.scheme=https
-        # - --entrypoints.web.http.redirections.entrypoint.permanent=true
-        # # # - --ping=true
-        # - --certificatesresolvers.letsencrypt.acme.tlschallenge
-        # - --certificatesresolvers.letsencrypt.acme.email=gtan@mozilla.com
-        # - --certificatesresolvers.letsencrypt.acme.storage=acme.json
-        
+        - --entryPoints.http.address=:80
+        - --entrypoints.http.http.redirections.entryPoint.to=https
+        - --entrypoints.http.http.redirections.entryPoint.scheme=https
+        - --entrypoints.http.http.redirections.entrypoint.permanent=true
+        resources:
+          limits:
+            memory: 3072Mi
+            cpu: 2
+          requests:
+            memory: 256Mi
+            cpu: 0.2        
 ---
 apiVersion: v1
 kind: Service
@@ -55,21 +62,24 @@ metadata:
   name: lb
   namespace: traefik
   annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:558986605633:certificate/47d305ab-f861-470b-a837-98ca52a76e17
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443,4443
 spec:
   type: LoadBalancer
   selector:
     k8s-app: traefik-ingress-lb
   ports:
-  # - name: http
-  #   port: 80
-  #   targetPort: 80
+  - name: http
+    port: 80
+    targetPort: 80
   - name: https
     port: 443
     targetPort: 443   
-  # - name: internal
-  #   port: 444
-  #   targetPort: 444  
+  - name: https2
+    port: 4443
+    targetPort: 4443
   # - name: dashboard-test
   #   port: 1080
   #   targetPort: 1080
