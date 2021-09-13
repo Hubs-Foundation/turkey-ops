@@ -92,17 +92,9 @@ func traefik() http.Handler {
 		if xff != "" && strings.Contains(IPsAllowed, xff) {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
-			r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
-			r.Method = r.Header.Get("X-Forwarded-Method")
-			r.Host = r.Header.Get("X-Forwarded-Host")
-			headerBytes, _ := json.Marshal(r.Header)
-			cookieMap := make(map[string]string)
-			for _, c := range r.Cookies() {
-				cookieMap[c.Name] = c.Value
-			}
-			cookieJson, _ := json.Marshal(cookieMap)
-			fmt.Fprintln(w, "headers: "+string(headerBytes)+"\ncookies: "+string(cookieJson))
-			w.WriteHeader(http.StatusForbidden)
+			fmt.Println("####################################################################### bad ip !!! not allowed !!! ##########")
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
 		}
 	})
 }
