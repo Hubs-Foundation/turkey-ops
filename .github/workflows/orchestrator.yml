@@ -5,6 +5,9 @@ name: orchestrator
 on:
   push:
     branches: [ master, dev ]
+    paths:
+    - './orchestrator'
+    - './.github/workflows/orchestrator.yml'
   workflow_dispatch:
 
 env:

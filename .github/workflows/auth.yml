@@ -5,6 +5,9 @@ name: auth
 on:
   push:
     branches: [ master, dev ]
+    paths:
+    - './auth'
+    - './.github/workflows/auth.yml'
   workflow_dispatch:
 
 env:
