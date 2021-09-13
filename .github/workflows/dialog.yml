@@ -3,6 +3,10 @@
 name: dialog
 
 on:
+  push:
+    branches: [ master, dev ]
+    paths:
+    - '.github/workflows/dialog.yml'
   workflow_dispatch:
 
 jobs:

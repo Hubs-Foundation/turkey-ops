@@ -2,6 +2,10 @@
 
 name: ret
 on:
+  push:
+    branches: [ master, dev ]
+    paths:
+    - '.github/workflows/ret.yml'
   workflow_dispatch:
 
 jobs:

@@ -14,7 +14,6 @@ env:
   containerName: turkeyorc
   registryName: mozillareality
 
-
 jobs:
   build:
     runs-on: ubuntu-latest

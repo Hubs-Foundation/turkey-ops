@@ -1,5 +1,9 @@
 name: hubs
 on:
+  push:
+    branches: [ master, dev ]
+    paths:
+    - '.github/workflows/hubs.yml'
   workflow_dispatch:
 
 jobs:
