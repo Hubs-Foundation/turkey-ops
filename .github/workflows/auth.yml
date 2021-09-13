@@ -27,7 +27,7 @@ jobs:
           sudo docker images
           sudo docker push $registryName/$containerName:$GITHUB_RUN_NUMBER          
           echo "GITHUB_REF==$GITHUB_REF"
-          if [ "$GITHUB_REF" = "refs/heads/dev" ]; then
+          if [ "$GITHUB_REF" = "refs/heads/dev" ] || [ "$GITHUB_REF" = "refs/heads/master" ]; then
             echo "pushing :dev for $GITHUB_REF"
             docker tag $registryName/$containerName:$GITHUB_RUN_NUMBER $registryName/$containerName:dev
             sudo docker push $registryName/$containerName:dev; fi

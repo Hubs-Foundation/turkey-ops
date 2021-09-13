@@ -54,7 +54,7 @@ jobs:
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
           sudo docker push $registryName/$containerName:$GITHUB_RUN_NUMBER
   push-dev:
-    if: github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: build
     environment:
