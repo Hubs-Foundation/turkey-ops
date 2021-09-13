@@ -5,6 +5,59 @@ metadata:
   name: turkey-services
 ---
 ####################################################################################
+####################################### auth #######################################
+####################################################################################  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  namespace: turkey-services
+  labels:
+    app: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - image: mozillareality/turkeyauth:dev
+        name: turkeyauth
+        env:
+        - name: SECRET
+          value: a-random-string-to-secure-your-cookie
+        resources:
+          limits:
+            memory: 1024Mi
+            cpu: 1
+          requests:
+            memory: 128Mi
+            cpu: 0.1   
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  namespace: turkey-services
+  labels:
+    app: auth
+spec:
+  type: ClusterIP
+  selector:
+    app: auth
+  ports:
+  - name: http
+    port: 9001
+    targetPort: 9001
+---
+####################################################################################
 ################################### orchestrator ###################################
 ####################################################################################
 apiVersion: traefik.containo.us/v1alpha1
@@ -18,11 +71,26 @@ spec:
   routes:
   - kind: Rule
     match: Host(`orc.myhubs.net`) && PathPrefix(`/`)
+    middlewares:
+    - name: turkeyauth
+      namespace: turkey-services    
     services:
     - kind: Service
       name: turkey-orc
       passHostHeader: true
       port: 888
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: turkeyauth
+  namespace: turkey-services
+spec:
+  forwardAuth:
+    address: http://auth.turkey-services:9001/traefik
+    authResponseHeaders:
+      - X-Forwarded-User
+    trustForwardHeader: true      
 ---
 apiVersion: v1
 kind: Secret
@@ -83,10 +151,6 @@ spec:
     targetPort: 888
   selector:
     app: turkey-orc
-
-####################################################################################
-################################### RBAC ###########################################
-####################################################################################
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -105,4 +169,5 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: orchestrator-sa
-  namespace: turkey-services     
+  namespace: turkey-services
+

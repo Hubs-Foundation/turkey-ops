@@ -76,7 +76,7 @@ func traefik() http.Handler {
 			return
 		}
 		IPsAllowed := "73.53.171.231"
-		xff := r.Header.Get("X_Forwarded-For")
+		xff := r.Header.Get("X-Forwarded-For")
 		if strings.Contains(IPsAllowed, xff) {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
