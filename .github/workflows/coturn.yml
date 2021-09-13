@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  containerName: turkeyauth
+  containerName: coturn
   registryName: mozillareality
 
 jobs:
