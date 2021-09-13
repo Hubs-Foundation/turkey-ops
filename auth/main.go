@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -36,7 +34,7 @@ func main() {
 	router := http.NewServeMux()
 	// router.Handle("/", root())
 	router.Handle("/healthz", healthz())
-	router.Handle("/traefik", traefik())
+	router.Handle("/traefik-ip", traefikIp())
 
 	startServer(router, 9001)
 
@@ -64,37 +62,37 @@ func healthz() http.Handler {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	})
 }
-func traefik() http.Handler {
+
+func traefikIp() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/traefik" {
+		if r.URL.Path != "/traefik-ip" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-
-		r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
-		r.Method = r.Header.Get("X-Forwarded-Method")
-		r.Host = r.Header.Get("X-Forwarded-Host")
-		headerBytes, _ := json.Marshal(r.Header)
-		cookieMap := make(map[string]string)
-		for _, c := range r.Cookies() {
-			cookieMap[c.Name] = c.Value
-		}
-		cookieJson, _ := json.Marshal(cookieMap)
-		fmt.Println("headers: " + string(headerBytes) + "\ncookies: " + string(cookieJson))
-
-		// traefik ForwardAuth middleware should add X-Forwarded-Uri header
 		if _, ok := r.Header["X-Forwarded-Uri"]; !ok {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
-		IPsAllowed := "73.53.171.231"
+		// r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
+		// r.Method = r.Header.Get("X-Forwarded-Method")
+		// r.Host = r.Header.Get("X-Forwarded-Host")
+		// headerBytes, _ := json.Marshal(r.Header)
+		// cookieMap := make(map[string]string)
+		// for _, c := range r.Cookies() {
+		// 	cookieMap[c.Name] = c.Value
+		// }
+		// cookieJson, _ := json.Marshal(cookieMap)
+		// fmt.Println("headers: " + string(headerBytes) + "\ncookies: " + string(cookieJson))
+
+		// traefik ForwardAuth middleware should add X-Forwarded-Uri header
+
+		IPsAllowed := os.Getenv("trusted_IPs") // "73.53.171.231"
 		xff := r.Header.Get("X-Forwarded-For")
 		if xff != "" && strings.Contains(IPsAllowed, xff) {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
-			fmt.Println("####################################################################### bad ip !!! not allowed !!! ##########")
+			fmt.Println("##################### not allowed !!! bad ip in xff: " + xff)
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
 		}
 	})
 }
