@@ -60,9 +60,9 @@ spec:
   routes:
   - kind: Rule
     match: Host(`dash.myhubs.net`) && PathPrefix(`/`)
-    # middlewares:
-    # - name: traefik-forward-auth
-    #   namespace: tools    
+    middlewares:
+    - name: tfa-google
+      namespace: tools
     services:                       
     - kind: Service
       name: skooner
@@ -96,11 +96,11 @@ subjects:
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  name: traefik-forward-auth
+  name: tfa-google
   namespace: tools
 spec:
   forwardAuth:
-    address: http://traefik-forward-auth.auth:4181
+    address: http://tfa-google.auth:4181
     authResponseHeaders:
       - X-Forwarded-User
     trustForwardHeader: true

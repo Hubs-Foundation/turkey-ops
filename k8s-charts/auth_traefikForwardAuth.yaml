@@ -6,21 +6,21 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: traefik-forward-auth
+  name: tfa-google
   namespace: auth
   labels:
-    app: traefik-forward-auth
+    app: tfa-google
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: traefik-forward-auth
+      app: tfa-google
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: traefik-forward-auth
+        app: tfa-google
     spec:
       terminationGracePeriodSeconds: 60
       containers:
@@ -42,14 +42,25 @@ spec:
         # # INSECURE_COOKIE is required unless using https entrypoint
         # - name: INSECURE_COOKIE
         #   value: "true"
-        - name: DEFAULT_PROVIDER
-          value: oidc
-        - name: PROVIDERS_OIDC_ISSUER_URL
-          value: https://kc.myhubs.net/auth/realms/master          
-        - name: PROVIDERS_OIDC_CLIENT_ID
-          value: traefik
-        - name: PROVIDERS_OIDC_CLIENT_SECRET
-          value: 98ad903b-fac9-490e-a92f-a72b2519f2fa
+        # - name: DEFAULT_PROVIDER
+        #   value: oidc
+        # - name: PROVIDERS_OIDC_ISSUER_URL
+        #   value: https://kc.myhubs.net/auth/realms/master          
+        # - name: PROVIDERS_OIDC_CLIENT_ID
+        #   value: traefik
+        # - name: PROVIDERS_OIDC_CLIENT_SECRET
+        #   value: 98ad903b-fac9-490e-a92f-a72b2519f2fa
+        - name: PROVIDERS_GOOGLE_CLIENT_ID
+          value: 329616299969-qdj49c50rqqokk2vialrm6l7nljfa0j5.apps.googleusercontent.com
+        - name: PROVIDERS_GOOGLE_CLIENT_SECRET
+          value: g4QmxQI3gmCJg5G1DDHP4oBq
+        resources:
+          limits:
+            memory: 1024Mi
+            cpu: 1
+          requests:
+            memory: 128Mi
+            cpu: 0.1          
 ---
 #
 # Auth Service
@@ -57,14 +68,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: traefik-forward-auth
+  name: tfa-google
   namespace: auth
   labels:
-    app: traefik-forward-auth
+    app: tfa-google
 spec:
   type: ClusterIP
   selector:
-    app: traefik-forward-auth
+    app: tfa-google
   ports:
   - name: auth-http
     port: 4181

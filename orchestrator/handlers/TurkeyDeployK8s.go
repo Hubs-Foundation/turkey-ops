@@ -88,23 +88,29 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		t.Execute(&buf, _data)
 		k8sChartYaml := buf.String()
 		//<debugging>
-		if turkeyUserId == "dev_dump" {
-			headerBytes, _ := json.Marshal(r.Header)
-			sess.PushMsg(string(headerBytes))
-			cookieMap := make(map[string]string)
-			for _, c := range r.Cookies() {
-				cookieMap[c.Name] = c.Value
+		if turkeyUserId[0:4] == "dev_" {
+			if turkeyDomain != "dev0" {
+				return
 			}
-			cookieJson, _ := json.Marshal(cookieMap)
-			sess.PushMsg(string(cookieJson))
+			sess.PushMsg(`turkeyUserId[0:4] == dev_ means dev mode`)
+			if turkeyUserId == "dev_dump" {
+				headerBytes, _ := json.Marshal(r.Header)
+				sess.PushMsg(string(headerBytes))
+				cookieMap := make(map[string]string)
+				for _, c := range r.Cookies() {
+					cookieMap[c.Name] = c.Value
+				}
+				cookieJson, _ := json.Marshal(cookieMap)
+				sess.PushMsg(string(cookieJson))
 
-			return
-		}
-		if turkeyUserId == "dev_gimmechart" {
-			w.Header().Set("Content-Disposition", "attachment; filename="+turkeySubdomain+".yaml")
-			w.Header().Set("Content-Type", "text/plain")
-			io.Copy(w, strings.NewReader(k8sChartYaml))
-			return
+				return
+			}
+			if turkeyUserId == "dev_gimmechart" {
+				w.Header().Set("Content-Disposition", "attachment; filename="+turkeySubdomain+".yaml")
+				w.Header().Set("Content-Type", "text/plain")
+				io.Copy(w, strings.NewReader(k8sChartYaml))
+				return
+			}
 		}
 		//</debugging>
 
