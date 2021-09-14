@@ -104,7 +104,7 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:21
+          image: mozillareality/ret:22
           imagePullPolicy: IfNotPresent
           env:
           - name: POD_IP
