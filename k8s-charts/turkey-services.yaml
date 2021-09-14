@@ -122,7 +122,7 @@ spec:
     spec:
       serviceAccountName: orchestrator-sa
       containers:
-      - image: mozillareality/turkeyorc:41
+      - image: mozillareality/turkeyorc:42
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         livenessProbe:
