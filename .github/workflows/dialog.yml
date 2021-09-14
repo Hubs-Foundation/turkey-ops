@@ -41,8 +41,8 @@ jobs:
           run printf 'while true; do (echo -e "HTTP/1.1 200 OK\r\n") | nc -lp 1111 > /dev/null; done' > /healthcheck.sh && chmod +x /healthcheck.sh
           run echo ' \n\
             /healthcheck.sh& \n\
-            printf "%b" "$perms_key">/app/certs/perms.pub.pem \n\
-            echo $(cat perms.pub.pem) > perms.pub.pem \n\
+            pkey=$(echo $perms_key) \n\
+            printf "%b" "$pkey">/app/certs/perms.pub.pem \n\
             cat /app/certs/perms.pub.pem \n\            
             export MEDIASOUP_ANNOUNCED_IP=$(curl ${{ env.PUB_IP_CURL }}) \n\
             echo "MEDIASOUP_ANNOUNCED_IP: $MEDIASOUP_ANNOUNCED_IP" \n\
