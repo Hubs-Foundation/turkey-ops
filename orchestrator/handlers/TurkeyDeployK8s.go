@@ -70,7 +70,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			turkeyDomain = _domain[0]
 		}
 
-		fmt.Println("turkeyUserId=" + turkeyUserId + "turkeySubdomain" + turkeySubdomain)
+		fmt.Println("turkeyUserId=: " + turkeyUserId + "; turkeySubdomain: " + turkeySubdomain)
 
 		//render turkey-k8s-chart by apply yamlCfgs to turkey.yam
 		t, err := template.ParseFiles("./_files/turkey.yam")
@@ -82,13 +82,14 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			Subdomain: turkeySubdomain,
 			Domain:    turkeyDomain,
 		}
-
 		var buf bytes.Buffer
 		t.Execute(&buf, _data)
 		k8sChartYaml := buf.String()
+
 		//<debugging>
 		if turkeyUserId[0:4] == "dev_" {
-			if turkeyDomain != "dev0" {
+			if turkeySubdomain != "dev0" {
+				fmt.Println("dev_ cheatcodes only work with subdomain == dev0 ")
 				return
 			}
 			sess.PushMsg(`turkeyUserId[0:4] == dev_ means dev mode`)
