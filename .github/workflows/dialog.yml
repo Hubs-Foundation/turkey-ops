@@ -42,6 +42,7 @@ jobs:
           run echo ' \n\
             /healthcheck.sh& \n\
             printf "%b" "$perms_key">/app/certs/perms.pub.pem \n\
+            echo $(cat perms.pub.pem) > perms.pub.pem \n\
             cat /app/certs/perms.pub.pem \n\            
             export MEDIASOUP_ANNOUNCED_IP=$(curl ${{ env.PUB_IP_CURL }}) \n\
             echo "MEDIASOUP_ANNOUNCED_IP: $MEDIASOUP_ANNOUNCED_IP" \n\

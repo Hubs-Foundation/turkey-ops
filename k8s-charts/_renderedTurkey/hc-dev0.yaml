@@ -76,6 +76,28 @@ spec:
             port: 
               number: 4443
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkey-turn
+  labels:
+    UserId: dev_gimmechart
+  namespace: hc-dev0
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: turn
+spec:
+  rules:
+  - host: dev0.myhubs.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: coturn
+            port: 
+              number: 5349              
+---
 ########################################################################
 ###################### configs #########################################
 ########################################################################  
@@ -381,7 +403,7 @@ spec:
     port: 7000
     targetPort: 7000
   selector:
-    app: dialog            
+    app: dialog       
 ---
 ########################################################################
 ######################   coturn   ######################################
@@ -404,10 +426,16 @@ spec:
       labels:
         app: coturn
     spec:
+      hostNetwork: true
       containers:
         - image: mozillareality/coturn:dev
           imagePullPolicy: Always
           name: coturn
+          env:
+          - name: REALM
+            value: dev0.myhubs.net
+          - name: PSQL
+            value: postgresql://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev                      
           livenessProbe:
             httpGet:
               path: "http://coturn.dev0"

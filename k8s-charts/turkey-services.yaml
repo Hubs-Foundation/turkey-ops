@@ -28,12 +28,14 @@ spec:
     spec:
       terminationGracePeriodSeconds: 60
       containers:
-      - image: mozillareality/turkeyauth:9
+      - image: mozillareality/turkeyauth:10
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
         - name: SECRET
           value: a-random-string-to-secure-your-cookie
+        - name: trusted_IPs
+          value: 73.53.171.231
         resources:
           limits:
             memory: 1024Mi
@@ -88,7 +90,7 @@ metadata:
   namespace: turkey-services
 spec:
   forwardAuth:
-    address: http://auth.turkey-services:9001/traefik
+    address: http://auth.turkey-services:9001/traefik-ip
     authResponseHeaders:
       - X-Forwarded-User
     trustForwardHeader: true      

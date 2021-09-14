@@ -39,6 +39,9 @@ spec:
         - --entryPoints.https2.address=:4443
         - --entrypoints.https2.http.tls=true
         - --entryPoints.https2.forwardedHeaders.insecure=true
+        - --entryPoints.turn.address=:5349
+        - --entrypoints.turn.http.tls=true
+        - --entryPoints.turn.forwardedHeaders.insecure=true        
         - --api
         - --api.insecure
         - --accesslog
