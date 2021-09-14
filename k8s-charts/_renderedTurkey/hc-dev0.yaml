@@ -148,7 +148,7 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:17
+          image: mozillareality/ret:20
           imagePullPolicy: IfNotPresent
           env:
           - name: POD_IP
@@ -272,7 +272,7 @@ spec:
     spec:
       containers:
         - name: hubs
-          image: mozillareality/hubs:19
+          image: mozillareality/hubs:22
           imagePullPolicy: Always
           env:
           - name: SUB_DOMAIN
@@ -363,7 +363,7 @@ spec:
         app: dialog
     spec:
       containers:
-        - image: mozillareality/dialog:13
+        - image: mozillareality/dialog:16
           imagePullPolicy: Always
           name: dialog
           env:
@@ -428,7 +428,7 @@ spec:
     spec:
       hostNetwork: true
       containers:
-        - image: mozillareality/coturn:dev
+        - image: mozillareality/coturn:12
           imagePullPolicy: Always
           name: coturn
           env:
