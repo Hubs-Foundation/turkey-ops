@@ -69,7 +69,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:558986605633:certificate/47d305ab-f861-470b-a837-98ca52a76e17
-    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443,4443
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443,4443,5349
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -85,9 +85,9 @@ spec:
   - name: https2
     port: 4443
     targetPort: 4443
-  # - name: dashboard-test
-  #   port: 1080
-  #   targetPort: 1080
+  - name: turn
+    port: 5349
+    targetPort: 5349
 ---
 apiVersion: v1
 kind: Service
