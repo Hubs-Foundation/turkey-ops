@@ -363,7 +363,7 @@ spec:
         app: dialog
     spec:
       containers:
-        - image: mozillareality/dialog:9
+        - image: mozillareality/dialog:13
           imagePullPolicy: Always
           name: dialog
           env:
