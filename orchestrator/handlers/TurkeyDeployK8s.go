@@ -51,11 +51,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			return
 		}
 		sess.PushMsg("hello")
-		//try to get k8s config from r.body
-		// cfg, err := clientcmd.RESTConfigFromKubeConfig(rBodyBytes)
-		// if err != nil {
 
-		//getting yamlCfgs in query params
 		_userid, found := r.URL.Query()["userid"]
 		if !found || len(_userid) != 1 {
 			panic("bad <userid> in query parameters")
@@ -74,6 +70,8 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			turkeyDomain = _domain[0]
 		}
 
+		fmt.Println("turkeyUserId=" + turkeyUserId + "turkeySubdomain" + turkeySubdomain)
+
 		//render turkey-k8s-chart by apply yamlCfgs to turkey.yam
 		t, err := template.ParseFiles("./_files/turkey.yam")
 		if err != nil {
@@ -84,6 +82,7 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			Subdomain: turkeySubdomain,
 			Domain:    turkeyDomain,
 		}
+
 		var buf bytes.Buffer
 		t.Execute(&buf, _data)
 		k8sChartYaml := buf.String()
