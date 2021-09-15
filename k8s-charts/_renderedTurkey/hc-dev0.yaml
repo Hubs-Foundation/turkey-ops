@@ -87,7 +87,7 @@ metadata:
     UserId: dev_gimmechart
   namespace: hc-dev0
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: reticulum
@@ -104,8 +104,8 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:23
-          imagePullPolicy: IfNotPresent
+          image: mozillareality/ret:24
+          imagePullPolicy: Always
           env:
           - name: POD_IP
             valueFrom:
