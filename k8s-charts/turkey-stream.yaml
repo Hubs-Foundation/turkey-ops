@@ -3,6 +3,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: turkey-stream
+  
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -58,7 +59,7 @@ stringData:
 ######################   dialog   ######################################
 ########################################################################  
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
   name: dialog
   namespace: turkey-stream
@@ -85,7 +86,7 @@ spec:
                 key: PERMS_KEY          
           livenessProbe:
             httpGet:
-              path: "http://dialog.turkey-stream"
+              path: "http://localhost"
               port: 1111
             initialDelaySeconds: 20
             timeoutSeconds: 1
@@ -115,7 +116,7 @@ spec:
 ######################   coturn   ######################################
 ########################################################################
 apiVersion: apps/v1
-kind: DaemonSet                                          
+kind: Deployment                                          
 metadata:
   name: coturn
   namespace: turkey-stream
@@ -144,7 +145,7 @@ spec:
                 key: PSQL             
           livenessProbe:
             httpGet:
-              path: "http://coturn.turkey-stream"
+              path: "http://localhost"
               port: 1111
             initialDelaySeconds: 20
             timeoutSeconds: 1
