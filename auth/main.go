@@ -38,6 +38,8 @@ var (
 func main() {
 
 	turkeyDomain = "myhubs.net"
+	googleOauthClientId = os.Getenv("oauthClientId_google")
+	googleOauthClientSecret = os.Getenv("oauthClientSecret_google")
 
 	router := http.NewServeMux()
 	// router.Handle("/", root())
