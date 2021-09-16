@@ -86,13 +86,13 @@ spec:
               secretKeyRef:
                 name: configs
                 key: PERMS_KEY          
-          livenessProbe:
-            httpGet:
-              path: "http://localhost"
-              port: 1111
-            initialDelaySeconds: 20
-            timeoutSeconds: 1
-            periodSeconds: 120
+          # livenessProbe:
+          #   httpGet:
+          #     path: "http://localhost"
+          #     port: 1111
+          #   initialDelaySeconds: 20
+          #   timeoutSeconds: 1
+          #   periodSeconds: 120
           # resources:
           #   limits:
           #     memory: 999Gi

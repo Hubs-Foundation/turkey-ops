@@ -35,7 +35,7 @@ spec:
         - name: SECRET
           value: a-random-string-to-secure-your-cookie
         - name: trusted_IPs
-          value: 73.53.171.231
+          value: 73.53.171.231,107.137.66.24
         resources:
           limits:
             memory: 1024Mi
