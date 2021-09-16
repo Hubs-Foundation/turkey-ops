@@ -79,7 +79,7 @@ func login() http.Handler {
 				"scope=https%3A//www.googleapis.com/auth/drive.metadata.readonly&" +
 				"access_type=offline&include_granted_scopes=true&" +
 				"response_type=code&state=state_parameter_passthrough_value&" +
-				"redirect_uri=https%3A//auth." + turkeyDomain + "/code&" +
+				"redirect_uri=https%3A//auth." + turkeyDomain + "/_oauth_google&" +
 				"client_id=" + googleOauthClientId
 			http.Redirect(w, r, url, http.StatusSeeOther)
 		}

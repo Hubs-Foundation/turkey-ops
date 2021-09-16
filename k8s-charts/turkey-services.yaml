@@ -7,6 +7,26 @@ metadata:
 ####################################################################################
 ####################################### auth #######################################
 ####################################################################################  
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: turkey-auth
+  namespace: turkey-services
+spec:
+  entryPoints:
+    - https
+  routes:
+  - kind: Rule
+    match: Host(`auth.myhubs.net`) && PathPrefix(`/`)
+    middlewares:
+    - name: turkeyauth
+      namespace: turkey-services    
+    services:
+    - kind: Service
+      name: auth
+      passHostHeader: true
+      port: 9001
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,7 +48,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: 60
       containers:
-      - image: mozillareality/turkeyauth:11
+      - image: mozillareality/turkeyauth:12
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -36,6 +56,10 @@ spec:
           value: a-random-string-to-secure-your-cookie
         - name: trusted_IPs
           value: 73.53.171.231,107.137.66.24
+        - name: oauthClientId_google
+          value: 329616299969-qdj49c50rqqokk2vialrm6l7nljfa0j5.apps.googleusercontent.com
+        - name: oauthClientSecret_google
+          value: g4QmxQI3gmCJg5G1DDHP4oBq          
         resources:
           limits:
             memory: 1024Mi
