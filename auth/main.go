@@ -30,9 +30,11 @@ var (
 
 	logger = log.New(os.Stdout, "http: ", log.LstdFlags)
 	// zonalNameMap = make(map[string]string)
-	turkeyDomain            string
+	turkeyDomain string
+
 	googleOauthClientId     string
 	googleOauthClientSecret string
+	googleScope             string
 )
 
 func main() {
@@ -40,6 +42,7 @@ func main() {
 	turkeyDomain = "myhubs.net"
 	googleOauthClientId = os.Getenv("oauthClientId_google")
 	googleOauthClientSecret = os.Getenv("oauthClientSecret_google")
+	googleScope = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
 
 	router := http.NewServeMux()
 	// router.Handle("/", root())
@@ -75,12 +78,12 @@ func login() http.Handler {
 
 		if idp == "google" {
 
-			url := "https://accounts.google.com/o/oauth2/v2/auth?" +
-				"scope=https%3A//www.googleapis.com/auth/drive.metadata.readonly&" +
-				"access_type=offline&include_granted_scopes=true&" +
-				"response_type=code&state=state_parameter_passthrough_value&" +
-				"redirect_uri=https%3A//auth." + turkeyDomain + "/_oauth_google&" +
-				"client_id=" + googleOauthClientId
+			url := "https://accounts.google.com/o/oauth2/v2/auth" +
+				"?scope=" + googleScope +
+				"&access_type=offline&include_granted_scopes=true" +
+				"&response_type=code&state=state_parameter_passthrough_value" +
+				"&redirect_uri=https%3A//auth." + turkeyDomain + "/_oauth_google" +
+				"&client_id=" + googleOauthClientId
 			http.Redirect(w, r, url, http.StatusSeeOther)
 		}
 	})
