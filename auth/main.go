@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -27,31 +30,27 @@ var (
 
 	logger = log.New(os.Stdout, "http: ", log.LstdFlags)
 	// zonalNameMap = make(map[string]string)
+	turkeyDomain            string
+	googleOauthClientId     string
+	googleOauthClientSecret string
 )
 
 func main() {
+
+	turkeyDomain = "myhubs.net"
 
 	router := http.NewServeMux()
 	// router.Handle("/", root())
 	router.Handle("/healthz", healthz())
 	router.Handle("/traefik-ip", traefikIp())
 
+	router.Handle("/login", login())
+
+	router.Handle("/_oauth_google", _oauth_google())
+
 	startServer(router, 9001)
 
 }
-
-// func root() http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		if r.URL.Path != "/" {
-// 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-// 			return
-// 		}
-// 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-// 		w.Header().Set("X-Content-Type-Options", "nosniff")
-// 		w.WriteHeader(http.StatusOK)
-// 		fmt.Fprintln(w, "hello "+r.RemoteAddr)
-// 	})
-// }
 
 func healthz() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +59,85 @@ func healthz() http.Handler {
 			return
 		}
 		w.WriteHeader(http.StatusServiceUnavailable)
+	})
+}
+
+func login() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/login" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		idp := r.URL.Query()["idp"][0]
+
+		if idp == "google" {
+
+			url := "https://accounts.google.com/o/oauth2/v2/auth?" +
+				"scope=https%3A//www.googleapis.com/auth/drive.metadata.readonly&" +
+				"access_type=offline&include_granted_scopes=true&" +
+				"response_type=code&state=state_parameter_passthrough_value&" +
+				"redirect_uri=https%3A//auth." + turkeyDomain + "/code&" +
+				"client_id=" + googleOauthClientId
+			http.Redirect(w, r, url, http.StatusSeeOther)
+		}
+	})
+}
+
+func _oauth_google() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.URL.Path != "/_oauth_google" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		code := r.URL.Query()["code"][0]
+
+		fmt.Println("### /_oauth_google ~~~ received code: " + code)
+
+		fmt.Println("### /_oauth_google ~~~ dumping r !!!")
+		r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
+		r.Method = r.Header.Get("X-Forwarded-Method")
+		r.Host = r.Header.Get("X-Forwarded-Host")
+		headerBytes, _ := json.Marshal(r.Header)
+		cookieMap := make(map[string]string)
+		for _, c := range r.Cookies() {
+			cookieMap[c.Name] = c.Value
+		}
+		cookieJson, _ := json.Marshal(cookieMap)
+		fmt.Println("headers: " + string(headerBytes) + "\ncookies: " + string(cookieJson))
+
+		//Step 5: Exchange authorization code for refresh and access tokens
+		//https://developers.google.com/identity/protocols/oauth2/web-server#exchange-authorization-code
+		req, err := http.NewRequest("POST", "https://oauth2.googleapis.com/token", nil)
+		if err != nil {
+			panic("Exchange authorization code for refresh and access tokens FAILED: " + err.Error())
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("code", code)
+		req.Header.Set("client_id", googleOauthClientId)
+		req.Header.Set("client_secret", googleOauthClientSecret)
+		req.Header.Set("redirect_uri", "https://portal.myhubs.net")
+		req.Header.Set("grant_type", "authorization_code")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+		fmt.Println("response Headers:", resp.Header)
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println("response Body:", string(body))
+
+		respCookieMap := make(map[string]string)
+		for _, c := range resp.Cookies() {
+			respCookieMap[c.Name] = c.Value
+		}
+		cookieJson, _ = json.Marshal(respCookieMap)
+		fmt.Println("response cookie: " + string(cookieJson))
+
 	})
 }
 
