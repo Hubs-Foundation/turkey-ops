@@ -79,6 +79,7 @@ stringData:
   SMTP_PORT: "25"
   SMTP_USER: AKIAYEJRSWRAQUI7U3J4
   SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
+  ADM_EMAIL: dev_gimmechart
 ---
 ########################################################################
 ###################### reticulum #######################################
@@ -194,7 +195,12 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: configs
-                key: SMTP_PASS                                                               
+                key: SMTP_PASS
+          - name: turkeyCfg_ADM_EMAIL
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: ADM_EMAIL          
           livenessProbe:
             httpGet:
               path: "http://reticulum.dev0"
