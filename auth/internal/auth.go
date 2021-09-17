@@ -314,10 +314,10 @@ func matchCookieDomains(domain string) (bool, string) {
 
 // Create cookie hmac
 func cookieSignature(r *http.Request, email, expires string) string {
-	fmt.Println("config.Secret" + string(config.Secret))
-	fmt.Println(config.Secret)
 
-	hash := hmac.New(sha256.New, config.Secret)
+	// hash := hmac.New(sha256.New, config.Secret)
+	hash := hmac.New(sha256.New, []byte("SecretString"))
+
 	hash.Write([]byte(cookieDomain(r)))
 	hash.Write([]byte(email))
 	hash.Write([]byte(expires))
