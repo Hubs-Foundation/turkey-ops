@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"main/internal"
+	"main/internal/provider"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -32,6 +31,10 @@ var (
 	// zonalNameMap = make(map[string]string)
 	turkeyDomain string
 
+	config internal.Config
+
+	// idps provider.Providers
+
 	googleOauthClientId     string
 	googleOauthClientSecret string
 	googleScope             string
@@ -40,9 +43,16 @@ var (
 func main() {
 
 	turkeyDomain = "myhubs.net"
-	googleOauthClientId = os.Getenv("oauthClientId_google")
-	googleOauthClientSecret = os.Getenv("oauthClientSecret_google")
-	googleScope = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
+
+	config.CookieName = "_turkey_auth_cookie"
+
+	config.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
+	config.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
+	config.Providers.Google.Setup()
+
+	// googleOauthClientId = os.Getenv("oauthClientId_google")
+	// googleOauthClientSecret = os.Getenv("oauthClientSecret_google")
+	// googleScope = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
 
 	router := http.NewServeMux()
 	// router.Handle("/", root())
@@ -51,7 +61,7 @@ func main() {
 
 	router.Handle("/login", login())
 
-	router.Handle("/_oauth_google", _oauth_google())
+	router.Handle("/_oauth", _oauth())
 
 	startServer(router, 9001)
 
@@ -78,70 +88,191 @@ func login() http.Handler {
 
 		if idp == "google" {
 
-			url := "https://accounts.google.com/o/oauth2/v2/auth" +
-				"?scope=" + googleScope +
-				"&access_type=offline&include_granted_scopes=true" +
-				"&response_type=code&state=state_parameter_passthrough_value" +
-				"&redirect_uri=https%3A//auth." + turkeyDomain + "/_oauth_google" +
-				"&client_id=" + googleOauthClientId
-			http.Redirect(w, r, url, http.StatusSeeOther)
+			// url := "https://accounts.google.com/o/oauth2/v2/auth" +
+			// 	"?scope=" + googleScope +
+			// 	"&access_type=offline&include_granted_scopes=true" +
+			// 	"&response_type=code&state=state_parameter_passthrough_value" +
+			// 	"&redirect_uri=https%3A//auth." + turkeyDomain + "/_oauth_google" +
+			// 	"&client_id=" + googleOauthClientId
+			// http.Redirect(w, r, url, http.StatusSeeOther)
+
+			p := &config.Providers.Google
+			// Get auth cookie
+			c, err := r.Cookie(config.CookieName)
+			if err != nil {
+				authRedirect(w, r, p)
+				return
+			}
+
+			// Validate cookie
+			email, err := internal.ValidateCookie(r, c)
+			if err != nil {
+				if err.Error() == "Cookie has expired" {
+					logger.Println("Cookie has expired")
+					authRedirect(w, r, p)
+				} else {
+					logger.Println("Invalid cookie, err: " + err.Error())
+					http.Error(w, "Not authorized", 401)
+				}
+				return
+			}
+
+			// // Validate user
+			// valid := internal.ValidateEmail(email, "rule")
+			// if !valid {
+			// 	logger.Println("Invalid email: " + email)
+			// 	http.Error(w, "Not authorized", 401)
+			// 	return
+			// }
+
+			// Valid request
+			logger.Println("Allowing valid request")
+			w.Header().Set("X-Forwarded-User", email)
+			w.WriteHeader(200)
 		}
 	})
 }
 
-func _oauth_google() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func authRedirect(w http.ResponseWriter, r *http.Request, p provider.Provider) {
+	// Error indicates no cookie, generate nonce
+	err, nonce := internal.Nonce()
+	if err != nil {
+		logger.Println("Error generating nonce: " + err.Error())
+		http.Error(w, "Service unavailable", 503)
+		return
+	}
 
-		if r.URL.Path != "/_oauth_google" {
+	// Set the CSRF cookie
+	csrf := internal.MakeCSRFCookie(r, nonce)
+	http.SetCookie(w, csrf)
+
+	if !config.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
+		logger.Println("You are using \"secure\" cookies for a request that was not " +
+			"received via https. You should either redirect to https or pass the " +
+			"\"insecure-cookie\" config option to permit cookies via http.")
+	}
+
+	// Forward them on
+	// loginURL := p.GetLoginURL(redirectUri(r), internal.MakeState(r, p, nonce))
+	loginURL := p.GetLoginURL("https%3A//auth."+turkeyDomain+"/_oauth", internal.MakeState(r, p, nonce))
+
+	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
+
+	// logger.WithFields(logrus.Fields{
+	// 	"csrf_cookie": csrf,
+	// 	"login_url":   loginURL,
+	// }).Debug("Set CSRF cookie and redirected to provider login url")
+}
+
+func _oauth() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/_oauth" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
 
-		code := r.URL.Query()["code"][0]
-
-		fmt.Println("### /_oauth_google ~~~ received code: " + code)
-
-		fmt.Println("### /_oauth_google ~~~ dumping r !!!")
-		r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
-		r.Method = r.Header.Get("X-Forwarded-Method")
-		r.Host = r.Header.Get("X-Forwarded-Host")
-		headerBytes, _ := json.Marshal(r.Header)
-		cookieMap := make(map[string]string)
-		for _, c := range r.Cookies() {
-			cookieMap[c.Name] = c.Value
+		logger.Println("Handling callback")
+		// Check state
+		state := r.URL.Query().Get("state")
+		if err := internal.ValidateState(state); err != nil {
+			logger.Println("Error validating state: " + err.Error())
+			http.Error(w, "Not authorized", 401)
+			return
 		}
-		cookieJson, _ := json.Marshal(cookieMap)
-		fmt.Println("headers: " + string(headerBytes) + "\ncookies: " + string(cookieJson))
 
-		//Step 5: Exchange authorization code for refresh and access tokens
-		//https://developers.google.com/identity/protocols/oauth2/web-server#exchange-authorization-code
-		req, err := http.NewRequest("POST", "https://oauth2.googleapis.com/token", nil)
+		// Check for CSRF cookie
+		c, err := internal.FindCSRFCookie(r, state)
 		if err != nil {
-			panic("Exchange authorization code for refresh and access tokens FAILED: " + err.Error())
+			logger.Println("Missing csrf cookie")
+			http.Error(w, "Not authorized", 401)
+			return
 		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		req.Header.Set("code", code)
-		req.Header.Set("client_id", googleOauthClientId)
-		req.Header.Set("client_secret", googleOauthClientSecret)
-		req.Header.Set("redirect_uri", "https://portal.myhubs.net")
-		req.Header.Set("grant_type", "authorization_code")
 
-		client := &http.Client{}
-		resp, err := client.Do(req)
+		// Validate CSRF cookie against state
+		valid, providerName, redirect, err := internal.ValidateCSRFCookie(c, state)
+		if !valid {
+			logger.Println("Error validating csrf cookie: " + err.Error())
+			http.Error(w, "Not authorized", 401)
+			return
+		}
+
+		// Get provider
+		p, err := config.GetConfiguredProvider(providerName)
 		if err != nil {
-			panic(err)
+			// logger.WithFields(logrus.Fields{
+			// 	"error":       err,
+			// 	"csrf_cookie": c,
+			// 	"provider":    providerName,
+			// }).Warn("Invalid provider in csrf cookie")
+			logger.Println("Invalid provider in csrf cookie: " + providerName)
+			http.Error(w, "Not authorized", 401)
+			return
 		}
-		defer resp.Body.Close()
-		fmt.Println("response Headers:", resp.Header)
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("response Body:", string(body))
 
-		respCookieMap := make(map[string]string)
-		for _, c := range resp.Cookies() {
-			respCookieMap[c.Name] = c.Value
+		// Clear CSRF cookie
+		http.SetCookie(w, internal.ClearCSRFCookie(r, c))
+
+		// Exchange code for token
+		token, err := p.ExchangeCode("https%3A//auth."+turkeyDomain+"/_oauth", r.URL.Query().Get("code"))
+		if err != nil {
+			logger.Println("Code exchange failed with provider: " + err.Error())
+			http.Error(w, "Service unavailable", 503)
+			return
 		}
-		cookieJson, _ = json.Marshal(respCookieMap)
-		fmt.Println("response cookie: " + string(cookieJson))
+
+		// Get user
+		user, err := p.GetUser(token)
+		if err != nil {
+			logger.Println("Error getting user: " + err.Error())
+			http.Error(w, "Service unavailable", 503)
+			return
+		}
+
+		// Generate cookie
+		http.SetCookie(w, internal.MakeCookie(r, user.Email))
+		// logger.WithFields(logrus.Fields{
+		// 	"provider": providerName,
+		// 	"redirect": redirect,
+		// 	"user":     user.Email,
+		// }).Info("Successfully generated auth cookie, redirecting user.")
+		logger.Println("auth cookie generated for: " + user.Email)
+
+		// Redirect
+		http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
+
+		// code := r.URL.Query()["code"][0]
+
+		// fmt.Println("### /_oauth_google ~~~ received code: " + code)
+
+		// fmt.Println("### /_oauth_google ~~~ dumping r !!!")
+		// r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
+		// r.Method = r.Header.Get("X-Forwarded-Method")
+		// r.Host = r.Header.Get("X-Forwarded-Host")
+		// headerBytes, _ := json.Marshal(r.Header)
+		// fmt.Println("headers: " + string(headerBytes))
+
+		// //Step 5: Exchange authorization code for refresh and access tokens
+		// //https://developers.google.com/identity/protocols/oauth2/web-server#exchange-authorization-code
+		// req, err := http.NewRequest("POST", "https://oauth2.googleapis.com/token", nil)
+		// if err != nil {
+		// 	panic("Exchange authorization code for refresh and access tokens FAILED: " + err.Error())
+		// }
+		// req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		// req.Header.Set("code", code)
+		// req.Header.Set("client_id", googleOauthClientId)
+		// req.Header.Set("client_secret", googleOauthClientSecret)
+		// req.Header.Set("redirect_uri", "https://portal.myhubs.net")
+		// req.Header.Set("grant_type", "authorization_code")
+
+		// client := &http.Client{}
+		// resp, err := client.Do(req)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// defer resp.Body.Close()
+		// fmt.Println("response Headers:", resp.Header)
+		// body, _ := ioutil.ReadAll(resp.Body)
+		// fmt.Println("response Body:", string(body))
 
 	})
 }
