@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -46,30 +45,24 @@ type Config struct {
 
 // NewGlobalConfig creates a new global config, parsed from command arguments
 func NewGlobalConfig() *Config {
-	var err error
-	config, err = NewConfig(os.Args[1:])
-	if err != nil {
-		fmt.Printf("%+v\n", err)
-		os.Exit(1)
-	}
-
-	return config
+	return &Config{}
 }
 
 // TODO: move config parsing into new func "NewParsedConfig"
 
 // NewConfig parses and validates provided configuration into a config object
 func NewConfig(args []string) (*Config, error) {
-	c := &Config{
-		Rules: map[string]*Rule{},
-	}
+	// c := &Config{
+	// 	Rules: map[string]*Rule{},
+	// }
 
-	// Transformations
-	if len(c.Path) > 0 && c.Path[0] != '/' {
-		c.Path = "/" + c.Path
-	}
-	c.Secret = []byte(c.SecretString)
-	c.Lifetime = time.Second * time.Duration(c.LifetimeString)
+	// // Transformations
+	// if len(c.Path) > 0 && c.Path[0] != '/' {
+	// 	c.Path = "/" + c.Path
+	// }
+	c := &Config{}
+	// c.Secret = []byte(c.SecretString)
+	// c.Lifetime = time.Second * time.Duration(c.LifetimeString)
 
 	return c, nil
 }
