@@ -44,7 +44,8 @@ func main() {
 
 	turkeyDomain = "myhubs.net"
 
-	config.CookieName = "_turkey_auth_cookie"
+	config.CookieName = "_turkeyauthcookie"
+	config.CSRFCookieName = "_turkeyauthcsrfcookie"
 
 	config.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
 	config.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
