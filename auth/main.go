@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"main/internal"
@@ -188,8 +187,7 @@ func _oauth() http.Handler {
 			return
 		}
 
-		// // Get provider
-		// p, err := internal.Cfg.GetConfiguredProvider(providerName)
+		// Get provider
 		p, err := internal.Cfg.GetProvider(providerName)
 		if err != nil {
 			Logger.Info("Invalid provider in csrf cookie: " + providerName)
@@ -207,8 +205,7 @@ func _oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		tokenJson, _ := json.Marshal(token)
-		Logger.Sugar().Infof("token", tokenJson)
+		Logger.Sugar().Debug("token", token)
 
 		// Get user
 		user, err := p.GetUser(token.AccessToken)
@@ -217,18 +214,17 @@ func _oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		userJson, _ := json.Marshal(user)
-		Logger.Sugar().Info("user", userJson)
+		Logger.Sugar().Debug("user", user)
 
 		// Generate cookie
 		http.SetCookie(w, internal.MakeCookie(r, user.Email))
-		// logger.WithFields(logrus.Fields{
-		// 	"provider": providerName,
-		// 	"redirect": redirect,
-		// 	"user":     user.Email,
-		// }).Info("Successfully generated auth cookie, redirecting user.")
+
 		Logger.Info("auth cookie generated",
 			zap.String("user.email", user.Email),
+			zap.String("user.sub", user.Sub),
+			zap.String("user.name", user.Name),
+			zap.String("user.picture", user.Picture),
+			zap.String("user.locale", user.Locale),
 			zap.String("provider", providerName),
 			zap.String("redirect", redirect),
 		)
@@ -249,18 +245,6 @@ func traefikIp() http.Handler {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
-		// r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
-		// r.Method = r.Header.Get("X-Forwarded-Method")
-		// r.Host = r.Header.Get("X-Forwarded-Host")
-		// headerBytes, _ := json.Marshal(r.Header)
-		// cookieMap := make(map[string]string)
-		// for _, c := range r.Cookies() {
-		// 	cookieMap[c.Name] = c.Value
-		// }
-		// cookieJson, _ := json.Marshal(cookieMap)
-		// fmt.Println("headers: " + string(headerBytes) + "\ncookies: " + string(cookieJson))
-
-		// traefik ForwardAuth middleware should add X-Forwarded-Uri header
 
 		IPsAllowed := os.Getenv("trusted_IPs") // "73.53.171.231"
 		xff := r.Header.Get("X-Forwarded-For")
