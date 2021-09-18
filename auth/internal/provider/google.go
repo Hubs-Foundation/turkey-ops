@@ -1,9 +1,9 @@
 package provider
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 )
@@ -72,7 +72,9 @@ func (g *Google) GetLoginURL(redirectURI, state string) string {
 }
 
 // ExchangeCode exchanges the given redirect uri and code for a token
-func (g *Google) ExchangeCode(redirectURI, code string) ([]byte, error) {
+func (g *Google) ExchangeCode(redirectURI, code string) (Token, error) {
+	var token Token
+
 	form := url.Values{}
 	form.Set("client_id", g.ClientID)
 	form.Set("client_secret", g.ClientSecret)
@@ -82,39 +84,38 @@ func (g *Google) ExchangeCode(redirectURI, code string) ([]byte, error) {
 
 	res, err := http.PostForm(g.TokenURL.String(), form)
 	if err != nil {
-		return nil, err
+		return token, err
 	}
 
-	// var token token
 	defer res.Body.Close()
-	// err = json.NewDecoder(res.Body).Decode(&token)
-	fmt.Sprintln("ExchangeCode.res.StatusCode = ", res.StatusCode)
-	bodyBytes, err := ioutil.ReadAll(res.Body)
+	err = json.NewDecoder(res.Body).Decode(&token)
+	// fmt.Sprintln("ExchangeCode.res.StatusCode = ", res.StatusCode)
+	// bodyBytes, err := ioutil.ReadAll(res.Body)
 
-	return bodyBytes, err
+	return token, err
 }
 
 // GetUser uses the given token and returns a complete provider.User object
-func (g *Google) GetUser(token string) ([]byte, error) {
-	// var user User
+func (g *Google) GetUser(token string) (User, error) {
+	var user User
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", g.UserURL.String(), nil)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return user, err
 	}
 	defer res.Body.Close()
 	fmt.Sprintln("GetUser.res.StatusCode = ", res.StatusCode)
 	// fmt.Println("@@@ ExchangeCode @@@ resBodyBytes: " + string(resBodyBytes))
 
-	// err = json.NewDecoder(res.Body).Decode(&user)
-	bodyBytes, err := ioutil.ReadAll(res.Body)
+	err = json.NewDecoder(res.Body).Decode(&user)
+	// bodyBytes, err := ioutil.ReadAll(res.Body)
 
-	return bodyBytes, err
+	return user, err
 }
