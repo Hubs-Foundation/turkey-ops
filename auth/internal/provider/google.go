@@ -1,9 +1,9 @@
 package provider
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 )
@@ -87,7 +87,9 @@ func (g *Google) ExchangeCode(redirectURI, code string) (string, error) {
 
 	var token token
 	defer res.Body.Close()
-	err = json.NewDecoder(res.Body).Decode(&token)
+	// err = json.NewDecoder(res.Body).Decode(&token)
+	resBodyBytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println("@@@ ExchangeCode @@@ resBodyBytes: " + string(resBodyBytes))
 
 	return token.Token, err
 }
@@ -108,10 +110,9 @@ func (g *Google) GetUser(token string) (User, error) {
 		return user, err
 	}
 	defer res.Body.Close()
-
-	fmt.Println(res.Body)
-
-	err = json.NewDecoder(res.Body).Decode(&user)
+	// err = json.NewDecoder(res.Body).Decode(&user)
+	resBodyBytes, err := ioutil.ReadAll(res.Body)
+	fmt.Println("@@@ ExchangeCode @@@ resBodyBytes: " + string(resBodyBytes))
 
 	return user, err
 }
