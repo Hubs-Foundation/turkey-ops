@@ -56,7 +56,7 @@ func MakeCfg() {
 	Cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
 	err := Cfg.Providers.Google.Setup()
 	if err != nil {
-		panic(err)
+		fmt.Println("[ERROR] @ Cfg.Providers.Google.Setup: " + err.Error())
 	}
 }
 
@@ -103,14 +103,14 @@ func (c *Config) GetProvider(name string) (provider.Provider, error) {
 
 // GetConfiguredProvider returns the provider of the given name, if it has been
 // configured. Returns an error if the provider is unknown, or hasn't been configured
-func (c *Config) GetConfiguredProvider(name string) (provider.Provider, error) {
-	// Check the provider has been configured
-	if !c.providerConfigured(name) {
-		return nil, fmt.Errorf("Unconfigured provider: %s", name)
-	}
+// func (c *Config) GetConfiguredProvider(name string) (provider.Provider, error) {
+// 	// Check the provider has been configured
+// 	if !c.providerConfigured(name) {
+// 		return nil, fmt.Errorf("Unconfigured provider: %s", name)
+// 	}
 
-	return c.GetProvider(name)
-}
+// 	return c.GetProvider(name)
+// }
 
 // func (c *Config) providerConfigured(name string) bool {
 // 	// Check default provider
