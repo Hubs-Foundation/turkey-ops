@@ -210,11 +210,11 @@ spec:
             periodSeconds: 120
           resources:
             limits:
-              memory: 512Mi
-              cpu: 0.8
+              memory: 1024Mi
+              cpu: 1
             requests:
               memory: 128Mi
-              cpu: 0.2
+              cpu: 0.1
 ---
 apiVersion: v1
 kind: Service
@@ -302,10 +302,10 @@ spec:
             periodSeconds: 120
           resources:
             limits:
-              memory: 512Mi
-              cpu: 0.8
+              memory: 1024Mi
+              cpu: 1
             requests:
-              memory: 64Mi
+              memory: 128Mi
               cpu: 0.1
 ---
 apiVersion: v1

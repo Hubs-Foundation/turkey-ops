@@ -150,7 +150,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, p provider.Provider) {
 
 	// Forward them on
 	// loginURL := p.GetLoginURL(redirectUri(r), internal.MakeState(r, p, nonce))
-	loginURL := p.GetLoginURL("https%3A//auth."+turkeyDomain+"/_oauth", internal.MakeState(r, p, nonce))
+	loginURL := p.GetLoginURL("https://auth."+turkeyDomain+"/_oauth", internal.MakeState(r, p, nonce))
 
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
