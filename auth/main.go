@@ -204,9 +204,7 @@ func _oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-
-		Logger.Info("accessToken: " + token.AccessToken)
-		Logger.Info("idToken: " + token.IdToken)
+		Logger.Sugar().Infof("token", token)
 
 		// Get user
 		user, err := p.GetUser(token.AccessToken)
@@ -215,6 +213,7 @@ func _oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
+		Logger.Sugar().Infof("user", user)
 
 		// Generate cookie
 		http.SetCookie(w, internal.MakeCookie(r, user.Email))
