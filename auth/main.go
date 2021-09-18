@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"main/internal"
@@ -198,32 +199,34 @@ func _oauth() http.Handler {
 		http.SetCookie(w, internal.ClearCSRFCookie(r, c))
 
 		// Exchange code for token
-		token, err := p.ExchangeCode("https://auth."+turkeyDomain+"/_oauth", r.URL.Query().Get("code"))
+		tokenJson, err := p.ExchangeCode("https://auth."+turkeyDomain+"/_oauth", r.URL.Query().Get("code"))
 		if err != nil {
 			Logger.Info("Code exchange failed with provider: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-
-		Logger.Info("~~~~~~~~ token: " + token)
-
+		Logger.Info("~~~~~~~~ token: " + string(tokenJson))
+		_map := make(map[string]string)
+		json.Unmarshal(tokenJson, _map)
 		// Get user
-		user, err := p.GetUser(token)
+		userJson, err := p.GetUser(_map["access_token"])
 		if err != nil {
 			Logger.Info("Error getting user: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
+		Logger.Info("~~~~~~~~ User: " + string(userJson))
+		json.Unmarshal(userJson, _map)
 
 		// Generate cookie
-		http.SetCookie(w, internal.MakeCookie(r, user.Email))
+		http.SetCookie(w, internal.MakeCookie(r, _map["Email"]))
 		// logger.WithFields(logrus.Fields{
 		// 	"provider": providerName,
 		// 	"redirect": redirect,
 		// 	"user":     user.Email,
 		// }).Info("Successfully generated auth cookie, redirecting user.")
 		Logger.Info("auth cookie generated",
-			zap.String("user.email", user.Email),
+			zap.String("user.email", _map["Email"]),
 			zap.String("provider", providerName),
 			zap.String("redirect", redirect),
 		)

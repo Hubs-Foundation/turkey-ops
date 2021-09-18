@@ -18,8 +18,8 @@ type Providers struct {
 type Provider interface {
 	Name() string
 	GetLoginURL(redirectURI, state string) string
-	ExchangeCode(redirectURI, code string) (string, error)
-	GetUser(token string) (User, error)
+	ExchangeCode(redirectURI, code string) ([]byte, error)
+	GetUser(token string) ([]byte, error)
 	Setup() error
 }
 

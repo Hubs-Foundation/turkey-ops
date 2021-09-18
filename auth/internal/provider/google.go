@@ -72,7 +72,7 @@ func (g *Google) GetLoginURL(redirectURI, state string) string {
 }
 
 // ExchangeCode exchanges the given redirect uri and code for a token
-func (g *Google) ExchangeCode(redirectURI, code string) (string, error) {
+func (g *Google) ExchangeCode(redirectURI, code string) ([]byte, error) {
 	form := url.Values{}
 	form.Set("client_id", g.ClientID)
 	form.Set("client_secret", g.ClientSecret)
@@ -82,37 +82,39 @@ func (g *Google) ExchangeCode(redirectURI, code string) (string, error) {
 
 	res, err := http.PostForm(g.TokenURL.String(), form)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var token token
+	// var token token
 	defer res.Body.Close()
 	// err = json.NewDecoder(res.Body).Decode(&token)
-	resBodyBytes, err := ioutil.ReadAll(res.Body)
-	fmt.Println("@@@ ExchangeCode @@@ resBodyBytes: " + string(resBodyBytes))
+	fmt.Sprintln("ExchangeCode.res.StatusCode = ", res.StatusCode)
+	bodyBytes, err := ioutil.ReadAll(res.Body)
 
-	return token.Token, err
+	return bodyBytes, err
 }
 
 // GetUser uses the given token and returns a complete provider.User object
-func (g *Google) GetUser(token string) (User, error) {
-	var user User
+func (g *Google) GetUser(token string) ([]byte, error) {
+	// var user User
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", g.UserURL.String(), nil)
 	if err != nil {
-		return user, err
+		return nil, err
 	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	res, err := client.Do(req)
 	if err != nil {
-		return user, err
+		return nil, err
 	}
 	defer res.Body.Close()
-	// err = json.NewDecoder(res.Body).Decode(&user)
-	resBodyBytes, err := ioutil.ReadAll(res.Body)
-	fmt.Println("@@@ ExchangeCode @@@ resBodyBytes: " + string(resBodyBytes))
+	fmt.Sprintln("GetUser.res.StatusCode = ", res.StatusCode)
+	// fmt.Println("@@@ ExchangeCode @@@ resBodyBytes: " + string(resBodyBytes))
 
-	return user, err
+	// err = json.NewDecoder(res.Body).Decode(&user)
+	bodyBytes, err := ioutil.ReadAll(res.Body)
+
+	return bodyBytes, err
 }

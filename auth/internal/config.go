@@ -97,10 +97,10 @@ func (c *Config) GetProvider(name string) (provider.Provider, error) {
 	switch name {
 	case "google":
 		return &c.Providers.Google, nil
-	// case "oidc":
-	// 	return &c.Providers.OIDC, nil
-	case "generic-oauth":
-		return &c.Providers.GenericOAuth, nil
+		// case "oidc":
+		// 	return &c.Providers.OIDC, nil
+		// case "generic-oauth":
+		// 	return &c.Providers.GenericOAuth, nil
 	}
 
 	return nil, fmt.Errorf("unknown provider: %s", name)
