@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"main/internal"
@@ -36,6 +37,8 @@ func main() {
 	turkeyDomain = "myhubs.net"
 
 	Logger, _ = zap.NewProduction()
+	zap.NewAtomicLevel().SetLevel(zap.DebugLevel)
+
 	internal.MakeCfg(Logger)
 
 	router := http.NewServeMux()
@@ -204,7 +207,8 @@ func _oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		Logger.Sugar().Infof("token", token)
+		tokenJson, _ := json.Marshal(token)
+		Logger.Sugar().Infof("token", tokenJson)
 
 		// Get user
 		user, err := p.GetUser(token.AccessToken)
@@ -213,7 +217,8 @@ func _oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		Logger.Sugar().Infof("user", user)
+		userJson, _ := json.Marshal(user)
+		Logger.Sugar().Info("user", userJson)
 
 		// Generate cookie
 		http.SetCookie(w, internal.MakeCookie(r, user.Email))
