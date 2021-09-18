@@ -326,7 +326,9 @@ func logging() func(http.Handler) http.Handler {
 				if !ok {
 					requestID = "unknown"
 				}
-				Logger.Info(requestID + r.Method + r.URL.Path + r.RemoteAddr + r.UserAgent())
+				Logger.Debug("new request,", zap.String("id", requestID),
+					zap.String("method", r.Method), zap.String("path", r.URL.Path),
+					zap.String("RemoteAddr", r.RemoteAddr), zap.String("UserAgent", r.UserAgent()))
 			}()
 			next.ServeHTTP(w, r)
 		})
