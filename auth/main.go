@@ -206,16 +206,26 @@ func _oauth() http.Handler {
 			return
 		}
 		Logger.Info("~~~~~~~~ token: " + string(tokenJson))
-		_map := make(map[string]string)
-		json.Unmarshal(tokenJson, _map)
+
+		var token struct {
+			accessToken string `json:"access_token"`
+			idToken     string `json:"id_token"`
+		}
+		json.Unmarshal(tokenJson, token)
+		Logger.Info("accessToken: " + token.accessToken)
+		Logger.Info("idToken: " + token.idToken)
+
 		// Get user
-		userJson, err := p.GetUser(_map["access_token"])
+		userJson, err := p.GetUser(token.accessToken)
 		if err != nil {
 			Logger.Info("Error getting user: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
 		Logger.Info("~~~~~~~~ User: " + string(userJson))
+
+		_map := make(map[string]string)
+
 		json.Unmarshal(userJson, _map)
 
 		// Generate cookie
