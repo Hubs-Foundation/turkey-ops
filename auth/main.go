@@ -192,8 +192,9 @@ func _oauth() http.Handler {
 			return
 		}
 
-		// Get provider
-		p, err := internal.Cfg.GetConfiguredProvider(providerName)
+		// // Get provider
+		// p, err := internal.Cfg.GetConfiguredProvider(providerName)
+		p, err := internal.Cfg.GetProvider(providerName)
 		if err != nil {
 			// logger.WithFields(logrus.Fields{
 			// 	"error":       err,

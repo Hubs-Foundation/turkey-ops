@@ -112,21 +112,21 @@ func (c *Config) GetConfiguredProvider(name string) (provider.Provider, error) {
 	return c.GetProvider(name)
 }
 
-func (c *Config) providerConfigured(name string) bool {
-	// Check default provider
-	if name == c.DefaultProvider {
-		return true
-	}
+// func (c *Config) providerConfigured(name string) bool {
+// 	// Check default provider
+// 	if name == c.DefaultProvider {
+// 		return true
+// 	}
 
-	// Check rule providers
-	for _, rule := range c.Rules {
-		if name == rule.Provider {
-			return true
-		}
-	}
+// 	// Check rule providers
+// 	for _, rule := range c.Rules {
+// 		if name == rule.Provider {
+// 			return true
+// 		}
+// 	}
 
-	return false
-}
+// 	return false
+// }
 
 func (c *Config) setupProvider(name string) error {
 	// Check provider exists
