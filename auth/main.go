@@ -28,12 +28,8 @@ var (
 	healthy    int32
 
 	logger = log.New(os.Stdout, "http: ", log.LstdFlags)
-	// zonalNameMap = make(map[string]string)
+
 	turkeyDomain string
-
-	config internal.Config
-
-	// idps provider.Providers
 
 	googleOauthClientId     string
 	googleOauthClientSecret string
@@ -44,14 +40,11 @@ func main() {
 
 	turkeyDomain = "myhubs.net"
 
-	config := internal.NewGlobalConfig()
-	config.Secret = []byte("SecretString")
-	config.Lifetime = time.Second * time.Duration(43200) //12 hours
-	config.CookieName = "_turkeyauthcookie"
-	config.CSRFCookieName = "_turkeyauthcsrfcookie"
-	config.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
-	config.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
-	config.Providers.Google.Setup()
+	internal.MakeCfg()
+
+	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	fmt.Println(internal.Cfg.Providers.Google.LoginURL)
+	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 	// googleOauthClientId = os.Getenv("oauthClientId_google")
 	// googleOauthClientSecret = os.Getenv("oauthClientSecret_google")
@@ -99,9 +92,9 @@ func login() http.Handler {
 			// 	"&client_id=" + googleOauthClientId
 			// http.Redirect(w, r, url, http.StatusSeeOther)
 
-			p := &config.Providers.Google
+			p := &internal.Cfg.Providers.Google
 			// Get auth cookie
-			c, err := r.Cookie(config.CookieName)
+			c, err := r.Cookie(internal.Cfg.CookieName)
 			if err != nil {
 				authRedirect(w, r, p)
 				return
@@ -149,7 +142,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, p provider.Provider) {
 	csrf := internal.MakeCSRFCookie(r, nonce)
 	http.SetCookie(w, csrf)
 
-	if !config.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
+	if !internal.Cfg.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
 		logger.Println("You are using \"secure\" cookies for a request that was not " +
 			"received via https. You should either redirect to https or pass the " +
 			"\"insecure-cookie\" config option to permit cookies via http.")
@@ -200,7 +193,7 @@ func _oauth() http.Handler {
 		}
 
 		// Get provider
-		p, err := config.GetConfiguredProvider(providerName)
+		p, err := internal.Cfg.GetConfiguredProvider(providerName)
 		if err != nil {
 			// logger.WithFields(logrus.Fields{
 			// 	"error":       err,

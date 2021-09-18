@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
 	"main/internal/provider"
 )
 
-var config *Config
+var Cfg Config
 
 // Config holds the runtime application config
 type Config struct {
@@ -43,28 +44,20 @@ type Config struct {
 	Lifetime time.Duration
 }
 
-// NewGlobalConfig creates a new global config, parsed from command arguments
-func NewGlobalConfig() *Config {
-	return &Config{}
-}
+func MakeCfg() {
+	Cfg = Config{}
+	Cfg.Secret = []byte("SecretString")
+	Cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
+	Cfg.CookieName = "_turkeyauthcookie"
+	Cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
+	Cfg.CookieDomains = []CookieDomain{*NewCookieDomain("myhubs.net")}
 
-// TODO: move config parsing into new func "NewParsedConfig"
-
-// NewConfig parses and validates provided configuration into a config object
-func NewConfig(args []string) (*Config, error) {
-	// c := &Config{
-	// 	Rules: map[string]*Rule{},
-	// }
-
-	// // Transformations
-	// if len(c.Path) > 0 && c.Path[0] != '/' {
-	// 	c.Path = "/" + c.Path
-	// }
-	c := &Config{}
-	// c.Secret = []byte(c.SecretString)
-	// c.Lifetime = time.Second * time.Duration(c.LifetimeString)
-
-	return c, nil
+	Cfg.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
+	Cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
+	err := Cfg.Providers.Google.Setup()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Validate validates a config object
