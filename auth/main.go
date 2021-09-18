@@ -4,9 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"main/internal"
-	"main/internal/provider"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +13,8 @@ import (
 	"time"
 
 	"strconv"
+
+	"go.uber.org/zap"
 )
 
 type key int
@@ -27,28 +27,16 @@ var (
 	listenAddr string
 	healthy    int32
 
-	logger = log.New(os.Stdout, "http: ", log.LstdFlags)
+	Logger *zap.Logger
 
 	turkeyDomain string
-
-	googleOauthClientId     string
-	googleOauthClientSecret string
-	googleScope             string
 )
 
 func main() {
-
 	turkeyDomain = "myhubs.net"
 
-	internal.MakeCfg()
-
-	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-	fmt.Println(internal.Cfg.Providers.Google.LoginURL)
-	fmt.Println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-	// googleOauthClientId = os.Getenv("oauthClientId_google")
-	// googleOauthClientSecret = os.Getenv("oauthClientSecret_google")
-	// googleScope = "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email"
+	Logger, _ = zap.NewProduction()
+	internal.MakeCfg(Logger)
 
 	router := http.NewServeMux()
 	// router.Handle("/", root())
@@ -56,7 +44,9 @@ func main() {
 	router.Handle("/traefik-ip", traefikIp())
 
 	router.Handle("/login", login())
+	router.Handle("/logout", logout())
 
+	// oauth callback catcher
 	router.Handle("/_oauth", _oauth())
 
 	startServer(router, 9001)
@@ -80,61 +70,69 @@ func login() http.Handler {
 			return
 		}
 
-		idp := r.URL.Query()["idp"][0]
+		idp := r.URL.Query()["idp"]
 
-		if idp == "google" {
-
-			// url := "https://accounts.google.com/o/oauth2/v2/auth" +
-			// 	"?scope=" + googleScope +
-			// 	"&access_type=offline&include_granted_scopes=true" +
-			// 	"&response_type=code&state=state_parameter_passthrough_value" +
-			// 	"&redirect_uri=https%3A//auth." + turkeyDomain + "/_oauth_google" +
-			// 	"&client_id=" + googleOauthClientId
-			// http.Redirect(w, r, url, http.StatusSeeOther)
-
-			p := &internal.Cfg.Providers.Google
-			// Get auth cookie
-			c, err := r.Cookie(internal.Cfg.CookieName)
-			if err != nil {
-				authRedirect(w, r, p)
-				return
-			}
-
-			// Validate cookie
-			email, err := internal.ValidateCookie(r, c)
-			if err != nil {
-				if err.Error() == "Cookie has expired" {
-					logger.Println("Cookie has expired")
-					authRedirect(w, r, p)
-				} else {
-					logger.Println("Invalid cookie, err: " + err.Error())
-					http.Error(w, "Not authorized", 401)
-				}
-				return
-			}
-
-			// // Validate user
-			// valid := internal.ValidateEmail(email, "rule")
-			// if !valid {
-			// 	logger.Println("Invalid email: " + email)
-			// 	http.Error(w, "Not authorized", 401)
-			// 	return
-			// }
-
-			// Valid request
-			logger.Println("Allowing valid request")
-			w.Header().Set("X-Forwarded-User", email)
-			w.WriteHeader(200)
+		// Get auth cookie
+		c, err := r.Cookie(internal.Cfg.CookieName)
+		if err != nil {
+			authRedirect(w, r, idp[0])
+			return
 		}
+
+		// Validate cookie
+		email, err := internal.ValidateCookie(r, c)
+		if err != nil {
+			if err.Error() == "Cookie has expired" {
+				Logger.Info("Cookie has expired")
+				authRedirect(w, r, idp[0])
+			} else {
+				Logger.Info("Invalid cookie, err: " + err.Error())
+				http.Error(w, "Not authorized", http.StatusUnauthorized)
+			}
+			return
+		}
+
+		// // Validate user ########## do i want authZ here ????
+		// valid := internal.ValidateEmail(email, "rule")
+		// if !valid {
+		// 	logger.Println("Invalid email: " + email)
+		// 	http.Error(w, "Not authorized", 401)
+		// 	return
+		// }
+
+		// Valid request
+		Logger.Info("Allowing valid request")
+		w.Header().Set("X-Forwarded-User", email)
+		w.WriteHeader(200)
+
+	})
+}
+func logout() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Clear cookie
+		http.SetCookie(w, internal.ClearCookie(r))
+
+		if internal.Cfg.LogoutRedirect != "" {
+			Logger.Info("logout redirect to: " + internal.Cfg.LogoutRedirect)
+			http.Redirect(w, r, internal.Cfg.LogoutRedirect, http.StatusTemporaryRedirect)
+		} else {
+			http.Error(w, "You have been logged out", http.StatusUnauthorized)
+		}
+
 	})
 }
 
-func authRedirect(w http.ResponseWriter, r *http.Request, p provider.Provider) {
+func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
+
+	p, err := internal.Cfg.GetProvider(providerName)
+	if err != nil {
+		Logger.Panic("internal.Cfg.GetProvider(" + providerName + ") failed: " + err.Error())
+	}
 	// Error indicates no cookie, generate nonce
 	err, nonce := internal.Nonce()
 	if err != nil {
-		logger.Println("Error generating nonce: " + err.Error())
-		http.Error(w, "Service unavailable", 503)
+		Logger.Info("Error generating nonce: " + err.Error())
+		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 		return
 	}
 
@@ -143,23 +141,18 @@ func authRedirect(w http.ResponseWriter, r *http.Request, p provider.Provider) {
 	http.SetCookie(w, csrf)
 
 	if !internal.Cfg.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
-		logger.Println("You are using \"secure\" cookies for a request that was not " +
+		Logger.Info("You are using \"secure\" cookies for a request that was not " +
 			"received via https. You should either redirect to https or pass the " +
 			"\"insecure-cookie\" config option to permit cookies via http.")
 	}
 
-	// Forward them on
-	// loginURL := p.GetLoginURL(redirectUri(r), internal.MakeState(r, p, nonce))
 	loginURL := p.GetLoginURL("https://auth."+turkeyDomain+"/_oauth", internal.MakeState(r, p, nonce))
 
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
-	// logger.WithFields(logrus.Fields{
-	// 	"csrf_cookie": csrf,
-	// 	"login_url":   loginURL,
-	// }).Debug("Set CSRF cookie and redirected to provider login url")
 }
 
+// oauth callback handler
 func _oauth() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/_oauth" {
@@ -167,28 +160,28 @@ func _oauth() http.Handler {
 			return
 		}
 
-		logger.Println("Handling callback")
+		Logger.Info("Handling callback")
 		// Check state
 		state := r.URL.Query().Get("state")
 		if err := internal.ValidateState(state); err != nil {
-			logger.Println("Error validating state: " + err.Error())
-			http.Error(w, "Not authorized", 401)
+			Logger.Info("Error validating state: " + err.Error())
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
 		// Check for CSRF cookie
 		c, err := internal.FindCSRFCookie(r, state)
 		if err != nil {
-			logger.Println("Missing csrf cookie")
-			http.Error(w, "Not authorized", 401)
+			Logger.Info("Missing csrf cookie")
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
 		// Validate CSRF cookie against state
 		valid, providerName, redirect, err := internal.ValidateCSRFCookie(c, state)
 		if !valid {
-			logger.Println("Error validating csrf cookie: " + err.Error())
-			http.Error(w, "Not authorized", 401)
+			Logger.Info("Error validating csrf cookie: " + err.Error())
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
@@ -196,13 +189,8 @@ func _oauth() http.Handler {
 		// p, err := internal.Cfg.GetConfiguredProvider(providerName)
 		p, err := internal.Cfg.GetProvider(providerName)
 		if err != nil {
-			// logger.WithFields(logrus.Fields{
-			// 	"error":       err,
-			// 	"csrf_cookie": c,
-			// 	"provider":    providerName,
-			// }).Warn("Invalid provider in csrf cookie")
-			logger.Println("Invalid provider in csrf cookie: " + providerName)
-			http.Error(w, "Not authorized", 401)
+			Logger.Info("Invalid provider in csrf cookie: " + providerName)
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
 
@@ -212,16 +200,18 @@ func _oauth() http.Handler {
 		// Exchange code for token
 		token, err := p.ExchangeCode("https%3A//auth."+turkeyDomain+"/_oauth", r.URL.Query().Get("code"))
 		if err != nil {
-			logger.Println("Code exchange failed with provider: " + err.Error())
-			http.Error(w, "Service unavailable", 503)
+			Logger.Info("Code exchange failed with provider: " + err.Error())
+			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
+
+		Logger.Info("~~~~~~~~ token: " + token)
 
 		// Get user
 		user, err := p.GetUser(token)
 		if err != nil {
-			logger.Println("Error getting user: " + err.Error())
-			http.Error(w, "Service unavailable", 503)
+			Logger.Info("Error getting user: " + err.Error())
+			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
 
@@ -232,44 +222,14 @@ func _oauth() http.Handler {
 		// 	"redirect": redirect,
 		// 	"user":     user.Email,
 		// }).Info("Successfully generated auth cookie, redirecting user.")
-		logger.Println("auth cookie generated for: " + user.Email)
+		Logger.Info("auth cookie generated",
+			zap.String("user.email", user.Email),
+			zap.String("provider", providerName),
+			zap.String("redirect", redirect),
+		)
 
 		// Redirect
 		http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
-
-		// code := r.URL.Query()["code"][0]
-
-		// fmt.Println("### /_oauth_google ~~~ received code: " + code)
-
-		// fmt.Println("### /_oauth_google ~~~ dumping r !!!")
-		// r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
-		// r.Method = r.Header.Get("X-Forwarded-Method")
-		// r.Host = r.Header.Get("X-Forwarded-Host")
-		// headerBytes, _ := json.Marshal(r.Header)
-		// fmt.Println("headers: " + string(headerBytes))
-
-		// //Step 5: Exchange authorization code for refresh and access tokens
-		// //https://developers.google.com/identity/protocols/oauth2/web-server#exchange-authorization-code
-		// req, err := http.NewRequest("POST", "https://oauth2.googleapis.com/token", nil)
-		// if err != nil {
-		// 	panic("Exchange authorization code for refresh and access tokens FAILED: " + err.Error())
-		// }
-		// req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		// req.Header.Set("code", code)
-		// req.Header.Set("client_id", googleOauthClientId)
-		// req.Header.Set("client_secret", googleOauthClientSecret)
-		// req.Header.Set("redirect_uri", "https://portal.myhubs.net")
-		// req.Header.Set("grant_type", "authorization_code")
-
-		// client := &http.Client{}
-		// resp, err := client.Do(req)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// defer resp.Body.Close()
-		// fmt.Println("response Headers:", resp.Header)
-		// body, _ := ioutil.ReadAll(resp.Body)
-		// fmt.Println("response Body:", string(body))
 
 	})
 }
@@ -302,7 +262,7 @@ func traefikIp() http.Handler {
 		if xff != "" && strings.Contains(IPsAllowed, xff) {
 			w.WriteHeader(http.StatusNoContent)
 		} else {
-			fmt.Println("##################### not allowed !!! bad ip in xff: " + xff)
+			Logger.Info("not allowed !!! bad ip in xff: " + xff)
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		}
 	})
@@ -314,7 +274,7 @@ func startServer(router *http.ServeMux, port int) {
 	flag.StringVar(&listenAddr, "listen-addr", ":"+strconv.Itoa(port), "server listen address")
 	flag.Parse()
 
-	logger.Println("Server is starting...")
+	Logger.Info("Server is starting...")
 
 	nextRequestID := func() string {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
@@ -322,8 +282,7 @@ func startServer(router *http.ServeMux, port int) {
 
 	server := &http.Server{
 		Addr:         listenAddr,
-		Handler:      tracing(nextRequestID)(logging(logger)(router)),
-		ErrorLog:     logger,
+		Handler:      tracing(nextRequestID)(logging()(router)),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
@@ -335,7 +294,7 @@ func startServer(router *http.ServeMux, port int) {
 
 	go func() {
 		<-quit
-		logger.Println("Server is shutting down...")
+		Logger.Info("Server is shutting down...")
 		atomic.StoreInt32(&healthy, 0)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -343,20 +302,20 @@ func startServer(router *http.ServeMux, port int) {
 
 		server.SetKeepAlivesEnabled(false)
 		if err := server.Shutdown(ctx); err != nil {
-			logger.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+			Logger.Sugar().Fatalf("Could not gracefully shutdown the server: %v\n", err)
 		}
 		close(done)
 	}()
-	logger.Println("Server is ready to handle requests at", listenAddr)
+	Logger.Info("Server is ready to handle requests at" + listenAddr)
 	atomic.StoreInt32(&healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Fatalf("Could not listen on %s: %v\n", listenAddr, err)
+		Logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}
 	<-done
-	logger.Println("Server stopped")
+	Logger.Info("Server stopped")
 }
 
-func logging(logger *log.Logger) func(http.Handler) http.Handler {
+func logging() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -364,7 +323,7 @@ func logging(logger *log.Logger) func(http.Handler) http.Handler {
 				if !ok {
 					requestID = "unknown"
 				}
-				logger.Println(requestID, r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+				Logger.Info(requestID + r.Method + r.URL.Path + r.RemoteAddr + r.UserAgent())
 			}()
 			next.ServeHTTP(w, r)
 		})

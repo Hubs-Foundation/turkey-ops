@@ -4,18 +4,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
 
 	"main/internal/provider"
+
+	"go.uber.org/zap"
 )
 
 var Cfg Config
 
 // Config holds the runtime application config
 type Config struct {
+	Logger    *zap.Logger
 	LogLevel  string `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error" choice:"fatal" choice:"panic" description:"Log level"`
 	LogFormat string `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
 
@@ -29,6 +31,7 @@ type Config struct {
 	DefaultProvider        string               `long:"default-provider" env:"DEFAULT_PROVIDER" default:"google" choice:"google" choice:"oidc" choice:"generic-oauth" description:"Default provider"`
 	Domains                CommaSeparatedList   `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, can be set multiple times"`
 	LifetimeString         int                  `long:"lifetime" env:"LIFETIME" default:"43200" description:"Lifetime in seconds"`
+	LoginRedirect          string               `long:"login-redirect" env:"LOGIN_REDIRECT" description:"URL to redirect to following login"`
 	LogoutRedirect         string               `long:"logout-redirect" env:"LOGOUT_REDIRECT" description:"URL to redirect to following logout"`
 	MatchWhitelistOrDomain bool                 `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"Allow users that match *either* whitelist or domain (enabled by default in v3)"`
 	Path                   string               `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
@@ -44,7 +47,9 @@ type Config struct {
 	Lifetime time.Duration
 }
 
-func MakeCfg() {
+func MakeCfg(Logger *zap.Logger) {
+	Cfg.Logger = Logger
+
 	Cfg = Config{}
 	Cfg.Secret = []byte("SecretString")
 	Cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
@@ -56,7 +61,7 @@ func MakeCfg() {
 	Cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
 	err := Cfg.Providers.Google.Setup()
 	if err != nil {
-		fmt.Println("[ERROR] @ Cfg.Providers.Google.Setup: " + err.Error())
+		Logger.Error("[ERROR] @ Cfg.Providers.Google.Setup: " + err.Error())
 	}
 }
 
@@ -64,20 +69,20 @@ func MakeCfg() {
 func (c *Config) Validate() {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
-		log.Fatal("\"secret\" option must be set")
+		c.Logger.Fatal("\"secret\" option must be set")
 	}
 
 	// Setup default provider
 	err := c.setupProvider(c.DefaultProvider)
 	if err != nil {
-		log.Fatal(err)
+		c.Logger.Fatal(err.Error())
 	}
 
 	// Check rules (validates the rule and the rule provider)
 	for _, rule := range c.Rules {
 		err = rule.Validate(c)
 		if err != nil {
-			log.Fatal(err)
+			c.Logger.Fatal(err.Error())
 		}
 	}
 }
@@ -98,7 +103,7 @@ func (c *Config) GetProvider(name string) (provider.Provider, error) {
 		return &c.Providers.GenericOAuth, nil
 	}
 
-	return nil, fmt.Errorf("Unknown provider: %s", name)
+	return nil, fmt.Errorf("unknown provider: %s", name)
 }
 
 // GetConfiguredProvider returns the provider of the given name, if it has been

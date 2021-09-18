@@ -107,8 +107,10 @@ func (g *Google) GetUser(token string) (User, error) {
 	if err != nil {
 		return user, err
 	}
-
 	defer res.Body.Close()
+
+	fmt.Println(res.Body)
+
 	err = json.NewDecoder(res.Body).Decode(&user)
 
 	return user, err
