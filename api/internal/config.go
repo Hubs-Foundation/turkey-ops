@@ -8,18 +8,20 @@ import (
 	"strings"
 	"time"
 
-	"main/internal/provider"
+	"main/internal/idp"
 
 	"go.uber.org/zap"
 )
 
-var Cfg Config
+var Cfg *Config
+var Logger *zap.Logger
 
 // Config holds the runtime application config
 type Config struct {
-	Logger    *zap.Logger
 	LogLevel  string `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error" choice:"fatal" choice:"panic" description:"Log level"`
 	LogFormat string `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
+
+	Domain string `turkey domain`
 
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config                 func(s string) error `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
@@ -39,18 +41,19 @@ type Config struct {
 	Whitelist              CommaSeparatedList   `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given email addresses, can be set multiple times"`
 	Port                   int                  `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
 
-	Providers provider.Providers `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
-	Rules     map[string]*Rule   `long:"rule.<name>.<param>" description:"Rule definitions, param can be: \"action\", \"rule\" or \"provider\""`
+	Providers idp.Providers    `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
+	Rules     map[string]*Rule `long:"rule.<name>.<param>" description:"Rule definitions, param can be: \"action\", \"rule\" or \"provider\""`
 
 	// Filled during transformations
 	Secret   []byte `json:"-"`
 	Lifetime time.Duration
 }
 
-func MakeCfg(Logger *zap.Logger) {
-	Cfg.Logger = Logger
+func MakeCfg(logger *zap.Logger) {
 
-	Cfg = Config{}
+	Logger = logger
+
+	Cfg = &Config{}
 	Cfg.Secret = []byte("SecretString")
 	Cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
 	Cfg.CookieName = "_turkeyauthcookie"
@@ -69,20 +72,20 @@ func MakeCfg(Logger *zap.Logger) {
 func (c *Config) Validate() {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
-		c.Logger.Fatal("\"secret\" option must be set")
+		Logger.Fatal("\"secret\" option must be set")
 	}
 
 	// Setup default provider
 	err := c.setupProvider(c.DefaultProvider)
 	if err != nil {
-		c.Logger.Fatal(err.Error())
+		Logger.Fatal(err.Error())
 	}
 
 	// Check rules (validates the rule and the rule provider)
 	for _, rule := range c.Rules {
 		err = rule.Validate(c)
 		if err != nil {
-			c.Logger.Fatal(err.Error())
+			Logger.Fatal(err.Error())
 		}
 	}
 }
@@ -93,7 +96,7 @@ func (c Config) String() string {
 }
 
 // GetProvider returns the provider of the given name
-func (c *Config) GetProvider(name string) (provider.Provider, error) {
+func (c *Config) GetProvider(name string) (idp.Provider, error) {
 	switch name {
 	case "google":
 		return &c.Providers.Google, nil

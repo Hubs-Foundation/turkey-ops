@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"main/internal/provider"
+	"main/internal/idp"
 )
 
 // Request Validation
@@ -254,7 +254,7 @@ func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider stri
 }
 
 // MakeState generates a state value
-func MakeState(r *http.Request, p provider.Provider, nonce string) string {
+func MakeState(r *http.Request, p idp.Provider, nonce string) string {
 	return fmt.Sprintf("%s:%s:%s", nonce, p.Name(), returnUrl(r))
 }
 
