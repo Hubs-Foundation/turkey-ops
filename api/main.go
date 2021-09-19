@@ -15,6 +15,7 @@ import (
 	"strconv"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type key int
@@ -35,8 +36,11 @@ var (
 func main() {
 	turkeyDomain = "myhubs.net"
 
-	Logger, _ = zap.NewProduction()
-	zap.NewAtomicLevel().SetLevel(zap.DebugLevel)
+	atom := zap.NewAtomicLevel()
+	encoderCfg := zap.NewProductionEncoderConfig()
+	encoderCfg.TimeKey = ""
+	Logger = zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), zapcore.Lock(os.Stdout), atom))
+	atom.SetLevel(zap.DebugLevel)
 
 	internal.MakeCfg(Logger)
 

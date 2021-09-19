@@ -5,52 +5,52 @@ metadata:
   name: turkey-services
 ---
 ####################################################################################
-####################################### auth #######################################
+####################################### api #######################################
 ####################################################################################  
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: turkey-auth
+  name: turkey-api
   namespace: turkey-services
 spec:
   entryPoints:
     - https
   routes:
   - kind: Rule
-    match: Host(`auth.myhubs.net`) && PathPrefix(`/`)
+    match: Host(`api.myhubs.net`) && PathPrefix(`/`)
     middlewares:
-    - name: turkeyauth
+    - name: turkeyapi
       namespace: turkey-services    
     services:
     - kind: Service
-      name: auth
+      name: api
       passHostHeader: true
       port: 9001
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth
+  name: api
   namespace: turkey-services
   labels:
-    app: auth
+    app: api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: auth
+      app: api
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: auth
+        app: api
     spec:
       terminationGracePeriodSeconds: 60
       containers:
-      - image: mozillareality/turkeyauth:33
+      - image: mozillareality/turkeyapi:34
         imagePullPolicy: IfNotPresent
-        name: turkeyauth
+        name: turkeyapi
         env:
         - name: SECRET
           value: a-random-string-to-secure-your-cookie
@@ -71,14 +71,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: auth
+  name: api
   namespace: turkey-services
   labels:
-    app: auth
+    app: api
 spec:
   type: ClusterIP
   selector:
-    app: auth
+    app: api
   ports:
   - name: http
     port: 9001
@@ -99,7 +99,7 @@ spec:
   - kind: Rule
     match: Host(`orc.myhubs.net`) && PathPrefix(`/`)
     # middlewares:
-    # - name: turkeyauth
+    # - name: turkeyapi
     #   namespace: turkey-services    
     services:
     - kind: Service
@@ -110,11 +110,11 @@ spec:
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  name: turkeyauth
+  name: turkeyapi
   namespace: turkey-services
 spec:
   forwardAuth:
-    address: http://auth.turkey-services:9001/traefik-ip
+    address: http://api.turkey-services:9001/traefik-ip
     authResponseHeaders:
       - X-Forwarded-User
     trustForwardHeader: true      
