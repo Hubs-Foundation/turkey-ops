@@ -54,6 +54,7 @@ func MakeCfg(logger *zap.Logger) {
 	Logger = logger
 
 	Cfg = &Config{}
+	Cfg.Domain = "myhubs.net"
 	Cfg.Secret = []byte("SecretString")
 	Cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
 	Cfg.CookieName = "_turkeyauthcookie"
