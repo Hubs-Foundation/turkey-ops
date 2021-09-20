@@ -9,8 +9,10 @@ import (
 	"io/ioutil"
 	"main/utils"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,93 +22,113 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 )
 
-type yamlCfg struct {
-	UserId    string
-	Subdomain string
-	Domain    string
+type turkeyCfg struct {
+	Key       string `json:"key"`
+	UserId    string `json:"userid"`
+	Subdomain string `json:"subdomain"`
+	Domain    string `json:"domain"`
+	Tier      string `json:"tier"`
 }
 
-var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var Orchestrator = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/orchestrator" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	sess := utils.GetSession(r.Cookie)
+	//get r.body
+	rBodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		sess.PushMsg("ERROR @ reading r.body, error = " + err.Error())
+		return
+	}
+	//make cfg
+	var cfg turkeyCfg
+	err = json.Unmarshal(rBodyBytes, &cfg)
+	if err != nil {
+		sess.PushMsg("bad turkeyCfg: " + string(rBodyBytes))
+		return
+	}
+	// tmp -- until auth in place
+	if cfg.Key != "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
+		sess.PushMsg("bad turkeyCfg.Key")
+		return
+	}
+	// userid is required
+	if cfg.UserId == "" {
+		sess.PushMsg("ERROR bad turkeyCfg.UserId")
+		return
+	}
+	// domain is required
+	if cfg.Domain == "" {
+		sess.PushMsg("ERROR bad turkeyCfg.Domain")
+		return
+	}
 	switch r.Method {
-	case "POST":
-		if r.URL.Path != "/TurkeyDeployK8s" {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
+
+	case "GET":
+		//getting k8s config
+		sess.PushMsg("&#9989; ... using InClusterConfig")
+		k8sCfg, err := rest.InClusterConfig()
+		// }
+		if k8sCfg == nil {
+			sess.PushMsg("ERROR" + err.Error())
+			panic(err.Error())
 		}
-
-		sess := utils.GetSession(r.Cookie)
-
-		//get r.body
-		rBodyBytes, err := ioutil.ReadAll(r.Body)
+		sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+		clientset, err := kubernetes.NewForConfig(k8sCfg)
 		if err != nil {
-			sess.PushMsg("ERROR @ reading r.body, error = " + err.Error())
-			return
+			panic(err.Error())
+		}
+		nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
+			metav1.ListOptions{
+				LabelSelector: "UserId=" + cfg.UserId,
+			})
+		if err != nil {
+			panic(err.Error())
+		}
+		sess.PushMsg("GET --- user <" + cfg.UserId + "> owns: ")
+		for _, ns := range nsList.Items {
+			sess.PushMsg("......<" + ns.ObjectMeta.Name + ">")
 		}
 
-		if string(rBodyBytes) != "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
-			return
-		}
-		sess.PushMsg("hello")
+	case "POST":
 
-		_userid, found := r.URL.Query()["userid"]
-		if !found || len(_userid) != 1 {
-			panic("bad <userid> in query parameters")
+		if cfg.Tier == "" {
+			cfg.Tier = "free"
 		}
-		turkeyUserId := _userid[0]
-
-		_subdomain, found := r.URL.Query()["subdomain"]
-		if !found || len(_subdomain) != 1 {
-			panic("bad <subdomain> in query parameters")
-		}
-		turkeySubdomain := _subdomain[0]
-
-		turkeyDomain := defaultTurkeyDomain
-		_domain, found := r.URL.Query()["domain"]
-		if found && len(_domain) == 1 {
-			turkeyDomain = _domain[0]
+		if cfg.Subdomain == "" {
+			cfg.Subdomain = cfg.UserId + "-" + strconv.FormatInt(time.Now().Unix()-1626102245, 36)
 		}
 
-		fmt.Println("turkeyUserId=: " + turkeyUserId + "; turkeySubdomain: " + turkeySubdomain)
-
-		//render turkey-k8s-chart by apply yamlCfgs to turkey.yam
+		//render turkey-k8s-chart by apply cfg to turkey.yam
 		t, err := template.ParseFiles("./_files/turkey.yam")
 		if err != nil {
 			panic(err.Error())
 		}
-		_data := yamlCfg{
-			UserId:    turkeyUserId,
-			Subdomain: turkeySubdomain,
-			Domain:    turkeyDomain,
-		}
 		var buf bytes.Buffer
-		t.Execute(&buf, _data)
+		t.Execute(&buf, cfg)
 		k8sChartYaml := buf.String()
 
 		//<debugging>
-		if turkeyUserId[0:4] == "dev_" {
-			if turkeySubdomain != "dev0" {
+		if cfg.UserId[0:4] == "dev_" {
+			if cfg.Subdomain != "dev0" {
 				fmt.Println("dev_ cheatcodes only work with subdomain == dev0 ")
 				return
 			}
 			sess.PushMsg(`turkeyUserId[0:4] == dev_ means dev mode`)
-			if turkeyUserId == "dev_dump" {
+			if cfg.UserId == "dev_dumpr" {
 				headerBytes, _ := json.Marshal(r.Header)
 				sess.PushMsg(string(headerBytes))
-				cookieMap := make(map[string]string)
-				for _, c := range r.Cookies() {
-					cookieMap[c.Name] = c.Value
-				}
-				cookieJson, _ := json.Marshal(cookieMap)
-				sess.PushMsg(string(cookieJson))
-
 				return
 			}
-			if turkeyUserId == "dev_gimmechart" {
-				w.Header().Set("Content-Disposition", "attachment; filename="+turkeySubdomain+".yaml")
+			if cfg.UserId == "dev_gimmechart" {
+				w.Header().Set("Content-Disposition", "attachment; filename="+cfg.Subdomain+".yaml")
 				w.Header().Set("Content-Type", "text/plain")
 				io.Copy(w, strings.NewReader(k8sChartYaml))
 				return
@@ -114,43 +136,32 @@ var TurkeyDeployK8s = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		}
 		//</debugging>
 
+		//getting k8s config
 		sess.PushMsg("&#9989; ... using InClusterConfig")
-		cfg, err := rest.InClusterConfig()
+		k8sCfg, err := rest.InClusterConfig()
 		// }
-		if cfg == nil {
+		if k8sCfg == nil {
 			sess.PushMsg("ERROR" + err.Error())
 			panic(err.Error())
 		}
-		sess.PushMsg("&#129311; k8s.cfg.Host == " + cfg.Host)
+		sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 
-		//basically kubectl apply -f
+		// kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
 		sess.PushMsg("&#128640;[DEBUG] --- deployment started")
-		err = ssa_k8sChartYaml(turkeyUserId, k8sChartYaml, cfg)
+		err = ssa_k8sChartYaml(cfg.UserId, k8sChartYaml, k8sCfg)
 		if err != nil {
 			sess.PushMsg("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 			panic(err.Error())
 		}
-		skipadminLink := "https://" + turkeySubdomain + "." + turkeyDomain + "?skipadmin"
+		skipadminLink := "https://" + cfg.Subdomain + "." + turkeyDomain + "?skipadmin"
 		sess.PushMsg("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
-			skipadminLink + "\" target=\"_blank\"><b>&#128279;" + turkeyUserId + "'s " + turkeySubdomain + "</b></a>")
-
-		// clientset, err := kubernetes.NewForConfig(cfg)
-		// if err != nil {
-		// 	panic(err.Error())
-		// }
-		// nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-		// if err != nil {
-		// 	panic(err.Error())
-		// }
-		// for _, ns := range nsList.Items {
-		// 	sess.PushMsg("~~~~~ns~~~~~~" + ns.ObjectMeta.Name)
-		// }
+			skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.UserId + "'s " + cfg.Subdomain + "</b></a>")
 
 		return
 
 	default:
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
-		// fmt.Fprintf(w, "unexpected method: "+r.Method)
 	}
 })
 

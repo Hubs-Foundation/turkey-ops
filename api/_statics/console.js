@@ -1,92 +1,65 @@
 
-//============================== =====inits=================================
-document.getElementById("AWSEx").addEventListener("click", AWSExClicked);
-document.getElementById("AWSBtn").addEventListener("click", AWSBtnClicked);
-document.getElementById("K8sEx").addEventListener("click", K8sExClicked);
-document.getElementById("K8sBtn").addEventListener("click", K8sBtnClicked);
-
 window.addEventListener("load", streamLogs);
-
-
-// $(document).ready(function(){
-//   $('[data-toggle="onebtndep-popover"]').popover({
-//     title: "json like this",
-//     content: `
-// {<br />
-//   "awsKey":    "$AWS_ACCESS_KEY_ID",<br />
-//   "awsSecret": "$AWS_SECRET_ACCESS_KEY",<br />
-//   "awsRegion": "$AWS_DEFAULT_REGION",<br />
-//   "cf_CFparameters": "CF parameter overrides",<br />
-// }<br />
-// `,
-//     html:true,
-//     trigger:"focus",
-//   });   
-// });
-
-//====================================funcs=================================
 function streamLogs(){
   var source = new EventSource("/LogStream");
   divLogBoard=document.getElementById("divLogBoard");
   source.onmessage = function (event) {
-    // console.warn(event.data)
     divLogBoard.innerHTML+=event.data +"<br>";
     divLogBoard.scrollTop = divLogBoard.scrollHeight;
   }
 }
 
-
-function AWSExClicked(){
-  document.getElementById("AWSInput").value = 
-`{
-    "awsKey":    "$AWS_ACCESS_KEY_ID",
-    "awsSecret": "$AWS_SECRET_ACCESS_KEY",
-    "awsRegion": "$AWS_DEFAULT_REGION",
-    "deploymentName": "(optional) used as a prefix on the stack name, default == t",
-    "cf_<CFparameterName>": "(optional, 0 or more) CF input parameter override",
-}`
+document.getElementById("login_google").addEventListener("click", login_google);
+function login_google() {
+  // window.location.replace("https://auth."+getDomain()+"/login?idp=google");
+  window.location.replace("https://auth.myhubs.net/login?idp=google");
 }
-function AWSBtnClicked() {
-    input=document.getElementById("AWSInput").value
-    var xhttp = new XMLHttpRequest(); res=""
-    xhttp.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        res = this.responseText;
-      }
-    };
-    xhttp.open("POST", "/TurkeyDeployAWS", true);
-    xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhttp.send(input);
-  }
 
-  function K8sExClicked(){
-  document.getElementById("kubeCfg").value = `
-{
-  "hello":    "world"
+document.getElementById("login_fxa").addEventListener("click", login_fxa);
+function login_fxa() {
+  window.location.replace("https://auth."+getDomain()+"/login?idp=fxa");
+}
+
+document.getElementById("cfgEx_get").addEventListener("click", cfgEx_getClicked);
+function cfgEx_getClicked(){
+  document.getElementById("cfg").value = `{
+  "userid": "user1"
 }`
 }
 
-function K8sBtnClicked() {
-  subdomain=document.getElementById("subdomain").value
-  userid=document.getElementById("userid").value
-  kubeCfg=document.getElementById("kubeCfg").value
+document.getElementById("cfgEx_deploy").addEventListener("click", cfgEx_deployClicked);
+function cfgEx_deployClicked(){
+  document.getElementById("cfg").value = `{
+  "userid": "user1",
+  "subdomain": "subdomain1",
+  "domain": "myhubs.net"
+}`
+}
+
+document.getElementById("deployBtn").addEventListener("click", deployBtnClicked);
+function deployBtnClicked() {
+  cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      res = this.responseText;
-    }
-  };
-  xhttp.open("POST", "/TurkeyDeployK8s?userid="+userid+"&subdomain="+subdomain, true);
+  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
+  xhttp.open("POST", "/orchestrator", true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(kubeCfg);
+  xhttp.send(cfg);
 }
 
-// function streamLogs(){
-// var source = new EventSource("/LogStream");
-// divLogBoard=document.getElementById("divLogBoard");
-// source.onmessage = function (event) {
-//   // console.warn(event.data)
-//   divLogBoard.innerHTML+=event.data +"<br>";
-//   divLogBoard.scrollTop = divLogBoard.scrollHeight;
-// }
-// }
+document.getElementById("getBtn").addEventListener("click", getBtnClicked);
+function getBtnClicked() {
+  cfg=document.getElementById("cfg").value
+  var xhttp = new XMLHttpRequest(); res=""
+  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
+  xhttp.open("GET", "/orchestrator", true);
+  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xhttp.send(cfg);
+}
+
+
+//-------------------------
+function getDomain()
+{
+    hostName = window.location.hostname
+    return hostName.substring(hostName.lastIndexOf(".", hostName.lastIndexOf(".") - 1) + 1);
+}

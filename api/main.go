@@ -15,15 +15,10 @@ func main() {
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 
 	router.Handle("/", handlers.Console)
-	// router.Handle("/TurkeyDeployAWS", handlers.TurkeyDeployAWS)
-	router.Handle("/TurkeyDeployK8s", handlers.TurkeyDeployK8s)
-
+	router.Handle("/orchestrator", handlers.Orchestrator)
 	router.Handle("/LogStream", handlers.LogStream)
-
 	router.Handle("/KeepAlive", handlers.KeepAlive)
-
 	router.Handle("/Dummy", handlers.Dummy)
-
 	utils.StartServer(router, 888)
 
 }
