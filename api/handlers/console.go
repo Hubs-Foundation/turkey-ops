@@ -7,16 +7,16 @@ import (
 	"main/utils"
 )
 
-var Root = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
+var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/console" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	t, err := template.ParseFiles("./_statics/root.html")
+	t, err := template.ParseFiles("./_statics/console.html")
 	if err != nil {
-		utils.Logger.Panic("failed to parse root.html template -- " + err.Error())
+		utils.Logger.Panic("failed to parse console.html template -- " + err.Error())
 	}
 
 	c, err := r.Cookie(utils.SessionTokenName)

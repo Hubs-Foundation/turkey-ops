@@ -1,5 +1,5 @@
 
-authVersion: v1
+apiVersion: v1
 kind: Namespace
 metadata:
   name: turkey-services
@@ -48,7 +48,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: 60
       containers:
-      - image: mozillareality/turkeyauth:4
+      - image: mozillareality/turkeyauth:35
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -85,25 +85,25 @@ spec:
     targetPort: 9001
 ---
 ####################################################################################
-################################### orchestrator ###################################
+################################### api ###################################
 ####################################################################################
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: turkey-orc
+  name: turkey-api
   namespace: turkey-services
 spec:
   entryPoints:
     - https
   routes:
   - kind: Rule
-    match: Host(`orc.myhubs.net`) && PathPrefix(`/`)
+    match: Host(`api.myhubs.net`) && PathPrefix(`/`)
     # middlewares:
     # - name: turkeyapi
     #   namespace: turkey-services    
     services:
     - kind: Service
-      name: turkey-orc
+      name: turkey-api
       passHostHeader: true
       port: 888
 ---
@@ -131,27 +131,27 @@ type: kubernetes.io/dockerconfigjson
 apiVersion: apps/v1
 kind: Deployment                                          
 metadata:
-  name: turkey-orc
+  name: turkey-api
   namespace: turkey-services
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: turkey-orc                                          
+      app: turkey-api
   minReadySeconds: 15                                      
   template:
     metadata:
       labels:
-        app: turkey-orc
+        app: turkey-api
     spec:
-      serviceAccountName: orchestrator-sa
+      serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyorc:44
+      - image: mozillareality/turkeyapi:1
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         livenessProbe:
           httpGet:
-            path: "http://turkey-orc.orchestrator"
+            path: "http://turkey-api.turkey-services/healthz"
             port: 888
           initialDelaySeconds: 20
           timeoutSeconds: 1
@@ -169,7 +169,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: turkey-orc
+  name: turkey-api
   namespace: turkey-services
 spec:
   ports:
@@ -177,24 +177,24 @@ spec:
     port: 888
     targetPort: 888
   selector:
-    app: turkey-orc
+    app: turkey-api
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: orchestrator-sa
+  name: api-sa
   namespace: turkey-services
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: orchestrator-rb
+  name: api-rb
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin  
 subjects:
 - kind: ServiceAccount
-  name: orchestrator-sa
+  name: api-sa
   namespace: turkey-services
 
