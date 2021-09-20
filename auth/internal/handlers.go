@@ -146,7 +146,7 @@ func Oauth() http.Handler {
 
 		logger.Info("auth cookie generated",
 			zap.String("user.email", user.Email),
-			zap.String("user.sub", user.Sub),
+			zap.String("user.sub", user.Id),
 			zap.String("user.name", user.Name),
 			zap.String("user.picture", user.Picture),
 			zap.String("user.locale", user.Locale),
