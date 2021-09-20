@@ -61,10 +61,10 @@ func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 // a permitted domain, as defined by the "domains" config parameter
 func ValidateEmail(email, ruleName string) bool {
 	// Use global config by default
-	whitelist := Cfg.Whitelist
-	domains := Cfg.Domains
+	whitelist := cfg.Whitelist
+	domains := cfg.Domains
 
-	if rule, ok := Cfg.Rules[ruleName]; ok {
+	if rule, ok := cfg.Rules[ruleName]; ok {
 		// Override with rule config if found
 		if len(rule.Whitelist) > 0 || len(rule.Domains) > 0 {
 			whitelist = rule.Whitelist
@@ -84,7 +84,7 @@ func ValidateEmail(email, ruleName string) bool {
 		}
 
 		// If we're not matching *either*, stop here
-		if !Cfg.MatchWhitelistOrDomain {
+		if !cfg.MatchWhitelistOrDomain {
 			return false
 		}
 	}
@@ -137,15 +137,15 @@ func returnUrl(r *http.Request) string {
 func redirectUri(r *http.Request) string {
 	if use, _ := useAuthDomain(r); use {
 		p := r.Header.Get("X-Forwarded-Proto")
-		return fmt.Sprintf("%s://%s%s", p, Cfg.AuthHost, Cfg.Path)
+		return fmt.Sprintf("%s://%s%s", p, cfg.AuthHost, cfg.Path)
 	}
 
-	return fmt.Sprintf("%s%s", redirectBase(r), Cfg.Path)
+	return fmt.Sprintf("%s%s", redirectBase(r), cfg.Path)
 }
 
 // Should we use auth host + what it is
 func useAuthDomain(r *http.Request) (bool, string) {
-	if Cfg.AuthHost == "" {
+	if cfg.AuthHost == "" {
 		return false, ""
 	}
 
@@ -153,7 +153,7 @@ func useAuthDomain(r *http.Request) (bool, string) {
 	reqMatch, reqHost := matchCookieDomains(r.Host)
 
 	// Do any of the auth hosts match a cookie domain?
-	authMatch, authHost := matchCookieDomains(Cfg.AuthHost)
+	authMatch, authHost := matchCookieDomains(cfg.AuthHost)
 
 	// We need both to match the same domain
 	return reqMatch && authMatch && reqHost == authHost, reqHost
@@ -168,12 +168,12 @@ func MakeCookie(r *http.Request, email string) *http.Cookie {
 	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), email)
 
 	return &http.Cookie{
-		Name:     Cfg.CookieName,
+		Name:     cfg.CookieName,
 		Value:    value,
 		Path:     "/",
 		Domain:   cookieDomain(r),
 		HttpOnly: true,
-		Secure:   !Cfg.InsecureCookie,
+		Secure:   !cfg.InsecureCookie,
 		Expires:  expires,
 	}
 }
@@ -181,18 +181,18 @@ func MakeCookie(r *http.Request, email string) *http.Cookie {
 // ClearCookie clears the auth cookie
 func ClearCookie(r *http.Request) *http.Cookie {
 	return &http.Cookie{
-		Name:     Cfg.CookieName,
+		Name:     cfg.CookieName,
 		Value:    "",
 		Path:     "/",
 		Domain:   cookieDomain(r),
 		HttpOnly: true,
-		Secure:   !Cfg.InsecureCookie,
+		Secure:   !cfg.InsecureCookie,
 		Expires:  time.Now().Local().Add(time.Hour * -1),
 	}
 }
 
 func buildCSRFCookieName(nonce string) string {
-	return Cfg.CSRFCookieName + "_" + nonce[:6]
+	return cfg.CSRFCookieName + "_" + nonce[:6]
 }
 
 // MakeCSRFCookie makes a csrf cookie (used during login only)
@@ -207,7 +207,7 @@ func MakeCSRFCookie(r *http.Request, nonce string) *http.Cookie {
 		Path:     "/",
 		Domain:   csrfCookieDomain(r),
 		HttpOnly: true,
-		Secure:   !Cfg.InsecureCookie,
+		Secure:   !cfg.InsecureCookie,
 		Expires:  time.Now().Local().Add(time.Hour * 1),
 	}
 }
@@ -220,7 +220,7 @@ func ClearCSRFCookie(r *http.Request, c *http.Cookie) *http.Cookie {
 		Path:     "/",
 		Domain:   csrfCookieDomain(r),
 		HttpOnly: true,
-		Secure:   !Cfg.InsecureCookie,
+		Secure:   !cfg.InsecureCookie,
 		Expires:  time.Now().Local().Add(time.Hour * -1),
 	}
 }
@@ -303,7 +303,7 @@ func matchCookieDomains(domain string) (bool, string) {
 	// Remove port
 	p := strings.Split(domain, ":")
 
-	for _, d := range Cfg.CookieDomains {
+	for _, d := range cfg.CookieDomains {
 		if d.Match(p[0]) {
 			return true, d.Domain
 		}
@@ -315,7 +315,7 @@ func matchCookieDomains(domain string) (bool, string) {
 // Create cookie hmac
 func cookieSignature(r *http.Request, email, expires string) string {
 
-	// hash := hmac.New(sha256.New, Cfg.Secret)
+	// hash := hmac.New(sha256.New, cfg.Secret)
 	hash := hmac.New(sha256.New, []byte("SecretString"))
 
 	hash.Write([]byte(cookieDomain(r)))
@@ -326,7 +326,7 @@ func cookieSignature(r *http.Request, email, expires string) string {
 
 // Get cookie expiry
 func cookieExpiry() time.Time {
-	return time.Now().Local().Add(Cfg.Lifetime)
+	return time.Now().Local().Add(cfg.Lifetime)
 }
 
 // CookieDomain holds cookie domain info

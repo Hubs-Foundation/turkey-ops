@@ -48,7 +48,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: 60
       containers:
-      - image: mozillareality/turkeyapi:2
+      - image: mozillareality/turkeyapi:3
         imagePullPolicy: IfNotPresent
         name: turkeyapi
         env:

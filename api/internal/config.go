@@ -9,20 +9,13 @@ import (
 	"time"
 
 	"main/internal/idp"
-
-	"go.uber.org/zap"
 )
 
-var Cfg *Config
-var Logger *zap.Logger
+var cfg *Config
 
 // Config holds the runtime application config
 type Config struct {
-	LogLevel  string `long:"log-level" env:"LOG_LEVEL" default:"warn" choice:"trace" choice:"debug" choice:"info" choice:"warn" choice:"error" choice:"fatal" choice:"panic" description:"Log level"`
-	LogFormat string `long:"log-format"  env:"LOG_FORMAT" default:"text" choice:"text" choice:"json" choice:"pretty" description:"Log format"`
-
-	Domain string `turkey domain`
-
+	Domain                 string               `turkey domain`
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config                 func(s string) error `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
 	CookieDomains          []CookieDomain       `long:"cookie-domain" env:"COOKIE_DOMAIN" env-delim:"," description:"Domain to set auth cookie on, can be set multiple times"`
@@ -49,23 +42,20 @@ type Config struct {
 	Lifetime time.Duration
 }
 
-func MakeCfg(logger *zap.Logger) {
+func MakeCfg() {
+	cfg = &Config{}
+	cfg.Domain = "myhubs.net"
+	cfg.Secret = []byte("SecretString")
+	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
+	cfg.CookieName = "_turkeyauthcookie"
+	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
+	cfg.CookieDomains = []CookieDomain{*NewCookieDomain("myhubs.net")}
 
-	Logger = logger
-
-	Cfg = &Config{}
-	Cfg.Domain = "myhubs.net"
-	Cfg.Secret = []byte("SecretString")
-	Cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
-	Cfg.CookieName = "_turkeyauthcookie"
-	Cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
-	Cfg.CookieDomains = []CookieDomain{*NewCookieDomain("myhubs.net")}
-
-	Cfg.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
-	Cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
-	err := Cfg.Providers.Google.Setup()
+	cfg.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
+	cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
+	err := cfg.Providers.Google.Setup()
 	if err != nil {
-		Logger.Error("[ERROR] @ Cfg.Providers.Google.Setup: " + err.Error())
+		logger.Error("[ERROR] @ Cfg.Providers.Google.Setup: " + err.Error())
 	}
 }
 
@@ -73,20 +63,20 @@ func MakeCfg(logger *zap.Logger) {
 func (c *Config) Validate() {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
-		Logger.Fatal("\"secret\" option must be set")
+		logger.Fatal("\"secret\" option must be set")
 	}
 
 	// Setup default provider
 	err := c.setupProvider(c.DefaultProvider)
 	if err != nil {
-		Logger.Fatal(err.Error())
+		logger.Fatal(err.Error())
 	}
 
 	// Check rules (validates the rule and the rule provider)
 	for _, rule := range c.Rules {
 		err = rule.Validate(c)
 		if err != nil {
-			Logger.Fatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 	}
 }

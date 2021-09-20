@@ -2,39 +2,24 @@ package main
 
 import (
 	"main/internal"
-	"main/internal/handlers"
 	"net/http"
-	"os"
-
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 var (
-	turkeyDomain string
+	cfg *internal.Config
 )
 
 func main() {
-	turkeyDomain = "myhubs.net"
 
-	atom := zap.NewAtomicLevel()
-	encoderCfg := zap.NewProductionEncoderConfig()
-	encoderCfg.TimeKey = ""
-	logger := zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), zapcore.Lock(os.Stdout), atom))
-	atom.SetLevel(zap.DebugLevel)
-
-	internal.MakeCfg(logger)
+	internal.MakeCfg()
+	internal.InitLogger()
 
 	router := http.NewServeMux()
-
-	router.Handle("/healthz", handlers.Healthz())
-
-	router.Handle("/login", handlers.Login())
-	router.Handle("/logout", handlers.Logout())
-
-	router.Handle("/traefik-ip", handlers.TraefikIp())
-	router.Handle("/_oauth", handlers.Oauth())
+	router.Handle("/healthz", internal.Healthz())
+	router.Handle("/login", internal.Login())
+	router.Handle("/logout", internal.Logout())
+	router.Handle("/traefik-ip", internal.TraefikIp())
+	router.Handle("/_oauth", internal.Oauth())
 
 	internal.StartServer(router, 9001)
-
 }
