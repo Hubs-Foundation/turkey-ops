@@ -146,7 +146,7 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:1
+      - image: mozillareality/turkeyapi:5
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         livenessProbe:
