@@ -117,7 +117,7 @@ func (g *Google) GetUser(token string) (User, error) {
 	// err = json.NewDecoder(res.Body).Decode(&user)
 	bodyBytes, err := ioutil.ReadAll(res.Body)
 	fmt.Println("GetUser -- bodyBytes -- " + string(bodyBytes))
-	err = json.Unmarshal(bodyBytes, user)
+	err = json.Unmarshal(bodyBytes, &user)
 
 	return user, err
 }
