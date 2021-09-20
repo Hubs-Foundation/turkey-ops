@@ -153,7 +153,7 @@ var Orchestrator = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			sess.PushMsg("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 			panic(err.Error())
 		}
-		skipadminLink := "https://" + cfg.Subdomain + "." + turkeyDomain + "?skipadmin"
+		skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
 		sess.PushMsg("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
 			skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.UserId + "'s " + cfg.Subdomain + "</b></a>")
 

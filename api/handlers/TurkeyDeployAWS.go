@@ -15,6 +15,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
+var turkeyDomain = "quackstack.net"
+var turkeyEnv = "dev"
+var turkeycfg_s3_bucket = "turkeycfg"
+
 var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":

@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -25,6 +27,9 @@ func Login() http.Handler {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
+
+		headerBytes, _ := json.Marshal(r.Header)
+		fmt.Println(string(headerBytes))
 
 		idp := r.URL.Query()["idp"]
 
