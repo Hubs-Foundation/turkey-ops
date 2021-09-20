@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -28,11 +26,17 @@ func Login() http.Handler {
 			return
 		}
 
-		headerBytes, _ := json.Marshal(r.Header)
-		fmt.Println(string(headerBytes))
+		// headerBytes, _ := json.Marshal(r.Header)
+		// fmt.Println(string(headerBytes))
 
 		idp := r.URL.Query()["idp"]
-
+		client := r.URL.Query()["client"]
+		trustedClients := os.Getenv("trustedClients")
+		if len(client) != 1 && !strings.Contains(trustedClients, client[0]+",") {
+			logger.Debug("bad value for client in r.URL.Query()")
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
 		// Get auth cookie
 		c, err := r.Cookie(cfg.CookieName)
 		if err != nil {
@@ -67,6 +71,34 @@ func Login() http.Handler {
 		w.WriteHeader(200)
 
 	})
+}
+
+func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
+
+	p, err := cfg.GetProvider(providerName)
+	if err != nil {
+		logger.Panic("internal.Cfg.GetProvider(" + providerName + ") failed: " + err.Error())
+	}
+	// Error indicates no cookie, generate nonce
+	err, nonce := Nonce()
+	if err != nil {
+		logger.Info("Error generating nonce: " + err.Error())
+		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Set the CSRF cookie
+	csrf := MakeCSRFCookie(r, nonce)
+	http.SetCookie(w, csrf)
+
+	if !cfg.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
+		logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
+	}
+
+	loginURL := p.GetLoginURL("https://auth."+cfg.Domain+"/_oauth", MakeState(r, p, nonce))
+
+	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
+
 }
 
 func Logout() http.Handler {
@@ -160,6 +192,9 @@ func Oauth() http.Handler {
 		)
 
 		// Redirect
+		w.Header().Set("user-name", user.Name)
+		w.Header().Set("user-email", user.Email)
+		w.Header().Set("user-picture", user.Picture)
 		http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
 
 	})
@@ -185,32 +220,4 @@ func TraefikIp() http.Handler {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		}
 	})
-}
-
-func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
-
-	p, err := cfg.GetProvider(providerName)
-	if err != nil {
-		logger.Panic("internal.Cfg.GetProvider(" + providerName + ") failed: " + err.Error())
-	}
-	// Error indicates no cookie, generate nonce
-	err, nonce := Nonce()
-	if err != nil {
-		logger.Info("Error generating nonce: " + err.Error())
-		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
-		return
-	}
-
-	// Set the CSRF cookie
-	csrf := MakeCSRFCookie(r, nonce)
-	http.SetCookie(w, csrf)
-
-	if !cfg.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
-		logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
-	}
-
-	loginURL := p.GetLoginURL("https://auth."+cfg.Domain+"/_oauth", MakeState(r, p, nonce))
-
-	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
-
 }

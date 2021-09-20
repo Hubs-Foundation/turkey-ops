@@ -128,11 +128,6 @@ func redirectBase(r *http.Request) string {
 	return fmt.Sprintf("%s://%s", r.Header.Get("X-Forwarded-Proto"), r.Host)
 }
 
-// Return url
-func returnUrl(r *http.Request) string {
-	return fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
-}
-
 // Get oauth redirect uri
 func redirectUri(r *http.Request) string {
 	if use, _ := useAuthDomain(r); use {
@@ -256,6 +251,12 @@ func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider stri
 // MakeState generates a state value
 func MakeState(r *http.Request, p idp.Provider, nonce string) string {
 	return fmt.Sprintf("%s:%s:%s", nonce, p.Name(), returnUrl(r))
+}
+
+// Return url
+func returnUrl(r *http.Request) string {
+	return r.URL.Query()["client"][0]
+	// return fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
 }
 
 // ValidateState checks whether the state is of right length.

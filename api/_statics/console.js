@@ -11,12 +11,12 @@ function streamLogs(){
 
 document.getElementById("login_google").addEventListener("click", login_google);
 function login_google() {
-  window.location.assign("https://auth."+getDomain()+"/login?idp=google");
+  window.location.assign("https://auth."+getDomain()+"/login?idp=google&client="+window.location.origin+window.location.pathname);
 }
 
 document.getElementById("login_fxa").addEventListener("click", login_fxa);
 function login_fxa() {
-  window.location.assign("https://auth."+getDomain()+"/login?idp=fxa");
+  window.location.assign("https://auth."+getDomain()+"/login?idp=fxa&client="+window.location.origin+window.location.pathname);
 }
 
 document.getElementById("cfgEx_get").addEventListener("click", cfgEx_getClicked);
