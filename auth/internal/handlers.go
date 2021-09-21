@@ -5,8 +5,6 @@ import (
 	"os"
 	"strings"
 	"sync/atomic"
-
-	"go.uber.org/zap"
 )
 
 func Healthz() http.Handler {
@@ -33,7 +31,7 @@ func Login() http.Handler {
 		client := r.URL.Query()["client"]
 		trustedClients := os.Getenv("trustedClients")
 		if len(client) != 1 && !strings.Contains(trustedClients, client[0]+",") {
-			logger.Debug("bad value for client in r.URL.Query()")
+			logger.Sugar().Debug("bad value for client in r.URL.Query()")
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
@@ -48,11 +46,12 @@ func Login() http.Handler {
 		email, err := ValidateCookie(r, c)
 		if err != nil {
 			if err.Error() == "Cookie has expired" {
-				logger.Info("Cookie has expired")
+				logger.Sugar().Debug("Cookie has expired")
 				authRedirect(w, r, idp[0])
 			} else {
-				logger.Info("Invalid cookie, err: " + err.Error())
-				http.Error(w, "Not authorized", http.StatusUnauthorized)
+				logger.Sugar().Debug("Invalid cookie, err: " + err.Error())
+				// http.Error(w, "Not authorized", http.StatusUnauthorized)
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			}
 			return
 		}
@@ -66,9 +65,14 @@ func Login() http.Handler {
 		// }
 
 		// Valid request
-		logger.Info("Allowing valid request")
+		logger.Sugar().Debug("good cookie, allowing: " + email)
 		w.Header().Set("X-Forwarded-User", email)
 		w.WriteHeader(200)
+		// Redirect
+		// w.Header().Set("user-name", user.Name)
+		// w.Header().Set("user-email", user.Email)
+		// w.Header().Set("user-picture", user.Picture)
+		http.Redirect(w, r, client[0], http.StatusTemporaryRedirect)
 
 	})
 }
@@ -107,7 +111,7 @@ func Logout() http.Handler {
 		http.SetCookie(w, ClearCookie(r))
 
 		if cfg.LogoutRedirect != "" {
-			logger.Info("logout redirect to: " + cfg.LogoutRedirect)
+			logger.Debug("logout redirect to: " + cfg.LogoutRedirect)
 			http.Redirect(w, r, cfg.LogoutRedirect, http.StatusTemporaryRedirect)
 		} else {
 			http.Error(w, "You have been logged out", http.StatusUnauthorized)
@@ -124,11 +128,11 @@ func Oauth() http.Handler {
 			return
 		}
 
-		logger.Info("Handling callback")
+		logger.Sugar().Debug("Handling callback")
 		// Check state
 		state := r.URL.Query().Get("state")
 		if err := ValidateState(state); err != nil {
-			logger.Info("Error validating state: " + err.Error())
+			logger.Sugar().Warn("Error validating state: " + err.Error())
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -136,7 +140,7 @@ func Oauth() http.Handler {
 		// Check for CSRF cookie
 		c, err := FindCSRFCookie(r, state)
 		if err != nil {
-			logger.Info("Missing csrf cookie")
+			logger.Sugar().Warn("Missing csrf cookie")
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -144,7 +148,7 @@ func Oauth() http.Handler {
 		// Validate CSRF cookie against state
 		valid, providerName, redirect, err := ValidateCSRFCookie(c, state)
 		if !valid {
-			logger.Info("Error validating csrf cookie: " + err.Error())
+			logger.Sugar().Warn("Error validating csrf cookie: " + err.Error())
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -152,7 +156,7 @@ func Oauth() http.Handler {
 		// Get provider
 		p, err := cfg.GetProvider(providerName)
 		if err != nil {
-			logger.Info("Invalid provider in csrf cookie: " + providerName)
+			logger.Sugar().Warn("Invalid provider in csrf cookie: " + providerName)
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -163,7 +167,7 @@ func Oauth() http.Handler {
 		// Exchange code for token
 		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_oauth", r.URL.Query().Get("code"))
 		if err != nil {
-			logger.Info("Code exchange failed with provider: " + err.Error())
+			logger.Sugar().Warn("Code exchange failed with provider: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
@@ -172,7 +176,7 @@ func Oauth() http.Handler {
 		// Get user
 		user, err := p.GetUser(token.AccessToken)
 		if err != nil {
-			logger.Info("Error getting user: " + err.Error())
+			logger.Sugar().Warn("Error getting user: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
@@ -181,20 +185,20 @@ func Oauth() http.Handler {
 		// Generate cookie
 		http.SetCookie(w, MakeCookie(r, user.Email))
 
-		logger.Info("auth cookie generated",
-			zap.String("user.email", user.Email),
-			zap.String("user.sub", user.Id),
-			zap.String("user.name", user.Name),
-			zap.String("user.picture", user.Picture),
-			zap.String("user.locale", user.Locale),
-			zap.String("provider", providerName),
-			zap.String("redirect", redirect),
+		logger.Sugar().Debug("auth cookie generated",
+			"user.meail", user.Email,
+			"user.sub", user.Id,
+			"user.name", user.Name,
+			"user.picture", user.Picture,
+			"user.locale", user.Locale,
+			"provider", providerName,
+			"redirect", redirect,
 		)
 
 		// Redirect
-		w.Header().Set("user-name", user.Name)
-		w.Header().Set("user-email", user.Email)
-		w.Header().Set("user-picture", user.Picture)
+		w.Header().Set("X-Forwarded-UserName", user.Name)
+		w.Header().Set("X-Forwarded-User", user.Email)
+		w.Header().Set("X-Forwarded-UserPicture", user.Picture)
 		http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
 
 	})
@@ -219,5 +223,33 @@ func TraefikIp() http.Handler {
 			logger.Info("not allowed !!! bad ip in xff: " + xff)
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		}
+	})
+}
+
+func Authn() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Get auth cookie
+		c, err := r.Cookie(cfg.CookieName)
+		if err != nil {
+			logger.Sugar().Debug("missing cookie: " + cfg.CookieName)
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		// Validate cookie
+		email, err := ValidateCookie(r, c)
+		if err != nil {
+			if err.Error() == "Cookie has expired" {
+				logger.Sugar().Debug("Cookie has expired")
+				http.Error(w, "authn expired", http.StatusUnauthorized)
+			} else {
+				logger.Sugar().Debug("Invalid cookie, err: " + err.Error())
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			}
+		}
+		logger.Sugar().Debug("good cookie, allowing: " + email)
+		w.Header().Set("X-Forwarded-User", email)
+		w.WriteHeader(200)
+
 	})
 }
