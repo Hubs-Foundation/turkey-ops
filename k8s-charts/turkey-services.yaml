@@ -48,12 +48,12 @@ spec:
     spec:
       terminationGracePeriodSeconds: 60
       containers:
-      - image: mozillareality/turkeyauth:42
+      - image: mozillareality/turkeyauth:43
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
         - name: trustedClients
-          value: https://api.myhubs.net/console
+          value: https://api.myhubs.net/console,
         - name: SECRET
           value: a-random-string-to-secure-your-cookie
         - name: trusted_IPs

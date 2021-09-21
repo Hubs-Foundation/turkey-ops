@@ -39,6 +39,7 @@ func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 
 	// Valid token?
 	if !hmac.Equal(mac, expected) {
+		logger.Debug("bad cookie mac: <" + string(mac) + ">, expecting<" + string(expected) + ">")
 		return "", errors.New("Invalid cookie mac")
 	}
 

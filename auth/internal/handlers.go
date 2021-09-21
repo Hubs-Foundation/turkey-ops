@@ -246,10 +246,9 @@ func Authn() http.Handler {
 				logger.Sugar().Debug("Invalid cookie, err: " + err.Error())
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			}
+			return
 		}
 		logger.Sugar().Debug("good cookie, allowing: " + email)
 		w.Header().Set("X-Forwarded-User", email)
-		w.WriteHeader(200)
-
 	})
 }
