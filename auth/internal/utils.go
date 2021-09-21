@@ -14,7 +14,7 @@ func InitLogger() {
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.CallerKey = "c"
 	// encoderCfg.FunctionKey = "f"
-	logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), atom))
+	logger = zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), zapcore.Lock(os.Stdout), atom))
 
 	defer logger.Sync()
 

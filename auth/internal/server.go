@@ -34,7 +34,7 @@ func StartServer(router *http.ServeMux, port int) {
 
 	server := &http.Server{
 		Addr:         listenAddr,
-		Handler:      tracing(nextRequestID)(logging()(router)),
+		Handler:      proxyMods()(tracing(nextRequestID)(logging()(router))),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
