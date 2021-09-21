@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -24,8 +26,8 @@ func Login() http.Handler {
 			return
 		}
 
-		// headerBytes, _ := json.Marshal(r.Header)
-		// fmt.Println(string(headerBytes))
+		headerBytes, _ := json.Marshal(r.Header)
+		fmt.Println(string(headerBytes))
 
 		idp := r.URL.Query()["idp"]
 		client := r.URL.Query()["client"]
@@ -228,6 +230,8 @@ func TraefikIp() http.Handler {
 
 func Authn() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		headerBytes, _ := json.Marshal(r.Header)
+		fmt.Println(string(headerBytes))
 		// Get auth cookie
 		c, err := r.Cookie(cfg.CookieName)
 		if err != nil {
