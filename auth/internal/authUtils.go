@@ -39,7 +39,6 @@ func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 
 	// Valid token?
 	if !hmac.Equal(mac, expected) {
-		logger.Debug("bad cookie mac: <" + string(mac) + ">, expecting<" + string(expected) + ">")
 		return "", errors.New("Invalid cookie mac")
 	}
 
@@ -317,10 +316,11 @@ func matchCookieDomains(domain string) (bool, string) {
 // Create cookie hmac
 func cookieSignature(r *http.Request, email, expires string) string {
 
-	// hash := hmac.New(sha256.New, cfg.Secret)
-	hash := hmac.New(sha256.New, []byte("SecretString"))
+	hash := hmac.New(sha256.New, cfg.Secret)
+	cookieDomain := cookieDomain(r)
+	logger.Debug("### cookieSignature ### cookieDomain: " + cookieDomain)
 
-	hash.Write([]byte(cookieDomain(r)))
+	hash.Write([]byte(cookieDomain))
 	hash.Write([]byte(email))
 	hash.Write([]byte(expires))
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))

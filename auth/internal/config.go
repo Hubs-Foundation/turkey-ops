@@ -45,7 +45,7 @@ type Config struct {
 func MakeCfg() {
 	cfg = &Config{}
 	cfg.Domain = "myhubs.net"
-	cfg.Secret = []byte("SecretString")
+	cfg.Secret = []byte("dummy-SecretString-replace-me-with-env-var-later")
 	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
 	cfg.CookieName = "_turkeyauthcookie"
 	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
