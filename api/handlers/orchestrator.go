@@ -36,6 +36,7 @@ type turkeyCfg struct {
 }
 
 var Orchestrator = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 	if r.URL.Path != "/orchestrator" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -123,8 +124,7 @@ var Orchestrator = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 			sess.PushMsg(`turkeyUserId[0:4] == dev_ means dev mode`)
 			if cfg.UserId == "dev_dumpr" {
-				headerBytes, _ := json.Marshal(r.Header)
-				sess.PushMsg(string(headerBytes))
+				sess.PushMsg(dumpHeader(r))
 				return
 			}
 			if cfg.UserId == "dev_gimmechart" {

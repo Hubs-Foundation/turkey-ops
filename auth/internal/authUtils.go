@@ -23,33 +23,33 @@ func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 	parts := strings.Split(c.Value, "|")
 
 	if len(parts) != 3 {
-		return "", errors.New("Invalid cookie format")
+		return "", errors.New("invalid cookie format")
 	}
 
 	mac, err := base64.URLEncoding.DecodeString(parts[0])
 	if err != nil {
-		return "", errors.New("Unable to decode cookie mac")
+		return "", errors.New("unable to decode cookie mac")
 	}
 
 	expectedSignature := cookieSignature(r, parts[2], parts[1])
 	expected, err := base64.URLEncoding.DecodeString(expectedSignature)
 	if err != nil {
-		return "", errors.New("Unable to generate mac")
+		return "", errors.New("unable to generate mac")
 	}
 
 	// Valid token?
 	if !hmac.Equal(mac, expected) {
-		return "", errors.New("Invalid cookie mac")
+		return "", errors.New("invalid cookie mac")
 	}
 
 	expires, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		return "", errors.New("Unable to parse cookie expiry")
+		return "", errors.New("unable to parse cookie expiry")
 	}
 
 	// Has it expired?
 	if time.Unix(expires, 0).Before(time.Now()) {
-		return "", errors.New("Cookie has expired")
+		return "", errors.New("cookie has expired")
 	}
 
 	// Looks valid
@@ -123,20 +123,20 @@ func ValidateDomains(email string, domains CommaSeparatedList) bool {
 
 // Utility methods
 
-// Get the redirect base
-func redirectBase(r *http.Request) string {
-	return fmt.Sprintf("%s://%s", r.Header.Get("X-Forwarded-Proto"), r.Host)
-}
+// // Get the redirect base
+// func redirectBase(r *http.Request) string {
+// 	return fmt.Sprintf("%s://%s", r.Header.Get("X-Forwarded-Proto"), r.Host)
+// }
 
 // Get oauth redirect uri
-func redirectUri(r *http.Request) string {
-	if use, _ := useAuthDomain(r); use {
-		p := r.Header.Get("X-Forwarded-Proto")
-		return fmt.Sprintf("%s://%s%s", p, cfg.AuthHost, cfg.Path)
-	}
+// func redirectUri(r *http.Request) string {
+// 	if use, _ := useAuthDomain(r); use {
+// 		p := r.Header.Get("X-Forwarded-Proto")
+// 		return fmt.Sprintf("%s://%s%s", p, cfg.AuthHost, cfg.Path)
+// 	}
 
-	return fmt.Sprintf("%s%s", redirectBase(r), cfg.Path)
-}
+// 	return fmt.Sprintf("%s%s", redirectBase(r), cfg.Path)
+// }
 
 // Should we use auth host + what it is
 func useAuthDomain(r *http.Request) (bool, string) {
@@ -229,7 +229,7 @@ func FindCSRFCookie(r *http.Request, state string) (c *http.Cookie, err error) {
 // ValidateCSRFCookie validates the csrf cookie against state
 func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, redirect string, err error) {
 	if len(c.Value) != 32 {
-		return false, "", "", errors.New("Invalid CSRF cookie value")
+		return false, "", "", errors.New("invalid CSRF cookie value")
 	}
 
 	// Check nonce match
@@ -241,7 +241,7 @@ func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider stri
 	params := state[33:]
 	split := strings.Index(params, ":")
 	if split == -1 {
-		return false, "", "", errors.New("Invalid CSRF state format")
+		return false, "", "", errors.New("invalid CSRF state format")
 	}
 
 	// Valid, return provider and redirect
@@ -262,20 +262,20 @@ func returnUrl(r *http.Request) string {
 // ValidateState checks whether the state is of right length.
 func ValidateState(state string) error {
 	if len(state) < 34 {
-		return errors.New("Invalid CSRF state value")
+		return errors.New("invalid CSRF state value")
 	}
 	return nil
 }
 
 // Nonce generates a random nonce
-func Nonce() (error, string) {
+func Nonce() (string, error) {
 	nonce := make([]byte, 16)
 	_, err := rand.Read(nonce)
 	if err != nil {
-		return err, ""
+		return "", err
 	}
 
-	return nil, fmt.Sprintf("%x", nonce)
+	return fmt.Sprintf("%x", nonce), nil
 }
 
 // Cookie domain

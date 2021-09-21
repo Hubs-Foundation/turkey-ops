@@ -2,12 +2,16 @@ package internal
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
 	"sync/atomic"
 )
+
+func dumpHeader(r *http.Request) string {
+	headerBytes, _ := json.Marshal(r.Header)
+	return string(headerBytes)
+}
 
 func Healthz() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -26,17 +30,23 @@ func Login() http.Handler {
 			return
 		}
 
-		headerBytes, _ := json.Marshal(r.Header)
-		fmt.Println(string(headerBytes))
+		logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		idp := r.URL.Query()["idp"]
-		client := r.URL.Query()["client"]
-		trustedClients := os.Getenv("trustedClients")
-		if len(client) != 1 || !strings.Contains(trustedClients, client[0]+",") {
-			logger.Sugar().Debug("bad value for client in r.URL.Query()")
+		if len(idp) != 1 {
+			logger.Sugar().Debug(`bad value for ["idp"] in r.URL.Query()`)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
+
+		client := r.URL.Query()["client"]
+		trustedClients := os.Getenv("trustedClients")
+		if len(client) != 1 || !strings.Contains(trustedClients, client[0]+",") {
+			logger.Sugar().Debug(`bad value for ["client"] in r.URL.Query()`)
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
 		// Get auth cookie
 		c, err := r.Cookie(cfg.CookieName)
 		if err != nil {
@@ -86,7 +96,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 		logger.Panic("internal.Cfg.GetProvider(" + providerName + ") failed: " + err.Error())
 	}
 	// Error indicates no cookie, generate nonce
-	err, nonce := Nonce()
+	nonce, err := Nonce()
 	if err != nil {
 		logger.Info("Error generating nonce: " + err.Error())
 		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
@@ -230,8 +240,7 @@ func TraefikIp() http.Handler {
 
 func Authn() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		headerBytes, _ := json.Marshal(r.Header)
-		fmt.Println(string(headerBytes))
+		logger.Debug("dumpHeader: " + dumpHeader(r))
 		// Get auth cookie
 		c, err := r.Cookie(cfg.CookieName)
 		if err != nil {

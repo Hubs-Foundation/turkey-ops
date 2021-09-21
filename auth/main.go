@@ -10,9 +10,8 @@ var (
 )
 
 func main() {
-
-	internal.MakeCfg()
 	internal.InitLogger()
+	internal.MakeCfg()
 
 	router := http.NewServeMux()
 	router.Handle("/healthz", internal.Healthz())
