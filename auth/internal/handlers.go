@@ -245,10 +245,11 @@ func Authn() http.Handler {
 		c, err := r.Cookie(cfg.CookieName)
 		if err != nil {
 			logger.Sugar().Debug("missing cookie: " + cfg.CookieName)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			// http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			// return
+			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
-
 		// Validate cookie
 		email, err := ValidateCookie(r, c)
 		if err != nil {

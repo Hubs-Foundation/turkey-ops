@@ -76,12 +76,12 @@ func logging() func(http.Handler) http.Handler {
 				}
 				_ = requestID
 				logger.Sugar().Debug(
-					"new request,",
-					"id", requestID,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"RemoteAddr", r.RemoteAddr,
-					"UserAgent", r.UserAgent(),
+					"newReq",
+					"id: ", requestID,
+					"method: ", r.Method,
+					"path: ", r.URL.Path,
+					"RemoteAddr: ", r.RemoteAddr,
+					"UserAgent: ", r.UserAgent(),
 				)
 			}()
 			next.ServeHTTP(w, r)
