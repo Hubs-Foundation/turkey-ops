@@ -121,23 +121,6 @@ func ValidateDomains(email string, domains CommaSeparatedList) bool {
 	return false
 }
 
-// Utility methods
-
-// // Get the redirect base
-// func redirectBase(r *http.Request) string {
-// 	return fmt.Sprintf("%s://%s", r.Header.Get("X-Forwarded-Proto"), r.Host)
-// }
-
-// Get oauth redirect uri
-// func redirectUri(r *http.Request) string {
-// 	if use, _ := useAuthDomain(r); use {
-// 		p := r.Header.Get("X-Forwarded-Proto")
-// 		return fmt.Sprintf("%s://%s%s", p, cfg.AuthHost, cfg.Path)
-// 	}
-
-// 	return fmt.Sprintf("%s%s", redirectBase(r), cfg.Path)
-// }
-
 // Should we use auth host + what it is
 func useAuthDomain(r *http.Request) (bool, string) {
 	if cfg.AuthHost == "" {
@@ -255,9 +238,29 @@ func MakeState(r *http.Request, p idp.Provider, nonce string) string {
 
 // Return url
 func returnUrl(r *http.Request) string {
+	if len(r.URL.Query()["client"]) != 1 {
+		return cfg.DefaultClient
+	}
 	return r.URL.Query()["client"][0]
 	// return fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
 }
+
+// Utility methods
+
+// // Get the redirect base
+// func redirectBase(r *http.Request) string {
+// 	return fmt.Sprintf("%s://%s", r.Header.Get("X-Forwarded-Proto"), r.Host)
+// }
+
+// Get oauth redirect uri
+// func redirectUri(r *http.Request) string {
+// 	if use, _ := useAuthDomain(r); use {
+// 		p := r.Header.Get("X-Forwarded-Proto")
+// 		return fmt.Sprintf("%s://%s%s", p, cfg.AuthHost, cfg.Path)
+// 	}
+
+// 	return fmt.Sprintf("%s%s", redirectBase(r), cfg.Path)
+// }
 
 // ValidateState checks whether the state is of right length.
 func ValidateState(state string) error {

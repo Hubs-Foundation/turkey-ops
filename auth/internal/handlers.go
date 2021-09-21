@@ -254,11 +254,13 @@ func Authn() http.Handler {
 		if err != nil {
 			if err.Error() == "Cookie has expired" {
 				logger.Sugar().Debug("Cookie has expired")
-				http.Error(w, "authn expired", http.StatusUnauthorized)
+				// http.Error(w, "authn expired", http.StatusUnauthorized)
 			} else {
 				logger.Sugar().Debug("Invalid cookie, err: " + err.Error())
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				// http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			}
+			// return
+			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
 		logger.Sugar().Debug("good cookie, allowing: " + email)

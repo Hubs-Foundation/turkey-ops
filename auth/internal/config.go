@@ -15,7 +15,9 @@ var cfg *Config
 
 // Config holds the runtime application config
 type Config struct {
-	Domain                 string               `turkey domain`
+	Domain        string `turkey domain`
+	DefaultClient string `ie. https://portal.myhubs.net`
+
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config                 func(s string) error `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
 	CookieDomains          []CookieDomain       `long:"cookie-domain" env:"COOKIE_DOMAIN" env-delim:"," description:"Domain to set auth cookie on, can be set multiple times"`
@@ -51,6 +53,7 @@ func MakeCfg() {
 	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
 	cfg.CookieDomains = []CookieDomain{*NewCookieDomain("myhubs.net")}
 
+	cfg.DefaultProvider = "google"
 	cfg.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
 	cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
 	err := cfg.Providers.Google.Setup()
