@@ -30,7 +30,7 @@ func Login() http.Handler {
 		idp := r.URL.Query()["idp"]
 		client := r.URL.Query()["client"]
 		trustedClients := os.Getenv("trustedClients")
-		if len(client) != 1 && !strings.Contains(trustedClients, client[0]+",") {
+		if len(client) != 1 || !strings.Contains(trustedClients, client[0]+",") {
 			logger.Sugar().Debug("bad value for client in r.URL.Query()")
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return

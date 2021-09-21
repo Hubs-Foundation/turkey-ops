@@ -20,7 +20,7 @@ spec:
     match: Host(`auth.myhubs.net`) && PathPrefix(`/`)
     # middlewares:
     # - name: turkeyauth
-    #   namespace: turkey-services    
+    #   namespace: turkey-services
     services:
     - kind: Service
       name: auth
@@ -48,7 +48,7 @@ spec:
     spec:
       terminationGracePeriodSeconds: 60
       containers:
-      - image: mozillareality/turkeyauth:41
+      - image: mozillareality/turkeyauth:42
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -100,9 +100,9 @@ spec:
   routes:
   - kind: Rule
     match: Host(`api.myhubs.net`) && PathPrefix(`/`)
-    # middlewares:
-    # - name: turkeyauth
-    #   namespace: turkey-services    
+    middlewares:
+    - name: turkeyauth
+      namespace: turkey-services
     services:
     - kind: Service
       name: turkey-api
@@ -116,7 +116,8 @@ metadata:
   namespace: turkey-services
 spec:
   forwardAuth:
-    address: http://api.turkey-services:9001/traefik-ip
+    # address: http://api.turkey-services:9001/traefik-ip
+    address: http://auth.turkey-services:9001/authn
     authResponseHeaders:
       - X-Forwarded-User
     trustForwardHeader: true      
