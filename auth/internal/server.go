@@ -101,12 +101,14 @@ func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 func proxyMods() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger.Debug("r.Host in: " + r.Host)
 			if _, ok := r.Header["X-Forwarded-Host"]; ok {
-				r.Method = r.Header.Get("X-Forwarded-Host")
+				r.Host = r.Header.Get("X-Forwarded-Host")
 			}
 			if _, ok := r.Header["X-Forwarded-Method"]; ok {
 				r.Method = r.Header.Get("X-Forwarded-Method")
 			}
+			logger.Debug("r.Host out: " + r.Host)
 			// // Read URI from header if we're acting as forward auth middleware
 			// if _, ok := r.Header["X-Forwarded-Uri"]; ok {
 			// 	r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
