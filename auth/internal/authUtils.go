@@ -317,6 +317,19 @@ func matchCookieDomains(domain string) (bool, string) {
 	return false, p[0]
 }
 
+// Match checks if the given host matches this CookieDomain
+func (c *CookieDomain) Match(host string) bool {
+	// Exact domain match?
+	if host == c.Domain {
+		return true
+	}
+	// Subdomain match?
+	if len(host) >= c.SubDomainLen && host[len(host)-c.SubDomainLen:] == c.SubDomain {
+		return true
+	}
+	return false
+}
+
 // Create cookie hmac
 func cookieSignature(r *http.Request, email, expires string) string {
 
@@ -351,21 +364,6 @@ func NewCookieDomain(domain string) *CookieDomain {
 		SubDomain:    fmt.Sprintf(".%s", domain),
 		SubDomainLen: len(domain) + 1,
 	}
-}
-
-// Match checks if the given host matches this CookieDomain
-func (c *CookieDomain) Match(host string) bool {
-	// Exact domain match?
-	if host == c.Domain {
-		return true
-	}
-
-	// Subdomain match?
-	if len(host) >= c.SubDomainLen && host[len(host)-c.SubDomainLen:] == c.SubDomain {
-		return true
-	}
-
-	return false
 }
 
 // UnmarshalFlag converts a string to a CookieDomain

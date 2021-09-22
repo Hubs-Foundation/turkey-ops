@@ -28,7 +28,6 @@ type Config struct {
 	DefaultProvider        string               `long:"default-provider" env:"DEFAULT_PROVIDER" default:"google" choice:"google" choice:"oidc" choice:"generic-oauth" description:"Default provider"`
 	Domains                CommaSeparatedList   `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, can be set multiple times"`
 	LifetimeString         int                  `long:"lifetime" env:"LIFETIME" default:"43200" description:"Lifetime in seconds"`
-	LoginRedirect          string               `long:"login-redirect" env:"LOGIN_REDIRECT" description:"URL to redirect to following login"`
 	LogoutRedirect         string               `long:"logout-redirect" env:"LOGOUT_REDIRECT" description:"URL to redirect to following logout"`
 	MatchWhitelistOrDomain bool                 `long:"match-whitelist-or-domain" env:"MATCH_WHITELIST_OR_DOMAIN" description:"Allow users that match *either* whitelist or domain (enabled by default in v3)"`
 	Path                   string               `long:"url-path" env:"URL_PATH" default:"/_oauth" description:"Callback URL Path"`
@@ -47,6 +46,7 @@ type Config struct {
 func MakeCfg() {
 	cfg = &Config{}
 	cfg.Domain = "myhubs.net"
+	cfg.AuthHost = "myhubs.net"
 	cfg.Secret = []byte("dummy-SecretString-replace-me-with-env-var-later")
 	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
 	cfg.CookieName = "_turkeyauthcookie"
