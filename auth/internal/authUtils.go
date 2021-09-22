@@ -170,6 +170,7 @@ func ClearCookie(r *http.Request) *http.Cookie {
 }
 
 func buildCSRFCookieName(nonce string) string {
+	logger.Debug("nonce: " + nonce)
 	return cfg.CSRFCookieName + "_" + nonce[:6]
 }
 
@@ -238,19 +239,19 @@ func MakeState(r *http.Request, p idp.Provider, nonce string) string {
 
 // Return url
 func returnUrl(r *http.Request) string {
-	if len(r.URL.Query()["client"]) != 1 {
-		return cfg.DefaultClient
+	if len(r.URL.Query()["client"]) == 1 {
+		return r.URL.Query()["client"][0]
 	}
-	return r.URL.Query()["client"][0]
-	// return fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
+	// return cfg.DefaultClient
+	return fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
 }
 
 // Utility methods
 
-// // Get the redirect base
-// func redirectBase(r *http.Request) string {
-// 	return fmt.Sprintf("%s://%s", r.Header.Get("X-Forwarded-Proto"), r.Host)
-// }
+// Get the redirect base
+func redirectBase(r *http.Request) string {
+	return fmt.Sprintf("%s://%s", r.Header.Get("X-Forwarded-Proto"), r.Host)
+}
 
 // Get oauth redirect uri
 // func redirectUri(r *http.Request) string {

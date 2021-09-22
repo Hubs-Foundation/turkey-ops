@@ -240,6 +240,10 @@ func TraefikIp() http.Handler {
 
 func Authn() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/authn" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
 		logger.Debug("dumpHeader: " + dumpHeader(r))
 		// Get auth cookie
 		c, err := r.Cookie(cfg.CookieName)
