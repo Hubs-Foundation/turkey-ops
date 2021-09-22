@@ -15,6 +15,14 @@ import (
 	"main/internal/idp"
 )
 
+func GetClient(r *http.Request) string {
+	client := r.URL.Query()["client"]
+	if len(client) != 1 || !strings.Contains(cfg.TrustedClients, client[0]+",") {
+		return ""
+	}
+	return client[0]
+}
+
 func CheckCookie(r *http.Request) (string, error) {
 	// Get auth cookie
 	c, err := r.Cookie(cfg.CookieName)
@@ -257,11 +265,12 @@ func MakeState(r *http.Request, p idp.Provider, nonce string) string {
 
 // Return url
 func returnUrl(r *http.Request) string {
+	client := fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
 	if len(r.URL.Query()["client"]) == 1 {
-		return r.URL.Query()["client"][0]
+		client = r.URL.Query()["client"][0]
 	}
-	// return cfg.DefaultClient
-	return fmt.Sprintf("%s%s", redirectBase(r), r.URL.Path)
+
+	return client
 }
 
 // Utility methods

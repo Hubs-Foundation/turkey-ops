@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"os"
-	"strings"
 	"sync/atomic"
 )
 
@@ -31,7 +29,7 @@ func Login() http.Handler {
 			return
 		}
 
-		logger.Debug("dumpHeader: " + dumpHeader(r))
+		// logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		idp := r.URL.Query()["idp"]
 		if len(idp) != 1 {
@@ -40,9 +38,8 @@ func Login() http.Handler {
 			return
 		}
 
-		client := r.URL.Query()["client"]
-		trustedClients := os.Getenv("trustedClients")
-		if len(client) != 1 || !strings.Contains(trustedClients, client[0]+",") {
+		client := GetClient(r)
+		if client == "" {
 			logger.Sugar().Debug(`bad value for ["client"] in r.URL.Query()`)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
@@ -57,7 +54,7 @@ func Login() http.Handler {
 		// Valid request
 		logger.Sugar().Debug("allowed. good cookie found for " + email)
 		w.Header().Set("X-Forwarded-User", email)
-		http.Redirect(w, r, client[0], http.StatusTemporaryRedirect)
+		http.Redirect(w, r, client, http.StatusTemporaryRedirect)
 
 	})
 }
@@ -114,7 +111,7 @@ func Oauth() http.Handler {
 		}
 
 		logger.Debug("Handling callback")
-		logger.Debug("dumpHeader: " + dumpHeader(r))
+		// logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		// Check state
 		state := r.URL.Query().Get("state")
@@ -194,7 +191,7 @@ func Authn() http.Handler {
 		if _, ok := r.Header["X-Forwarded-Uri"]; ok {
 			r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
 		}
-		logger.Debug("dumpHeader: " + dumpHeader(r))
+		// logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		email, err := CheckCookie(r)
 		if err != nil {

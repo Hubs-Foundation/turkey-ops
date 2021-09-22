@@ -15,8 +15,8 @@ var cfg *Config
 
 // Config holds the runtime application config
 type Config struct {
-	Domain        string `turkey domain`
-	DefaultClient string `ie. https://portal.myhubs.net`
+	Domain         string `turkey domain`
+	TrustedClients string `ie. https://portal.myhubs.net`
 
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config                 func(s string) error `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
@@ -47,6 +47,7 @@ func MakeCfg() {
 	cfg = &Config{}
 	cfg.Domain = "myhubs.net"
 	cfg.AuthHost = "myhubs.net"
+	cfg.TrustedClients = os.Getenv("trustedClients")
 	cfg.Secret = []byte("dummy-SecretString-replace-me-with-env-var-later")
 	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
 	cfg.CookieName = "_turkeyauthcookie"
