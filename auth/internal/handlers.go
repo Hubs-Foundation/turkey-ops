@@ -91,6 +91,7 @@ func Login() http.Handler {
 }
 
 func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
+	logger.Debug("dumpHeader: " + dumpHeader(r))
 
 	p, err := cfg.GetProvider(providerName)
 	if err != nil {
