@@ -46,9 +46,9 @@ spec:
       labels:
         app: auth
     spec:
-      terminationGracePeriodSeconds: 60
+      # terminationGracePeriodSeconds: 3
       containers:
-      - image: mozillareality/turkeyauth:59
+      - image: mozillareality/turkeyauth:60
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -61,7 +61,7 @@ spec:
         - name: oauthClientId_google
           value: 329616299969-qdj49c50rqqokk2vialrm6l7nljfa0j5.apps.googleusercontent.com
         - name: oauthClientSecret_google
-          value: g4QmxQI3gmCJg5G1DDHP4oBq          
+          value: g4QmxQI3gmCJg5G1DDHP4oBq
         resources:
           limits:
             memory: 1024Mi
