@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"text/template"
@@ -32,25 +31,23 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UserEmail:   r.Header.Get("X-Forwarded-User"),
 		UserPicture: r.Header.Get("X-Forwarded-UserPicture"),
 	}
-	var buf bytes.Buffer
-	t.Execute(&buf, cfg)
 
 	c, err := r.Cookie(utils.SessionTokenName)
 	if err != nil {
 		newCookie := utils.CreateNewSession()
 		http.SetCookie(w, newCookie)
-		t.Execute(w, nil)
+		t.Execute(w, cfg)
 		return
 	}
 
 	sess := utils.CACHE.Load(c.Value)
 	if sess == nil {
 		http.SetCookie(w, utils.CreateNewSession())
-		t.Execute(w, nil)
+		t.Execute(w, cfg)
 		return
 	}
 
-	t.Execute(w, nil)
+	t.Execute(w, cfg)
 
 })
 
