@@ -91,7 +91,6 @@ func Login() http.Handler {
 }
 
 func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
-	logger.Debug("dumpHeader: " + dumpHeader(r))
 
 	p, err := cfg.GetProvider(providerName)
 	if err != nil {
@@ -142,7 +141,9 @@ func Oauth() http.Handler {
 			return
 		}
 
-		logger.Sugar().Debug("Handling callback")
+		logger.Debug("Handling callback")
+		logger.Debug("dumpHeader: " + dumpHeader(r))
+
 		// Check state
 		state := r.URL.Query().Get("state")
 		if err := ValidateState(state); err != nil {
