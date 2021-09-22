@@ -362,7 +362,7 @@ func cookieSignature(r *http.Request, email, expires string) string {
 
 	hash := hmac.New(sha256.New, cfg.Secret)
 	cookieDomain := cookieDomain(r)
-	logger.Debug("### cookieSignature ### cookieDomain: " + cookieDomain)
+	// logger.Debug("### cookieSignature ### cookieDomain: " + cookieDomain)
 
 	hash.Write([]byte(cookieDomain))
 	hash.Write([]byte(email))

@@ -26,7 +26,7 @@ const (
 
 var (
 	listenAddr string
-	healthy    int32
+	Healthy    int32
 )
 
 func StartServer(router *http.ServeMux, port int) {
@@ -58,7 +58,7 @@ func StartServer(router *http.ServeMux, port int) {
 	go func() {
 		<-quit
 		Logger.Println("Server is shutting down...")
-		atomic.StoreInt32(&healthy, 0)
+		atomic.StoreInt32(&Healthy, 0)
 
 		ctx, cancel := context.WithTimeout(context.Background(),
 			1*time.Second) //default = 30 or longer probably i guess depends on the thing
@@ -71,7 +71,7 @@ func StartServer(router *http.ServeMux, port int) {
 		close(done)
 	}()
 	Logger.Println("Server is ready to handle requests at", listenAddr)
-	atomic.StoreInt32(&healthy, 1)
+	atomic.StoreInt32(&Healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		Logger.Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}

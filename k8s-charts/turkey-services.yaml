@@ -48,7 +48,7 @@ spec:
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
-      - image: mozillareality/turkeyauth:60
+      - image: mozillareality/turkeyauth:61
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -116,7 +116,6 @@ metadata:
   namespace: turkey-services
 spec:
   forwardAuth:
-    # address: http://api.turkey-services:9001/traefik-ip
     address: http://auth.turkey-services:9001/authn
     authResponseHeaders:
       - X-Forwarded-User

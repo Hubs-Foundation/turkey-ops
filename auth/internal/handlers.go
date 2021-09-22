@@ -82,7 +82,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	}
 
 	loginURL := p.GetLoginURL("https://auth."+cfg.Domain+"/_oauth", MakeState(r, p, nonce))
-
+	logger.Debug(" ### loginURL: " + loginURL)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
 }

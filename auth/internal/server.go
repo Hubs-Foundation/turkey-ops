@@ -106,14 +106,14 @@ func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 func proxyMods() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logger.Debug("r.Host in: " + r.Host)
+			// logger.Debug("r.Host in: " + r.Host)
 			if _, ok := r.Header["X-Forwarded-Host"]; ok {
 				r.Host = r.Header.Get("X-Forwarded-Host")
 			}
 			if _, ok := r.Header["X-Forwarded-Method"]; ok {
 				r.Method = r.Header.Get("X-Forwarded-Method")
 			}
-			logger.Debug("r.Host out: " + r.Host)
+			// logger.Debug("r.Host out: " + r.Host)
 			next.ServeHTTP(w, r)
 		})
 	}

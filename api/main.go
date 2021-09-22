@@ -19,6 +19,8 @@ func main() {
 	router.Handle("/LogStream", handlers.LogStream)
 	router.Handle("/KeepAlive", handlers.KeepAlive)
 	// router.Handle("/Dummy", handlers.Dummy)
+	router.Handle("/Healthz", handlers.Healthz())
+
 	utils.StartServer(router, 888)
 
 }

@@ -61,7 +61,7 @@ spec:
   - kind: Rule
     match: Host(`dash.myhubs.net`) && PathPrefix(`/`)
     middlewares:
-    - name: tfa-google
+    - name: turkeyauth
       namespace: tools
     services:                       
     - kind: Service
@@ -96,11 +96,11 @@ subjects:
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  name: tfa-google
+  name: turkeyauth
   namespace: tools
 spec:
   forwardAuth:
-    address: http://tfa-google.auth:4181
+    address: http://auth.turkey-services:9001/authn
     authResponseHeaders:
       - X-Forwarded-User
-    trustForwardHeader: true
+    trustForwardHeader: true    

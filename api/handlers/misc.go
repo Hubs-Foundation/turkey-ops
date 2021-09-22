@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"main/utils"
 	"net/http"
+	"sync/atomic"
 )
 
 func dumpHeader(r *http.Request) string {
@@ -34,3 +36,12 @@ var KeepAlive = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 // 	os.Exit(1)
 
 // })
+func Healthz() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if atomic.LoadInt32(&utils.Healthy) == 1 {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.WriteHeader(http.StatusServiceUnavailable)
+	})
+}
