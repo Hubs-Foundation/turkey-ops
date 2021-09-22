@@ -119,6 +119,7 @@ spec:
     address: http://auth.turkey-services:9001/authn
     authResponseHeaders:
       - X-Forwarded-User
+      - X-Forwarded-UserPicture
     trustForwardHeader: true      
 ---
 apiVersion: v1
@@ -148,7 +149,7 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:13
+      - image: mozillareality/turkeyapi:14
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         livenessProbe:
