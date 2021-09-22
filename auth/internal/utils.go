@@ -8,9 +8,10 @@ import (
 )
 
 var logger *zap.Logger
+var Atom zap.AtomicLevel
 
 func InitLogger() {
-	atom := zap.NewAtomicLevel()
+	Atom = zap.NewAtomicLevel()
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.TimeKey = "t"
 	encoderCfg.EncodeTime = zapcore.TimeEncoderOfLayout("060102.03:04:05MST") //wanted to use time.Kitchen so much
@@ -18,9 +19,9 @@ func InitLogger() {
 	encoderCfg.FunctionKey = "f"
 	encoderCfg.MessageKey = "m"
 	// encoderCfg.FunctionKey = "f"
-	logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), atom), zap.AddCaller())
+	logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), Atom), zap.AddCaller())
 
 	defer logger.Sync()
 
-	atom.SetLevel(zap.DebugLevel)
+	Atom.SetLevel(zap.DebugLevel)
 }

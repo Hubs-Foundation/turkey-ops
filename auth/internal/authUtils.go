@@ -15,6 +15,24 @@ import (
 	"main/internal/idp"
 )
 
+func CheckCookie(r *http.Request) (string, error) {
+	// Get auth cookie
+	c, err := r.Cookie(cfg.CookieName)
+	if err != nil {
+		logger.Sugar().Debug("missing cookie: " + cfg.CookieName)
+		return "", errors.New("missing cookie")
+	}
+	// Validate cookie
+	email, err := ValidateCookie(r, c)
+	if err != nil {
+		if err.Error() != "Cookie has expired" {
+			logger.Sugar().Warn("Bad cookie, err: " + err.Error())
+		}
+		return "", err
+	}
+	return email, nil
+}
+
 // Request Validation
 
 // ValidateCookie verifies that a cookie matches the expected format of:
