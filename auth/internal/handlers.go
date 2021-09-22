@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -243,6 +244,10 @@ func Authn() http.Handler {
 		if r.URL.Path != "/authn" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
+		}
+		// Read URI from header if we're acting as forward auth middleware
+		if _, ok := r.Header["X-Forwarded-Uri"]; ok {
+			r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
 		}
 		logger.Debug("dumpHeader: " + dumpHeader(r))
 		// Get auth cookie

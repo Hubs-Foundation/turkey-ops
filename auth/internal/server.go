@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -115,10 +114,6 @@ func proxyMods() func(http.Handler) http.Handler {
 				r.Method = r.Header.Get("X-Forwarded-Method")
 			}
 			logger.Debug("r.Host out: " + r.Host)
-			// Read URI from header if we're acting as forward auth middleware
-			if _, ok := r.Header["X-Forwarded-Uri"]; ok {
-				r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
-			}
 			next.ServeHTTP(w, r)
 		})
 	}
