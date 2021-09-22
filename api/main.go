@@ -14,7 +14,7 @@ func main() {
 
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 
-	router.Handle("/", handlers.Console)
+	router.Handle("/console", handlers.Console)
 	router.Handle("/orchestrator", handlers.Orchestrator)
 	router.Handle("/LogStream", handlers.LogStream)
 	router.Handle("/KeepAlive", handlers.KeepAlive)

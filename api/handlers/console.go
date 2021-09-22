@@ -1,12 +1,18 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"text/template"
 
 	"main/utils"
 )
+
+type consoleCfg struct {
+	UserEmail   string `json:"key"`
+	UserPicture string `json:"subdomain"`
+}
 
 var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/console" {
@@ -19,7 +25,15 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	t, err := template.ParseFiles("./_statics/console.html")
 	if err != nil {
 		utils.Logger.Panic("failed to parse console.html template -- " + err.Error())
+		return
 	}
+
+	cfg := consoleCfg{
+		UserEmail:   r.Header.Get("X-Forwarded-User"),
+		UserPicture: r.Header.Get("X-Forwarded-UserPicture"),
+	}
+	var buf bytes.Buffer
+	t.Execute(&buf, cfg)
 
 	c, err := r.Cookie(utils.SessionTokenName)
 	if err != nil {
