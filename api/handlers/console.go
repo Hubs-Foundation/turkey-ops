@@ -28,7 +28,7 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cfg := consoleCfg{
-		UserEmail:   r.Header.Get("X-Forwarded-User"),
+		UserEmail:   r.Header.Get("X-Forwarded-UserEmail"),
 		UserPicture: r.Header.Get("X-Forwarded-UserPicture"),
 	}
 
