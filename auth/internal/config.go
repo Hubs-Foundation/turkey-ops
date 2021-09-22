@@ -55,11 +55,22 @@ func MakeCfg() {
 	cfg.CookieDomains = []CookieDomain{*NewCookieDomain("myhubs.net")}
 
 	cfg.DefaultProvider = "google"
+	// GOOGLE
 	cfg.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
 	cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
 	err := cfg.Providers.Google.Setup()
+
 	if err != nil {
 		logger.Error("[ERROR] @ Cfg.Providers.Google.Setup: " + err.Error())
+	}
+
+	// FXA
+	cfg.Providers.Google.ClientID = os.Getenv("oauthClientId_fxa")
+	cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_fxa")
+	err := cfg.Providers.Fxa.Setup()
+
+	if err != nil {
+		logger.Error("[ERROR] @ Cfg.Providers.Fxa.Setup: " + err.Error())
 	}
 }
 
@@ -99,6 +110,8 @@ func (c *Config) GetProvider(name string) (idp.Provider, error) {
 		// 	return &c.Providers.OIDC, nil
 		// case "generic-oauth":
 		// 	return &c.Providers.GenericOAuth, nil
+	case "fxa":
+		return &c.Providers.Fxa, nil
 	}
 
 	return nil, fmt.Errorf("unknown provider: %s", name)

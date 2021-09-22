@@ -10,6 +10,7 @@ import (
 // Providers contains all the implemented providers
 type Providers struct {
 	Google Google `group:"Google Provider" namespace:"google" env-namespace:"GOOGLE"`
+	Fxa Fxa `group:"FxA Provider" namespace:"fxa" env-namespace:"FXA"`
 	// OIDC         OIDC         `group:"OIDC Provider" namespace:"oidc" env-namespace:"OIDC"`
 	GenericOAuth GenericOAuth `group:"Generic OAuth2 Provider" namespace:"generic-oauth" env-namespace:"GENERIC_OAUTH"`
 }
@@ -56,7 +57,7 @@ func (p *OAuthProvider) ConfigCopy(redirectURI string) oauth2.Config {
 	return config
 }
 
-// OAuthGetLoginURL provides a base "GetLoginURL" for proiders using OAauth2
+// OAuthGetLoginURL provides a base "GetLoginURL" for providers using OAauth2
 func (p *OAuthProvider) OAuthGetLoginURL(redirectURI, state string) string {
 	config := p.ConfigCopy(redirectURI)
 
@@ -67,7 +68,7 @@ func (p *OAuthProvider) OAuthGetLoginURL(redirectURI, state string) string {
 	return config.AuthCodeURL(state)
 }
 
-// OAuthExchangeCode provides a base "ExchangeCode" for proiders using OAauth2
+// OAuthExchangeCode provides a base "ExchangeCode" for providers using OAauth2
 func (p *OAuthProvider) OAuthExchangeCode(redirectURI, code string) (*oauth2.Token, error) {
 	config := p.ConfigCopy(redirectURI)
 	return config.Exchange(p.ctx, code)
