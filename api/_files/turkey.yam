@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: hc-{{.Subdomain}}
   labels:
-    UserId: {{.UserId}}
+    TurkeyId: {{.TurkeyId}}
 ---
 ######################################################################################
 ###################################### ingress #######################################
@@ -13,7 +13,7 @@ kind: Ingress
 metadata:
   name: turkey-https
   labels:
-    UserId: {{.UserId}}
+    TurkeyId: {{.TurkeyId}}
   namespace: hc-{{.Subdomain}}
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: https
@@ -62,7 +62,7 @@ kind: Secret
 metadata:
   name: configs
   labels:
-    UserId: {{.UserId}}
+    TurkeyId: {{.TurkeyId}}
   namespace: hc-{{.Subdomain}}
 stringData:
   NODE_COOKIE: foobar
@@ -79,7 +79,7 @@ stringData:
   SMTP_PORT: "25"
   SMTP_USER: AKIAYEJRSWRAQUI7U3J4
   SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
-  ADM_EMAIL: {{.UserId}}
+  ADM_EMAIL: {{.UserEmail}}
 ---
 ########################################################################
 ###################### reticulum #######################################
@@ -89,7 +89,7 @@ kind: Deployment
 metadata:
   name: reticulum
   labels:
-    UserId: {{.UserId}}
+    TurkeyId: {{.TurkeyId}}
   namespace: hc-{{.Subdomain}}
 spec:
   replicas: 2
@@ -210,18 +210,18 @@ spec:
             periodSeconds: 120
           resources:
             limits:
-              memory: 512Mi
-              cpu: 0.8
+              memory: 1024Mi
+              cpu: 1
             requests:
               memory: 128Mi
-              cpu: 0.2
+              cpu: 0.1
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: ret
   labels:
-    UserId: {{.UserId}}
+    TurkeyId: {{.TurkeyId}}
   namespace: hc-{{.Subdomain}}
 spec:
   clusterIP: None
@@ -240,7 +240,7 @@ kind: Deployment
 metadata:
   name: hubs
   labels:
-    UserId: {{.UserId}}
+    TurkeyId: {{.TurkeyId}}
   namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1 
@@ -302,10 +302,10 @@ spec:
             periodSeconds: 120
           resources:
             limits:
-              memory: 512Mi
-              cpu: 0.8
+              memory: 1024Mi
+              cpu: 1
             requests:
-              memory: 64Mi
+              memory: 128Mi
               cpu: 0.1
 ---
 apiVersion: v1
@@ -313,7 +313,7 @@ kind: Service
 metadata:
   name: hubs
   labels:
-    UserId: {{.UserId}}
+    TurkeyId: {{.TurkeyId}}
   namespace: hc-{{.Subdomain}}
 spec:
   clusterIP: None

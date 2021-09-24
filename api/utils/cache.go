@@ -70,13 +70,14 @@ func (mb *MetaBox) Delete(key string) {
 }
 
 func (sess *CacheBoxSessData) PushMsg(msg string) {
-	delay := time.Millisecond * 1
+
 	go func() {
 		if sess == nil {
 			Logger.Println("WARNING @ PushMsg: no session. \n message dropped = <" + msg + ">")
 			return
 		}
 		attempt := 0
+		delay := time.Millisecond * 1
 		delayStep := 500 * time.Millisecond
 		maxAttempt := 10
 		for sess.SseChan == nil {

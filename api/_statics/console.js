@@ -22,14 +22,14 @@ function login_fxa() {
 document.getElementById("cfgEx_get").addEventListener("click", cfgEx_getClicked);
 function cfgEx_getClicked(){
   document.getElementById("cfg").value = `{
-  "userid": "user1"
+  "turkeyid": "user1"
 }`
 }
 
 document.getElementById("cfgEx_deploy").addEventListener("click", cfgEx_deployClicked);
 function cfgEx_deployClicked(){
   document.getElementById("cfg").value = `{
-  "userid": "user1",
+  "turkeyid": "user1",
   "subdomain": "subdomain1",
   "domain": "myhubs.net"
 }`
@@ -40,7 +40,7 @@ function deployBtnClicked() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("POST", "/orchestrator", true);
+  xhttp.open("POST", "/hc_deploy", true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }
@@ -50,7 +50,7 @@ function getBtnClicked() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("GET", "/orchestrator", true);
+  xhttp.open("POST", "/hc_get", true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }

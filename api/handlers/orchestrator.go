@@ -29,39 +29,35 @@ import (
 
 type turkeyCfg struct {
 	Key       string `json:"key"`
-	UserId    string `json:"userid"`
+	TurkeyId  string `json:"turkeyid"`
 	Subdomain string `json:"subdomain"`
 	Domain    string `json:"domain"`
 	Tier      string `json:"tier"`
+	UserEmail string `json:"useremail"`
 }
 
-var Orchestrator = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	if r.URL.Path != "/orchestrator" {
+	if r.URL.Path != "/hc_deploy" || r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+
 	sess := utils.GetSession(r.Cookie)
-	//get r.body
-	rBodyBytes, err := ioutil.ReadAll(r.Body)
+
+	cfg, err := makeCfg(r)
 	if err != nil {
-		sess.PushMsg("ERROR @ reading r.body, error = " + err.Error())
-		return
+		sess.PushMsg("bad turkeyCfg: " + err.Error())
 	}
-	//make cfg
-	var cfg turkeyCfg
-	err = json.Unmarshal(rBodyBytes, &cfg)
-	if err != nil {
-		sess.PushMsg("bad turkeyCfg: " + string(rBodyBytes))
-		return
-	}
-	// tmp -- until auth in place
+
+	// tmp -- until authZ in place
 	if cfg.Key != "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
 		sess.PushMsg("bad turkeyCfg.Key")
 		return
 	}
+
 	// userid is required
-	if cfg.UserId == "" {
+	if cfg.TurkeyId == "" {
 		sess.PushMsg("ERROR bad turkeyCfg.UserId")
 		return
 	}
@@ -70,99 +66,54 @@ var Orchestrator = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		sess.PushMsg("ERROR bad turkeyCfg.Domain")
 		return
 	}
-	switch r.Method {
 
-	case "GET":
-		//getting k8s config
-		sess.PushMsg("&#9989; ... using InClusterConfig")
-		k8sCfg, err := rest.InClusterConfig()
-		// }
-		if k8sCfg == nil {
-			sess.PushMsg("ERROR" + err.Error())
-			panic(err.Error())
-		}
-		sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-		clientset, err := kubernetes.NewForConfig(k8sCfg)
-		if err != nil {
-			panic(err.Error())
-		}
-		nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
-			metav1.ListOptions{
-				LabelSelector: "UserId=" + cfg.UserId,
-			})
-		if err != nil {
-			panic(err.Error())
-		}
-		sess.PushMsg("GET --- user <" + cfg.UserId + "> owns: ")
-		for _, ns := range nsList.Items {
-			sess.PushMsg("......<" + ns.ObjectMeta.Name + ">")
-		}
+	//default Tier is free
+	if cfg.Tier == "" {
+		cfg.Tier = "free"
+	}
+	//default Subdomain is a string hashed from turkeyId and time
+	if cfg.Subdomain == "" {
+		cfg.Subdomain = cfg.TurkeyId + "-" + strconv.FormatInt(time.Now().Unix()-1626102245, 36)
+	}
 
-	case "POST":
-
-		if cfg.Tier == "" {
-			cfg.Tier = "free"
-		}
-		if cfg.Subdomain == "" {
-			cfg.Subdomain = cfg.UserId + "-" + strconv.FormatInt(time.Now().Unix()-1626102245, 36)
-		}
-
-		//render turkey-k8s-chart by apply cfg to turkey.yam
-		t, err := template.ParseFiles("./_files/turkey.yam")
-		if err != nil {
-			panic(err.Error())
-		}
-		var buf bytes.Buffer
-		t.Execute(&buf, cfg)
-		k8sChartYaml := buf.String()
-
-		//<debugging>
-		if cfg.UserId[0:4] == "dev_" {
-			if cfg.Subdomain != "dev0" {
-				fmt.Println("dev_ cheatcodes only work with subdomain == dev0 ")
-				return
-			}
-			sess.PushMsg(`turkeyUserId[0:4] == dev_ means dev mode`)
-			if cfg.UserId == "dev_dumpr" {
-				sess.PushMsg(dumpHeader(r))
-				return
-			}
-			if cfg.UserId == "dev_gimmechart" {
-				w.Header().Set("Content-Disposition", "attachment; filename="+cfg.Subdomain+".yaml")
-				w.Header().Set("Content-Type", "text/plain")
-				io.Copy(w, strings.NewReader(k8sChartYaml))
-				return
-			}
-		}
-		//</debugging>
-
-		//getting k8s config
-		sess.PushMsg("&#9989; ... using InClusterConfig")
-		k8sCfg, err := rest.InClusterConfig()
-		// }
-		if k8sCfg == nil {
-			sess.PushMsg("ERROR" + err.Error())
-			panic(err.Error())
-		}
-		sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-
-		// kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
-		sess.PushMsg("&#128640;[DEBUG] --- deployment started")
-		err = ssa_k8sChartYaml(cfg.UserId, k8sChartYaml, k8sCfg)
-		if err != nil {
-			sess.PushMsg("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
-			panic(err.Error())
-		}
-		skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
-		sess.PushMsg("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
-			skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.UserId + "'s " + cfg.Subdomain + "</b></a>")
-
-		return
-
-	default:
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail")
+	if cfg.UserEmail == "" {
+		sess.PushMsg("failed to get cfg.UserEmail")
 		return
 	}
+
+	//render turkey-k8s-chart by apply cfg to turkey.yam
+	t, err := template.ParseFiles("./_files/turkey.yam")
+	if err != nil {
+		panic(err.Error())
+	}
+	var buf bytes.Buffer
+	t.Execute(&buf, cfg)
+	k8sChartYaml := buf.String()
+
+	//getting k8s config
+	sess.PushMsg("&#9989; ... using InClusterConfig")
+	k8sCfg, err := rest.InClusterConfig()
+	// }
+	if k8sCfg == nil {
+		sess.PushMsg("ERROR" + err.Error())
+		panic(err.Error())
+	}
+	sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+
+	// kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
+	sess.PushMsg("&#128640;[DEBUG] --- deployment started")
+	err = ssa_k8sChartYaml(cfg.TurkeyId, k8sChartYaml, k8sCfg)
+	if err != nil {
+		sess.PushMsg("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
+		panic(err.Error())
+	}
+	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
+	sess.PushMsg("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
+		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + "'s " + cfg.Subdomain + "</b></a>")
+
+	return
+
 })
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
@@ -221,4 +172,86 @@ func ssa_k8sChartYaml(userId, k8sChartYaml string, cfg *rest.Config) error {
 		}
 	}
 	return err
+}
+
+var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/hc_get" || r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	sess := utils.GetSession(r.Cookie)
+	cfg, err := makeCfg(r)
+	if err != nil {
+		sess.PushMsg("bad turkeyCfg: " + err.Error())
+		return
+	}
+
+	//<debugging cheatcodes>
+	if cfg.TurkeyId[0:4] == "dev_" {
+		if cfg.Subdomain != "dev0" {
+			fmt.Println("dev_ cheatcodes only work with subdomain == dev0 ")
+			return
+		}
+		sess.PushMsg(`turkeyUserId[0:4] == dev_ means dev mode`)
+
+		cfg.UserEmail = "foo@bar.com"
+		t, _ := template.ParseFiles("./_files/turkey.yam")
+		var buf bytes.Buffer
+		t.Execute(&buf, cfg)
+		k8sChartYaml := buf.String()
+		if cfg.TurkeyId == "dev_dumpr" {
+			sess.PushMsg(dumpHeader(r))
+			return
+		}
+		if cfg.TurkeyId == "dev_gimmechart" {
+			w.Header().Set("Content-Disposition", "attachment; filename="+cfg.Subdomain+".yaml")
+			w.Header().Set("Content-Type", "text/plain")
+			io.Copy(w, strings.NewReader(k8sChartYaml))
+			return
+		}
+	}
+	//</debugging cheatcodes>
+
+	//getting k8s config
+	sess.PushMsg("&#9989; ... using InClusterConfig")
+	k8sCfg, err := rest.InClusterConfig()
+	// }
+	if k8sCfg == nil {
+		sess.PushMsg("ERROR" + err.Error())
+		panic(err.Error())
+	}
+	sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	clientset, err := kubernetes.NewForConfig(k8sCfg)
+	if err != nil {
+		panic(err.Error())
+	}
+	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
+		metav1.ListOptions{
+			LabelSelector: "UserId=" + cfg.TurkeyId,
+		})
+	if err != nil {
+		panic(err.Error())
+	}
+	sess.PushMsg("GET --- user <" + cfg.TurkeyId + "> owns: ")
+	for _, ns := range nsList.Items {
+		sess.PushMsg("......<" + ns.ObjectMeta.Name + ">")
+	}
+})
+
+func makeCfg(r *http.Request) (turkeyCfg, error) {
+	var cfg turkeyCfg
+
+	//get r.body
+	rBodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("ERROR @ reading r.body, error = " + err.Error())
+		return cfg, err
+	}
+	//make cfg
+	err = json.Unmarshal(rBodyBytes, &cfg)
+	if err != nil {
+		fmt.Println("bad turkeyCfg: " + string(rBodyBytes))
+		return cfg, err
+	}
+	return cfg, nil
 }

@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: hc-dev0
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
 ---
 ######################################################################################
 ###################################### ingress #######################################
@@ -13,7 +13,7 @@ kind: Ingress
 metadata:
   name: turkey-https
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: https
@@ -62,7 +62,7 @@ kind: Secret
 metadata:
   name: configs
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 stringData:
   NODE_COOKIE: foobar
@@ -79,7 +79,7 @@ stringData:
   SMTP_PORT: "25"
   SMTP_USER: AKIAYEJRSWRAQUI7U3J4
   SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
-  ADM_EMAIL: dev_gimmechart
+  ADM_EMAIL: foo@bar.com
 ---
 ########################################################################
 ###################### reticulum #######################################
@@ -89,7 +89,7 @@ kind: Deployment
 metadata:
   name: reticulum
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
   replicas: 2
@@ -221,7 +221,7 @@ kind: Service
 metadata:
   name: ret
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
   clusterIP: None
@@ -240,7 +240,7 @@ kind: Deployment
 metadata:
   name: hubs
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
   replicas: 1 
@@ -313,7 +313,7 @@ kind: Service
 metadata:
   name: hubs
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
   clusterIP: None
