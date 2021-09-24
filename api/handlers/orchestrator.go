@@ -50,11 +50,11 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.PushMsg("bad turkeyCfg: " + err.Error())
 	}
 
-	// tmp -- until authZ in place
-	if cfg.Key != "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
-		sess.PushMsg("bad turkeyCfg.Key")
-		return
-	}
+	// // tmp -- until authZ in place
+	// if cfg.Key != "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
+	// 	sess.PushMsg("bad turkeyCfg.Key")
+	// 	return
+	// }
 
 	// userid is required
 	if cfg.TurkeyId == "" {
