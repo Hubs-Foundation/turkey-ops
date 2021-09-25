@@ -232,6 +232,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err.Error())
 	}
+	//list ns
 	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
 		metav1.ListOptions{
 			LabelSelector: "UserId=" + cfg.TurkeyId,
@@ -285,29 +286,40 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+})
 
-	// //getting k8s config
-	// sess.Log("&#9989; ... using InClusterConfig")
-	// k8sCfg, err := rest.InClusterConfig()
-	// // }
-	// if k8sCfg == nil {
-	// 	sess.Log("ERROR" + err.Error())
-	// 	panic(err.Error())
+var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/hc_delDB" || r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	sess := internal.GetSession(r.Cookie)
+	cfg, err := makeCfg(r)
+	if err != nil {
+		sess.Log("bad turkeyCfg: " + err.Error())
+		return
+	}
+
+	//getting k8s config
+	sess.Log("&#9989; ... using InClusterConfig")
+	k8sCfg, err := rest.InClusterConfig()
 	// }
-	// sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-	// clientset, err := kubernetes.NewForConfig(k8sCfg)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-	// nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
-	// 	metav1.ListOptions{
-	// 		LabelSelector: "UserId=" + cfg.TurkeyId,
-	// 	})
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-	// sess.Log("GET --- user <" + cfg.TurkeyId + "> owns: ")
-	// for _, ns := range nsList.Items {
-	// 	sess.Log("......<" + ns.ObjectMeta.Name + ">")
-	// }
+	if k8sCfg == nil {
+		sess.Log("ERROR" + err.Error())
+		panic(err.Error())
+	}
+	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	clientset, err := kubernetes.NewForConfig(k8sCfg)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	//delete ns
+	err = clientset.CoreV1().Namespaces().Delete(context.TODO(),
+		"hc-"+cfg.Subdomain,
+		metav1.DeleteOptions{})
+	if err != nil {
+		panic("delete ns failed: " + err.Error())
+	}
+
 })

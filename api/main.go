@@ -22,6 +22,9 @@ func main() {
 	router.Handle("/LogStream", handlers.LogStream)
 	router.Handle("/Healthz", handlers.Healthz())
 
+	router.Handle("/hc_delNS", handlers.Hc_delNS)
+	router.Handle("/hc_delDB", handlers.Hc_delDB)
+
 	// router.Handle("/KeepAlive", handlers.KeepAlive)
 	// router.Handle("/Dummy", handlers.Dummy)
 	internal.StartServer(router, 888)
