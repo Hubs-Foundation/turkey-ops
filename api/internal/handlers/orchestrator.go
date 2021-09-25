@@ -108,11 +108,13 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//create db
 	conn, err := internal.PgxPool.Acquire(context.Background())
 	if err != nil {
+		sess.Log("ERROR --- DB.conn FAILED !!! because" + fmt.Sprint(err))
 		panic("error acquiring connection: " + err.Error())
 	}
 	cfg.DBname = "hc-" + cfg.Subdomain
-	_, err = conn.Exec(context.Background(), "create database "+cfg.DBname)
+	_, err = conn.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
 	if err != nil {
+		sess.Log("ERROR --- DB.conn.Exec FAILED !!! because" + fmt.Sprint(err))
 		panic(err)
 	}
 	sess.Log("&#128640;[DEBUG] --- db created")

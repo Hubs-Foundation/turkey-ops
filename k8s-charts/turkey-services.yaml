@@ -48,7 +48,7 @@ spec:
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
-      - image: mozillareality/turkeyauth:64
+      - image: mozillareality/turkeyauth:65
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -150,7 +150,7 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:19
+      - image: mozillareality/turkeyapi:21
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         env:
