@@ -78,7 +78,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("failed to get cfg.UserEmail")
 		return
 	}
-
+	cfg.DBname = "hc-" + cfg.Subdomain
 	//render turkey-k8s-chart by apply cfg to turkey.yam
 	t, err := template.ParseFiles("./_files/turkey.yam")
 	if err != nil {
@@ -111,7 +111,6 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("ERROR --- DB.conn FAILED !!! because" + fmt.Sprint(err))
 		panic("error acquiring connection: " + err.Error())
 	}
-	cfg.DBname = "hc-" + cfg.Subdomain
 	_, err = conn.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
