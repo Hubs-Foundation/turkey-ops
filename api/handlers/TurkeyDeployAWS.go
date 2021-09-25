@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"main/turkeyUtils.go"
-	"main/utils"
+	"main/internal"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -27,16 +26,16 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		sess := utils.GetSession(r.Cookie)
+		sess := internal.GetSession(r.Cookie)
 		sess.PushMsg("!!! THE ONE BUTTON clicked !!!")
 
-		userData, err := utils.ParseJsonReqBody(r.Body)
+		userData, err := internal.ParseJsonReqBody(r.Body)
 		if err != nil {
 			sess.PushMsg("ERROR @ Unmarshal r.body, will try configs in cache, btw json.Unmarshal error = " + err.Error())
 			return
 		}
 
-		awss, err := utils.NewAwsSvs(userData["awsKey"], userData["awsSecret"], userData["awsRegion"])
+		awss, err := internal.NewAwsSvs(userData["awsKey"], userData["awsSecret"], userData["awsRegion"])
 		if err != nil {
 			sess.PushMsg("ERROR @ NewAwsSvs: " + err.Error())
 			return
@@ -53,7 +52,7 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		if !ok {
 			deploymentName = "z"
 		}
-		stackName := deploymentName + "-" + utils.StackNameGen()
+		stackName := deploymentName + "-" + internal.StackNameGen()
 
 		_, ok = userData["cf_deploymentId"]
 		if !ok {
@@ -85,7 +84,7 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 
 		go reportCreateCFstackStatus(stackName, userData, sess, awss)
 
-		go turkeyUtils.DeployHubsAssets(
+		go internal.DeployHubsAssets(
 			awss,
 			map[string]string{
 				"base_assets_path": "https://" + stackName + "-cdn." + turkeyDomain + "/hubs/",
@@ -103,7 +102,7 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 			turkeycfg_s3_bucket,
 			stackName+"-assets-"+userData["cf_deploymentId"])
 
-		go turkeyUtils.DeployKeys(awss, stackName, stackName+"-assets-"+userData["cf_deploymentId"])
+		go internal.DeployKeys(awss, stackName, stackName+"-assets-"+userData["cf_deploymentId"])
 
 		return
 
@@ -129,7 +128,7 @@ func parseCFparams(userData map[string]string) ([]*cloudformation.Parameter, err
 				if err != nil {
 					return nil, err
 				}
-				val = utils.PwdGen(len)
+				val = internal.PwdGen(len)
 			}
 			userData[k] = val
 			cfParams = append(cfParams,
@@ -139,7 +138,7 @@ func parseCFparams(userData map[string]string) ([]*cloudformation.Parameter, err
 	return cfParams, nil
 }
 
-func createSSMparam(stackName string, accountNum string, userData map[string]string, awss *utils.AwsSvs, sess *utils.CacheBoxSessData) error {
+func createSSMparam(stackName string, accountNum string, userData map[string]string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) error {
 	stacks, err := awss.GetStack(stackName)
 	if err != nil {
 		sess.PushMsg("ERROR @ createSSMparam -- GetStack: " + err.Error())
@@ -171,7 +170,7 @@ func createSSMparam(stackName string, accountNum string, userData map[string]str
 	return nil
 }
 
-func reportCreateCFstackStatus(stackName string, userData map[string]string, sess *utils.CacheBoxSessData, awss *utils.AwsSvs) error {
+func reportCreateCFstackStatus(stackName string, userData map[string]string, sess *internal.CacheBoxSessData, awss *internal.AwsSvs) error {
 	time.Sleep(time.Second * 10)
 	stackStatus := "something something IN_PROGRESS"
 	for strings.Contains(stackStatus, "IN_PROGRESS") {

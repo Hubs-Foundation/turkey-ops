@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"main/utils"
+
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,6 +25,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+
+	"main/internal"
 )
 
 type turkeyCfg struct {
@@ -34,6 +36,7 @@ type turkeyCfg struct {
 	Domain    string `json:"domain"`
 	Tier      string `json:"tier"`
 	UserEmail string `json:"useremail"`
+	DBname    string `json:"dbname"`
 }
 
 var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +46,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess := utils.GetSession(r.Cookie)
+	sess := internal.GetSession(r.Cookie)
 
 	cfg, err := makeCfg(r)
 	if err != nil {
@@ -82,6 +85,17 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//create db
+	conn, err := internal.PgxPool.Acquire(context.Background())
+	if err != nil {
+		panic("error acquiring connection: " + err.Error())
+	}
+	cfg.DBname = "hc-" + cfg.Subdomain
+	_, err = conn.Exec(context.Background(), "create database "+cfg.DBname)
+	if err != nil {
+		panic(err)
+	}
+
 	//render turkey-k8s-chart by apply cfg to turkey.yam
 	t, err := template.ParseFiles("./_files/turkey.yam")
 	if err != nil {
@@ -111,8 +125,6 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
 	sess.PushMsg("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
 		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + "'s " + cfg.Subdomain + "</b></a>")
-
-	return
 
 })
 
@@ -179,7 +191,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	sess := utils.GetSession(r.Cookie)
+	sess := internal.GetSession(r.Cookie)
 	cfg, err := makeCfg(r)
 	if err != nil {
 		sess.PushMsg("bad turkeyCfg: " + err.Error())
@@ -255,3 +267,52 @@ func makeCfg(r *http.Request) (turkeyCfg, error) {
 	}
 	return cfg, nil
 }
+
+var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/hc_del" || r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	sess := internal.GetSession(r.Cookie)
+	cfg, err := makeCfg(r)
+	if err != nil {
+		sess.PushMsg("bad turkeyCfg: " + err.Error())
+		return
+	}
+
+	//delete db
+	conn, err := internal.PgxPool.Acquire(context.Background())
+	if err != nil {
+		panic("error acquiring connection: " + err.Error())
+	}
+	cfg.DBname = "hc-" + cfg.Subdomain
+	_, err = conn.Exec(context.Background(), "drop database "+cfg.DBname)
+	if err != nil {
+		panic(err)
+	}
+
+	//getting k8s config
+	sess.PushMsg("&#9989; ... using InClusterConfig")
+	k8sCfg, err := rest.InClusterConfig()
+	// }
+	if k8sCfg == nil {
+		sess.PushMsg("ERROR" + err.Error())
+		panic(err.Error())
+	}
+	sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	clientset, err := kubernetes.NewForConfig(k8sCfg)
+	if err != nil {
+		panic(err.Error())
+	}
+	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
+		metav1.ListOptions{
+			LabelSelector: "UserId=" + cfg.TurkeyId,
+		})
+	if err != nil {
+		panic(err.Error())
+	}
+	sess.PushMsg("GET --- user <" + cfg.TurkeyId + "> owns: ")
+	for _, ns := range nsList.Items {
+		sess.PushMsg("......<" + ns.ObjectMeta.Name + ">")
+	}
+})

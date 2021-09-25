@@ -4,25 +4,27 @@ import (
 	"net/http"
 
 	"main/handlers"
-	"main/utils"
+	"main/internal"
 )
 
 func main() {
 
+	internal.InitLogger()
+	internal.MakeCfg()
+	internal.MakePgxPool()
+
 	// pwd, _ := os.Getwd()
 	router := http.NewServeMux()
-
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
-
 	router.Handle("/console", handlers.Console)
 	router.Handle("/hc_deploy", privateEndpoint("placeholder")(handlers.Hc_deploy))
 	router.Handle("/hc_get", handlers.Hc_get)
 	router.Handle("/LogStream", handlers.LogStream)
-	router.Handle("/KeepAlive", handlers.KeepAlive)
-	// router.Handle("/Dummy", handlers.Dummy)
 	router.Handle("/Healthz", handlers.Healthz())
 
-	utils.StartServer(router, 888)
+	// router.Handle("/KeepAlive", handlers.KeepAlive)
+	// router.Handle("/Dummy", handlers.Dummy)
+	internal.StartServer(router, 888)
 
 }
 

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"text/template"
 
-	"main/utils"
+	"main/internal"
 )
 
 type consoleCfg struct {
@@ -23,7 +23,7 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	t, err := template.ParseFiles("./_statics/console.html")
 	if err != nil {
-		utils.Logger.Panic("failed to parse console.html template -- " + err.Error())
+		internal.Logger.Panic("failed to parse console.html template -- " + err.Error())
 		return
 	}
 
@@ -32,17 +32,17 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UserPicture: r.Header.Get("X-Forwarded-UserPicture"),
 	}
 
-	c, err := r.Cookie(utils.SessionTokenName)
+	c, err := r.Cookie(internal.SessionTokenName)
 	if err != nil {
-		newCookie := utils.CreateNewSession()
+		newCookie := internal.CreateNewSession()
 		http.SetCookie(w, newCookie)
 		t.Execute(w, cfg)
 		return
 	}
 
-	sess := utils.CACHE.Load(c.Value)
+	sess := internal.CACHE.Load(c.Value)
 	if sess == nil {
-		http.SetCookie(w, utils.CreateNewSession())
+		http.SetCookie(w, internal.CreateNewSession())
 		t.Execute(w, cfg)
 		return
 	}
@@ -60,7 +60,7 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 // 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 // 		t, err := template.ParseFiles("./root.html")
 // 		if err != nil {
-// 			utils.Logger.Panic("failed to parse root.html template -- " + err.Error())
+// 			internal.Logger.Panic("failed to parse root.html template -- " + err.Error())
 // 		}
 // 		t.Execute(w, nil)
 // 	})
