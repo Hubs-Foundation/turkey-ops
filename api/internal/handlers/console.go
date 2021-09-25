@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"text/template"
 
@@ -18,13 +17,12 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	fmt.Println("dumpHeader: " + dumpHeader(r))
+	internal.GetLogger().Info("console accessed --- r.dump: " + dumpHeader(r))
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	t, err := template.ParseFiles("./_statics/console.html")
 	if err != nil {
 		panic("failed to parse console.html template -- " + err.Error())
-		return
 	}
 
 	cfg := consoleCfg{

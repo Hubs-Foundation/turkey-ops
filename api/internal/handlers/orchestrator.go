@@ -114,8 +114,13 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	cfg.DBname = "hc-" + cfg.Subdomain
 	_, err = conn.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
 	if err != nil {
-		sess.Log("ERROR --- DB.conn.Exec FAILED !!! because" + fmt.Sprint(err))
-		panic(err)
+		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
+			sess.Log("db already exists")
+			internal.GetLogger().Warn("db <" + cfg.DBname + "> already exists")
+		} else {
+			sess.Log("ERROR --- DB.conn.Exec FAILED !!! because" + fmt.Sprint(err))
+			panic(err)
+		}
 	}
 	sess.Log("&#128640;[DEBUG] --- db created")
 	//

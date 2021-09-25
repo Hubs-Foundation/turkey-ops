@@ -36,6 +36,10 @@ func InitLogger() {
 	Atom.SetLevel(zap.DebugLevel)
 }
 
+func GetLogger() *zap.Logger {
+	return logger
+}
+
 func NewUUID() []byte {
 	uuid := make([]byte, 16)
 	n, err := io.ReadFull(crand.Reader, uuid)
