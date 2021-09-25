@@ -69,29 +69,28 @@ func (mb *MetaBox) Delete(key string) {
 	mb.Unlock()
 }
 
-func (sess *CacheBoxSessData) PushMsg(msg string) {
-
+func (sess *CacheBoxSessData) Log(msg string) {
+	logger.Debug(msg)
 	go func() {
 		if sess == nil {
-			Logger.Println("WARNING @ PushMsg: no session. \n message dropped = <" + msg + ">")
+			logger.Debug("no session")
 			return
 		}
 		attempt := 0
 		delay := time.Millisecond * 1
 		delayStep := 500 * time.Millisecond
-		maxAttempt := 10
+		maxAttempt := 3
 		for sess.SseChan == nil {
 			time.Sleep(delayStep)
 			delay = time.Second * 1
 			if attempt >= maxAttempt {
-				Logger.Println("WARNING @ PushMsg: no channel. \n message dropped = <" + msg + ">")
+				logger.Debug("no channel")
 				return
 			}
 			attempt = attempt + 1
 		}
 		time.Sleep(delay)
 		sess.SseChan <- fmt.Sprintf(msg)
-		Logger.Println("PushMsg: <" + msg + ">")
 	}()
 	time.Sleep(5e7)
 }

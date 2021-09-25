@@ -1,13 +1,8 @@
 package internal
 
-import (
-	"log"
-	"os"
-)
-
 const SessionTokenName = "session_token"
 
-var Logger = log.New(os.Stdout, "http: ", log.LstdFlags)
+// var Logger = log.New(os.Stdout, "http: ", log.LstdFlags)
 var CACHE = NewCacheBox()
 
 // type RootPageData struct {

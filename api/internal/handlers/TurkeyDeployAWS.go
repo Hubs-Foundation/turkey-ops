@@ -27,26 +27,26 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		}
 
 		sess := internal.GetSession(r.Cookie)
-		sess.PushMsg("!!! THE ONE BUTTON clicked !!!")
+		sess.Log("!!! THE ONE BUTTON clicked !!!")
 
 		userData, err := internal.ParseJsonReqBody(r.Body)
 		if err != nil {
-			sess.PushMsg("ERROR @ Unmarshal r.body, will try configs in cache, btw json.Unmarshal error = " + err.Error())
+			sess.Log("ERROR @ Unmarshal r.body, will try configs in cache, btw json.Unmarshal error = " + err.Error())
 			return
 		}
 
 		awss, err := internal.NewAwsSvs(userData["awsKey"], userData["awsSecret"], userData["awsRegion"])
 		if err != nil {
-			sess.PushMsg("ERROR @ NewAwsSvs: " + err.Error())
+			sess.Log("ERROR @ NewAwsSvs: " + err.Error())
 			return
 		}
 
 		accountNum, err := awss.GetAccountID()
 		if err != nil {
-			sess.PushMsg("ERROR @ GetAccountID: " + err.Error())
+			sess.Log("ERROR @ GetAccountID: " + err.Error())
 			return
 		}
-		sess.PushMsg("good aws creds, account #: " + accountNum)
+		sess.Log("good aws creds, account #: " + accountNum)
 
 		deploymentName, ok := userData["deploymentName"]
 		if !ok {
@@ -65,7 +65,7 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 
 		cfParams, err := parseCFparams(userData)
 		if err != nil {
-			sess.PushMsg("ERROR @ parseCFparams: " + err.Error())
+			sess.Log("ERROR @ parseCFparams: " + err.Error())
 		}
 		cfTags := []*cloudformation.Tag{
 			{Key: aws.String("customer-id"), Value: aws.String("not-yet-place-holder-only")},
@@ -75,12 +75,12 @@ var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		go func() {
 			err = awss.CreateCFstack(stackName, cfS3Folder+"main.yaml", cfParams, cfTags)
 			if err != nil {
-				sess.PushMsg("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
+				sess.Log("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
 				return
 			}
 			// createSSMparam(stackName, accountNum, userData, awss, sess)
 		}()
-		sess.PushMsg("&#128640;CreateCFstack started for stackName=" + stackName)
+		sess.Log("&#128640;CreateCFstack started for stackName=" + stackName)
 
 		go reportCreateCFstackStatus(stackName, userData, sess, awss)
 
@@ -141,13 +141,13 @@ func parseCFparams(userData map[string]string) ([]*cloudformation.Parameter, err
 func createSSMparam(stackName string, accountNum string, userData map[string]string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) error {
 	stacks, err := awss.GetStack(stackName)
 	if err != nil {
-		sess.PushMsg("ERROR @ createSSMparam -- GetStack: " + err.Error())
+		sess.Log("ERROR @ createSSMparam -- GetStack: " + err.Error())
 		return err
 	}
 	//----------create SSM parameter
 	// paramMap, err := getSSMparamFromS3json(awss, userData, "ssmParam.json")
 	// if err != nil {
-	// 	sess.PushMsg("ERROR @ createSSMparamFromS3json: " + err.Error())
+	// 	sess.Log("ERROR @ createSSMparamFromS3json: " + err.Error())
 	// 	return err
 	// }
 	paramMap := make(map[string]string)
@@ -164,7 +164,7 @@ func createSSMparam(stackName string, accountNum string, userData map[string]str
 	paramJSONbytes, _ := json.Marshal(paramMap)
 	err = awss.CreateSSMparameter(stackName, string(paramJSONbytes))
 	if err != nil {
-		sess.PushMsg("ERROR @ createSSMparamFromS3json: " + err.Error())
+		sess.Log("ERROR @ createSSMparamFromS3json: " + err.Error())
 		return err
 	}
 	return nil
@@ -176,7 +176,7 @@ func reportCreateCFstackStatus(stackName string, userData map[string]string, ses
 	for strings.Contains(stackStatus, "IN_PROGRESS") {
 		stacks, err := awss.GetStack(stackName)
 		if err != nil {
-			sess.PushMsg("ERROR @ reportCreateCFstackStatus: " + err.Error())
+			sess.Log("ERROR @ reportCreateCFstackStatus: " + err.Error())
 			return err
 		}
 		stack := *stacks[0]
@@ -190,7 +190,7 @@ func reportCreateCFstackStatus(stackName string, userData map[string]string, ses
 		if stack.StackStatusReason != nil {
 			reportMsg = reportMsg + " because " + *stack.StackStatusReason
 		}
-		sess.PushMsg(reportMsg)
+		sess.Log(reportMsg)
 		time.Sleep(time.Second * 60)
 	}
 	return nil

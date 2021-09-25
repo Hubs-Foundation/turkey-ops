@@ -142,7 +142,7 @@ spec:
   selector:
     matchLabels:
       app: turkey-api
-  minReadySeconds: 15                                      
+  minReadySeconds: 2
   template:
     metadata:
       labels:
@@ -150,7 +150,7 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:18
+      - image: mozillareality/turkeyapi:19
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         env:

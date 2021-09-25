@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
-	"main/handlers"
 	"main/internal"
+	"main/internal/handlers"
 )
 
 func main() {

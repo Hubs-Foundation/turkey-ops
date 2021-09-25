@@ -75,14 +75,7 @@ func logging() func(http.Handler) http.Handler {
 					requestID = "unknown"
 				}
 				_ = requestID
-				logger.Sugar().Debug(
-					"<newReq>",
-					"<id>", requestID,
-					"<method>", r.Method,
-					"<path>", r.URL.Path,
-					"<RemoteAddr>", r.RemoteAddr,
-					"<UserAgent>", r.UserAgent(),
-				)
+				logger.Debug("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
 			}()
 			next.ServeHTTP(w, r)
 		})

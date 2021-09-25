@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,7 +32,7 @@ func StartServer(router *http.ServeMux, port int) {
 	flag.StringVar(&listenAddr, "listen-addr", ":"+strconv.Itoa(port), "server listen address")
 	flag.Parse()
 
-	Logger.Println("Server is starting...")
+	logger.Debug("Server is starting...")
 
 	nextRequestID := func() string {
 		// return fmt.Sprintf("%d", time.Now().UnixNano())
@@ -44,8 +43,7 @@ func StartServer(router *http.ServeMux, port int) {
 
 	server := &http.Server{
 		Addr:         listenAddr,
-		Handler:      tracing(nextRequestID)(logging(Logger)(router)),
-		ErrorLog:     Logger,
+		Handler:      tracing(nextRequestID)(logging()(router)),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 0 * time.Second,
 		IdleTimeout:  3600 * time.Second,
@@ -57,7 +55,7 @@ func StartServer(router *http.ServeMux, port int) {
 
 	go func() {
 		<-quit
-		Logger.Println("Server is shutting down...")
+		logger.Debug("Server is shutting down...")
 		atomic.StoreInt32(&Healthy, 0)
 
 		ctx, cancel := context.WithTimeout(context.Background(),
@@ -66,17 +64,17 @@ func StartServer(router *http.ServeMux, port int) {
 
 		server.SetKeepAlivesEnabled(false)
 		if err := server.Shutdown(ctx); err != nil {
-			Logger.Fatalf("Could not gracefully shutdown the server: %v\n", err)
+			logger.Sugar().Fatalf("Could not gracefully shutdown the server: %v\n", err)
 		}
 		close(done)
 	}()
-	Logger.Println("Server is ready to handle requests at", listenAddr)
+	logger.Debug("Server is ready to handle requests at: " + listenAddr)
 	atomic.StoreInt32(&Healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		Logger.Fatalf("Could not listen on %s: %v\n", listenAddr, err)
+		logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}
 	<-done
-	Logger.Println("Server stopped")
+	logger.Debug("Server stopped")
 }
 func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -91,7 +89,7 @@ func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 		})
 	}
 }
-func logging(Logger *log.Logger) func(http.Handler) http.Handler {
+func logging() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -99,8 +97,7 @@ func logging(Logger *log.Logger) func(http.Handler) http.Handler {
 				if !ok {
 					requestID = "unknown"
 				}
-				// Logger.Println(requestID, r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
-				Logger.Println("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
+				logger.Debug("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
 			}()
 			next.ServeHTTP(w, r)
 		})

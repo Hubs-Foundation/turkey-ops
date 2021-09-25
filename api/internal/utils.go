@@ -40,7 +40,7 @@ func NewUUID() []byte {
 	uuid := make([]byte, 16)
 	n, err := io.ReadFull(crand.Reader, uuid)
 	if n != len(uuid) || err != nil {
-		Logger.Panic("NewUUID err, something's not right")
+		logger.Panic("NewUUID err, something's not right")
 		return uuid
 	}
 	// variant bits;
@@ -52,7 +52,7 @@ func NewUUID() []byte {
 }
 
 func CreateNewSession() *http.Cookie {
-	Logger.Println("######################## create new sessions: ########################")
+	logger.Debug("######################## create new sessions: ########################")
 	id := base64.RawURLEncoding.EncodeToString(NewUUID())
 	cookie := &http.Cookie{
 		Name:  SessionTokenName,
@@ -63,7 +63,7 @@ func CreateNewSession() *http.Cookie {
 		&CacheBoxSessData{},
 		time.Hour*1,
 	)
-	Logger.Println("######################## new sessions created ########################")
+	logger.Debug("######################## new sessions created ########################")
 	return cookie
 }
 
@@ -140,7 +140,7 @@ func GetSession(Cookie func(string) (*http.Cookie, error)) *CacheBoxSessData {
 	cookie, _ := Cookie(SessionTokenName)
 	sess := CACHE.Load(cookie.Value)
 	if sess == nil {
-		Logger.Println("WARNING @ GetSession: session not found")
+		logger.Debug("WARNING @ GetSession: session not found")
 	}
 	return sess
 }

@@ -23,7 +23,7 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	t, err := template.ParseFiles("./_statics/console.html")
 	if err != nil {
-		internal.Logger.Panic("failed to parse console.html template -- " + err.Error())
+		panic("failed to parse console.html template -- " + err.Error())
 		return
 	}
 
@@ -60,7 +60,7 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 // 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 // 		t, err := template.ParseFiles("./root.html")
 // 		if err != nil {
-// 			internal.Logger.Panic("failed to parse root.html template -- " + err.Error())
+// 			internal.logger.Panic("failed to parse root.html template -- " + err.Error())
 // 		}
 // 		t.Execute(w, nil)
 // 	})

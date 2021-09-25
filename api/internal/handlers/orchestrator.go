@@ -50,23 +50,17 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	cfg, err := makeCfg(r)
 	if err != nil {
-		sess.PushMsg("bad turkeyCfg: " + err.Error())
+		sess.Log("bad turkeyCfg: " + err.Error())
 	}
-
-	// // tmp -- until authZ in place
-	// if cfg.Key != "fkzXYeGRjjryynH23upDQK3584vG8SmE" {
-	// 	sess.PushMsg("bad turkeyCfg.Key")
-	// 	return
-	// }
 
 	// userid is required
 	if cfg.TurkeyId == "" {
-		sess.PushMsg("ERROR bad turkeyCfg.UserId")
+		sess.Log("ERROR bad turkeyCfg.UserId")
 		return
 	}
 	// domain is required
 	if cfg.Domain == "" {
-		sess.PushMsg("ERROR bad turkeyCfg.Domain")
+		sess.Log("ERROR bad turkeyCfg.Domain")
 		return
 	}
 
@@ -81,19 +75,8 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail")
 	if cfg.UserEmail == "" {
-		sess.PushMsg("failed to get cfg.UserEmail")
+		sess.Log("failed to get cfg.UserEmail")
 		return
-	}
-
-	//create db
-	conn, err := internal.PgxPool.Acquire(context.Background())
-	if err != nil {
-		panic("error acquiring connection: " + err.Error())
-	}
-	cfg.DBname = "hc-" + cfg.Subdomain
-	_, err = conn.Exec(context.Background(), "create database "+cfg.DBname)
-	if err != nil {
-		panic(err)
 	}
 
 	//render turkey-k8s-chart by apply cfg to turkey.yam
@@ -106,24 +89,36 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	k8sChartYaml := buf.String()
 
 	//getting k8s config
-	sess.PushMsg("&#9989; ... using InClusterConfig")
+	sess.Log("&#9989; ... using InClusterConfig")
 	k8sCfg, err := rest.InClusterConfig()
 	// }
 	if k8sCfg == nil {
-		sess.PushMsg("ERROR" + err.Error())
+		sess.Log("ERROR" + err.Error())
 		panic(err.Error())
 	}
-	sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 
 	// kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
-	sess.PushMsg("&#128640;[DEBUG] --- deployment started")
+	sess.Log("&#128640;[DEBUG] --- deployment started")
 	err = ssa_k8sChartYaml(cfg.TurkeyId, k8sChartYaml, k8sCfg)
 	if err != nil {
-		sess.PushMsg("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
+		sess.Log("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 		panic(err.Error())
 	}
+	//create db
+	conn, err := internal.PgxPool.Acquire(context.Background())
+	if err != nil {
+		panic("error acquiring connection: " + err.Error())
+	}
+	cfg.DBname = "hc-" + cfg.Subdomain
+	_, err = conn.Exec(context.Background(), "create database "+cfg.DBname)
+	if err != nil {
+		panic(err)
+	}
+	sess.Log("&#128640;[DEBUG] --- db created")
+	//
 	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
-	sess.PushMsg("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
+	sess.Log("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
 		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + "'s " + cfg.Subdomain + "</b></a>")
 
 })
@@ -145,7 +140,7 @@ func ssa_k8sChartYaml(userId, k8sChartYaml string, cfg *rest.Config) error {
 	for _, k8sYaml := range strings.Split(k8sChartYaml, "\n---\n") {
 		// fmt.Println("\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
 		// fmt.Println(k8sYaml)
-		// fmt.Println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n\n")
+		// fmt.Println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n\n")
 		// continue
 
 		// Decode YAML manifest into unstructured.Unstructured
@@ -194,7 +189,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 	cfg, err := makeCfg(r)
 	if err != nil {
-		sess.PushMsg("bad turkeyCfg: " + err.Error())
+		sess.Log("bad turkeyCfg: " + err.Error())
 		return
 	}
 
@@ -204,7 +199,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("dev_ cheatcodes only work with subdomain == dev0 ")
 			return
 		}
-		sess.PushMsg(`turkeyUserId[0:4] == dev_ means dev mode`)
+		sess.Log(`turkeyUserId[0:4] == dev_ means dev mode`)
 
 		cfg.UserEmail = "foo@bar.com"
 		t, _ := template.ParseFiles("./_files/turkey.yam")
@@ -212,7 +207,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Execute(&buf, cfg)
 		k8sChartYaml := buf.String()
 		if cfg.TurkeyId == "dev_dumpr" {
-			sess.PushMsg(dumpHeader(r))
+			sess.Log(dumpHeader(r))
 			return
 		}
 		if cfg.TurkeyId == "dev_gimmechart" {
@@ -225,14 +220,14 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//</debugging cheatcodes>
 
 	//getting k8s config
-	sess.PushMsg("&#9989; ... using InClusterConfig")
+	sess.Log("&#9989; ... using InClusterConfig")
 	k8sCfg, err := rest.InClusterConfig()
 	// }
 	if k8sCfg == nil {
-		sess.PushMsg("ERROR" + err.Error())
+		sess.Log("ERROR" + err.Error())
 		panic(err.Error())
 	}
-	sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 	clientset, err := kubernetes.NewForConfig(k8sCfg)
 	if err != nil {
 		panic(err.Error())
@@ -244,9 +239,9 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err.Error())
 	}
-	sess.PushMsg("GET --- user <" + cfg.TurkeyId + "> owns: ")
+	sess.Log("GET --- user <" + cfg.TurkeyId + "> owns: ")
 	for _, ns := range nsList.Items {
-		sess.PushMsg("......<" + ns.ObjectMeta.Name + ">")
+		sess.Log("......<" + ns.ObjectMeta.Name + ">")
 	}
 })
 
@@ -268,15 +263,15 @@ func makeCfg(r *http.Request) (turkeyCfg, error) {
 	return cfg, nil
 }
 
-var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hc_del" || r.Method != "POST" {
+var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/hc_delDB" || r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 	sess := internal.GetSession(r.Cookie)
 	cfg, err := makeCfg(r)
 	if err != nil {
-		sess.PushMsg("bad turkeyCfg: " + err.Error())
+		sess.Log("bad turkeyCfg: " + err.Error())
 		return
 	}
 
@@ -291,28 +286,28 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	//getting k8s config
-	sess.PushMsg("&#9989; ... using InClusterConfig")
-	k8sCfg, err := rest.InClusterConfig()
+	// //getting k8s config
+	// sess.Log("&#9989; ... using InClusterConfig")
+	// k8sCfg, err := rest.InClusterConfig()
+	// // }
+	// if k8sCfg == nil {
+	// 	sess.Log("ERROR" + err.Error())
+	// 	panic(err.Error())
 	// }
-	if k8sCfg == nil {
-		sess.PushMsg("ERROR" + err.Error())
-		panic(err.Error())
-	}
-	sess.PushMsg("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-	clientset, err := kubernetes.NewForConfig(k8sCfg)
-	if err != nil {
-		panic(err.Error())
-	}
-	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
-		metav1.ListOptions{
-			LabelSelector: "UserId=" + cfg.TurkeyId,
-		})
-	if err != nil {
-		panic(err.Error())
-	}
-	sess.PushMsg("GET --- user <" + cfg.TurkeyId + "> owns: ")
-	for _, ns := range nsList.Items {
-		sess.PushMsg("......<" + ns.ObjectMeta.Name + ">")
-	}
+	// sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	// clientset, err := kubernetes.NewForConfig(k8sCfg)
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+	// nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
+	// 	metav1.ListOptions{
+	// 		LabelSelector: "UserId=" + cfg.TurkeyId,
+	// 	})
+	// if err != nil {
+	// 	panic(err.Error())
+	// }
+	// sess.Log("GET --- user <" + cfg.TurkeyId + "> owns: ")
+	// for _, ns := range nsList.Items {
+	// 	sess.Log("......<" + ns.ObjectMeta.Name + ">")
+	// }
 })

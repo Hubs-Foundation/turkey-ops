@@ -45,7 +45,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess.SseChan = make(chan string)
-	sess.PushMsg("&#127383; LogStream connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+	sess.Log("&#127383; LogStream connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
 
 	notify := w.(http.CloseNotifier).CloseNotify()
 	go func() {
@@ -66,11 +66,11 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// }()
 	// //^^^^^^^^^^^^^^^^^^^^^ junk log producer for debugging ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	internal.Logger.Println("connection established for:" + r.RemoteAddr + " @ " + cookie.Value)
+	fmt.Println("connection established for:" + r.RemoteAddr + " @ " + cookie.Value)
 
 	for {
 		if sess.SseChan == nil {
-			internal.Logger.Println(" ??? LogStream: channel == nil ??? quit !!!")
+			fmt.Println(" ??? LogStream: channel == nil ??? quit !!!")
 			break
 		}
 
