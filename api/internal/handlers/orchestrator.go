@@ -78,7 +78,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("failed to get cfg.UserEmail")
 		return
 	}
-	cfg.DBname = "hc-" + cfg.Subdomain
+	cfg.DBname = "ret_" + cfg.Subdomain
 	//render turkey-k8s-chart by apply cfg to turkey.yam
 	t, err := template.ParseFiles("./_files/turkey.yam")
 	if err != nil {
@@ -287,7 +287,7 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic("error acquiring connection: " + err.Error())
 	}
-	cfg.DBname = "hc-" + cfg.Subdomain
+	cfg.DBname = "ret_" + cfg.Subdomain
 	_, err = conn.Exec(context.Background(), "drop database "+cfg.DBname)
 	if err != nil {
 		panic(err)
