@@ -26,7 +26,7 @@ func main() {
 	router.Handle("/hc_delDB", handlers.Hc_delDB)
 
 	// router.Handle("/KeepAlive", handlers.KeepAlive)
-	// router.Handle("/Dummy", handlers.Dummy)
+	router.Handle("/Dummy", handlers.Dummy)
 	internal.StartServer(router, 888)
 
 }

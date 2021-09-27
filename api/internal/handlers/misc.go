@@ -1,10 +1,9 @@
 package handlers
 
 import (
+	"main/internal"
 	"net/http"
 	"sync/atomic"
-
-	"main/internal"
 )
 
 // var KeepAlive = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -19,27 +18,26 @@ var Dummy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	os.Exit(1)
 	// }
 
-	// dbName := "geng_test_1"
+	// dbName := "ret_geng_test_3"
 	// _, err = conn.Exec(context.Background(), "create database "+dbName)
 	// if err != nil {
 	// 	panic(err)
 	// }
-	// fmt.Println(" ~~~ hello from /Dummy ~~~ ~~~ ~~~ dumping r !!!")
-
-	// headerBytes, _ := json.Marshal(r.Header)
-
-	// fmt.Println(string(headerBytes))
-
-	// cookieMap := make(map[string]string)
-	// for _, c := range r.Cookies() {
-	// 	cookieMap[c.Name] = c.Value
+	// retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
+	// if err != nil {
+	// 	panic(err)
 	// }
-	// cookieJson, _ := json.Marshal(cookieMap)
-	// fmt.Println(string(cookieJson))
+	// dbconn, err := pgx.Connect(context.Background(), internal.Cfg.DBconn+"/"+dbName)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// _, err = dbconn.Exec(context.Background(), string(retSchemaBytes))
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// dbconn.Close(context.Background())
 
-	// fmt.Println(" ~~~ /Dummy ~~~ ~~~ ~~~ done !!!")
-
-	// os.Exit(1)
+	// fmt.Println(" ~~~ hello from /Dummy ~~~ ~~~ ~~~ dumping r !!!")
 
 })
 

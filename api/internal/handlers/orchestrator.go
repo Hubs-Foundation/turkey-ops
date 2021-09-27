@@ -14,6 +14,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -105,6 +106,12 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 		panic(err.Error())
 	}
+
+	// qualit of life ++ for dev console
+	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
+	sess.Log("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
+		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + "'s " + cfg.Subdomain + "</b></a>")
+
 	//create db
 	conn, err := internal.PgxPool.Acquire(context.Background())
 	if err != nil {
@@ -116,17 +123,28 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			sess.Log("db already exists")
 			internal.GetLogger().Warn("db <" + cfg.DBname + "> already exists")
+			return
 		} else {
 			sess.Log("ERROR --- DB.conn.Exec FAILED !!! because" + fmt.Sprint(err))
 			panic(err)
 		}
 	}
-	sess.Log("&#128640;[DEBUG] --- db created")
-	//
-	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
-	sess.Log("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
-		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + "'s " + cfg.Subdomain + "</b></a>")
-
+	sess.Log("&#128640;[DEBUG] --- db created: " + cfg.DBname)
+	//load schema to new db
+	retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
+	if err != nil {
+		panic(err)
+	}
+	dbconn, err := pgx.Connect(context.Background(), internal.Cfg.DBconn+"/"+cfg.DBname)
+	if err != nil {
+		panic(err)
+	}
+	_, err = dbconn.Exec(context.Background(), string(retSchemaBytes))
+	if err != nil {
+		panic(err)
+	}
+	dbconn.Close(context.Background())
+	sess.Log("&#128640;[DEBUG] --- schema loaded to db: " + cfg.DBname)
 })
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
