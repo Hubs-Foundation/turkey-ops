@@ -92,7 +92,7 @@ metadata:
     TurkeyId: {{.TurkeyId}}
   namespace: hc-{{.Subdomain}}
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: reticulum

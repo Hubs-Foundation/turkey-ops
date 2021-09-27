@@ -113,12 +113,12 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + "'s " + cfg.Subdomain + "</b></a>")
 
 	//create db
-	conn, err := internal.PgxPool.Acquire(context.Background())
-	if err != nil {
-		sess.Log("ERROR --- DB.conn FAILED !!! because" + fmt.Sprint(err))
-		panic("error acquiring connection: " + err.Error())
-	}
-	_, err = conn.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
+	// conn, err := internal.PgxPool.Acquire(context.Background())
+	// if err != nil {
+	// 	sess.Log("ERROR --- DB.conn FAILED !!! because" + fmt.Sprint(err))
+	// 	panic("error acquiring connection: " + err.Error())
+	// }
+	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			sess.Log("db already exists")
@@ -139,11 +139,11 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	defer dbconn.Close(context.Background())
 	_, err = dbconn.Exec(context.Background(), string(retSchemaBytes))
 	if err != nil {
 		panic(err)
 	}
-	dbconn.Close(context.Background())
 	sess.Log("&#128640;[DEBUG] --- schema loaded to db: " + cfg.DBname)
 })
 
@@ -300,20 +300,19 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//delete db
-	conn, err := internal.PgxPool.Acquire(context.Background())
-	if err != nil {
-		panic("error acquiring connection: " + err.Error())
-	}
 	cfg.DBname = "ret_" + cfg.Subdomain
-	_, err = conn.Exec(context.Background(), "drop database "+cfg.DBname)
+
+	sess.Log("deleting db: " + cfg.DBname)
+
+	//delete db
+	_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
 	if err != nil {
 		panic(err)
 	}
 })
 
 var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hc_delDB" || r.Method != "POST" {
+	if r.URL.Path != "/hc_delNS" || r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}

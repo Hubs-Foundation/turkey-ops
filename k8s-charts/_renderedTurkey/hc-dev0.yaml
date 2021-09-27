@@ -92,7 +92,7 @@ metadata:
     TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: reticulum

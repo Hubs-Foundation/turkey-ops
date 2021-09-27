@@ -7,10 +7,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-// type Pg struct {
-// 	pool *pgxpool.Pool
-// }
-
 var PgxPool *pgxpool.Pool
 
 func MakePgxPool() {
