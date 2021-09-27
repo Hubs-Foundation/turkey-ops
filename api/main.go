@@ -16,8 +16,8 @@ func main() {
 	// pwd, _ := os.Getwd()
 	router := http.NewServeMux()
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
-	router.Handle("/console", handlers.Console)
-	router.Handle("/hc_deploy", privateEndpoint("placeholder")(handlers.Hc_deploy))
+	router.Handle("/console", requireRole("foobar")(handlers.Console))
+	router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
 	router.Handle("/hc_get", handlers.Hc_get)
 	router.Handle("/LogStream", handlers.LogStream)
 	router.Handle("/Healthz", handlers.Healthz())
@@ -31,7 +31,7 @@ func main() {
 
 }
 
-func privateEndpoint(requiredRole string) func(http.Handler) http.Handler {
+func requireRole(role string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			email := r.Header.Get("X-Forwarded-UserEmail")
