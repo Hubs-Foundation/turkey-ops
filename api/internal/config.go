@@ -13,6 +13,7 @@ var Cfg *Config
 
 func MakeCfg() {
 	Cfg = &Config{}
+	Cfg.Domain = os.Getenv("DOMAIN")
 	Cfg.DBconn = os.Getenv("DB_CONN")
 
 }
