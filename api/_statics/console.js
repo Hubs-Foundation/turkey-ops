@@ -38,7 +38,7 @@ document.getElementById("cfgEx_deploy").addEventListener("click", cfgEx_deployCl
 function cfgEx_deployClicked(){
   document.getElementById("cfg").value = `{
   "turkeyid": "someString",
-  "subdomain": "subdomain1",
+  "subdomain": "subdomain1"
 }`
 }
 
