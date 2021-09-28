@@ -59,11 +59,8 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("ERROR bad turkeyCfg.UserId")
 		return
 	}
-	// domain is required
-	if cfg.Domain == "" {
-		sess.Log("ERROR bad turkeyCfg.Domain")
-		return
-	}
+
+	cfg.Domain = internal.Cfg.Domain
 
 	//default Tier is free
 	if cfg.Tier == "" {

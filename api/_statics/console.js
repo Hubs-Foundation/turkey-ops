@@ -39,7 +39,6 @@ function cfgEx_deployClicked(){
   document.getElementById("cfg").value = `{
   "turkeyid": "someString",
   "subdomain": "subdomain1",
-  "domain": "myhubs.net"
 }`
 }
 

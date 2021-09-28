@@ -5,6 +5,7 @@ import (
 )
 
 type Config struct {
+	Domain string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
 	DBconn string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
 }
 
