@@ -284,7 +284,7 @@ spec:
           - name: turkeyCfg_reticulum_server
             value: dev0.myhubs.net
           - name: turkeyCfg_cors_proxy_server
-            value: 
+            value: dev0-assets.myhubs.net
           - name: turkeyCfg_ga_tracking_id
             value: 
           - name: turkeyCfg_shortlink_domain

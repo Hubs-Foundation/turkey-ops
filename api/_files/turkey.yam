@@ -284,7 +284,7 @@ spec:
           - name: turkeyCfg_reticulum_server
             value: {{.Subdomain}}.{{.Domain}}
           - name: turkeyCfg_cors_proxy_server
-            value: 
+            value: {{.Subdomain}}-assets.{{.Domain}}
           - name: turkeyCfg_ga_tracking_id
             value: 
           - name: turkeyCfg_shortlink_domain

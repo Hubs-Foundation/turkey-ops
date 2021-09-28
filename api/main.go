@@ -26,7 +26,8 @@ func main() {
 	router.Handle("/hc_delNS", handlers.Hc_delNS)
 	router.Handle("/hc_delDB", handlers.Hc_delDB)
 
-	router.Handle("/admin-info", handlers.Admin_info)
+	router.Handle("/admin-info", handlers.Ita_admin_info)
+	router.Handle("/configs/reticulum/ps", handlers.Ita_cfg_ret_ps)
 
 	router.Handle("/Dummy", handlers.Dummy)
 	internal.StartServer(router, 888)
