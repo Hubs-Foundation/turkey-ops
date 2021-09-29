@@ -130,7 +130,7 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:34
+          image: mozillareality/ret:38
           ports:
           - containerPort: 9100
           imagePullPolicy: IfNotPresent
@@ -222,6 +222,10 @@ spec:
               secretKeyRef:
                 name: configs
                 key: ADM_EMAIL          
+          - name: turkeyCfg_ITA_HOST
+            value: http://turkey-api.turkey-services
+          - name: turkeyCfg_PGREST_HOST
+            value: http://do-we-need-this-why-not-just-do-it-in-ret
           livenessProbe:
             httpGet:
               path: "http://reticulum.{{.Subdomain}}"

@@ -69,8 +69,7 @@ func (mb *MetaBox) Delete(key string) {
 	mb.Unlock()
 }
 
-func (sess *CacheBoxSessData) Log(msg string) {
-	logger.Debug(msg)
+func (sess *CacheBoxSessData) consoleLog(msg string) {
 	go func() {
 		if sess == nil {
 			logger.Debug("no session")
@@ -93,6 +92,16 @@ func (sess *CacheBoxSessData) Log(msg string) {
 		sess.SseChan <- fmt.Sprintf(msg)
 	}()
 	time.Sleep(5e7)
+}
+
+func (sess *CacheBoxSessData) Panic(msg string) {
+	sess.consoleLog(msg)
+	logger.Panic(msg)
+}
+
+func (sess *CacheBoxSessData) Log(msg string) {
+	sess.consoleLog(msg)
+	logger.Debug(msg)
 }
 
 func NewCacheBox() CacheBox {
