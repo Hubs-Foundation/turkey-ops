@@ -130,7 +130,7 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:32
+          image: mozillareality/ret:33
           ports:
           - containerPort: 9100
           imagePullPolicy: IfNotPresent
