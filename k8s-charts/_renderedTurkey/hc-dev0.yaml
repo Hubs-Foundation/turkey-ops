@@ -17,6 +17,8 @@ metadata:
   namespace: hc-dev0
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: https
+    # traefik.ingress.kubernetes.io/router.tls.options: hc-dev0-h2only@kubernetescrd
+    # traefik.ingress.kubernetes.io/router.middlewares: hc-dev0-fakeh2headersforret@kubernetescrd
 spec:
   rules:
   - host: dev0-assets.myhubs.net
@@ -52,7 +54,26 @@ spec:
           service:
             name: ret
             port: 
-              number: 4000            
+              number: 4000
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: TLSOption
+# metadata:
+#   name: h2only
+#   namespace: hc-dev0
+# spec:
+#   alpnProtocols:
+#     - h2
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: fakeh2headersforret
+#   namespace: hc-dev0
+# spec:
+#   headers:
+#     customRequestHeaders:
+#       authority: dev0-assets.myhubs.net
 ---
 ########################################################################
 ###################### configs #########################################

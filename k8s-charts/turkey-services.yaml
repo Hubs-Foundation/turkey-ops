@@ -150,13 +150,13 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:31
+      - image: mozillareality/turkeyapi:32
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         env:
-        - DOMAIN:
+        - name: DOMAIN
           value: myhubs.net
-        - name: DB_CONN  # postgres://username:password@localhost:5432/database_name
+        - name: DB_CONN
           value: postgres://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
         livenessProbe:
           httpGet:
