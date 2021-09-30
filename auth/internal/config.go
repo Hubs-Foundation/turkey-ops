@@ -65,8 +65,8 @@ func MakeCfg() {
 	}
 
 	// FXA
-	cfg.Providers.Google.ClientID = os.Getenv("oauthClientId_fxa")
-	cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_fxa")
+	cfg.Providers.Fxa.ClientID = os.Getenv("oauthClientId_fxa")
+	cfg.Providers.Fxa.ClientSecret = os.Getenv("oauthClientSecret_fxa")
 	err := cfg.Providers.Fxa.Setup()
 
 	if err != nil {
