@@ -29,7 +29,7 @@ jobs:
         run: |
           cd ./ret && ls -lha
           cat > Dockerfile << 'EOL'
-          FROM elixir:1.8-alpine as builder
+          FROM elixir:1.6-alpine as builder
           RUN apk add --no-cache nodejs yarn git build-base
           copy . .
           RUN mix local.hex --force && mix local.rebar --force && mix deps.get
