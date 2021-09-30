@@ -12,7 +12,8 @@ import (
 type Fxa struct {
 	ClientID     string `long:"client-id" env:"CLIENT_ID" description:"Client ID"`
 	ClientSecret string `long:"client-secret" env:"CLIENT_SECRET" description:"Client Secret" json:"-"`
-	Scope        string 
+	Scope        string
+	entrypoint   string
 	Prompt       string `long:"prompt" env:"PROMPT" default:"select_account" description:"Space separated list of OpenID prompt options"`
 
 	LoginURL *url.URL
