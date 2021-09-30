@@ -40,14 +40,14 @@ func (g *Fxa) Setup() error {
 	}
 	g.TokenURL = &url.URL{
 		Scheme: "https",
-		Host:   "localhost:3030",
-		Path:   "/oauth2/v3/token",
+		Host:   "api-accounts.stage.mozaws.net",
+		Path:   "/v1/client",
 	}
-	g.UserURL = &url.URL{
-		Scheme: "https",
-		Host:   "localhost:3030",
-		Path:   "/oauth2/v2/userinfo",
-	}
+	// g.UserURL = &url.URL{
+	// 	Scheme: "https",
+	// 	Host:   "localhost:3030",
+	// 	Path:   "/oauth2/v2/userinfo",
+	// }
 
 	return nil
 }
@@ -56,15 +56,9 @@ func (g *Fxa) Setup() error {
 func (g *Fxa) GetLoginURL(redirectURI, state string) string {
 	q := url.Values{}
 	q.Set("client_id", g.ClientID)
-	q.Set("response_type", "code")
 	q.Set("scope", g.Scope)
-	if g.Prompt != "" {
-		q.Set("prompt", g.Prompt)
-	}
-	q.Set("redirect_uri", redirectURI)
+	q.Set("entrypoint", g.entrypoint) // Todo could this be generated ad hoc by the client?
 	q.Set("state", state)
-	q.Set("pkce_client_id", "todo") // Todo
-	q.Set("access_type", "offline") // Todo
 
 	var u url.URL
 	u = *g.LoginURL

@@ -62,6 +62,10 @@ spec:
           value: 329616299969-qdj49c50rqqokk2vialrm6l7nljfa0j5.apps.googleusercontent.com
         - name: oauthClientSecret_google
           value: g4QmxQI3gmCJg5G1DDHP4oBq
+        - name: oauthClientId_fxa
+          value: dcdb5ae7add825d2
+        - name: oauthClientSecret_fxa
+          value: b93ef8a8f3e553a430d7e5b904c6132b2722633af9f03128029201d24a97f2a8
         resources:
           limits:
             memory: 1024Mi
