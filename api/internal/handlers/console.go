@@ -1,42 +1,51 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"text/template"
 
-	"main/utils"
+	"main/internal"
 )
+
+type consoleCfg struct {
+	UserEmail   string `json:"key"`
+	UserPicture string `json:"subdomain"`
+}
 
 var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/console" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	fmt.Println("dumpHeader: " + dumpHeader(r))
+	internal.GetLogger().Info("console accessed --- r.dump: " + dumpHeader(r))
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	t, err := template.ParseFiles("./_statics/console.html")
 	if err != nil {
-		utils.Logger.Panic("failed to parse console.html template -- " + err.Error())
+		panic("failed to parse console.html template -- " + err.Error())
 	}
 
-	c, err := r.Cookie(utils.SessionTokenName)
+	cfg := consoleCfg{
+		UserEmail:   r.Header.Get("X-Forwarded-UserEmail"),
+		UserPicture: r.Header.Get("X-Forwarded-UserPicture"),
+	}
+
+	c, err := r.Cookie(internal.SessionTokenName)
 	if err != nil {
-		newCookie := utils.CreateNewSession()
+		newCookie := internal.CreateNewSession()
 		http.SetCookie(w, newCookie)
-		t.Execute(w, nil)
+		t.Execute(w, cfg)
 		return
 	}
 
-	sess := utils.CACHE.Load(c.Value)
+	sess := internal.CACHE.Load(c.Value)
 	if sess == nil {
-		http.SetCookie(w, utils.CreateNewSession())
-		t.Execute(w, nil)
+		http.SetCookie(w, internal.CreateNewSession())
+		t.Execute(w, cfg)
 		return
 	}
 
-	t.Execute(w, nil)
+	t.Execute(w, cfg)
 
 })
 
@@ -49,7 +58,7 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 // 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 // 		t, err := template.ParseFiles("./root.html")
 // 		if err != nil {
-// 			utils.Logger.Panic("failed to parse root.html template -- " + err.Error())
+// 			internal.logger.Panic("failed to parse root.html template -- " + err.Error())
 // 		}
 // 		t.Execute(w, nil)
 // 	})

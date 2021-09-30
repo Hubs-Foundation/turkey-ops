@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync/atomic"
+	"time"
 )
 
 func dumpHeader(r *http.Request) string {
@@ -53,7 +55,7 @@ func Login() http.Handler {
 
 		// Valid request
 		logger.Sugar().Debug("allowed. good cookie found for " + email)
-		w.Header().Set("X-Forwarded-User", email)
+		w.Header().Set("X-Forwarded-UserEmail", email)
 		http.Redirect(w, r, client, http.StatusTemporaryRedirect)
 
 	})
@@ -200,9 +202,20 @@ func Authn() http.Handler {
 		}
 
 		logger.Sugar().Debug("allowed. good cookie found for " + email)
-		w.Header().Set("X-Forwarded-User", email)
+		w.Header().Set("X-Forwarded-UserEmail", email)
+
+		clearCSRFcookies(w, r)
+
 		w.WriteHeader(200)
 	})
+}
+
+func clearCSRFcookies(w http.ResponseWriter, r *http.Request) {
+	for _, c := range r.Cookies() {
+		if strings.Index(c.Name[:11], "_turkeyauthcsrfcookie_") == 0 {
+			http.SetCookie(w, &http.Cookie{Name: c.Name, Value: "", Path: "/", Expires: time.Unix(0, 0)})
+		}
+	}
 }
 
 // func TraefikIp() http.Handler {

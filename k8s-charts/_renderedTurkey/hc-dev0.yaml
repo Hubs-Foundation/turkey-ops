@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: hc-dev0
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
 ---
 ######################################################################################
 ###################################### ingress #######################################
@@ -13,10 +13,12 @@ kind: Ingress
 metadata:
   name: turkey-https
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: https
+    # traefik.ingress.kubernetes.io/router.tls.options: hc-dev0-h2only@kubernetescrd
+    # traefik.ingress.kubernetes.io/router.middlewares: hc-dev0-fakeh2headersforret@kubernetescrd
 spec:
   rules:
   - host: dev0-assets.myhubs.net
@@ -52,7 +54,26 @@ spec:
           service:
             name: ret
             port: 
-              number: 4000            
+              number: 4000
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: TLSOption
+# metadata:
+#   name: h2only
+#   namespace: hc-dev0
+# spec:
+#   alpnProtocols:
+#     - h2
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: fakeh2headersforret
+#   namespace: hc-dev0
+# spec:
+#   headers:
+#     customRequestHeaders:
+#       authority: dev0-assets.myhubs.net
 ---
 ########################################################################
 ###################### configs #########################################
@@ -62,7 +83,7 @@ kind: Secret
 metadata:
   name: configs
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 stringData:
   NODE_COOKIE: foobar
@@ -79,7 +100,7 @@ stringData:
   SMTP_PORT: "25"
   SMTP_USER: AKIAYEJRSWRAQUI7U3J4
   SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
-  ADM_EMAIL: dev_gimmechart
+  ADM_EMAIL: foo@bar.com
 ---
 ########################################################################
 ###################### reticulum #######################################
@@ -89,10 +110,10 @@ kind: Deployment
 metadata:
   name: reticulum
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: reticulum
@@ -109,7 +130,7 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:31
+          image: mozillareality/ret:40
           ports:
           - containerPort: 9100
           imagePullPolicy: IfNotPresent
@@ -201,6 +222,10 @@ spec:
               secretKeyRef:
                 name: configs
                 key: ADM_EMAIL          
+          - name: turkeyCfg_ITA_HOST
+            value: http://turkey-api.turkey-services
+          - name: turkeyCfg_PGREST_HOST
+            value: http://do-we-need-this-why-not-just-do-it-in-ret
           livenessProbe:
             httpGet:
               path: "http://reticulum.dev0"
@@ -221,7 +246,7 @@ kind: Service
 metadata:
   name: ret
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
   clusterIP: None
@@ -240,7 +265,7 @@ kind: Deployment
 metadata:
   name: hubs
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
   replicas: 1 
@@ -284,7 +309,7 @@ spec:
           - name: turkeyCfg_reticulum_server
             value: dev0.myhubs.net
           - name: turkeyCfg_cors_proxy_server
-            value: 
+            value: dev0-assets.myhubs.net
           - name: turkeyCfg_ga_tracking_id
             value: 
           - name: turkeyCfg_shortlink_domain
@@ -313,7 +338,7 @@ kind: Service
 metadata:
   name: hubs
   labels:
-    UserId: dev_gimmechart
+    TurkeyId: dev_gimmechart
   namespace: hc-dev0
 spec:
   clusterIP: None

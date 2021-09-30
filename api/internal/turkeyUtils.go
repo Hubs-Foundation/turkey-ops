@@ -1,4 +1,4 @@
-package turkeyUtils
+package internal
 
 import (
 	"bytes"
@@ -11,7 +11,6 @@ import (
 	"io"
 	"io/fs"
 	"io/ioutil"
-	"main/utils"
 	"net/url"
 	"os"
 	"os/exec"
@@ -24,7 +23,7 @@ import (
 	"github.com/square/go-jose"
 )
 
-func DeployKeys(awss *utils.AwsSvs, stackName, targetBucket string) error {
+func DeployKeys(awss *AwsSvs, stackName, targetBucket string) error {
 
 	tmpWorkDir := "./tmp_" + stackName
 	err := MakeKeys(stackName, tmpWorkDir)
@@ -76,7 +75,7 @@ func DeployKeys(awss *utils.AwsSvs, stackName, targetBucket string) error {
 	return nil
 }
 
-func DeployHubsAssets(awss *utils.AwsSvs, metaMap map[string]string, turkeycfgBucket, targetBucket string) {
+func DeployHubsAssets(awss *AwsSvs, metaMap map[string]string, turkeycfgBucket, targetBucket string) {
 	//wait for bucket
 	err := awss.S3WaitForBucket(targetBucket, 600)
 	if err != nil {
@@ -111,7 +110,7 @@ func DeployHubsAssets(awss *utils.AwsSvs, metaMap map[string]string, turkeycfgBu
 					f.Seek(0, io.SeekStart)
 					f.WriteString(fStr)
 					f.Seek(0, io.SeekStart)
-					awss.S3UploadMimeObj(f, targetBucket, targetKey, utils.GetMimeType(ext))
+					awss.S3UploadMimeObj(f, targetBucket, targetKey, GetMimeType(ext))
 					f.Close()
 					os.Remove(f.Name())
 				} else {

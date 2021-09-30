@@ -21,8 +21,16 @@
       <div class="container-fluid">
         <form class="d-flex">
           <button class="btn btn-outline-success me-2" type="button" id="login_google">login_google</button>
-          <button class="btn btn-outline-success" type="button" id="login_fxa">login_fxa</button>          
+          <button class="btn btn-outline-success" type="button" id="login_fxa">login_fxa</button>                    
+          <div class="container">
+            <a class="navbar-brand" href="#">  
+              hello: {{.UserEmail}}
+              <img src="{{.UserPicture}}" alt="" width="30" height="24">
+            </a>
+          </div>
         </form>
+        <a class="nav-link disabled position-absolute top-0 end-0" >:##runNum##</a>
+        <a class="nav-link disabled position-absolute bottom-0 end-0" >##commitNum##</a>
       </div>
     </nav>
   <div class="container mh-80  shadow p-3 mb-3" style="margin-top:2%">
@@ -44,11 +52,14 @@
                 2. click a button:<br>
                 <button type="button" class="btn btn-primary btn-sm" id="getBtn" >get</button>
                 <button type="button" class="btn btn-success btn-sm" id="deployBtn" >deploy</button>
-                <button type="button" class="btn btn-danger btn-sm" id="deleteBtn" >delete</button>
+                <br>
+                <button type="button" class="btn btn-warning btn-sm" id="delNsBtn" >deleteNS</button>
+                <button type="button" class="btn btn-danger btn-sm" id="delDbBtn" >deleteDB</button>
 
                 <p><b>config examples:</b><br>
                   <button type="button" class="btn btn-outline-info btn-sm" id="cfgEx_get" >get</button>
                   <button type="button" class="btn btn-outline-info btn-sm" id="cfgEx_deploy" >deploy</button>
+                  <button type="button" class="btn btn-outline-info btn-sm" id="cfgEx_del" >delete</button>
 
             </div>
             <div class="col-sm-7">

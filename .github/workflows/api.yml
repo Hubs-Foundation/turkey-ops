@@ -22,6 +22,8 @@ jobs:
       - name: docker build
         run: |
           cd ./api
+          sed -i "s/##runNum##/${GITHUB_RUN_NUMBER}/g" ./_statics/console.html
+          sed -i "s/##commitNum##/${GITHUB_SHA:0:7}/g" ./_statics/console.html
           docker build -q -t mozillareality/$containerName:$GITHUB_RUN_NUMBER .
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
           sudo docker images
