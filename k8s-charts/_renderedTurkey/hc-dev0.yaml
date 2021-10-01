@@ -7,73 +7,39 @@ metadata:
 ---
 ######################################################################################
 ###################################### ingress #######################################
-######################################################################################  
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+######################################################################################
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
   name: turkey-https
+  namespace: hc-dev0
   labels:
     TurkeyId: dev_gimmechart
-  namespace: hc-dev0
-  annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: https
-    # traefik.ingress.kubernetes.io/router.tls.options: hc-dev0-h2only@kubernetescrd
-    # traefik.ingress.kubernetes.io/router.middlewares: hc-dev0-fakeh2headersforret@kubernetescrd
 spec:
-  rules:
-  - host: dev0-assets.myhubs.net
-    http:
-      paths:
-      - path: /files/
-        pathType: Prefix
-        backend:
-          service:
-            name: ret
-            port: 
-              number: 4000
-      - path: /http
-        pathType: Prefix
-        backend:
-          service:
-            name: ret
-            port: 
-              number: 4000
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: hubs
-            port: 
-              number: 8080
-  - host: dev0.myhubs.net
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: ret
-            port: 
-              number: 4000
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: TLSOption
-# metadata:
-#   name: h2only
-#   namespace: hc-dev0
-# spec:
-#   alpnProtocols:
-#     - h2
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: Middleware
-# metadata:
-#   name: fakeh2headersforret
-#   namespace: hc-dev0
-# spec:
-#   headers:
-#     customRequestHeaders:
-#       authority: dev0-assets.myhubs.net
+  entryPoints:
+    - https
+  routes:
+  - kind: Rule
+    match: Host(`dev0.myhubs.net`) && PathPrefix(`/`)
+    services:
+    - kind: Service
+      name: ret
+      passHostHeader: true
+      port: 4000
+  - kind: Rule
+    match: (Host(`dev0-assets.myhubs.net`) || Host(`dev0-cors.myhubs.net`)) && (PathPrefix(`/files/`) || PathPrefix(`/http/`))
+    services:
+    - kind: Service
+      name: ret
+      passHostHeader: true
+      port: 4000
+  - kind: Rule
+    match: (Host(`dev0-assets.myhubs.net`) || Host(`dev0-cors.myhubs.net`)) && PathPrefix(`/`)
+    services:
+    - kind: Service
+      name: hubs
+      passHostHeader: true
+      port: 8080
 ---
 ########################################################################
 ###################### configs #########################################
@@ -100,11 +66,11 @@ stringData:
   SMTP_PORT: "25"
   SMTP_USER: AKIAYEJRSWRAQUI7U3J4
   SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
-  ADM_EMAIL: foo@bar.com
+  ADM_EMAIL: gtan@mozilla.com
 ---
 ########################################################################
 ###################### reticulum #######################################
-########################################################################  
+########################################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -130,7 +96,7 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:40
+          image: mozillareality/ret:70
           ports:
           - containerPort: 9100
           imagePullPolicy: IfNotPresent
@@ -259,7 +225,7 @@ spec:
 ---
 ########################################################################
 ######################   hubs   ########################################
-########################################################################  
+########################################################################
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -297,7 +263,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: configs
-                key: DOMAIN          
+                key: DOMAIN
           - name: turkeyCfg_postgrest_server
             value: 
           - name: turkeyCfg_thumbnail_server
@@ -309,7 +275,7 @@ spec:
           - name: turkeyCfg_reticulum_server
             value: dev0.myhubs.net
           - name: turkeyCfg_cors_proxy_server
-            value: dev0-assets.myhubs.net
+            value: dev0-cors.myhubs.net
           - name: turkeyCfg_ga_tracking_id
             value: 
           - name: turkeyCfg_shortlink_domain

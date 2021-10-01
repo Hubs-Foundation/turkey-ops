@@ -11,6 +11,7 @@ var (
 )
 
 func main() {
+	fmt.Println("######testttttttttttttttttttttttttttttttttt")
 	internal.InitLogger()
 	internal.MakeCfg()
 

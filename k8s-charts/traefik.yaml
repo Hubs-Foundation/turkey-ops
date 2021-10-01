@@ -117,18 +117,28 @@ spec:
   routes:
   - kind: Rule
     match: Host(`traefik.myhubs.net`) && PathPrefix(`/`)
-    # middlewares:                    
-    # - name: internal-ip-whitelist             
-    #   namespace: traefik            
+    middlewares:                    
+    - name: turkeyauth         
+      namespace: traefik
     services:                       
     - kind: Service
       name: dashboard
       namespace: traefik
       passHostHeader: true
       port: 1080
-
+---
 ################### middlewares ##########################
-
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: turkeyauth
+  namespace: traefik
+spec:
+  forwardAuth:
+    address: http://auth.turkey-services:9001/authn
+    authResponseHeaders:
+      - X-Forwarded-User
+    trustForwardHeader: true
 # ---
 # apiVersion: traefik.containo.us/v1alpha1
 # kind: Middleware
