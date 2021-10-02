@@ -27,12 +27,15 @@ spec:
       passHostHeader: true
       port: 4000
   - kind: Rule
-    match: (Host(`dev0-assets.myhubs.net`) || Host(`dev0-cors.myhubs.net`)) && (PathPrefix(`/files/`) || PathPrefix(`/http/`))
+    match: (Host(`dev0-assets.myhubs.net`) || Host(`dev0-cors.myhubs.net`)) && (PathPrefix(`/files/`) || PathPrefix(`/http`))
     services:
     - kind: Service
       name: ret
       passHostHeader: true
       port: 4000
+    middlewares:
+    - name: ret-cors
+      namespace: hc-dev0
   - kind: Rule
     match: (Host(`dev0-assets.myhubs.net`) || Host(`dev0-cors.myhubs.net`)) && PathPrefix(`/`)
     services:
@@ -40,6 +43,18 @@ spec:
       name: hubs
       passHostHeader: true
       port: 8080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ret-cors
+  namespace: hc-dev0
+  labels:
+    TurkeyId: dev_gimmechart  
+spec:
+  headers:
+    customResponseHeaders:
+      Access-Control-Allow-Origin: "*"
 ---
 ########################################################################
 ###################### configs #########################################
