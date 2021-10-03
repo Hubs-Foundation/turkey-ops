@@ -205,8 +205,8 @@ spec:
                 key: ADM_EMAIL          
           - name: turkeyCfg_ITA_HOST
             value: http://turkey-api.turkey-services
-          - name: turkeyCfg_PGREST_HOST
-            value: http://do-we-need-this-why-not-just-do-it-in-ret
+          # - name: turkeyCfg_PGREST_HOST
+          #   value: http://do-we-need-this-why-not-just-do-it-in-ret
           livenessProbe:
             httpGet:
               path: "http://reticulum.dev0"
@@ -221,6 +221,19 @@ spec:
             requests:
               memory: 128Mi
               cpu: 0.1
+      containers:
+        - name: postgrest
+          image: postgrest/postgrest:v8.0.0
+          ports:
+          - containerPort: 3000
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: PGRST_DB_URI
+            value: postgres://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
+          - name: PGRST_DB_SCHEMA
+            value: ret0
+          - name: PGRST_DB_ANON_ROLE
+            value: postgres            
 ---
 apiVersion: v1
 kind: Service

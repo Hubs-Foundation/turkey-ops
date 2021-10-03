@@ -48,7 +48,7 @@ spec:
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
-      - image: mozillareality/turkeyauth:61
+      - image: mozillareality/turkeyauth:66
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -61,11 +61,7 @@ spec:
         - name: oauthClientId_google
           value: 329616299969-qdj49c50rqqokk2vialrm6l7nljfa0j5.apps.googleusercontent.com
         - name: oauthClientSecret_google
-          value: g4QmxQI3gmCJg5G1DDHP4oBq
-        - name: oauthClientId_fxa
-          value: todoaddclientid
-        - name: oauthClientSecret_fxa
-          value: todoaddclientsecretid
+          value: g4QmxQI3gmCJg5G1DDHP4oBq         
         resources:
           limits:
             memory: 1024Mi
@@ -123,6 +119,8 @@ spec:
     address: http://auth.turkey-services:9001/authn
     authResponseHeaders:
       - X-Forwarded-User
+      - X-Forwarded-UserEmail
+      - X-Forwarded-UserPicture
     trustForwardHeader: true      
 ---
 apiVersion: v1
@@ -144,7 +142,7 @@ spec:
   selector:
     matchLabels:
       app: turkey-api
-  minReadySeconds: 15                                      
+  minReadySeconds: 2
   template:
     metadata:
       labels:
@@ -152,12 +150,17 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:11
+      - image: mozillareality/turkeyapi:40
         imagePullPolicy: IfNotPresent
         name: turkey-orc
+        env:
+        - name: DOMAIN
+          value: myhubs.net
+        - name: DB_CONN
+          value: postgres://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
         livenessProbe:
           httpGet:
-            path: "http://turkey-api.turkey-services/healthz"
+            path: "http://turkey-api.turkey-services/Healthz"
             port: 888
           initialDelaySeconds: 20
           timeoutSeconds: 1
