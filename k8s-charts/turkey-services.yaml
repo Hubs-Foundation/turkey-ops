@@ -229,7 +229,7 @@ spec:
         app: pgbouncer
     spec:
       containers:
-      - image: mozillareality/pgbouncer:2
+      - image: mozillareality/pgbouncer:3
         imagePullPolicy: IfNotPresent
         name: pgbouncer
         env:
