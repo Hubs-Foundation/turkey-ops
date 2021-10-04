@@ -73,7 +73,7 @@ stringData:
   DB_USER: postgres
   DB_PASS: itjfHE4HuS
   DB_NAME: {{.DBname}}
-  DB_HOST: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+  DB_HOST: pgbouncer.turkey-services
   GUARDIAN_KEY: strongSecret#1
   PERMS_KEY: {{.PermsKey}}
   PHX_KEY: strongSecret#2
@@ -226,7 +226,7 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
           - name: PGRST_DB_URI
-            value: postgres://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/{{.DBname}}
+            value: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/{{.DBname}}
           - name: PGRST_DB_SCHEMA
             value: ret0_admin
           - name: PGRST_DB_ANON_ROLE
