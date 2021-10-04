@@ -22,7 +22,7 @@ jobs:
       - name: docker build
         run: |
           cd ./deps/pgbouncer
-          docker build -q -t mozillareality/$containerName:$GITHUB_RUN_NUMBER .
+          docker build -t mozillareality/$containerName:$GITHUB_RUN_NUMBER .
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
           sudo docker images
           sudo docker push $registryName/$containerName:$GITHUB_RUN_NUMBER
