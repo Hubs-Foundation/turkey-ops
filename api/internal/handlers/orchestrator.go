@@ -98,7 +98,8 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// quality of life improvement for /console people
 	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
 	sess.Log("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
-		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + "'s " + cfg.Subdomain + "</b></a>")
+		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + ":" + cfg.Subdomain + "</b></a>")
+	sess.Log("&#129311; admin email: " + cfg.UserEmail)
 
 	// #5 create db
 	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+cfg.DBname+"\"")

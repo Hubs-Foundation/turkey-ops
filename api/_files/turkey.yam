@@ -81,7 +81,7 @@ stringData:
   SMTP_PORT: "25"
   SMTP_USER: AKIAYEJRSWRAQUI7U3J4
   SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
-  ADM_EMAIL: gtan@mozilla.com
+  ADM_EMAIL: {{.UserEmail}}
 ---
 ########################################################################
 ###################### reticulum #######################################
