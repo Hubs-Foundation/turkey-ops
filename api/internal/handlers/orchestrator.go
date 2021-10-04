@@ -3,10 +3,14 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 
 	"net/http"
 	"strconv"
@@ -38,6 +42,8 @@ type turkeyCfg struct {
 	Tier      string `json:"tier"`
 	UserEmail string `json:"useremail"`
 	DBname    string `json:"dbname"`
+	PermsKey  string `json:"permskey"`
+	JWK       string `json:"jwk"`
 }
 
 var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -46,38 +52,15 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-
 	sess := internal.GetSession(r.Cookie)
 
+	// #1 prepare configs
 	cfg, err := makeCfg(r)
 	if err != nil {
 		sess.Log("bad turkeyCfg: " + err.Error())
 	}
 
-	// userid is required
-	if cfg.TurkeyId == "" {
-		sess.Log("ERROR bad turkeyCfg.UserId")
-		return
-	}
-
-	cfg.Domain = internal.Cfg.Domain
-
-	//default Tier is free
-	if cfg.Tier == "" {
-		cfg.Tier = "free"
-	}
-	//default Subdomain is a string hashed from turkeyId and time
-	if cfg.Subdomain == "" {
-		cfg.Subdomain = cfg.TurkeyId + "-" + strconv.FormatInt(time.Now().Unix()-1626102245, 36)
-	}
-
-	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail")
-	if cfg.UserEmail == "" {
-		sess.Log("failed to get cfg.UserEmail")
-		return
-	}
-	cfg.DBname = "ret_" + cfg.Subdomain
-	//render turkey-k8s-chart by apply cfg to turkey.yam
+	// #2 render turkey-k8s-chart by apply cfg to turkey.yam
 	t, err := template.ParseFiles("./_files/turkey.yam")
 	if err != nil {
 		sess.Panic(err.Error())
@@ -86,7 +69,15 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	t.Execute(&buf, cfg)
 	k8sChartYaml := buf.String()
 
-	//getting k8s config
+	// #2.5 dry run option
+	if cfg.Tier == "dryrun" {
+		w.Header().Set("Content-Disposition", "attachment; filename="+cfg.Subdomain+".yaml")
+		w.Header().Set("Content-Type", "text/plain")
+		io.Copy(w, strings.NewReader(k8sChartYaml))
+		return
+	}
+
+	// #3 getting k8s config
 	sess.Log("&#9989; ... using InClusterConfig")
 	k8sCfg, err := rest.InClusterConfig()
 	// }
@@ -96,7 +87,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 
-	// kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
+	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
 	sess.Log("&#128640;[DEBUG] --- deployment started")
 	err = ssa_k8sChartYaml(cfg.TurkeyId, k8sChartYaml, k8sCfg)
 	if err != nil {
@@ -104,17 +95,12 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Panic(err.Error())
 	}
 
-	// qualit of life ++ for dev console
+	// quality of life improvement for /console people
 	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
 	sess.Log("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
 		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + "'s " + cfg.Subdomain + "</b></a>")
 
-	//create db
-	// conn, err := internal.PgxPool.Acquire(context.Background())
-	// if err != nil {
-	// 	sess.Log("ERROR --- DB.conn FAILED !!! because" + fmt.Sprint(err))
-	// 	panic("error acquiring connection: " + err.Error())
-	// }
+	// #5 create db
 	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
@@ -127,7 +113,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	sess.Log("&#128640;[DEBUG] --- db created: " + cfg.DBname)
-	//load schema to new db
+	// #6 load schema to new db
 	retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
 	if err != nil {
 		sess.Panic(err.Error())
@@ -142,6 +128,9 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Panic(err.Error())
 	}
 	sess.Log("&#128640;[DEBUG] --- schema loaded to db: " + cfg.DBname)
+
+	// #7 done, (todo) return a json report for portal to consume
+
 })
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
@@ -208,6 +197,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess := internal.GetSession(r.Cookie)
+
 	cfg, err := makeCfg(r)
 	if err != nil {
 		sess.Log("bad turkeyCfg: " + err.Error())
@@ -222,7 +212,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.Log(`turkeyUserId[0:4] == dev_ means dev mode`)
 
-		cfg.UserEmail = "foo@bar.com"
+		cfg.UserEmail = "gtan@mozilla.com"
 		t, _ := template.ParseFiles("./_files/turkey.yam")
 		var buf bytes.Buffer
 		t.Execute(&buf, cfg)
@@ -282,6 +272,47 @@ func makeCfg(r *http.Request) (turkeyCfg, error) {
 		fmt.Println("bad turkeyCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
+
+	// userid is required
+	if cfg.TurkeyId == "" {
+		return cfg, errors.New("ERROR bad turkeyCfg.UserId")
+	}
+	cfg.Domain = internal.Cfg.Domain
+	//default Tier is free
+	if cfg.Tier == "" {
+		cfg.Tier = "free"
+	}
+	//default Subdomain is a string hashed from turkeyId and time
+	if cfg.Subdomain == "" {
+		cfg.Subdomain = cfg.TurkeyId + "-" + strconv.FormatInt(time.Now().Unix()-1626102245, 36)
+	}
+	cfg.DBname = "ret_" + cfg.Subdomain
+	//use authenticated useremail
+	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail")
+	if cfg.UserEmail == "" {
+		// return cfg, errors.New("failed to get cfg.UserEmail")
+		cfg.UserEmail = "fooooo@barrrr.com"
+	}
+
+	//cluster wide private key for all reticulum authentications
+	permskey_in := os.Getenv("PERMS_KEY")
+	if permskey_in == "" {
+		return cfg, errors.New("bad perms_key")
+	}
+	cfg.PermsKey = strings.ReplaceAll(permskey_in, `\n`, `\\n`)
+	perms_key_str := strings.Replace(permskey_in, `\n`, "\n", -1)
+	pb, _ := pem.Decode([]byte(perms_key_str))
+	perms_key, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
+	if err != nil {
+		return cfg, err
+	}
+	//for postgrest to auth reticulum requests
+	jwk, err := jwkEncode(perms_key.Public())
+	if err != nil {
+		return cfg, err
+	}
+	cfg.JWK = strings.ReplaceAll(jwk, `"`, `\"`)
+
 	return cfg, nil
 }
 

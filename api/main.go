@@ -18,11 +18,13 @@ func main() {
 	router.Handle("/Healthz", handlers.Healthz())
 
 	router.Handle("/console", requireRole("foobar")(handlers.Console))
+
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
 
 	router.Handle("/hc_get", handlers.Hc_get)
 	router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
+
 	router.Handle("/hc_delNS", handlers.Hc_delNS)
 	router.Handle("/hc_delDB", handlers.Hc_delDB)
 
