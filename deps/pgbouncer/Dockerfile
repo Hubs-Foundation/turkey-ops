@@ -30,7 +30,7 @@ RUN \
   rm -rf /tmp/pgbouncer*  && \
   apk del --purge autoconf autoconf-doc automake udns-dev curl gcc libc-dev libevent-dev libtool make libressl-dev pkgconfig
 COPY entrypoint.sh /entrypoint.sh
-RUN chown -R postgres:postgres /entrypoint.sh && ls -lha /entrypoint.sh
+RUN chown -R postgres:postgres /entrypoint.sh && chmod +x ./entrypoint.sh
 USER postgres
 EXPOSE 5432
 ENTRYPOINT ["/entrypoint.sh"]
