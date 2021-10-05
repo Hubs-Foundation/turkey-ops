@@ -339,7 +339,7 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
 			sess.Log("WARNING: forcing: live connections will get kicked: " + err.Error())
-			_, err = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM `+internal.Cfg.DBuser)
+			_, err = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM public`)
 			if err != nil {
 				_, err = internal.PgxPool.Exec(context.Background(), `SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = `+cfg.DBname)
 			}
