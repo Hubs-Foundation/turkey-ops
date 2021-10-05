@@ -89,8 +89,11 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 })
 
 func msgBeautifier(msg string) string {
-	if strings.Contains(msg, "ERROR") {
+	if strings.HasPrefix(msg, "ERROR") {
 		msg = "&#128293;" + msg + "&#128293;"
+	}
+	if strings.HasPrefix(msg, "WARNING") {
+		msg = "&#9889;" + msg + "&#9889;"
 	}
 	return msg
 }
