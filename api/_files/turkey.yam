@@ -217,8 +217,8 @@ spec:
               memory: 1024Mi
               cpu: 1
             requests:
-              memory: 128Mi
-              cpu: 0.1
+              memory: 64Mi
+              cpu: 0.03
         - name: postgrest
           image: postgrest/postgrest:v8.0.0
           ports:
@@ -326,8 +326,8 @@ spec:
               memory: 1024Mi
               cpu: 1
             requests:
-              memory: 128Mi
-              cpu: 0.1
+              memory: 64Mi
+              cpu: 0.03
 ---
 apiVersion: v1
 kind: Service
