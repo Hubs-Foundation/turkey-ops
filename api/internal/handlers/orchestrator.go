@@ -338,12 +338,17 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
 	if err != nil {
 		if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
-			sess.Log("WARNING: forcing: live connections will get kicked: " + err.Error())
+			squatters, _ := internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
+			sess.Log("WARNING: found " + fmt.Sprint(squatters.RowsAffected()) + " squatters <- " + err.Error())
+			sess.Log("kicking squatters: " + squatters.String())
 			_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM public`)
 			_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM `+internal.Cfg.DBuser)
 			_, _ = internal.PgxPool.Exec(context.Background(), `SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '`+cfg.DBname+`'`)
+			squatters, _ = internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
+			if squatters.RowsAffected() != 0 {
+				sess.Panic("ERROR: failed to kick squatters: " + squatters.String())
+			}
 			_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
-
 		}
 		if err != nil {
 			sess.Panic(err.Error())
