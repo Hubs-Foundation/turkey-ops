@@ -133,7 +133,7 @@ data:
 type: kubernetes.io/dockerconfigjson
 ---
 apiVersion: apps/v1
-kind: Deployment                                          
+kind: Deployment
 metadata:
   name: turkey-api
   namespace: turkey-services
@@ -150,7 +150,7 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:43
+      - image: mozillareality/turkeyapi:44
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         env:
@@ -213,7 +213,7 @@ subjects:
 ################################### pgbouncer ######################################
 ####################################################################################
 apiVersion: apps/v1
-kind: Deployment                                          
+kind: Deployment
 metadata:
   name: pgbouncer
   namespace: turkey-services
@@ -239,23 +239,13 @@ spec:
           value: itjfHE4HuS
         - name: DB_HOST
           value: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
-        # - name: POOL_MODE
-        #   value: transaction
-
-        # livenessProbe:
-        #   httpGet:
-        #     path: "http://turkey-api.turkey-services/Healthz"
-        #     port: 888
-        #   initialDelaySeconds: 20
-        #   timeoutSeconds: 1
-        #   periodSeconds: 120
-        # resources:
-        #   limits:
-        #     memory: 1024Mi
-        #     cpu: 1
-        #   requests:
-        #     memory: 128Mi
-        #     cpu: 0.1    
+        resources:
+          limits:
+            memory: 1024Mi
+            cpu: 1
+          requests:
+            memory: 128Mi
+            cpu: 0.1              
 ---
 apiVersion: v1
 kind: Service
@@ -269,5 +259,58 @@ spec:
     targetPort: 5432
   selector:
     app: pgbouncer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-t
+  namespace: turkey-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-t
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-t
+    spec:
+      containers:
+      - image: mozillareality/pgbouncer:6
+        imagePullPolicy: IfNotPresent
+        name: pgbouncer-t
+        env:
+        - name: DB_USER
+          value: postgres
+        - name: DB_PASSWORD
+          value: itjfHE4HuS
+        - name: DB_HOST
+          value: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+        - name: POOL_MODE
+          value: transaction
+        resources:
+          limits:
+            memory: 1024Mi
+            cpu: 1      
+          requests:
+            memory: 128Mi
+            cpu: 0.1                  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-t
+  namespace: turkey-services
+spec:
+  ports:
+  - name: http
+    port: 5432
+    targetPort: 5432
+  selector:
+    app: pgbouncer-t
+
+
+
 
 

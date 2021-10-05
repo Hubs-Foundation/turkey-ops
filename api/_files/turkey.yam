@@ -74,6 +74,7 @@ stringData:
   DB_PASS: itjfHE4HuS
   DB_NAME: {{.DBname}}
   DB_HOST: pgbouncer.turkey-services
+  DB_HOST_T: pgbouncer-t.turkey-services
   GUARDIAN_KEY: strongSecret#1
   PERMS_KEY: {{.PermsKey}}
   PHX_KEY: strongSecret#2
@@ -111,7 +112,7 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:92
+          image: mozillareality/ret:93
           ports:
           - containerPort: 9100
           imagePullPolicy: IfNotPresent
@@ -163,6 +164,11 @@ spec:
               secretKeyRef:
                 name: configs
                 key: DB_HOST
+          - name: turkeyCfg_DB_HOST_T
+            valueFrom:
+              secretKeyRef:
+                name: configs
+                key: DB_HOST_T                
           - name: turkeyCfg_GUARDIAN_KEY
             valueFrom:
               secretKeyRef:
@@ -214,11 +220,11 @@ spec:
             periodSeconds: 120
           resources:
             limits:
-              memory: 1024Mi
-              cpu: 1
+              memory: 512Mi
+              cpu: 0.5
             requests:
               memory: 64Mi
-              cpu: 0.03
+              cpu: 0.025
         - name: postgrest
           image: postgrest/postgrest:v8.0.0
           ports:
@@ -323,11 +329,11 @@ spec:
             periodSeconds: 120
           resources:
             limits:
-              memory: 1024Mi
-              cpu: 1
+              memory: 512Mi
+              cpu: 0.5
             requests:
               memory: 64Mi
-              cpu: 0.03
+              cpu: 0.025
 ---
 apiVersion: v1
 kind: Service
