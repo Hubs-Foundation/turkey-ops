@@ -150,7 +150,7 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:42
+      - image: mozillareality/turkeyapi:43
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         env:
@@ -239,6 +239,9 @@ spec:
           value: itjfHE4HuS
         - name: DB_HOST
           value: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+        # - name: POOL_MODE
+        #   value: transaction
+
         # livenessProbe:
         #   httpGet:
         #     path: "http://turkey-api.turkey-services/Healthz"
