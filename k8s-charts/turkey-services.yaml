@@ -150,7 +150,7 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:58
+      - image: mozillareality/turkeyapi:59
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         env:
