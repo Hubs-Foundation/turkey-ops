@@ -88,7 +88,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
-	sess.Log("&#128640;[DEBUG] --- deployment started")
+	sess.Log("&#128640; --- deployment started")
 	err = ssa_k8sChartYaml(cfg.TurkeyId, k8sChartYaml, k8sCfg)
 	if err != nil {
 		sess.Log("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
@@ -97,9 +97,9 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	// quality of life improvement for /console people
 	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
-	sess.Log("&#128640;[DEBUG] --- deployment completed for: <a href=\"" +
+	sess.Log("&#128640; --- deployment completed for: <a href=\"" +
 		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + ":" + cfg.Subdomain + "</b></a>")
-	sess.Log("&#129311; admin email: " + cfg.UserEmail)
+	sess.Log("&#128231; admin email: " + cfg.UserEmail)
 
 	// #5 create db
 	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
@@ -113,7 +113,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Panic(err.Error())
 		}
 	}
-	sess.Log("&#128640;[DEBUG] --- db created: " + cfg.DBname)
+	sess.Log("&#128024;[DEBUG] --- db created: " + cfg.DBname)
 	// #6 load schema to new db
 	retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
 	if err != nil {
@@ -128,7 +128,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sess.Panic(err.Error())
 	}
-	sess.Log("&#128640;[DEBUG] --- schema loaded to db: " + cfg.DBname)
+	sess.Log("&#128024;[DEBUG] --- schema loaded to db: " + cfg.DBname)
 
 	// #7 done, (todo) return a json report for portal to consume
 
@@ -325,13 +325,13 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 	cfg, err := makeCfg(r)
 	if err != nil {
-		sess.Log("bad turkeyCfg: " + err.Error())
+		sess.Panic("bad turkeyCfg: " + err.Error())
 		return
 	}
 
 	cfg.DBname = "ret_" + cfg.Subdomain
 
-	sess.Log("deleting db: " + cfg.DBname)
+	sess.Log("&#128024 deleting db: " + cfg.DBname)
 
 	//delete db -- force
 	force := true
@@ -348,7 +348,7 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Panic(err.Error())
 		}
 	}
-	sess.Log("&#127383 deleted db: " + cfg.DBname)
+	sess.Log("&#128024 deleted db: " + cfg.DBname)
 })
 
 func pg_kick_all(cfg turkeyCfg, sess *internal.CacheBoxSessData) error {
