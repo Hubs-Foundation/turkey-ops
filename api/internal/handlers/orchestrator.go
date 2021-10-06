@@ -339,13 +339,13 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
 			squatters, _ := internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
-			sess.Log("WARNING: found " + fmt.Sprint(squatters.RowsAffected()) + " squatters because <- " + err.Error())
+			sess.Log("WARNING: found <" + fmt.Sprint(squatters.RowsAffected()) + "> squatters because <- " + err.Error())
 			_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM public`)
 			_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM `+internal.Cfg.DBuser)
 			_, _ = internal.PgxPool.Exec(context.Background(), `SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '`+cfg.DBname+`'`)
 			squatters, _ = internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
 			if squatters.RowsAffected() != 0 {
-				sess.Panic("ERROR: failed to kick " + fmt.Sprint(squatters.RowsAffected()) + "squatter(s): ")
+				sess.Panic("ERROR: failed to kick <" + fmt.Sprint(squatters.RowsAffected()) + "> squatter(s): ")
 			}
 			_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
 		}
@@ -353,7 +353,7 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Panic(err.Error())
 		}
 	}
-	sess.Log("deleted db: " + cfg.DBname)
+	sess.Log("&#127383 deleted db: " + cfg.DBname)
 })
 
 var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -389,6 +389,6 @@ var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sess.Panic("delete ns failed: " + err.Error())
 	}
-	sess.Log("ns deleted: " + nsName)
+	sess.Log("&#127383 deleted ns: " + nsName)
 
 })

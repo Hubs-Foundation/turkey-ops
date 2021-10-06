@@ -93,7 +93,7 @@ func msgBeautifier(msg string) string {
 		msg = "&#128293;" + msg + "&#128293;"
 	}
 	if strings.HasPrefix(msg, "WARNING") {
-		msg = "&#9889;" + msg + "&#9889;"
+		msg = "&#128576;" + msg + "&#128576;"
 	}
 	return msg
 }
