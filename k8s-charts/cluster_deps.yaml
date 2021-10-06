@@ -1,4 +1,15 @@
 
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: turkey-admin-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin  
+subjects:
+- kind: User
+  name: turkey-admin
 ###########################################################################################
 ################################### traefik CRDs ##########################################
 ###########################################################################################

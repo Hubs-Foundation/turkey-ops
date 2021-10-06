@@ -382,11 +382,13 @@ var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//delete ns
+	nsName := "hc-" + cfg.Subdomain
 	err = clientset.CoreV1().Namespaces().Delete(context.TODO(),
-		"hc-"+cfg.Subdomain,
+		nsName,
 		metav1.DeleteOptions{})
 	if err != nil {
 		sess.Panic("delete ns failed: " + err.Error())
 	}
+	sess.Log("ns deleted: " + nsName)
 
 })
