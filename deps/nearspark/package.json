@@ -1,0 +1,10 @@
+{
+  "name": "nearspark",
+  "version": "0.0.0",
+  "description": "",
+  "main": "app.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "sharp": "^0.29.1"
+  }
+}
