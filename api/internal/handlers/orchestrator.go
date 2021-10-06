@@ -338,14 +338,9 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
 	if err != nil {
 		if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
-			squatters, _ := internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
-			sess.Log("WARNING: found <" + fmt.Sprint(squatters.RowsAffected()) + "> squatters because <- " + err.Error())
-			_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM public`)
-			_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM `+internal.Cfg.DBuser)
-			_, _ = internal.PgxPool.Exec(context.Background(), `SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '`+cfg.DBname+`'`)
-			squatters, _ = internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
-			if squatters.RowsAffected() != 0 {
-				sess.Panic("ERROR: failed to kick <" + fmt.Sprint(squatters.RowsAffected()) + "> squatter(s): ")
+			err = pg_kick_all(cfg, sess)
+			if err != nil {
+				sess.Panic(err.Error())
 			}
 			_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
 		}
@@ -355,6 +350,26 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	sess.Log("&#127383 deleted db: " + cfg.DBname)
 })
+
+func pg_kick_all(cfg turkeyCfg, sess *internal.CacheBoxSessData) error {
+	sqatterCount := -1
+	tries := 0
+	for sqatterCount != 0 && tries < 3 {
+		squatters, _ := internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
+		sess.Log("WARNING: pg_kick_all: kicking <" + fmt.Sprint(squatters.RowsAffected()) + "> squatters from " + cfg.DBname)
+		_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM public`)
+		_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM `+internal.Cfg.DBuser)
+		_, _ = internal.PgxPool.Exec(context.Background(), `SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '`+cfg.DBname+`'`)
+		time.Sleep(3 * time.Second)
+		squatters, _ = internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
+		sqatterCount = int(squatters.RowsAffected())
+		tries++
+	}
+	if sqatterCount != 0 {
+		return errors.New("ERROR: pg_kick_all: failed to kick <" + fmt.Sprint(sqatterCount) + "> squatter(s): ")
+	}
+	return nil
+}
 
 var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/hc_delNS" || r.Method != "POST" {
