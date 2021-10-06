@@ -66,7 +66,7 @@ stringData:
   DOMAIN: myhubs.net
   DB_USER: postgres
   DB_PASS: itjfHE4HuS
-  DB_NAME: ret_dev
+  DB_NAME: ret_dev0
   DB_HOST: pgbouncer.turkey-services
   DB_HOST_T: pgbouncer-t.turkey-services
   GUARDIAN_KEY: strongSecret#1
@@ -104,7 +104,7 @@ spec:
     spec:
       containers:
         - name: reticulum
-          image: mozillareality/ret:99
+          image: mozillareality/ret:100
           ports:
           - containerPort: 9100
           imagePullPolicy: IfNotPresent
@@ -224,7 +224,7 @@ spec:
           imagePullPolicy: IfNotPresent
           env:
           - name: PGRST_DB_URI
-            value: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/ret_dev
+            value: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/ret_dev0
           - name: PGRST_DB_SCHEMA
             value: ret0_admin
           - name: PGRST_DB_ANON_ROLE
@@ -234,6 +234,11 @@ spec:
             value: "{\"e\":\"AQAB\",\"kty\":\"RSA\",\"n\":\"3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf_otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD-FoHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD-UfOCMctlwudNSs-AkmiPSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj-Oa_ZQVH44lmPI9Ih0OakXWpIfOob3X0XqcdywlMVI2hzBR3JNodRjyEz33p6E__lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIacr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqw\"}"
           - name: PGRST_LOG_LEVEL
             value: info
+        - name: nearspark
+          image: mozillareality/nearspark:1
+          ports:
+          - containerPort: 5000
+          imagePullPolicy: IfNotPresent         
 ---
 apiVersion: v1
 kind: Service
