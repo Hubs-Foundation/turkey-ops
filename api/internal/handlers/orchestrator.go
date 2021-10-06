@@ -99,7 +99,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
 	sess.Log("&#128640; --- deployment completed for: <a href=\"" +
 		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + ":" + cfg.Subdomain + "</b></a>")
-	sess.Log("&#128231; admin email: " + cfg.UserEmail)
+	sess.Log("&#128231; --- admin email: " + cfg.UserEmail)
 
 	// #5 create db
 	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
@@ -113,7 +113,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Panic(err.Error())
 		}
 	}
-	sess.Log("&#128024;[DEBUG] --- db created: " + cfg.DBname)
+	sess.Log("&#128024; --- db created: " + cfg.DBname)
 	// #6 load schema to new db
 	retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
 	if err != nil {
@@ -128,7 +128,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sess.Panic(err.Error())
 	}
-	sess.Log("&#128024;[DEBUG] --- schema loaded to db: " + cfg.DBname)
+	sess.Log("&#128024; --- schema loaded to db: " + cfg.DBname)
 
 	// #7 done, (todo) return a json report for portal to consume
 
@@ -404,6 +404,6 @@ var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		sess.Panic("delete ns failed: " + err.Error())
 	}
-	sess.Log("&#127383 deleted ns: " + nsName)
+	sess.Log("&#127754 deleted ns: " + nsName)
 
 })
