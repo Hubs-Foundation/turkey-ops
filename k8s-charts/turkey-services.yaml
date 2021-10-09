@@ -48,7 +48,7 @@ spec:
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
-      - image: mozillareality/turkeyauth:72
+      - image: mozillareality/turkeyauth:74
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -61,7 +61,17 @@ spec:
         - name: oauthClientId_google
           value: 329616299969-qdj49c50rqqokk2vialrm6l7nljfa0j5.apps.googleusercontent.com
         - name: oauthClientSecret_google
-          value: g4QmxQI3gmCJg5G1DDHP4oBq         
+          value: g4QmxQI3gmCJg5G1DDHP4oBq
+        - name: oauthClientId_fxa
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: OAUTH_CLIENT_ID_FXA
+        - name: oauthClientSecret_fxa
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: OAUTH_CLIENT_SECRET_FXA
         resources:
           limits:
             memory: 1024Mi

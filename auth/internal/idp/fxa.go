@@ -22,29 +22,29 @@ type Fxa struct {
 }
 
 // Name returns the name of the provider
-func (g *Fxa) Name() string {
+func (f *Fxa) Name() string {
 	return "fxa"
 }
 
 // Setup performs validation and setup
-func (g *Fxa) Setup() error {
-	if g.ClientID == "" || g.ClientSecret == "" {
+func (f *Fxa) Setup() error {
+	if f.ClientID == "" || f.ClientSecret == "" {
 		return errors.New("providers.fxa.client-id, providers.fxa.client-secret must be set")
 	}
 
 	// Set static values
-	g.Scope = "profile openid"
-	g.LoginURL = &url.URL{
+	f.Scope = "profile openid"
+	f.LoginURL = &url.URL{
 		Scheme: "https",
-		Host:   "localhost:3030",
+		Host:   "https://oauth.stage.mozaws.net",
 		Path:   "/authorization",
 	}
-	g.TokenURL = &url.URL{
+	f.TokenURL = &url.URL{
 		Scheme: "https",
 		Host:   "api-accounts.stage.mozaws.net",
 		Path:   "/v1/client",
 	}
-	// g.UserURL = &url.URL{
+	// f.UserURL = &url.URL{
 	// 	Scheme: "https",
 	// 	Host:   "localhost:3030",
 	// 	Path:   "/oauth2/v2/userinfo",
@@ -54,32 +54,32 @@ func (g *Fxa) Setup() error {
 }
 
 // GetLoginURL provides the login url for the given redirect uri and state
-func (g *Fxa) GetLoginURL(redirectURI, state string) string {
+func (f *Fxa) GetLoginURL(redirectURI, state string) string {
 	q := url.Values{}
-	q.Set("client_id", g.ClientID)
-	q.Set("scope", g.Scope)
+	q.Set("client_id", f.ClientID)
+	q.Set("scope", f.Scope)
 	q.Set("entrypoint", redirectURI+"/_fxa") // Todo could this be generated ad hoc by the client?
 	q.Set("state", state)
 
 	var u url.URL
-	u = *g.LoginURL
+	u = *f.LoginURL
 	u.RawQuery = q.Encode()
 
 	return u.String()
 }
 
 // ExchangeCode exchanges the given redirect uri and code for a token
-func (g *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
+func (f *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 	var token Token
 
 	form := url.Values{}
-	form.Set("client_id", g.ClientID)
-	form.Set("client_secret", g.ClientSecret)
+	form.Set("client_id", f.ClientID)
+	form.Set("client_secret", f.ClientSecret)
 	form.Set("grant_type", "authorization_code")
 	form.Set("redirect_uri", redirectURI)
 	form.Set("code", code)
 
-	res, err := http.PostForm(g.TokenURL.String(), form)
+	res, err := http.PostForm(f.TokenURL.String(), form)
 	if err != nil {
 		return token, err
 	}
@@ -93,11 +93,11 @@ func (g *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 }
 
 // GetUser uses the given token and returns a complete provider.User object
-func (g *Fxa) GetUser(token string) (User, error) {
+func (f *Fxa) GetUser(token string) (User, error) {
 	var user User
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", g.UserURL.String(), nil)
+	req, err := http.NewRequest("GET", f.UserURL.String(), nil)
 	if err != nil {
 		return user, err
 	}
