@@ -32,9 +32,7 @@ func Login() http.Handler {
 			return
 		}
 
-		dumpHeader(r)
-
-		// logger.Debug("dumpHeader: " + dumpHeader(r))
+		logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		idp := r.URL.Query()["idp"]
 		if len(idp) != 1 {

@@ -36,7 +36,7 @@ func (f *Fxa) Setup() error {
 	f.Scope = "profile openid"
 	f.LoginURL = &url.URL{
 		Scheme: "https",
-		Host:   "https://oauth.stage.mozaws.net",
+		Host:   "oauth.stage.mozaws.net",
 		Path:   "/authorization",
 	}
 	f.TokenURL = &url.URL{
