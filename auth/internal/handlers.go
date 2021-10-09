@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -48,9 +49,10 @@ func Login() http.Handler {
 		}
 
 		email, err := CheckCookie(r)
+		err = errors.New("fake error to force authRedirect, remove me after fxa's done")
 		if err != nil {
 			logger.Debug("valid auth cookie not found >>> authRedirect")
-			authRedirect(w, r, cfg.DefaultProvider)
+			authRedirect(w, r, idp[0])
 		}
 
 		// Valid request
@@ -63,7 +65,7 @@ func Login() http.Handler {
 
 func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 
-	p, err := cfg.GetProvider(providerName)
+	provider, err := cfg.GetProvider(providerName)
 	if err != nil {
 		logger.Panic("internal.Cfg.GetProvider(" + providerName + ") failed: " + err.Error())
 	}
@@ -83,7 +85,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 		logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
 	}
 
-	loginURL := p.GetLoginURL("https://auth."+cfg.Domain+"/_oauth", MakeState(r, p, nonce))
+	loginURL := provider.GetLoginURL("https://auth."+cfg.Domain, MakeState(r, provider, nonce))
 	logger.Debug(" ### loginURL: " + loginURL)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 

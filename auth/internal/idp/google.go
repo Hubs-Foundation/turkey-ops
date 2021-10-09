@@ -61,7 +61,7 @@ func (g *Google) GetLoginURL(redirectURI, state string) string {
 	if g.Prompt != "" {
 		q.Set("prompt", g.Prompt)
 	}
-	q.Set("redirect_uri", redirectURI)
+	q.Set("redirect_uri", redirectURI+"/_oauth")
 	q.Set("state", state)
 
 	var u url.URL

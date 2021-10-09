@@ -111,6 +111,7 @@ func (c *Config) GetProvider(name string) (idp.Provider, error) {
 		// case "generic-oauth":
 		// 	return &c.Providers.GenericOAuth, nil
 	case "fxa":
+		logger.Debug(" ### GetProvider: fxa")
 		return &c.Providers.Fxa, nil
 	}
 

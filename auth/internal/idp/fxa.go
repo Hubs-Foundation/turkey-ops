@@ -58,7 +58,7 @@ func (g *Fxa) GetLoginURL(redirectURI, state string) string {
 	q := url.Values{}
 	q.Set("client_id", g.ClientID)
 	q.Set("scope", g.Scope)
-	q.Set("entrypoint", g.entrypoint) // Todo could this be generated ad hoc by the client?
+	q.Set("entrypoint", redirectURI+"/_fxa") // Todo could this be generated ad hoc by the client?
 	q.Set("state", state)
 
 	var u url.URL
