@@ -30,8 +30,16 @@ spec:
             port: 4654
           initialDelaySeconds: 30
           timeoutSeconds: 30
+        resources:
+          requests:
+            memory: 0.2Gi
+            cpu: 0.1   
+          limits:
+            memory: 1Gi
+            cpu: 0.5          
       nodeSelector:
         'beta.kubernetes.io/os': linux
+
 
 ---
 kind: Service

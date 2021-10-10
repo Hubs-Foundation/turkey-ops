@@ -1,0 +1,348 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ingress-controller
+  namespace: ingress
+  labels:
+    k8s-app: ingress-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: ingress-controller
+  template:
+    metadata:
+      labels:
+        k8s-app: ingress-controller
+        name: ingress-controller
+    spec:
+      # hostNetwork: true
+      serviceAccountName: ingress-controller
+      terminationGracePeriodSeconds: 60
+      containers:
+      - name: traefik
+        image: traefik:v2.5
+        imagePullPolicy: IfNotPresent        
+        args:
+        - --serversTransport.insecureSkipVerify=true
+        - --providers.kubernetesingress=true
+        - --providers.kubernetescrd
+        - --entryPoints.traefik.address=:1080
+        - --entryPoints.https.address=:443
+        - --entrypoints.https.http.tls=true
+        - --entryPoints.https.forwardedHeaders.insecure=true
+        # - --entryPoints.dialog.address=:4443
+        # - --entrypoints.dialog.http.tls=true
+        # - --entryPoints.dialog.forwardedHeaders.insecure=true
+        - --entryPoints.turn.address=:5349
+        - --entrypoints.turn.http.tls=true
+        - --entryPoints.turn.forwardedHeaders.insecure=true        
+        - --api
+        - --api.insecure
+        - --accesslog
+        - --log.level=INFO
+        - --pilot.dashboard=false
+        - --entryPoints.http.address=:80
+        - --entrypoints.http.http.redirections.entryPoint.to=https
+        - --entrypoints.http.http.redirections.entryPoint.scheme=https
+        - --entrypoints.http.http.redirections.entrypoint.permanent=true
+        - --metrics.prometheus=true
+        resources:
+          requests:
+            memory: 0.2Gi
+            cpu: 0.1
+          limits:
+            memory: 4Gi
+            cpu: 2
+      - name: haproxy 
+        image: haproxytech/kubernetes-ingress:1.7.0
+        args:
+        - --https-bind-port=4443
+        - --disable-http
+        - --ingress.class=haproxy
+        - --log=trace #error warning info debug trace
+        - --default-ssl-certificate=ingress/dummy-haproxy-cert
+        securityContext:
+          runAsUser:  1000
+          runAsGroup: 1000
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - NET_BIND_SERVICE
+        resources:
+          requests:
+            memory: 0.2Gi
+            cpu: 0.1
+          limits:
+            memory: 4Gi
+            cpu: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 1042
+        env:
+        - name: TZ
+          value: "Etc/UTC"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dummy-haproxy-cert
+  namespace: ingress
+type: kubernetes.io/tls
+data:
+  tls.crt: |
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCekNDQWUrZ0F3SUJBZ0lVRWtpQVNEcElaY1RFMWdMaFBYRHRJcGhCMmZFd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0VqRVFNQTRHQTFVRUF3d0hhR0Z3Y205NGVUQWdGdzB5TVRFd01Ea3lNRE15TVRkYUdBOHlNVEl4TURreApOVEl3TXpJeE4xb3dFakVRTUE0R0ExVUVBd3dIYUdGd2NtOTRlVENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFECmdnRVBBRENDQVFvQ2dnRUJBTTFpSDg3VkYrTWpLdmZESW1MNHNvMkl0SFdhNExVV2ZQRUpmQlh5QTVyeHA3eXIKTmtrajd5czM4Uzdsbm9VdGFQdWs5ZkV3SGsvWklvdHQ1R2RkK0tqWVE4M25RaFJ5RHBIRmpFd3Y4UE5YMDFJbgpOOHhwbythU0ZsNEtld0Q4M2RMcGdFNDRFYnhyYitsOUI4TzF4eGF0ZzNVOXh6dk5yYmYyZytDcEsxKzM3RXVzCnZYWk9iZ2FBZllFMXhob2tBMWt4aURVdXN2azZYclExUHdManh6L1NyOGdKOXBSclVzWHo3ejRHcjNSMjA0bTEKMFdrdk1TeVRJQ3dWb2ltRmtnYW14ZDFlZXRORGhROTdweEFPNm9keE54Nlg1U2VXZmZrUVh1TVVpSldNd3dERApBdGdKYVZnU202ZFRSWmxJMnNqSjNuL0xON3ZpaW8rTFYvalkwd01DQXdFQUFhTlRNRkV3SFFZRFZSME9CQllFCkZNWVN5aUxCUHRCR2R4RkdscmtDWjFuWEdFOXJNQjhHQTFVZEl3UVlNQmFBRk1ZU3lpTEJQdEJHZHhGR2xya0MKWjFuWEdFOXJNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBRkFZRmhxWApUT2xPZlFZaDUxVkNaWnA0LzM0aW1EakNkYTUxRlQvbUFHRUNpb0h1dnVuTFgzcVRuMVlVNEtheGhkRE5XVUl0CklIaTNIeFB3bmMxa3NvR3lnUkFSYTZsRHhnMDB0S3JXdzRvT0Y5U1V3dDBzTERaOE1JbDVCOEZRZTZyaklZcnoKNUZKK3Y4Y1BzS2dGajFncFAzV1V5WU1hRTQ4UnB6SncwTXU1Sy9meU4rQ2VhWE83SUtUUmw0RktwWUx0R2E2TQo0U1NMaWF6dXZjaUJwb05vTlhXRjBlWHJ5R1JQdDBsdyt1NWVpNkdpQi9OVGxLbHBZTlFaN1dyazdvTXNxWU56CjRMOTRVbTd5Z2dvdWJRbGRLNUdMT3I5UFFheGVYUVNuSXJVdEJNMUtrZVVqeTlFTXA2SThrZjA1UUcxOWxKNWkKZ1h2UnFjNHlFWEhpWDdFPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  tls.key: |
+    LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2UUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktjd2dnU2pBZ0VBQW9JQkFRRE5ZaC9PMVJmakl5cjMKd3lKaStMS05pTFIxbXVDMUZuenhDWHdWOGdPYThhZThxelpKSSs4ck4vRXU1WjZGTFdqN3BQWHhNQjVQMlNLTApiZVJuWGZpbzJFUE41MElVY2c2UnhZeE1ML0R6VjlOU0p6Zk1hYVBta2haZUNuc0EvTjNTNllCT09CRzhhMi9wCmZRZkR0Y2NXcllOMVBjYzd6YTIzOW9QZ3FTdGZ0K3hMckwxMlRtNEdnSDJCTmNZYUpBTlpNWWcxTHJMNU9sNjAKTlQ4QzQ4Yy8wcS9JQ2ZhVWExTEY4KzgrQnE5MGR0T0p0ZEZwTHpFc2t5QXNGYUlwaFpJR3BzWGRYbnJUUTRVUAplNmNRRHVxSGNUY2VsK1VubG4zNUVGN2pGSWlWak1NQXd3TFlDV2xZRXB1blUwV1pTTnJJeWQ1L3l6ZTc0b3FQCmkxZjQyTk1EQWdNQkFBRUNnZ0VBVVNLc2NpY1lrckIzN3Z6MWZxZkUwY2pwa1hRbnhTSW5KWW1iclllNENPUGkKWWRRNVU5ZVFTa0NGVlFOOUJodVVWNlVwUzZpNHNNNlVxUVEyc09jY3JvY1E4aXlqbkRRYXNWZWJQeFhKV0RpZgowTnFSWG4xMU5FY044d1NzNXd6K0RLNFY4OUNPb1NMSVNUTU5lREU5ZnlYNHdyNHZFTjhGKzZDMUpIRndJeFZ1CkJZS2JjUmhiT2FxL3QrSDFpcnlIbUFvRHAxYXZGUmVqNlZ6dzdUMTNBVUJaQ3pKdE85VGk5RzAyTHpqQWpxZ3YKeWpXekVXV2FkajZkdDRJazNTVkZmK095aTZGMThoNzZJYWhiN2xhQ0ZQZVgvYi9MWGZrZkVzRHRJTTYvSDF2RApmMDJPRlhJSCtZRUEvWEtWNkhTdGhXNEdJQVROcFBtb21qVFhxeDJjY1FLQmdRRDBuTmNlWjQ4WngwQUNjOEZTCmM2dmRWK3p4QXNZK0MyWlR3WTJFS0FDeEdOSGlFVGZUZTBmTldqejV3ZndNZW9DNi9qWkRraHJPYzFlV1pxcjQKUUxta2ZQK1NLNytqZVpSbUtHVWV3akpOSi9KMTFnMTZFcTlSWDBKWUUxWWZnN3ZaV01GRjUwNHptWmxwdnltNwpraEExcS9BOEI5eHZaZWx5Z25DS00rbFc5d0tCZ1FEVzhjVVpWZDBnMlYzR1pJMHRhejFVMlQ3SGpqbDhFZ0xjCnd0UVZwUTJRR296NUJ5MEY4aU9yN202bTQvbU5hQnNyNGNRZjMvamc3M0tZU1JZak05TkhOZFNwbitheEIxUHAKVXNOckIyQTRQbTdUYktkYithQ0xPdVpmTzRZckVpUzhEK1k4V05uRkFYd0pyWmNMalBETWtKQlphbVdVaG1RNQpmbU1SQWd6bFZRS0JnQkpBYWFTeElYSlE5YXU1SzJHVmsrdE9GalhkZVNGRUJIeVhZcEhMMGxGa2dyU1ZpRTdWClVnUTJpWG94U1RjOUpNSFBHZ2xzcTJkZ0g5YnZEaTY3MVo0NlhXOXdxRG53Wm14QTgxcWFMdHFtOG1ac2RGRDUKZCs5Z1pqamdLSHJ0ZjJTMlJLV01ucjhtNU5XSkYvb1E2ZmkzUFpPZEdvdU5WUi9nTDdtQUtoYjlBb0dBTE5GUwptSnJIdGM2ODk5NEZkZC96ZE5xcmRXNlpXOTVoakdodlVtZ004T3dvVXRDRk9jVW9YUFFsVEZVaXRySnJYL1grCkwrdENlSnhVMTUzOXFLOW9zV052Q1VOWEZiaUNiWmNkT2hiYW9EK2NXaWRBcWpQZG5zcFVPSzB2cDVGcjZXNmoKUWhnQXFFeEw4YlNwVnZZM1MyQWxTUStmU0ozUkRnL2xWaW1JU05VQ2dZRUExUWVhbmJ1STBpS2lKYkp1bm9uWgpPbEdiNjc0bDFtc2hQdFF4WTVqVTRHWndWR2hEeUk3bkFoSWIzNXRZdk84V25zalhqNjQ3Q203bThLWWMvRXRqCjhKd0c0cnlFWlNUZUtTTEx0SXJFOG5YZERVSGUvVEE0ZXlEVVZWWHk2RHV4RWx6d3hEc1BSencyZ3BSUHp6VHMKaFhBY3dDWitSNk1neUtVY1U2TXlBZEk9Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lb
+  namespace: ingress
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: "*"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:558986605633:certificate/47d305ab-f861-470b-a837-98ca52a76e17
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443,4443,5349
+    service.beta.kubernetes.io/aws-load-balancer-alpn-policy: HTTP2Preferred      
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    k8s-app: ingress-controller
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  - name: https
+    port: 443
+    targetPort: 443   
+  - name: dialog
+    port: 4443
+    targetPort: 4443
+  - name: turn
+    port: 5349
+    targetPort: 5349
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  namespace: ingress
+spec:
+  selector:
+    k8s-app: ingress-controller
+  ports:
+  - name: dashboard
+    port: 1080
+    targetPort: 1080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik
+  namespace: ingress
+  # annotations:
+  #   ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
+spec:
+  entryPoints:
+    - https
+    # - web
+  routes:
+  - kind: Rule
+    match: Host(`traefik.myhubs.net`) && PathPrefix(`/`)
+    middlewares:                    
+    - name: turkeyauth         
+      namespace: ingress
+    services:                       
+    - kind: Service
+      name: dashboard
+      namespace: ingress
+      passHostHeader: true
+      port: 1080
+---
+################### middlewares ##########################
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: turkeyauth
+  namespace: ingress
+spec:
+  forwardAuth:
+    address: http://auth.turkey-services:9001/authn
+    authResponseHeaders:
+      - X-Forwarded-User
+    trustForwardHeader: true
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: rewrite4cdn
+#   namespace: ingress
+# spec:
+#   stripPrefix:
+#     prefixes: 
+#       - /_cdn    
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: internal-ip-whitelist
+#   namespace: ingress
+# spec:
+#   ipWhiteList:
+#     sourceRange:
+#       # - 10.0.0.0/16
+#       - 73.53.171.231/32  # gtan@mozilla.com
+#     # ipStrategy:
+#     #   depth: 2
+####################################################################################
+################################### RBAC ###########################################
+####################################################################################
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ingress-controller
+  namespace: ingress
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ingress-controller
+rules:
+#traefik
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+      - networking.k8s.io
+    resources:
+      - ingresses
+      - ingressclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses/status
+    verbs:
+      - update
+  - apiGroups:
+      - traefik.containo.us
+    resources:
+      - middlewares
+      - middlewaretcps
+      - ingressroutes
+      - traefikservices
+      - ingressroutetcps
+      - ingressrouteudps
+      - tlsoptions
+      - tlsstores
+      - serverstransports
+    verbs:
+      - get
+      - list
+      - watch
+#haproxy
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    - nodes
+    - pods
+    - namespaces
+    - events
+    - serviceaccounts
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - "extensions"
+    - "networking.k8s.io"
+    resources:
+    - ingresses
+    - ingresses/status
+    - ingressclasses
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - "extensions"
+    - "networking.k8s.io"
+    resources:
+    - ingresses/status
+    verbs:
+    - update
+  - apiGroups:
+    - ""
+    resources:
+    - secrets
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - patch
+    - update
+  - apiGroups:
+    - core.haproxy.org
+    resources:
+    - '*'
+    verbs:
+    - get
+    - list
+    - watch
+    - update
+  - apiGroups:
+    - "discovery.k8s.io"
+    resources:
+    - endpointslices
+    resources:
+    - '*'
+    verbs:
+    - get
+    - list
+    - watch      
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ingress-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ingress-controller
+subjects:
+- kind: ServiceAccount
+  name: ingress-controller
+  namespace: ingress 

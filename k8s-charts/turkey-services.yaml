@@ -48,7 +48,7 @@ spec:
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
-      - image: mozillareality/turkeyauth:74
+      - image: mozillareality/turkeyauth:76
         imagePullPolicy: IfNotPresent
         name: turkeyauth
         env:
@@ -74,11 +74,11 @@ spec:
               key: OAUTH_CLIENT_SECRET_FXA
         resources:
           limits:
-            memory: 1024Mi
+            memory: 2Gi
             cpu: 1
           requests:
-            memory: 128Mi
-            cpu: 0.1   
+            memory: 0.2Gi
+            cpu: 0.1
 ---
 apiVersion: v1
 kind: Service
@@ -179,10 +179,10 @@ spec:
           periodSeconds: 120
         resources:
           limits:
-            memory: 1024Mi
+            memory: 2Gi
             cpu: 1
           requests:
-            memory: 128Mi
+            memory: 0.2Gi
             cpu: 0.1
       imagePullSecrets:
       - name: regcred      
@@ -251,11 +251,11 @@ spec:
           value: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
         resources:
           limits:
-            memory: 1024Mi
+            memory: 2Gi
             cpu: 1
           requests:
-            memory: 128Mi
-            cpu: 0.1              
+            memory: 0.2Gi
+            cpu: 0.1             
 ---
 apiVersion: v1
 kind: Service
@@ -301,11 +301,11 @@ spec:
           value: transaction
         resources:
           limits:
-            memory: 1024Mi
+            memory: 2Gi
             cpu: 1      
           requests:
-            memory: 128Mi
-            cpu: 0.1                  
+            memory: 0.2Gi
+            cpu: 0.1                 
 ---
 apiVersion: v1
 kind: Service
