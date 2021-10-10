@@ -81,6 +81,18 @@ stringData:
 ########################################################################
 ###################### reticulum #######################################
 ########################################################################
+apiVersion: v1
+kind: PersistentVolumeClaim # no plan to polluting the cluster with custom k8s operator managed storageClass so aws' gp2/ebs will be used
+metadata:
+  name: {{.Subdomain}}-pvc
+  namespace: hc-{{.Subdomain}}
+spec:
+  accessModes:
+    - ReadWriteOnce # only mode supported by the cheap and clean gp2 / ebs on aws. effectively preventing deployment/pod scaling -- not needed after we made ret stateless with storage design
+  resources:
+    requests:
+      storage: 1Gi  # will use the default gp2 storageClass, minimum request size is 1Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -102,143 +114,150 @@ spec:
       labels:
         app: reticulum
     spec:
+      volumes:
+      - name: storage 
+        persistentVolumeClaim:
+          claimName: {{.Subdomain}}-pvc
       containers:
-        - name: reticulum
-          image: mozillareality/ret:101
-          ports:
-          - containerPort: 9100
-          imagePullPolicy: IfNotPresent
-          env:
-          - name: POD_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: POD_NS
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          - name: turkeyCfg_NODE_COOKIE
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: NODE_COOKIE
-          - name: turkeyCfg_SUB_DOMAIN
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: SUB_DOMAIN
-          - name: turkeyCfg_DOMAIN
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DOMAIN
-          - name: turkeyCfg_DB_USER
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DB_USER
-          - name: turkeyCfg_DB_PASS
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DB_PASS
-          - name: turkeyCfg_DB_NAME
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DB_NAME
-          - name: turkeyCfg_DB_HOST
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DB_HOST
-          - name: turkeyCfg_DB_HOST_T
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DB_HOST_T                
-          - name: turkeyCfg_GUARDIAN_KEY
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: GUARDIAN_KEY
-          - name: turkeyCfg_PERMS_KEY
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: PERMS_KEY
-          - name: turkeyCfg_PHX_KEY
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: PHX_KEY
-          - name: turkeyCfg_SMTP_SERVER
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: SMTP_SERVER
-          - name: turkeyCfg_SMTP_PORT
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: SMTP_PORT
-          - name: turkeyCfg_SMTP_USER
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: SMTP_USER
-          - name: turkeyCfg_SMTP_PASS
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: SMTP_PASS
-          - name: turkeyCfg_ADM_EMAIL
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: ADM_EMAIL          
-          - name: turkeyCfg_ITA_HOST
-            value: http://turkey-api.turkey-services
-          livenessProbe:
-            httpGet:
-              path: "http://reticulum.{{.Subdomain}}"
-              port: 1111
-            initialDelaySeconds: 20
-            timeoutSeconds: 1
-            periodSeconds: 120
-          resources:
-            limits:
-              memory: 512Mi
-              cpu: 0.5
-            requests:
-              memory: 64Mi
-              cpu: 0.025
-        - name: postgrest
-          image: postgrest/postgrest:v8.0.0
-          ports:
-          - containerPort: 3000
-          imagePullPolicy: IfNotPresent
-          env:
-          - name: PGRST_DB_URI
-            value: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/ret_{{.Subdomain}}
-          - name: PGRST_DB_SCHEMA
-            value: ret0_admin
-          - name: PGRST_DB_ANON_ROLE
-            value: postgres
-          # perms_key.publicKey.JWK
-          - name: PGRST_JWT_SECRET
-            value: "{{.JWK}}"
-          - name: PGRST_LOG_LEVEL
-            value: info
-        - name: nearspark
-          image: mozillareality/nearspark:1
-          ports:
-          - containerPort: 5000
-          imagePullPolicy: IfNotPresent         
+      - name: reticulum
+        image: mozillareality/ret:101
+        ports:
+        - containerPort: 9100
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: "/storage"
+          name: storage          
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: turkeyCfg_NODE_COOKIE
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: NODE_COOKIE
+        - name: turkeyCfg_SUB_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SUB_DOMAIN
+        - name: turkeyCfg_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DOMAIN
+        - name: turkeyCfg_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_USER
+        - name: turkeyCfg_DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_PASS
+        - name: turkeyCfg_DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_NAME
+        - name: turkeyCfg_DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_HOST
+        - name: turkeyCfg_DB_HOST_T
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_HOST_T
+        - name: turkeyCfg_GUARDIAN_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GUARDIAN_KEY
+        - name: turkeyCfg_PERMS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PERMS_KEY
+        - name: turkeyCfg_PHX_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PHX_KEY
+        - name: turkeyCfg_SMTP_SERVER
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SMTP_SERVER
+        - name: turkeyCfg_SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SMTP_PORT
+        - name: turkeyCfg_SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SMTP_USER
+        - name: turkeyCfg_SMTP_PASS
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SMTP_PASS
+        - name: turkeyCfg_ADM_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: ADM_EMAIL
+        - name: turkeyCfg_ITA_HOST
+          value: http://turkey-api.turkey-services
+        livenessProbe:
+          httpGet:
+            path: "http://reticulum.{{.Subdomain}}"
+            port: 1111
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
+        resources:
+          limits:
+            memory: 512Mi
+            cpu: 0.5
+          requests:
+            memory: 64Mi
+            cpu: 0.025
+      - name: postgrest
+        image: postgrest/postgrest:v8.0.0
+        ports:
+        - containerPort: 3000
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PGRST_DB_URI
+          value: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/ret_{{.Subdomain}}
+        - name: PGRST_DB_SCHEMA
+          value: ret0_admin
+        - name: PGRST_DB_ANON_ROLE
+          value: postgres
+        # perms_key.publicKey.JWK
+        - name: PGRST_JWT_SECRET
+          value: "{{.JWK}}"
+        - name: PGRST_LOG_LEVEL
+          value: info
+      - name: nearspark
+        image: mozillareality/nearspark:1
+        ports:
+        - containerPort: 5000
+        imagePullPolicy: IfNotPresent
 ---
 apiVersion: v1
 kind: Service
