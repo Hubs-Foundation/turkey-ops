@@ -54,7 +54,7 @@ spec:
         - --metrics.prometheus=true
         resources:
           requests:
-            memory: 0.2Gi
+            memory: 200Mi
             cpu: 0.1
           limits:
             memory: 4Gi
@@ -77,7 +77,7 @@ spec:
               - NET_BIND_SERVICE
         resources:
           requests:
-            memory: 0.2Gi
+            memory: 200Mi
             cpu: 0.1
           limits:
             memory: 4Gi

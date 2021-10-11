@@ -230,12 +230,12 @@ spec:
           timeoutSeconds: 1
           periodSeconds: 120
         resources:
+          requests:
+            memory: 100Mi
+            cpu: 0.05        
           limits:
             memory: 1Gi
             cpu: 0.5
-          requests:
-            memory: 0.1Gi
-            cpu: 0.05
       - name: postgrest
         image: postgrest/postgrest:v8.0.0
         ports:
@@ -340,12 +340,12 @@ spec:
             timeoutSeconds: 1
             periodSeconds: 120
           resources:
+            requests:
+              memory: 100Mi
+              cpu: 0.05
             limits:
               memory: 1Gi
               cpu: 0.5
-            requests:
-              memory: 0.1Gi
-              cpu: 0.05
 ---
 apiVersion: v1
 kind: Service

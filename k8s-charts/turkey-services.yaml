@@ -73,12 +73,13 @@ spec:
               name: configs
               key: OAUTH_CLIENT_SECRET_FXA
         resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1        
           limits:
             memory: 2Gi
             cpu: 1
-          requests:
-            memory: 0.2Gi
-            cpu: 0.1
+
 ---
 apiVersion: v1
 kind: Service
@@ -160,7 +161,7 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:63
+      - image: mozillareality/turkeyapi:64
         imagePullPolicy: IfNotPresent
         name: turkey-orc
         env:
@@ -178,12 +179,12 @@ spec:
           timeoutSeconds: 1
           periodSeconds: 120
         resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1        
           limits:
             memory: 2Gi
             cpu: 1
-          requests:
-            memory: 0.2Gi
-            cpu: 0.1
       imagePullSecrets:
       - name: regcred      
 ---
@@ -250,12 +251,12 @@ spec:
         - name: DB_HOST
           value: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
         resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1         
           limits:
             memory: 2Gi
-            cpu: 1
-          requests:
-            memory: 0.2Gi
-            cpu: 0.1             
+            cpu: 1            
 ---
 apiVersion: v1
 kind: Service
@@ -300,12 +301,12 @@ spec:
         - name: POOL_MODE
           value: transaction
         resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1        
           limits:
             memory: 2Gi
-            cpu: 1      
-          requests:
-            memory: 0.2Gi
-            cpu: 0.1                 
+            cpu: 1                       
 ---
 apiVersion: v1
 kind: Service
