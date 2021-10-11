@@ -231,11 +231,11 @@ spec:
           periodSeconds: 120
         resources:
           limits:
-            memory: 512Mi
+            memory: 1Gi
             cpu: 0.5
           requests:
-            memory: 64Mi
-            cpu: 0.025
+            memory: 0.1Gi
+            cpu: 0.05
       - name: postgrest
         image: postgrest/postgrest:v8.0.0
         ports:
@@ -341,11 +341,11 @@ spec:
             periodSeconds: 120
           resources:
             limits:
-              memory: 512Mi
+              memory: 1Gi
               cpu: 0.5
             requests:
-              memory: 64Mi
-              cpu: 0.025
+              memory: 0.1Gi
+              cpu: 0.05
 ---
 apiVersion: v1
 kind: Service
