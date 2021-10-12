@@ -61,6 +61,8 @@ func (f *Fxa) GetLoginURL(redirectURI, state string) string {
 	q.Set("entrypoint", redirectURI+"/_fxa") // Todo could this be generated ad hoc by the client?
 	q.Set("state", state)
 
+	fmt.Println("Inside GetLoginURL")
+
 	var u url.URL
 	u = *f.LoginURL
 	u.RawQuery = q.Encode()
