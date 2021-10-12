@@ -41,14 +41,14 @@ func (f *Fxa) Setup() error {
 	}
 	f.TokenURL = &url.URL{
 		Scheme: "https",
-		Host:   "api-accounts.stage.mozaws.net",
-		Path:   "/v1/client",
+		Host:   "oauth.stage.mozaws.net",
+		Path:   "/v1/token",
 	}
-	// f.UserURL = &url.URL{
-	// 	Scheme: "https",
-	// 	Host:   "localhost:3030",
-	// 	Path:   "/oauth2/v2/userinfo",
-	// }
+	f.UserURL = &url.URL{
+		Scheme: "https",
+		Host:   "profile.stage.mozaws.net",
+		Path:   "/v1/profile",
+	}
 
 	return nil
 }

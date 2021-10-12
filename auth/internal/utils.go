@@ -23,5 +23,5 @@ func InitLogger() {
 
 	defer logger.Sync()
 
-	Atom.SetLevel(zap.DebugLevel)
+	Atom.SetLevel(zap.InfoLevel)
 }
