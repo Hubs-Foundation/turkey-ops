@@ -108,7 +108,7 @@ func (f *Fxa) GetUser(token string) (User, error) {
 		return user, err
 	}
 	defer res.Body.Close()
-	fmt.Sprintln("GetUser.res.StatusCode = ", res.StatusCode)
+	fmt.Println("GetUser.res.StatusCode = ", res.StatusCode)
 
 	err = json.NewDecoder(res.Body).Decode(&user)
 	// bodyBytes, err := ioutil.ReadAll(res.Body)
