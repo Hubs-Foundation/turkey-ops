@@ -19,6 +19,8 @@ func main() {
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/login", internal.Login())
 	router.Handle("/_oauth", internal.Oauth())
+	router.Handle("/_fxa", internal.OauthFxa())
+
 	router.Handle("/logout", internal.Logout())
 	// router.Handle("/traefik-ip", internal.TraefikIp())
 	router.Handle("/authn", internal.Authn())
