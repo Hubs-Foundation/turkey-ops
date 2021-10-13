@@ -53,6 +53,7 @@ func MakeCfg() {
 	cfg.CookieName = "_turkeyauthcookie"
 	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
 	cfg.CookieDomains = []CookieDomain{*NewCookieDomain("myhubs.net")}
+	cfg.LogoutRedirect = "api.myhubs.net/console"
 
 	cfg.DefaultProvider = "google"
 	// GOOGLE

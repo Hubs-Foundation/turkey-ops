@@ -19,6 +19,11 @@ function login_fxa() {
   window.location.assign("https://auth."+getDomain()+"/login?idp=fxa&client="+window.location.origin+window.location.pathname);
 }
 
+document.getElementById("logout").addEventListener("click", logout);
+function logout() {
+  window.location.assign("https://auth."+getDomain()+"/logout");
+}
+
 document.getElementById("cfgEx_get").addEventListener("click", cfgEx_getClicked);
 function cfgEx_getClicked(){
   document.getElementById("cfg").value = `{

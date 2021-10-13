@@ -94,7 +94,6 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	loginURL := provider.GetLoginURL(redirectURL, MakeState(r, provider, nonce))
 	logger.Debug(" ### loginURL: " + loginURL)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
-
 }
 
 func Logout() http.Handler {
