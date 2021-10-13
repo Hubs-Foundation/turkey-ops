@@ -55,7 +55,7 @@ func MakeCfg() {
 	cfg.CookieDomains = []CookieDomain{*NewCookieDomain("myhubs.net")}
 	cfg.LogoutRedirect = "https://api.myhubs.net/console"
 
-	cfg.DefaultProvider = "google"
+	cfg.DefaultProvider = "fxa"
 	// GOOGLE
 	cfg.Providers.Google.ClientID = os.Getenv("oauthClientId_google")
 	cfg.Providers.Google.ClientSecret = os.Getenv("oauthClientSecret_google")
