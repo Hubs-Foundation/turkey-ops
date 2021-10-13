@@ -85,7 +85,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 		logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
 	}
 
-	loginURL := provider.GetLoginURL("https://auth."+cfg.Domain, MakeState(r, provider, nonce))
+	loginURL := provider.GetLoginURL("auth."+cfg.Domain, MakeState(r, provider, nonce))
 	logger.Debug(" ### loginURL: " + loginURL)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
@@ -114,8 +114,8 @@ func OauthFxa() http.Handler {
 			return
 		}
 
-		logger.Debug("Handling callback")
-		// logger.Debug("dumpHeader: " + dumpHeader(r))
+		logger.Info("Handling callback")
+		logger.Info("dumpHeader: " + dumpHeader(r))
 
 		// Check state
 		state := r.URL.Query().Get("state")
