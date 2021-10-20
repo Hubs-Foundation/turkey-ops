@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: words
+
+Parameters:
+  deploymentId:
+    Type: String
+    Default: asdf123
+  cfS3Folder:
+    Type: String
+    Default: https://s3.amazonaws.com/turkeycfg/cf/<env>
+  VpcCIDR:
+    Type: String
+    Default: 10.0.0.0/16    
+  PublicSubnet1CIDR:
+    Type: String
+    Default: 10.0.1.0/24
+  PublicSubnet2CIDR:
+    Type: String
+    Default: 10.0.2.0/24
+  turkeyDomain:
+    Type: String
+    Default: quackstack.net
+
+Resources:
+############################################# iam #################################################
+  iam:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join [ '', [!Ref cfS3Folder, "iam.yaml"] ]
+      Parameters:
+        mainStackName: !Ref "AWS::StackName"
+####################################### network ###################################################
+  nw:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Join [ '', [!Ref cfS3Folder, "network.yaml"] ]
+      Parameters:
+        mainStackName: !Ref "AWS::StackName"
+        VpcCIDR: 10.0.0.0/16
+        PublicSubnet1CIDR: 10.0.1.0/24
+        PublicSubnet2CIDR: 10.0.2.0/24
+############################################# db #############################################
+  db:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${cfS3Folder}db.yaml
+      Parameters:
+        mainStackName: !Ref "AWS::StackName"
+        DBInstanceClass: db.t3.micro
+        DBAllocatedStorage: 20
+        PG_PASS: itjfHE4HuS
+############################################# eks #############################################
+  eks:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${cfS3Folder}eks.yaml
+      Parameters:
+        mainStackName: !Ref "AWS::StackName"
+        PublicSubnet1Id: nw.Outputs.PublicSubnet1
+        PublicSubnet2Id: nw.Outputs.PublicSubnet2
+
+Outputs:
+  dbId:
+    Value: !GetAtt db.Outputs.dbId
+
+
+
+
+
+
+
+
+###############################################################################################
+  # HostedZone: 
+  #   Type: "AWS::Route53::HostedZone"
+  #   Properties: 
+  #     HostedZoneConfig: 
+  #       Comment: !Ref "AWS::StackName"
+  #     Name: !Join ['', [!Ref "AWS::StackName", .]]
+  #     VPCs: 
+  #       - 
+  #         VPCId: !Ref VPC
+  #         VPCRegion: !Ref AWS::Region
+  # RecordSet:
+  #   Type: AWS::Route53::RecordSet
+  #   Properties:
+  #     AliasTarget:
+  #       DNSName: !GetAtt NLB.DNSName   
+  #       HostedZoneId: !GetAtt NLB.CanonicalHostedZoneID
+  #     Name: !Join ['.', [nlb, !Ref "AWS::StackName"]]
+  #     Type: A
+  #     HostedZoneId: !Ref HostedZone

@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  mainStackName:
+    Type: String
+    Default: turkey-pg-1
+  DBInstanceClass:
+    Type: String
+  DBAllocatedStorage:
+    Type: Number
+  PG_PASS:
+    Type: String
+
+Resources:
+  PG:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceIdentifier: !Ref mainStackName
+      DBName: !Ref DBInstanceID
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      Engine: postgres
+      EngineVersion: 13.3-R1
+      MasterUsername: postgres
+      MasterUserPassword: !Ref PG_PASS
+      # MonitoringInterval: '60'
+      # MonitoringRoleArn: 'arn:aws:iam::123456789012:role/rds-monitoring-role'
+
+Outputs:
+  dbId:
+    Value: !Ref PG

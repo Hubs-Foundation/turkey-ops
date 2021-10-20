@@ -18,7 +18,7 @@ var turkeyDomain = "quackstack.net"
 var turkeyEnv = "dev"
 var turkeycfg_s3_bucket = "turkeycfg"
 
-var TurkeyDeployAWS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		if r.URL.Path != "/TurkeyDeployAWS" {
