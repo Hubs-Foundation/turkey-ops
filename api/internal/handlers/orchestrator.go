@@ -18,7 +18,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/jackc/pgx/v4"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -114,21 +113,22 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	sess.Log("&#128024; --- db created: " + cfg.DBname)
-	// #6 load schema to new db
-	retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
-	if err != nil {
-		sess.Panic(err.Error())
-	}
-	dbconn, err := pgx.Connect(context.Background(), internal.Cfg.DBconn+"/"+cfg.DBname)
-	if err != nil {
-		sess.Panic(err.Error())
-	}
-	defer dbconn.Close(context.Background())
-	_, err = dbconn.Exec(context.Background(), string(retSchemaBytes))
-	if err != nil {
-		sess.Panic(err.Error())
-	}
-	sess.Log("&#128024; --- schema loaded to db: " + cfg.DBname)
+
+	// // #6 load schema to new db
+	// retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
+	// if err != nil {
+	// 	sess.Panic(err.Error())
+	// }
+	// dbconn, err := pgx.Connect(context.Background(), internal.Cfg.DBconn+"/"+cfg.DBname)
+	// if err != nil {
+	// 	sess.Panic(err.Error())
+	// }
+	// defer dbconn.Close(context.Background())
+	// _, err = dbconn.Exec(context.Background(), string(retSchemaBytes))
+	// if err != nil {
+	// 	sess.Panic(err.Error())
+	// }
+	// sess.Log("&#128024; --- schema loaded to db: " + cfg.DBname)
 
 	// #7 done, (todo) return a json report for portal to consume
 
