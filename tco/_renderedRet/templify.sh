@@ -5,6 +5,7 @@ yam="../../api/_files/turkey.yam"
 
 cp hc-dev0.yaml $yam
 # sed -i 's/ret_dev0/{{.DBname}}/g' $yam
+sed -i 's/ret_dev0/{{.DBname}}/g' $yam
 sed -i 's/dev0/{{.Subdomain}}/g' $yam
 sed -i 's/someString/{{.TurkeyId}}/g' $yam
 sed -i 's/myhubs.net/{{.Domain}}/g' $yam
