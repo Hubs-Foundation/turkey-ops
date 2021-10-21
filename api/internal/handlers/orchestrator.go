@@ -114,7 +114,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	sess.Log("&#128024; --- db created: " + cfg.DBname)
 
-	// // #6 load schema to new db
+	// // #6 load schema to new db .................. doing it on reticulum boot-up for now, trival perf cost for zero dev impact, good tradeoff until we scaled to millions
 	// retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
 	// if err != nil {
 	// 	sess.Panic(err.Error())
@@ -287,7 +287,7 @@ func makeCfg(r *http.Request) (turkeyCfg, error) {
 	if cfg.Subdomain == "" {
 		cfg.Subdomain = cfg.TurkeyId + "-" + strconv.FormatInt(time.Now().Unix()-1626102245, 36)
 	}
-	cfg.DBname = "ret_" + cfg.Subdomain
+	cfg.DBname = "ret_" + strings.ReplaceAll(cfg.Subdomain, "-", "_")
 	//use authenticated useremail
 	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail")
 	if cfg.UserEmail == "" {

@@ -120,7 +120,7 @@ spec:
           claimName: dev0-pvc
       containers:
       - name: reticulum
-        image: mozillareality/ret:102
+        image: mozillareality/ret:103
         ports:
         - containerPort: 9100
         imagePullPolicy: IfNotPresent
