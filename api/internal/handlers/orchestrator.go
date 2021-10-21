@@ -329,8 +329,6 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cfg.DBname = "ret_" + cfg.Subdomain
-
 	sess.Log("&#128024 deleting db: " + cfg.DBname)
 
 	//delete db -- force
