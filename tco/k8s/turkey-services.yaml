@@ -27,6 +27,20 @@ spec:
       passHostHeader: true
       port: 9001
 ---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: turkeyauth
+  namespace: turkey-services
+spec:
+  forwardAuth:
+    address: http://auth.turkey-services:9001/authn
+    authResponseHeaders:
+      - X-Forwarded-User
+      - X-Forwarded-UserEmail
+      - X-Forwarded-UserPicture
+    trustForwardHeader: true        
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -48,9 +62,9 @@ spec:
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
-      - image: mozillareality/turkeyauth:86
-        imagePullPolicy: IfNotPresent
-        name: turkeyauth
+      - name: turkeyauth
+        image: mozillareality/turkeyauth:86
+        imagePullPolicy: IfNotPresent        
         env:
         - name: trustedClients  # must end with ','
           value: https://api.myhubs.net/console,http://localhost:3030,
@@ -118,21 +132,7 @@ spec:
     - kind: Service
       name: turkey-api
       passHostHeader: true
-      port: 888
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: turkeyauth
-  namespace: turkey-services
-spec:
-  forwardAuth:
-    address: http://auth.turkey-services:9001/authn
-    authResponseHeaders:
-      - X-Forwarded-User
-      - X-Forwarded-UserEmail
-      - X-Forwarded-UserPicture
-    trustForwardHeader: true      
+      port: 888    
 ---
 apiVersion: v1
 kind: Secret
@@ -161,9 +161,9 @@ spec:
     spec:
       serviceAccountName: api-sa
       containers:
-      - image: mozillareality/turkeyapi:70
-        imagePullPolicy: IfNotPresent
-        name: turkey-orc
+      - name: turkey-orc
+        image: mozillareality/turkeyapi:70
+        imagePullPolicy: IfNotPresent        
         env:
         - name: DOMAIN
           value: myhubs.net
