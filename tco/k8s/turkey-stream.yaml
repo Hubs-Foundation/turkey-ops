@@ -149,7 +149,7 @@ spec:
       hostNetwork: true
       containers:
       - name: coturn
-        image: mozillareality/coturn:12
+        image: mozillareality/coturn:14
         imagePullPolicy: Always
         ports:
         - hostPort: 5349
