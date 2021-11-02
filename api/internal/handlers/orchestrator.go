@@ -247,7 +247,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//list ns
 	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
 		metav1.ListOptions{
-			LabelSelector: "UserId=" + cfg.TurkeyId,
+			LabelSelector: "TurkeyId=" + cfg.TurkeyId,
 		})
 	if err != nil {
 		sess.Panic(err.Error())
