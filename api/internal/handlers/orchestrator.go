@@ -255,7 +255,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	sess.Log("GET --- user <" + cfg.TurkeyId + "> owns: ")
 	for _, ns := range nsList.Items {
 		sess.Log("......ObjectMeta.GetName: " + ns.ObjectMeta.GetName())
-		sess.Log("......ObjectMeta.dump: " + fmt.Sprint(ns.ObjectMeta))
+		sess.Log("......ObjectMeta.Labels.dump: " + fmt.Sprint(ns.ObjectMeta.Labels))
 	}
 })
 

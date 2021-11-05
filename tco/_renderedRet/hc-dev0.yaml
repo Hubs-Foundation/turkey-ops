@@ -77,6 +77,8 @@ stringData:
   SMTP_USER: AKIAYEJRSWRAQUI7U3J4
   SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
   ADM_EMAIL: gtan@mozilla.com
+  PGRST_DB_URI: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/ret_dev0
+  PGRST_JWT_SECRET: "{\"e\":\"AQAB\",\"kty\":\"RSA\",\"n\":\"3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf_otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD-FoHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD-UfOCMctlwudNSs-AkmiPSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj-Oa_ZQVH44lmPI9Ih0OakXWpIfOob3X0XqcdywlMVI2hzBR3JNodRjyEz33p6E__lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIacr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqw\"}"
 ---
 ########################################################################
 ###################### reticulum #######################################
@@ -242,17 +244,22 @@ spec:
         - containerPort: 3000
         imagePullPolicy: IfNotPresent
         env:
-        - name: PGRST_DB_URI
-          value: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/ret_dev0
+        - name: PGRST_LOG_LEVEL
+          value: info        
         - name: PGRST_DB_SCHEMA
           value: ret0_admin
         - name: PGRST_DB_ANON_ROLE
-          value: postgres
-        # perms_key.publicKey.JWK
+          value: postgres          
+        - name: PGRST_DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PGRST_DB_URI
         - name: PGRST_JWT_SECRET
-          value: "{\"e\":\"AQAB\",\"kty\":\"RSA\",\"n\":\"3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf_otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD-FoHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD-UfOCMctlwudNSs-AkmiPSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj-Oa_ZQVH44lmPI9Ih0OakXWpIfOob3X0XqcdywlMVI2hzBR3JNodRjyEz33p6E__lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIacr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqw\"}"
-        - name: PGRST_LOG_LEVEL
-          value: info
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PGRST_JWT_SECRET
       - name: nearspark
         image: mozillareality/nearspark:1
         ports:

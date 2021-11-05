@@ -77,6 +77,8 @@ stringData:
   SMTP_USER: AKIAYEJRSWRAQUI7U3J4
   SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
   ADM_EMAIL: {{.UserEmail}}
+  PGRST_DB_URI: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/{{.DBname}}
+  PGRST_JWT_SECRET: "{{.JWK}}"
 ---
 ########################################################################
 ###################### reticulum #######################################
@@ -242,17 +244,22 @@ spec:
         - containerPort: 3000
         imagePullPolicy: IfNotPresent
         env:
-        - name: PGRST_DB_URI
-          value: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/{{.DBname}}
+        - name: PGRST_LOG_LEVEL
+          value: info        
         - name: PGRST_DB_SCHEMA
           value: ret0_admin
         - name: PGRST_DB_ANON_ROLE
-          value: postgres
-        # perms_key.publicKey.JWK
+          value: postgres          
+        - name: PGRST_DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PGRST_DB_URI
         - name: PGRST_JWT_SECRET
-          value: "{{.JWK}}"
-        - name: PGRST_LOG_LEVEL
-          value: info
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PGRST_JWT_SECRET
       - name: nearspark
         image: mozillareality/nearspark:1
         ports:
