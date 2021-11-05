@@ -122,7 +122,7 @@ spec:
           claimName: dev0-pvc
       containers:
       - name: reticulum
-        image: mozillareality/ret:103
+        image: mozillareality/ret:dev
         ports:
         - containerPort: 9100
         imagePullPolicy: IfNotPresent
@@ -261,7 +261,7 @@ spec:
               name: configs
               key: PGRST_JWT_SECRET
       - name: nearspark
-        image: mozillareality/nearspark:1
+        image: mozillareality/nearspark:dev
         ports:
         - containerPort: 5000
         imagePullPolicy: IfNotPresent
@@ -306,7 +306,7 @@ spec:
     spec:
       containers:
         - name: hubs
-          image: mozillareality/hubs:22
+          image: mozillareality/hubs:dev
           imagePullPolicy: Always
           env:
           - name: SUB_DOMAIN
