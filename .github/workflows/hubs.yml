@@ -23,7 +23,7 @@ jobs:
       - name: build and wrap rawhubs in nginx container
         run: |
           cd ./hubs/
-          docker build -t $registryName/$containerName:$GITHUB_RUN_NUMBER .
+          docker build . -t $registryName/$containerName:$GITHUB_RUN_NUMBER -f RetPageOriginDockerfile
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin
           sudo docker push $registryName/$containerName:$GITHUB_RUN_NUMBER
   push-dev:
