@@ -36,8 +36,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: .
-          file: RetPageOriginDockerfile
+          context: hubs/
+          file: hubs/RetPageOriginDockerfile
           tags: ${{ env.registryName }}/${{ env.containerName }}:${{ github.run_number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max      
