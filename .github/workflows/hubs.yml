@@ -7,8 +7,9 @@ on:
   workflow_dispatch:
 
 env:
-  containerName: hubs
   registryName: mozillareality
+  containerName: hubs
+  tag: ${{ env.registryName }}/${{ env.containerName }}:${{ github.run_number }}
 
 jobs:
   build:
@@ -38,7 +39,7 @@ jobs:
         with:
           context: .
           file: RetPageOriginDockerfile
-          tags: ${{ env.registryName }}/${{ env.containerName }}:${{ env.GITHUB_RUN_NUMBER }}
+          tags: ${{ env.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max      
           push: true
