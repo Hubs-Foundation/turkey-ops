@@ -21,27 +21,13 @@ jobs:
           ref: feature/turkey
           path: './hubs'
       - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@master
-        with:
-          install: true
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-multi-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-multi-buildx                    
+        uses: docker/setup-buildx-action@v1
       - name: build and wrap rawhubs in nginx container
         run: |
           cd ./hubs/
-          docker build . -t $registryName/$containerName:$GITHUB_RUN_NUMBER -f RetPageOriginDockerfile --cache-from "type=local,src=/tmp/.buildx-cache" --cache-to "type=local,dest=/tmp/.buildx-cache-new"
+          docker build . -t $registryName/$containerName:$GITHUB_RUN_NUMBER -f RetPageOriginDockerfile --cache-from "type=gha" --cache-to "type=gha,mode=max" 1>/dev/null
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin
           sudo docker push $registryName/$containerName:$GITHUB_RUN_NUMBER
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
           
   push-dev:
     if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/master'
