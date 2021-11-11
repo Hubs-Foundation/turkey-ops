@@ -25,9 +25,10 @@ jobs:
       - name: build and wrap rawhubs in nginx container
         run: |
           cd ./hubs/
-          docker buildx  build . -t $registryName/$containerName:$GITHUB_RUN_NUMBER -f RetPageOriginDockerfile --cache-from "type=gha" --cache-to "type=gha,mode=max" 1>/dev/null
+          tag=$registryName/$containerName:$GITHUB_RUN_NUMBER
+          docker buildx  build . -t $tag -f RetPageOriginDockerfile --cache-from "type=gha" --cache-to "type=gha,mode=max" 1> /dev/null
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin
-          sudo docker push $registryName/$containerName:$GITHUB_RUN_NUMBER
+          sudo docker push $tag
           
   push-dev:
     if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/master'
