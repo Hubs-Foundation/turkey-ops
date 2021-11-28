@@ -31,6 +31,8 @@ func main() {
 	router.Handle("/admin-info", handlers.Ita_admin_info)
 	router.Handle("/configs/reticulum/ps", handlers.Ita_cfg_ret_ps)
 
+	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
+
 	router.Handle("/Dummy", handlers.Dummy)
 	internal.StartServer(router, 888)
 
