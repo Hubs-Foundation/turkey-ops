@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-var dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var v map[string]interface{}
 	err := decoder.Decode(&v)
