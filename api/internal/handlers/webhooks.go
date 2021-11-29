@@ -8,6 +8,11 @@ import (
 )
 
 var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/webhooks/dockerhub" || r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	fmt.Println("@@@@@@@@@@@@@@@@@@@@@@@@@@@/webhooks/dockerhub")
 	decoder := json.NewDecoder(r.Body)
 	var v map[string]interface{}
 	err := decoder.Decode(&v)

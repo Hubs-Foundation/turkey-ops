@@ -122,7 +122,7 @@ metadata:
 spec:
   entryPoints:
     - https
-  routes:
+  routes:  
   - kind: Rule
     match: Host(`api.myhubs.net`) && PathPrefix(`/`)
     middlewares:
@@ -132,7 +132,14 @@ spec:
     - kind: Service
       name: turkey-api
       passHostHeader: true
-      port: 888    
+      port: 888
+  - kind: Rule
+    match: Host(`api.myhubs.net`) && PathPrefix(`/webhooks/`)
+    services:
+    - kind: Service
+      name: turkey-api
+      passHostHeader: true
+      port: 888
 ---
 apiVersion: v1
 kind: Secret
