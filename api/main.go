@@ -38,7 +38,7 @@ func main() {
 
 }
 
-//todo: make a real one -- this just checks if the user's email got an @mozilla.com at the end
+//todo: make a real rbac -- this just checks if the user's email got an @mozilla.com at the end
 func requireRole(role string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,15 +52,15 @@ func requireRole(role string) func(http.Handler) http.Handler {
 	}
 }
 
-//todo: this only sort-of works, make it really works
-func localOnly(role string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("X-Forwarded-For") != "" {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
-}
+// //probably better to just keep k8s ingress rules explicit
+// func localOnly(role string) func(http.Handler) http.Handler {
+// 	return func(next http.Handler) http.Handler {
+// 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 			if r.Header.Get("X-Forwarded-For") != "" {
+// 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 				return
+// 			}
+// 			next.ServeHTTP(w, r)
+// 		})
+// 	}
+// }

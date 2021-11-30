@@ -32,7 +32,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	var v dockerhubWebhookJson
 	err := decoder.Decode(&v)
 	if err != nil || !strings.HasPrefix(v.Callback_url, "https://registry.hub.docker.com/u/mozillareality/") {
-		internal.GetLogger().Warn(" bad r.Body, is it json? ")
+		internal.GetLogger().Warn(" bad r.Body, is it json? have they changed it? (https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload)")
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
