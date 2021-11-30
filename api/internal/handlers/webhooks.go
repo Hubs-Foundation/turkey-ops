@@ -8,14 +8,18 @@ import (
 	"strings"
 )
 
+// https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload
 type dockerhubWebhookJson struct {
 	Callback_url string
 	Push_data    dockerhubWebhookJson_push_data
+	Repository   dockerhubWebhookJson_Repository
 }
-
 type dockerhubWebhookJson_push_data struct {
 	Pusher string
 	Tag    string
+}
+type dockerhubWebhookJson_Repository struct {
+	repo_name string
 }
 
 var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +32,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	var v dockerhubWebhookJson
 	err := decoder.Decode(&v)
 	if err != nil || !strings.HasPrefix(v.Callback_url, "https://registry.hub.docker.com/u/mozillareality/") {
-		internal.GetLogger().Warn("bad r.Body" + err.Error())
+		internal.GetLogger().Warn(" bad r.Body, is it json? ")
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -38,11 +42,14 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(v.Push_data.Tag, "dev-") ||
 		strings.HasPrefix(v.Push_data.Tag, "staging-") ||
 		strings.HasPrefix(v.Push_data.Tag, "prod-") {
-		internal.GetLogger().Info("deploying: " + v.Push_data.Tag)
+		tag := v.Repository.repo_name + ":" + v.Push_data.Tag
+		internal.GetLogger().Info("deploying: " + tag)
 	}
 
-	// fmt.Println(dumpHeader(r))
-	// b, _ := json.MarshalIndent(v, "", "  ")
-	// fmt.Println(string(b))
+	// dump r.body.json
+	var m map[string]interface{}
+	decoder.Decode(&m)
+	b, _ := json.MarshalIndent(m, "", "  ")
+	fmt.Println(string(b))
 
 })
