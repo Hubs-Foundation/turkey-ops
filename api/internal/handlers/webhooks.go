@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"main/internal"
 	"net/http"
 	"strings"
@@ -27,12 +29,14 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+	var rBodyBuf bytes.Buffer
+	rBody := io.TeeReader(r.Body, &rBodyBuf)
 
-	decoder := json.NewDecoder(r.Body)
+	decoder := json.NewDecoder(rBody)
 	var v dockerhubWebhookJson
 	err := decoder.Decode(&v)
 	if err != nil || !strings.HasPrefix(v.Callback_url, "https://registry.hub.docker.com/u/mozillareality/") {
-		internal.GetLogger().Warn(" bad r.Body, is it json? have they changed it? (https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload)")
+		internal.GetLogger().Debug(" bad r.Body, is it json? have they changed it? (https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload)")
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -45,5 +49,11 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tag := v.Repository.repo_name + ":" + v.Push_data.Tag
 		internal.GetLogger().Info("deploying: " + tag)
 	}
+
+	//
+	var m map[string]interface{}
+	_ = decoder.Decode(&m)
+	b, _ := json.MarshalIndent(m, "", "  ")
+	fmt.Println(string(b))
 
 })
