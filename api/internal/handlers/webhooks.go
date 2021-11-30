@@ -35,9 +35,9 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	internal.GetLogger().Debug(fmt.Sprintf("%+v", v))
 
-	if strings.HasPrefix(v.Push_data.Tag, ".dev") ||
-		strings.HasPrefix(v.Push_data.Tag, ".staging") ||
-		strings.HasPrefix(v.Push_data.Tag, ".prod") {
+	if strings.HasPrefix(v.Push_data.Tag, "dev-") ||
+		strings.HasPrefix(v.Push_data.Tag, "staging-") ||
+		strings.HasPrefix(v.Push_data.Tag, "prod-") {
 		internal.GetLogger().Info("deploying: " + v.Push_data.Tag)
 	}
 
