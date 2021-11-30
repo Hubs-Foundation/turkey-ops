@@ -46,10 +46,4 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		internal.GetLogger().Info("deploying: " + tag)
 	}
 
-	// dump r.body.json
-	var m map[string]interface{}
-	decoder.Decode(&m)
-	b, _ := json.MarshalIndent(m, "", "  ")
-	fmt.Println(string(b))
-
 })
