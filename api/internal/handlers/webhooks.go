@@ -29,10 +29,11 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	var rBodyBuf bytes.Buffer
-	rBody := io.TeeReader(r.Body, &rBodyBuf)
 
-	decoder := json.NewDecoder(rBody)
+	var buf bytes.Buffer
+	rBody := io.TeeReader(r.Body, &buf)
+
+	decoder := json.NewDecoder(r.Body)
 	var v dockerhubWebhookJson
 	err := decoder.Decode(&v)
 	if err != nil || !strings.HasPrefix(v.Callback_url, "https://registry.hub.docker.com/u/mozillareality/") {
@@ -51,9 +52,10 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//
+	d := json.NewDecoder(rBody)
 	var m map[string]interface{}
-	_ = decoder.Decode(&m)
+	_ = d.Decode(&m)
 	b, _ := json.MarshalIndent(m, "", "  ")
-	fmt.Println(string(b))
+	internal.GetLogger().Debug(string(b))
 
 })
