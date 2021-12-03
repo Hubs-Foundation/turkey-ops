@@ -207,8 +207,8 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	//<debugging cheatcodes>
 	if cfg.TurkeyId[0:4] == "dev_" {
-		if cfg.Subdomain != "dev0" {
-			fmt.Println("dev_ cheatcodes only work with subdomain == dev0 ")
+		if cfg.Subdomain[0:4] != "dev-" {
+			fmt.Println("dev_ cheatcodes only work with subdomains start with == dev-")
 			return
 		}
 		sess.Log(`turkeyUserId[0:4] == dev_ means dev mode`)

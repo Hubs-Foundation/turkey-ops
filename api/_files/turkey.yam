@@ -401,7 +401,7 @@ spec:
     spec:
       containers:
         - name: spoke
-          image: mozillareality/spoke:1
+          image: mozillareality/spoke:2
           imagePullPolicy: Always
           env:
           - name: SUB_DOMAIN

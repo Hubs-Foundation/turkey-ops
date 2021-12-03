@@ -66,3 +66,15 @@ func prettyPrintJson(jsonBytes []byte) string {
 	b, _ := json.MarshalIndent(m, "", "  ")
 	return string(b)
 }
+
+var TurkeyGitops = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/webhooks/turkeygitops" || r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	internal.GetLogger().Debug(dumpHeader(r))
+	rBodyBytes, _ := ioutil.ReadAll(r.Body)
+	internal.GetLogger().Debug(prettyPrintJson(rBodyBytes))
+
+})
