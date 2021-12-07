@@ -129,7 +129,7 @@ spec:
           claimName: {{.Subdomain}}-pvc
       containers:
       - name: reticulum
-        image: mozillareality/ret:35
+        image: mozillareality/ret:44
         ports:
         - containerPort: 9100
         imagePullPolicy: IfNotPresent
@@ -231,6 +231,8 @@ spec:
               key: ADM_EMAIL
         - name: turkeyCfg_ITA_HOST
           value: http://turkey-api.turkey-services
+        - name: turkeyCfg_IMG_PROXY
+          value: http://nearspark.hc-{{.Subdomain}}          
         livenessProbe:
           httpGet:
             path: "http://reticulum.{{.Subdomain}}"
@@ -267,11 +269,6 @@ spec:
             secretKeyRef:
               name: configs
               key: PGRST_JWT_SECRET
-      - name: nearspark
-        image: mozillareality/nearspark:dev
-        ports:
-        - containerPort: 5000
-        imagePullPolicy: IfNotPresent
 ---
 apiVersion: v1
 kind: Service
@@ -414,26 +411,24 @@ spec:
               secretKeyRef:
                 name: configs
                 key: DOMAIN
-          - name: turkeyCfg_postgrest_server
-            value: 
-          - name: turkeyCfg_thumbnail_server
-            value: notyet
           - name: turkeyCfg_base_assets_path
             value: https://{{.Subdomain}}-assets.{{.Domain}}/spoke/
-          - name: turkeyCfg_non_cors_proxy_domains
-            value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
-          - name: turkeyCfg_reticulum_server
-            value: {{.Subdomain}}.{{.Domain}}
           - name: turkeyCfg_cors_proxy_server
             value: {{.Subdomain}}-cors.{{.Domain}}
           - name: turkeyCfg_ga_tracking_id
             value: 
-          - name: turkeyCfg_shortlink_domain
-            value: notyet
-          - name: turkeyCfg_ita_server
-            value: 
+          - name: turkeyCfg_hubs_server
+            value: {{.Subdomain}}.{{.Domain}}
+          - name: turkeyCfg_is_moz
+            value: "false"
+          - name: turkeyCfg_non_cors_proxy_domains
+            value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+          - name: turkeyCfg_reticulum_server
+            value: {{.Subdomain}}.{{.Domain}}
           - name: turkeyCfg_sentry_dsn
             value: 
+          - name: turkeyCfg_thumbnail_server
+            value: nearspark.hc-{{.Subdomain}}:5000
           livenessProbe:
             httpGet:
               path: "http://spoke.{{.Subdomain}}"
@@ -462,3 +457,47 @@ spec:
     targetPort: 8080
   selector:
     app: spoke
+---
+########################################################################
+######################   nearspark   ########################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nearspark
+  namespace: hc-{{.Subdomain}}
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: nearspark
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: 
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: nearspark
+    spec:
+      containers:
+      - name: nearspark
+        image: mozillareality/nearspark:dev
+        ports:
+        - containerPort: 5000
+        imagePullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nearspark
+  namespace: hc-{{.Subdomain}}
+spec:
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000
+  selector:
+    app: nearspark    
