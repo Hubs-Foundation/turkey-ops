@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"main/internal"
+	"fmt"
 	"net/http"
 )
 
@@ -11,7 +11,8 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	internal.GetLogger().Debug(dumpHeader(r))
+	// internal.GetLogger().Debug(dumpHeader(r))
+	fmt.Println(dumpHeader(r))
 
 	http.Error(w, "comming soon", http.StatusNotImplemented)
 	return
