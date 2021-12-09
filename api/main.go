@@ -33,7 +33,7 @@ func main() {
 
 	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
 
-	router.Handle("/api/info", handlers.Ytdl)
+	router.Handle("/ytdl/api/info", handlers.Ytdl)
 
 	router.Handle("/Dummy", handlers.Dummy)
 	internal.StartServer(router, 888)

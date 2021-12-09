@@ -6,7 +6,7 @@ import (
 )
 
 var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/api/info" {
+	if r.URL.Path != "/ytdl/api/info" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}

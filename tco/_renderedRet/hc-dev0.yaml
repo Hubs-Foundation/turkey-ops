@@ -236,7 +236,7 @@ spec:
         - name: turkeyCfg_HEADER_AUTHZ
           value: "duuuuuuuuuuuuuuuuuuuuuuuuumy"
         - name: turkeyCfg_YTDL_HOST
-          value: "http://ytdl.hc-dev0"            
+          value: "http://turkey-api.turkey-services:888/ytdl"            
         livenessProbe:
           httpGet:
             path: "http://reticulum.dev0"
