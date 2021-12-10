@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"main/internal"
 	"net/http"
+	"net/url"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
@@ -15,17 +16,15 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	fmt.Println("~~~~~~~~~Ytdl~~~~~r.Host~~~~~~~~~~~~~" + r.Host)
-	fmt.Println("~~~~~~~~~Ytdl~~~~~r.URL.RawQuery~~~~~", r.URL.RawQuery)
+	query, err := url.QueryUnescape(r.URL.RawQuery)
+	if err != nil {
+		internal.GetLogger().Panic("failed to unescape r.URL.RawQuery: " + r.URL.RawQuery)
+	}
 
-	// lambdaEvent := map[string]string{"url": "http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"}
+	fmt.Println("~~~~~~~~~Ytdl~~~~~query: ", query)
 
-	lambdaEvent := map[string]string{
-		"url": "bla?" + r.URL.RawQuery}
-	payload, _ := json.Marshal(lambdaEvent)
-
-	lambdaClient := lambda.New(internal.Cfg.Awss.Sess)
-	resp, err := lambdaClient.Invoke(
+	payload, _ := json.Marshal(map[string]string{"url": "asdf?" + query})
+	resp, err := lambda.New(internal.Cfg.Awss.Sess).Invoke(
 		&lambda.InvokeInput{
 			FunctionName: aws.String("dev_ytdl_001"),
 			Payload:      payload,
@@ -44,5 +43,4 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// json.NewEncoder(w).Encode(string(resp.Payload))
 	// http.Error(w, "comming soon", http.StatusNotImplemented)
 	// fmt.Println(string(resp.Payload))
-	return
 })
