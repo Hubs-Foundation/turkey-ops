@@ -12,7 +12,8 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// internal.GetLogger().Debug(dumpHeader(r))
-	fmt.Println(dumpHeader(r))
+	fmt.Println("headers: ", dumpHeader(r))
+	fmt.Println("params:", r.URL.Query())
 
 	http.Error(w, "comming soon", http.StatusNotImplemented)
 	return

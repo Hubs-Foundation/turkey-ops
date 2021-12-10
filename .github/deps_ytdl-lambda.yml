@@ -1,0 +1,31 @@
+# This is a basic workflow to help you get started with Actions
+
+name: deps_ytdl-lambda
+
+on:
+  push:
+    branches: [ master, dev ]
+    paths:
+    - 'deps/ytdl/ytdl-lambda.py'
+    - '.github/workflows/deps_ytdl-lambda.yml'
+  workflow_dispatch:
+
+env:
+  s3bucket: arn:aws:s3:::turkeycfg/lambdas/
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: make and push lambda zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1         
+        run: |
+          cd ./deps/ytdl
+          pip install youtube_dl
+          zip -r ytdl-lambda.zip .
+          aws s3 sync ytdl-lambda.zip s3://${{ env.s3bucket }}
+
