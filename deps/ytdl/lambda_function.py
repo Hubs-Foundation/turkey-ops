@@ -76,7 +76,7 @@ def get_result(url, extra_params):
     return res
 
 ALLOWED_EXTRA_PARAMS = {
-    # 'format': str,
+    'format': str,
     'playliststart': int,
     'playlistend': int,
     'playlist_items': str,
