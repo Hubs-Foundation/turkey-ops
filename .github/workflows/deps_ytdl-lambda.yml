@@ -27,5 +27,6 @@ jobs:
           cd ./deps/ytdl
           pip install youtube_dl --target .
           zip -r ytdl-lambda.zip .
+          ls -lha
           aws s3 sync ytdl-lambda.zip ${{ env.s3bucket }}
 
