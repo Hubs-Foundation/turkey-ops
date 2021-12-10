@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  s3bucket: arn:aws:s3:::turkeycfg/lambdas/
+  s3bucket: s3://turkeycfg/lambdas/
 
 jobs:
   build:
@@ -27,5 +27,5 @@ jobs:
           cd ./deps/ytdl
           pip install youtube_dl
           zip -r ytdl-lambda.zip .
-          aws s3 sync ytdl-lambda.zip s3://${{ env.s3bucket }}
+          aws s3 sync ytdl-lambda.zip ${{ env.s3bucket }}
 
