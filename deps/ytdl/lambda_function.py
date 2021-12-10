@@ -10,11 +10,23 @@ def lambda_handler(event, context):
     params=event['url'].split('?',1)[1]
     ytdl_params=dict(item.split('=',1) for item in params.split('&'))
     ytdl_url=ytdl_params['url']
-    result = get_result(ytdl_url, ytdl_params)     
+    debugMsg="***no issue***"
+    try:
+        result = get_result(ytdl_url, ytdl_params)
+    except:
+        ytdl_params.pop("format",None)
+        result = get_result(ytdl_url, ytdl_params)
+        debugMsg="***retried with [format] dropped***"
     return {
         'url': ytdl_url,
         'info': result,
-    }
+        'debugMsg': debugMsg
+    }    
+    # result = get_result(ytdl_url, ytdl_params)     
+    # return {
+    #     'url': ytdl_url,
+    #     'info': result,
+    # }
 
 class SimpleYDL(youtube_dl.YoutubeDL):
     def __init__(self, *args, **kargs):
@@ -64,7 +76,7 @@ def get_result(url, extra_params):
     return res
 
 ALLOWED_EXTRA_PARAMS = {
-    'format': str,
+    # 'format': str,
     'playliststart': int,
     'playlistend': int,
     'playlist_items': str,
