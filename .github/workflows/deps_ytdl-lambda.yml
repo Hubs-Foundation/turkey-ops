@@ -6,7 +6,7 @@ on:
   push:
     branches: [ master, dev ]
     paths:
-    - 'deps/ytdl/ytdl-lambda.py'
+    - 'deps/ytdl/lambda_function.py'
     - '.github/workflows/deps_ytdl-lambda.yml'
   workflow_dispatch:
 
