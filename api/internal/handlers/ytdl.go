@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"main/internal"
 	"net/http"
 	"net/url"
@@ -21,8 +20,6 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		internal.GetLogger().Panic("failed to unescape r.URL.RawQuery: " + r.URL.RawQuery)
 	}
 
-	fmt.Println("~~~~~~~~~Ytdl~~~~~query: ", query)
-
 	payload, _ := json.Marshal(map[string]string{"url": "asdf?" + query})
 	resp, err := lambda.New(internal.Cfg.Awss.Sess).Invoke(
 		&lambda.InvokeInput{
@@ -39,6 +36,12 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(resp.Payload)
+
+	var m map[string]string
+	json.Unmarshal(resp.Payload, &m)
+	internal.GetLogger().Debug("ytdl query: " + query)
+	internal.GetLogger().Debug("ytdl debugMsg: " + m["debugMsg"])
+
 	// fmt.Fprint(w, string(resp.Payload))
 	// json.NewEncoder(w).Encode(string(resp.Payload))
 	// http.Error(w, "comming soon", http.StatusNotImplemented)
