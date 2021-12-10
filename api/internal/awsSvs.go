@@ -16,7 +16,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-type AwsSvs struct{ Sess *session.Session }
+type AwsSvs struct {
+	Sess *session.Session
+}
 
 func NewAwsSvs(key, secret, region string) (*AwsSvs, error) {
 	os.Setenv("AWS_ACCESS_KEY_ID", key)
@@ -29,7 +31,9 @@ func NewAwsSvs(key, secret, region string) (*AwsSvs, error) {
 	if err != nil {
 		return &AwsSvs{}, err
 	}
-	return &AwsSvs{Sess: sess}, err
+	return &AwsSvs{
+		Sess: sess,
+	}, err
 }
 
 func BuildCFlink(region, stackID string) string {
