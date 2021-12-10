@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: make and push lambda zip
+      - name: make zip and push dev
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
@@ -28,5 +28,5 @@ jobs:
           pip install youtube_dl --target .
           zip -r ytdl-lambda.zip .
           ls -lha
-          aws s3api put-object --bucket turkeycfg --key lambdas/ytdl-lambda.zip --body ytdl-lambda.zip
+          aws s3api put-object --bucket turkeycfg --key lambdas/dev_ytdl-lambda.zip --body ytdl-lambda.zip
 
