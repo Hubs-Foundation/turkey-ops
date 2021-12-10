@@ -29,4 +29,5 @@ jobs:
           zip -r ytdl-lambda.zip .
           ls -lha
           aws s3api put-object --bucket turkeycfg --key lambdas/dev_ytdl-lambda.zip --body ytdl-lambda.zip
+          aws lambda update-function-code --function-name dev_ytdl_001 --s3-bucket turkeycfg --s3-key lambdas/dev_ytdl-lambda.zip
 
