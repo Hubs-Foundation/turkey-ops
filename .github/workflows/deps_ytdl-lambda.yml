@@ -25,7 +25,7 @@ jobs:
           AWS_REGION: us-east-1         
         run: |
           cd ./deps/ytdl
-          pip install youtube_dl
+          pip install youtube_dl --target .
           zip -r ytdl-lambda.zip .
           aws s3 sync ytdl-lambda.zip ${{ env.s3bucket }}
 
