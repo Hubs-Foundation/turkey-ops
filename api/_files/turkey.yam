@@ -232,7 +232,11 @@ spec:
         - name: turkeyCfg_ITA_HOST
           value: http://turkey-api.turkey-services
         - name: turkeyCfg_IMG_PROXY
-          value: http://nearspark.hc-{{.Subdomain}}          
+          value: http://nearspark.hc-{{.Subdomain}}
+        - name: turkeyCfg_HEADER_AUTHZ
+          value: "duuuuuuuuuuuuuuuuuuuuuuuuumy"
+        - name: turkeyCfg_YTDL_HOST
+          value: "http://turkey-api.turkey-services:888/ytdl"            
         livenessProbe:
           httpGet:
             path: "http://reticulum.{{.Subdomain}}"
