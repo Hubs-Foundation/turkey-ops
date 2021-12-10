@@ -15,13 +15,13 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	fmt.Println("RequestURI: " + r.RequestURI)
-	// internal.GetLogger().Debug(dumpHeader(r))
-	fmt.Println("r.URL.RawQuery:", r.URL.RawQuery)
-	fmt.Println("headers: ", dumpHeader(r))
+	fmt.Println("~~~~~~~~~Ytdl~~~~~r.Host~~~~~~~~~~~~~" + r.Host)
+	fmt.Println("~~~~~~~~~Ytdl~~~~~r.URL.RawQuery~~~~~", r.URL.RawQuery)
 
-	lambdaEvent := map[string]string{"url": "http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"}
+	// lambdaEvent := map[string]string{"url": "http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"}
 
+	lambdaEvent := map[string]string{
+		"url": "bla?" + r.URL.RawQuery}
 	payload, _ := json.Marshal(lambdaEvent)
 
 	lambdaClient := lambda.New(internal.Cfg.Awss.Sess)
