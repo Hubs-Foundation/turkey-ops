@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: docker build + push
         run: |
-          ytdlVer=$(curl https://pypi.org/pypi/youtube_dl/json | jq '.info.version')
+          ytdlVer=$(curl https://pypi.org/pypi/youtube_dl/json | jq -r '.info.version')
           cd ./deps/ytdl/api_flask
           docker build . -t $registryName/$containerName:$GITHUB_RUN_NUMBER_$ytdlVer
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
