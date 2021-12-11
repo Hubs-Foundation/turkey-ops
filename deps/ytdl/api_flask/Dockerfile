@@ -1,4 +1,4 @@
-FROM python:3.7.3-slim
+FROM python:alpine
 
 RUN pip3 install youtube-dl flask gunicorn
 COPY main.py .
