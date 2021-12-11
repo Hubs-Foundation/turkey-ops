@@ -276,7 +276,7 @@ spec:
               name: configs
               key: PGRST_JWT_SECRET
       - name: ytdl
-        image: mozillareality/ytdl:1
+        image: mozillareality/ytdl:6_2021.6.6
         ports:
         - containerPort: 8080
         imagePullPolicy: IfNotPresent              
