@@ -18,7 +18,7 @@ jobs:
         run: |
           ytdlVer=$(curl https://pypi.org/pypi/youtube_dl/json | jq -r '.info.version')
           cd ./deps/ytdl/api_flask
-          tag="$registryName/$containerName:$GITHUB_RUN_NUMBER_$ytdlVer"
+          tag="$registryName/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer"
           echo "tag: $tag"
           docker build . -t $tag
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
