@@ -236,7 +236,9 @@ spec:
         - name: turkeyCfg_HEADER_AUTHZ
           value: "duuuuuuuuuuuuuuuuuuuuuuuuumy"
         - name: turkeyCfg_YTDL_HOST
-          value: "http://turkey-api.turkey-services:888/ytdl"            
+          value: "http://localhost:8080"
+        # - name: turkeyCfg_YTDL_HOST
+        #   value: "http://turkey-api.turkey-services:888/ytdl"            
         livenessProbe:
           httpGet:
             path: "http://reticulum.dev0"
@@ -273,6 +275,11 @@ spec:
             secretKeyRef:
               name: configs
               key: PGRST_JWT_SECRET
+      - name: ytdl
+        image: mozillareality/ytdl:1
+        ports:
+        - containerPort: 8080
+        imagePullPolicy: IfNotPresent              
 ---
 apiVersion: v1
 kind: Service

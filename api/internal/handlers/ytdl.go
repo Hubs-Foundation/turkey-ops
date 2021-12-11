@@ -19,7 +19,14 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal.GetLogger().Panic("failed to unescape r.URL.RawQuery: " + r.URL.RawQuery)
 	}
+	// //~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// for _, item := range strings.Split(query, "&"){
+	// 	if item[:4]=="url="{
+	// 		url=strings.Split(item, "=")[1]
 
+	// 	}
+	// }
+	// //~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	payload, _ := json.Marshal(map[string]string{"url": "asdf?" + query})
 	resp, err := lambda.New(internal.Cfg.Awss.Sess).Invoke(
 		&lambda.InvokeInput{
