@@ -23,7 +23,7 @@ import (
 
 var turkeyEnv = "dev"
 var turkeycfg_s3_bucket = "turkeycfg/cf/"
-var region = "us-west-1"
+var region = "us-east-1"
 
 var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -41,7 +41,9 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Log("ERROR @ Unmarshal r.body, will try configs in cache, btw json.Unmarshal error = " + err.Error())
 			return
 		}
-		if cfg["Region"] == "" {
+		if cfg["Region"] != "" {
+			region = cfg["Region"]
+		} else {
 			internal.GetLogger().Warn("no region input, using default: " + region)
 		}
 
