@@ -100,7 +100,7 @@ spec:
     - ReadWriteOnce # only mode supported by the cheap and clean gp2 / ebs on aws. effectively preventing deployment/pod scaling -- not needed after we made ret stateless with storage redesign
   resources:
     requests:
-      storage: 1Gi  # will use the default gp2 storageClass, minimum request size is 1Gi
+      storage: 12Gi  # will use the default gp2 storageClass, minimum request size is 1Gi
 ---
 apiVersion: apps/v1
 kind: Deployment

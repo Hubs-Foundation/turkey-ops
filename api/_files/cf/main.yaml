@@ -8,19 +8,19 @@ Parameters:
   cfS3Folder:
     Type: String
     Default: https://s3.amazonaws.com/turkeycfg/cf/<env>
-  VpcCIDR:
-    Type: String
-    Default: 10.0.0.0/16    
-  PublicSubnet1CIDR:
-    Type: String
-    Default: 10.0.1.0/24
-  PublicSubnet2CIDR:
-    Type: String
-    Default: 10.0.2.0/24
   turkeyDomain:
     Type: String
-    Default: quackstack.net
-
+    Default: myhubs.net
+  # VpcCIDR:
+  #   Type: String
+  #   Default: 10.0.0.0/16    
+  # PublicSubnet1CIDR:
+  #   Type: String
+  #   Default: 10.0.1.0/24
+  # PublicSubnet2CIDR:
+  #   Type: String
+  #   Default: 10.0.2.0/24
+  
 Resources:
 ############################################# iam #################################################
   iam:
