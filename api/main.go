@@ -35,6 +35,8 @@ func main() {
 
 	router.Handle("/ytdl/api/info", handlers.Ytdl)
 
+	router.Handle("/tco_aws", handlers.TcoAws)
+
 	router.Handle("/Dummy", handlers.Dummy)
 	internal.StartServer(router, 888)
 

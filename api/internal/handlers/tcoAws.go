@@ -14,9 +14,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
-var turkeyDomain = "quackstack.net"
+// type clusterCfg struct {
+// 	Env             string `json:"env"`
+// 	DeploymentName  string `json:"name"`
+// 	CF_deploymentId string `json:"cf_deploymentId"`
+// 	Domain          string `json:"domain"`
+// }
+
 var turkeyEnv = "dev"
-var turkeycfg_s3_bucket = "turkeycfg"
+var turkeycfg_s3_bucket = "turkeycfg/cf/"
+var region = "us-east-1"
 
 var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -34,8 +41,9 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Log("ERROR @ Unmarshal r.body, will try configs in cache, btw json.Unmarshal error = " + err.Error())
 			return
 		}
+		region = userData["Region"]
 
-		awss, err := internal.NewAwsSvs(userData["awsKey"], userData["awsSecret"], userData["awsRegion"])
+		awss, err := internal.NewAwsSvs(internal.Cfg.AwsKey, internal.Cfg.AwsSecret, region)
 		if err != nil {
 			sess.Log("ERROR @ NewAwsSvs: " + err.Error())
 			return
@@ -48,19 +56,28 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.Log("good aws creds, account #: " + accountNum)
 
-		deploymentName, ok := userData["deploymentName"]
+		turkeyDomain, gotDomain := userData["Domain"]
+		if !gotDomain {
+			internal.GetLogger().Panic("missing: Domain")
+		}
+
+		deploymentName, ok := userData["DeploymentName"]
 		if !ok {
 			deploymentName = "z"
 		}
+
+		turkeyEnv, ok = userData["Env"]
+		if !ok {
+			turkeyEnv = "dev"
+		}
 		stackName := deploymentName + "-" + internal.StackNameGen()
 
-		_, ok = userData["cf_deploymentId"]
+		_, ok = userData["CF_deploymentId"]
 		if !ok {
-			userData["cf_deploymentId"] = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
+			userData["CF_deploymentId"] = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
 		}
-		userData["cf_turkeyDomain"] = turkeyDomain
 
-		cfS3Folder := "https://s3.amazonaws.com/" + turkeycfg_s3_bucket + "/cf/" + turkeyEnv + "/"
+		cfS3Folder := "https://s3.amazonaws.com/" + turkeycfg_s3_bucket + turkeyEnv + "/"
 		userData["cf_cfS3Folder"] = cfS3Folder
 
 		cfParams, err := parseCFparams(userData)
@@ -70,6 +87,7 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfTags := []*cloudformation.Tag{
 			{Key: aws.String("customer-id"), Value: aws.String("not-yet-place-holder-only")},
 			{Key: aws.String("turkeyEnv"), Value: aws.String(turkeyEnv)},
+			{Key: aws.String("turkeyDomain"), Value: aws.String(turkeyDomain)},
 		}
 
 		go func() {
@@ -84,25 +102,24 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		go reportCreateCFstackStatus(stackName, userData, sess, awss)
 
-		go internal.DeployHubsAssets(
-			awss,
-			map[string]string{
-				"base_assets_path": "https://" + stackName + "-cdn." + turkeyDomain + "/hubs/",
-				// "cors_proxy_server":      stackName + "-cdn." + turkeyDomain,
-				"cors_proxy_server":      "",
-				"ga_tracking_id":         "",
-				"ita_server":             "",
-				"non_cors_proxy_domains": stackName + "." + turkeyDomain + "," + stackName + "-cdn." + turkeyDomain,
-				"postgrest_server":       "",
-				"reticulum_server":       stackName + "." + turkeyDomain,
-				"sentry_dsn":             "",
-				"shortlink_domain":       "notyet.link",
-				"thumbnail_server":       "notyet.com",
-			},
-			turkeycfg_s3_bucket,
-			stackName+"-assets-"+userData["cf_deploymentId"])
+		// go internal.DeployHubsAssets(
+		// 	awss,
+		// 	map[string]string{
+		// 		"base_assets_path":       "https://" + stackName + "-cdn." + turkeyDomain + "/hubs/",
+		// 		"cors_proxy_server":      "",
+		// 		"ga_tracking_id":         "",
+		// 		"ita_server":             "",
+		// 		"non_cors_proxy_domains": stackName + "." + turkeyDomain + "," + stackName + "-cdn." + turkeyDomain,
+		// 		"postgrest_server":       "",
+		// 		"reticulum_server":       stackName + "." + turkeyDomain,
+		// 		"sentry_dsn":             "",
+		// 		"shortlink_domain":       "notyet.link",
+		// 		"thumbnail_server":       "notyet.com",
+		// 	},
+		// 	turkeycfg_s3_bucket,
+		// 	stackName+"-assets-"+userData["CF_deploymentId"])
 
-		go internal.DeployKeys(awss, stackName, stackName+"-assets-"+userData["cf_deploymentId"])
+		// go internal.DeployKeys(awss, stackName, stackName+"-assets-"+userData["CF_deploymentId"])
 
 		return
 
@@ -182,9 +199,7 @@ func reportCreateCFstackStatus(stackName string, userData map[string]string, ses
 		stack := *stacks[0]
 		stackStatus = *stack.StackStatus
 		sinceStart := time.Now().UTC().Sub(stack.CreationTime.UTC()).Round(time.Second).String()
-		stackLink := "https://" + userData["awsRegion"] + ".console.aws.amazon.com/cloudformation/home?region=" +
-			userData["awsRegion"] + "#/stacks/stackinfo?stackId=" + *stack.StackId
-
+		stackLink := "https://" + region + ".console.aws.amazon.com/cloudformation/home?region=" + region + "#/stacks/stackinfo?stackId=" + *stack.StackId
 		reportMsg := "<span style=\"color:white\">(" + sinceStart + ")</span> status of CF stack " +
 			"<a href=\"" + stackLink + "\" target=\"_blank\"><b>&#128279;" + stackName + "</b></a>" + " is " + stackStatus
 		if stack.StackStatusReason != nil {

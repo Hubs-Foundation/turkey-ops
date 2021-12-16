@@ -37,14 +37,14 @@
   <div class="container mh-80  shadow p-3 mb-3" style="margin-top:2%">
     <ul class="nav nav-tabs">
       <li class="nav-item">
-        <a class="nav-link active" data-toggle="tab" href="#orchestrator">orchestrator</a>
+        <a class="nav-link active" data-bs-toggle="tab" type="button" role="tab" data-bs-target="#hubs_cloud">hubs cloud</a>
       </li>       
       <li class="nav-item">
-        <a class="nav-link" data-toggle="tab" href="#menu2">Menu 2</a>
+        <a class="nav-link" data-bs-toggle="tab" type="button" role="tab" data-bs-target="#turkey_cluster">turkey_cluster</a>
       </li>
     </ul>
     <div class="tab-content">
-      <div id="orchestrator" class="container tab-pane active"><br>
+      <div id="hubs_cloud" class="container tab-pane active"><br>
         <div class = "container">
           <div class="row" id="console">
             <div class="col-sm-5">
@@ -70,9 +70,30 @@
           </div>
         </div>   
       </div>          
-      <div id="menu2" class="container tab-pane fade"><br>
-        <h5>Menu 2</h5>
-        nothing here
+      <div id="turkey_cluster" class="container tab-pane fade"><br>
+        <div class = "container">
+          <div class="row" id="console">
+            <div class="col-sm-5">
+              <p><b>manual:</b><br>
+                1. put configs in configBox<br>
+                2. click the button:<br>
+                <button type="button" class="btn btn-primary btn-sm" id="tcoAws" >deploy_aws</button>
+                <!-- <button type="button" class="btn btn-success btn-sm" id="deployBtn" >deploy</button>
+                <br>
+                <button type="button" class="btn btn-warning btn-sm" id="delNsBtn" >deleteNS</button>
+                <button type="button" class="btn btn-danger btn-sm" id="delDbBtn" >deleteDB</button>
+
+                <p><b>config examples:</b><br>
+                  <button type="button" class="btn btn-outline-info btn-sm" id="cfgEx_get" >get</button>
+                  <button type="button" class="btn btn-outline-info btn-sm" id="cfgEx_deploy" >deploy</button>
+                  <button type="button" class="btn btn-outline-info btn-sm" id="cfgEx_del" >delete</button> -->
+            </div>
+            <div class="col-sm-7">
+              <label for="input"><b>configBox:</b></label>
+              <textarea class="form-control text-warning bg-dark" rows="10" id="cluster_cfg" style="font-size:smaller; white-space:pre" spellcheck="false"></textarea>   
+            </div>
+          </div>
+        </div>   
       </div>
     </div>
   </div>
