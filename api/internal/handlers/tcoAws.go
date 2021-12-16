@@ -28,7 +28,7 @@ var region = "us-east-1"
 var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
-		if r.URL.Path != "/TurkeyDeployAWS" {
+		if r.URL.Path != "/tco_aws" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
