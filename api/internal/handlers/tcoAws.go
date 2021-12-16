@@ -23,7 +23,7 @@ import (
 
 var turkeyEnv = "dev"
 var turkeycfg_s3_bucket = "turkeycfg/cf/"
-var region = "us-east-1"
+var region = "us-west-1"
 
 var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -36,12 +36,14 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess := internal.GetSession(r.Cookie)
 		sess.Log("!!! THE ONE BUTTON clicked !!!")
 
-		userData, err := internal.ParseJsonReqBody(r.Body)
+		cfg, err := internal.ParseJsonReqBody(r.Body)
 		if err != nil {
 			sess.Log("ERROR @ Unmarshal r.body, will try configs in cache, btw json.Unmarshal error = " + err.Error())
 			return
 		}
-		region = userData["Region"]
+		if cfg["Region"] == "" {
+			internal.GetLogger().Warn("no region input, using default: " + region)
+		}
 
 		awss, err := internal.NewAwsSvs(internal.Cfg.AwsKey, internal.Cfg.AwsSecret, region)
 		if err != nil {
@@ -56,31 +58,31 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.Log("good aws creds, account #: " + accountNum)
 
-		turkeyDomain, gotDomain := userData["Domain"]
+		turkeyDomain, gotDomain := cfg["Domain"]
 		if !gotDomain {
 			internal.GetLogger().Panic("missing: Domain")
 		}
 
-		deploymentName, ok := userData["DeploymentName"]
+		deploymentName, ok := cfg["DeploymentName"]
 		if !ok {
 			deploymentName = "z"
 		}
 
-		turkeyEnv, ok = userData["Env"]
+		turkeyEnv, ok = cfg["Env"]
 		if !ok {
 			turkeyEnv = "dev"
 		}
 		stackName := deploymentName + "-" + internal.StackNameGen()
 
-		_, ok = userData["CF_deploymentId"]
+		_, ok = cfg["CF_deploymentId"]
 		if !ok {
-			userData["CF_deploymentId"] = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
+			cfg["CF_deploymentId"] = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
 		}
 
 		cfS3Folder := "https://s3.amazonaws.com/" + turkeycfg_s3_bucket + turkeyEnv + "/"
-		userData["cf_cfS3Folder"] = cfS3Folder
+		cfg["cf_cfS3Folder"] = cfS3Folder
 
-		cfParams, err := parseCFparams(userData)
+		cfParams, err := parseCFparams(cfg)
 		if err != nil {
 			sess.Log("ERROR @ parseCFparams: " + err.Error())
 		}
@@ -96,11 +98,11 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Log("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
 				return
 			}
-			// createSSMparam(stackName, accountNum, userData, awss, sess)
+			// createSSMparam(stackName, accountNum, cfg, awss, sess)
 		}()
 		sess.Log("&#128640;CreateCFstack started for stackName=" + stackName)
 
-		go reportCreateCFstackStatus(stackName, userData, sess, awss)
+		go reportCreateCFstackStatus(stackName, cfg, sess, awss)
 
 		// go internal.DeployHubsAssets(
 		// 	awss,
@@ -117,9 +119,9 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 		"thumbnail_server":       "notyet.com",
 		// 	},
 		// 	turkeycfg_s3_bucket,
-		// 	stackName+"-assets-"+userData["CF_deploymentId"])
+		// 	stackName+"-assets-"+cfg["CF_deploymentId"])
 
-		// go internal.DeployKeys(awss, stackName, stackName+"-assets-"+userData["CF_deploymentId"])
+		// go internal.DeployKeys(awss, stackName, stackName+"-assets-"+cfg["CF_deploymentId"])
 
 		return
 
@@ -129,16 +131,16 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
-func parseCFparams(userData map[string]string) ([]*cloudformation.Parameter, error) {
+func parseCFparams(cfg map[string]string) ([]*cloudformation.Parameter, error) {
 
 	cfParams := []*cloudformation.Parameter{}
 
-	for k := range userData {
+	for k := range cfg {
 		if k[0:3] == "cf_" {
 			key := k[3:]
-			val := userData[k]
-			isPwdGen, _ := regexp.MatchString(`PwdGen\(\d+\)`, val)
-			if isPwdGen {
+			val := cfg[k]
+			// isPwdGen, _ := regexp.MatchString(`PwdGen\(\d+\)`, val)
+			if strings.HasPrefix(val, "PwdGen(") {
 				compRegEx := regexp.MustCompile(`PwdGen\((?P<len>\d+)\)`)
 				lenStr := compRegEx.FindStringSubmatch(val)[1]
 				len, err := strconv.Atoi(lenStr)
@@ -147,7 +149,7 @@ func parseCFparams(userData map[string]string) ([]*cloudformation.Parameter, err
 				}
 				val = internal.PwdGen(len)
 			}
-			userData[k] = val
+			cfg[k] = val
 			cfParams = append(cfParams,
 				&cloudformation.Parameter{ParameterKey: aws.String(key), ParameterValue: aws.String(val)})
 		}
@@ -155,22 +157,22 @@ func parseCFparams(userData map[string]string) ([]*cloudformation.Parameter, err
 	return cfParams, nil
 }
 
-func createSSMparam(stackName string, accountNum string, userData map[string]string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) error {
+func createSSMparam(stackName string, accountNum string, cfg map[string]string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) error {
 	stacks, err := awss.GetStack(stackName)
 	if err != nil {
 		sess.Log("ERROR @ createSSMparam -- GetStack: " + err.Error())
 		return err
 	}
 	//----------create SSM parameter
-	// paramMap, err := getSSMparamFromS3json(awss, userData, "ssmParam.json")
+	// paramMap, err := getSSMparamFromS3json(awss, cfg, "ssmParam.json")
 	// if err != nil {
 	// 	sess.Log("ERROR @ createSSMparamFromS3json: " + err.Error())
 	// 	return err
 	// }
 	paramMap := make(map[string]string)
-	for _, k := range userData {
+	for _, k := range cfg {
 		if k[0:3] == "cf_" {
-			paramMap[k[3:]] = userData[k]
+			paramMap[k[3:]] = cfg[k]
 		}
 	}
 	stackOutputs := stacks[0].Outputs
@@ -187,7 +189,7 @@ func createSSMparam(stackName string, accountNum string, userData map[string]str
 	return nil
 }
 
-func reportCreateCFstackStatus(stackName string, userData map[string]string, sess *internal.CacheBoxSessData, awss *internal.AwsSvs) error {
+func reportCreateCFstackStatus(stackName string, cfg map[string]string, sess *internal.CacheBoxSessData, awss *internal.AwsSvs) error {
 	time.Sleep(time.Second * 10)
 	stackStatus := "something something IN_PROGRESS"
 	for strings.Contains(stackStatus, "IN_PROGRESS") {
