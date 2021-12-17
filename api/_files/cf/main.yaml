@@ -20,7 +20,7 @@ Parameters:
   # PublicSubnet2CIDR:
   #   Type: String
   #   Default: 10.0.2.0/24
-  
+
 Resources:
 ############################################# iam #################################################
   iam:
@@ -30,7 +30,7 @@ Resources:
       Parameters:
         mainStackName: !Ref "AWS::StackName"
 ####################################### network ###################################################
-  nw:
+  network:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Join [ '', [!Ref cfS3Folder, "network.yaml"] ]
@@ -56,8 +56,9 @@ Resources:
       TemplateURL: !Sub ${cfS3Folder}eks.yaml
       Parameters:
         mainStackName: !Ref "AWS::StackName"
-        PublicSubnet1Id: nw.Outputs.PublicSubnet1
-        PublicSubnet2Id: nw.Outputs.PublicSubnet2
+        PublicSubnet1Id: network.Outputs.PublicSubnet1
+        PublicSubnet2Id: network.Outputs.PublicSubnet2
+        RoleArn: iam.Outputs.k8sAdmRoleArn
 
 Outputs:
   dbId:
