@@ -8,7 +8,7 @@ Parameters:
     Type: String
   DBAllocatedStorage:
     Type: Number
-  PG_PASS:
+  PGpwd:
     Type: String
 
 Resources:
@@ -16,13 +16,13 @@ Resources:
     Type: 'AWS::RDS::DBInstance'
     Properties:
       DBInstanceIdentifier: !Ref mainStackName
-      DBName: !Ref DBInstanceID
+      DBName: turkey
       DBInstanceClass: !Ref DBInstanceClass
       AllocatedStorage: !Ref DBAllocatedStorage
       Engine: postgres
-      EngineVersion: 13.3-R1
+      EngineVersion: 13.4
       MasterUsername: postgres
-      MasterUserPassword: !Ref PG_PASS
+      MasterUserPassword: !Ref PGpwd
       # MonitoringInterval: '60'
       # MonitoringRoleArn: 'arn:aws:iam::123456789012:role/rds-monitoring-role'
 

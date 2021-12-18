@@ -7,16 +7,45 @@ Parameters:
     Type: String
   PublicSubnet2Id:
     Type: String
-  RoleArn:
-    Type: String
 
 Resources:
+  clusterRole:
+    Type: "AWS::IAM::Role"
+    Properties: 
+      RoleName: !Sub ${mainStackName}-eks
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+            Effect: Allow
+            Principal:
+              Service:
+                - eks.amazonaws.com
+            Action: sts:AssumeRole
+  nodeRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub ${mainStackName}-node
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - ec2.amazonaws.com
+          Action: sts:AssumeRole        
   myCluster:
     Type: 'AWS::EKS::Cluster'
     Properties:
       Name: !Ref mainStackName
       Version: '1.21'
-      RoleArn: !Ref RoleArn
+      RoleArn: !GetAtt clusterRole.Arn
       ResourcesVpcConfig:
         SubnetIds:
         - !Ref PublicSubnet1Id
@@ -27,7 +56,7 @@ Resources:
     Type: 'AWS::EKS::Nodegroup'
     Properties:
       ClusterName: prod
-      NodeRole: 'arn:aws:iam::012345678910:role/eksInstanceRole'
+      NodeRole: !GetAtt nodeRole.Arn
       ScalingConfig:
         MinSize: 3
         DesiredSize: 5
