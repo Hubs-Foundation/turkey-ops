@@ -5,6 +5,7 @@ import (
 )
 
 type Config struct {
+	Env       string `long:"environment" env:"ENV" description:"env config"`
 	Domain    string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
 	DBuser    string `long:"db-user" env:"DB_USER" description:"postgresql data base user"`
 	DBconn    string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
@@ -13,12 +14,16 @@ type Config struct {
 	AwsRegion string `long:"aws-region" env:"AWS_REGION" description:"AWS_REGION"`
 
 	Awss *AwsSvs
+
+	TurkeyCfg_s3_bkt  string
+	DefaultRegion_aws string
 }
 
 var Cfg *Config
 
 func MakeCfg() {
 	Cfg = &Config{}
+	Cfg.Env = getEnv("ENV", "dev")
 	Cfg.Domain = os.Getenv("DOMAIN")
 	Cfg.DBconn = os.Getenv("DB_CONN")
 	Cfg.DBuser = "postgres"
@@ -35,4 +40,17 @@ func MakeCfg() {
 	}
 	Cfg.Awss = Awss
 
+	Cfg.TurkeyCfg_s3_bkt = "turkeycfg"
+
+	f, _ := os.Create("./_files/hc.yam")
+	Awss.DownloadS3item(Cfg.TurkeyCfg_s3_bkt, Cfg.Env+"/hc.yam", f)
+	f.Close()
+
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }

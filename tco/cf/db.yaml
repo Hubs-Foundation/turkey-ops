@@ -10,8 +10,20 @@ Parameters:
     Type: Number
   PGpwd:
     Type: String
+  PrivateSubnet1Id:
+    Type: String
+  PrivateSubnet2Id:
+    Type: String
 
 Resources:
+  SubnetGrp:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: turkey data
+      SubnetIds: 
+        - !Ref PrivateSubnet1Id
+        - !Ref PrivateSubnet2Id
+
   PG:
     Type: 'AWS::RDS::DBInstance'
     Properties:

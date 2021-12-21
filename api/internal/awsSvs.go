@@ -1,8 +1,10 @@
 package internal
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -10,10 +12,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/acm"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 )
 
 type AwsSvs struct {
@@ -179,4 +184,50 @@ func (as AwsSvs) CheckCERTarn(CERTarn string) (cert string, err error) {
 		return "", err
 	}
 	return *certOut.Certificate, err
+}
+
+func (as AwsSvs) GetK8sConfigFromEks(eksName string) (*rest.Config, error) {
+	eksSvc := eks.New(as.Sess)
+	res, err := eksSvc.DescribeCluster(&eks.DescribeClusterInput{
+		Name: aws.String(eksName),
+	})
+	if err != nil {
+		GetLogger().Error("Error calling DescribeCluster: " + err.Error())
+		return nil, err
+	}
+	k8sCfg, err := newK8sConfigFromEks(res.Cluster)
+	if err != nil {
+		GetLogger().Error("Error creating clientset: " + err.Error())
+		return nil, err
+	}
+	return k8sCfg, nil
+}
+
+func newK8sConfigFromEks(cluster *eks.Cluster) (*rest.Config, error) {
+	log.Printf("%+v", cluster)
+	gen, err := token.NewGenerator(true, false)
+	if err != nil {
+		return nil, err
+	}
+	opts := &token.GetTokenOptions{
+		ClusterID: aws.StringValue(cluster.Name),
+	}
+	tok, err := gen.GetWithOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+	ca, err := base64.StdEncoding.DecodeString(aws.StringValue(cluster.CertificateAuthority.Data))
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &rest.Config{
+		Host:        aws.StringValue(cluster.Endpoint),
+		BearerToken: tok.Token,
+		TLSClientConfig: rest.TLSClientConfig{
+			CAData: ca,
+		},
+	}, nil
 }

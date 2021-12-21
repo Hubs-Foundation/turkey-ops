@@ -21,9 +21,8 @@ import (
 // 	Domain          string `json:"domain"`
 // }
 
-var turkeyEnv = "dev"
-var turkeycfg_s3_bucket = "turkeycfg/cf/"
-var region = "us-east-1"
+// var turkeycfg_s3_bucket = "turkeycfg/cf/"
+// var defaultRegion = "us-east-1"
 
 var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -32,75 +31,57 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-
 		sess := internal.GetSession(r.Cookie)
-		sess.Log("!!! THE ONE BUTTON clicked !!!")
 
-		cfg, err := internal.ParseJsonReqBody(r.Body)
-		if err != nil {
-			sess.Log("ERROR @ Unmarshal r.body, will try configs in cache, btw json.Unmarshal error = " + err.Error())
-			return
-		}
-		if cfg["Region"] != "" {
-			region = cfg["Region"]
-		} else {
-			internal.GetLogger().Warn("no region input, using default: " + region)
-		}
+		// #1. get cfg from r.body
+		cfg := tco_makeCfg(r, sess)
 
-		awss, err := internal.NewAwsSvs(internal.Cfg.AwsKey, internal.Cfg.AwsSecret, region)
+		awss, err := internal.NewAwsSvs(internal.Cfg.AwsKey, internal.Cfg.AwsSecret, cfg["Region"])
 		if err != nil {
-			sess.Log("ERROR @ NewAwsSvs: " + err.Error())
+			sess.Panic("ERROR @ NewAwsSvs: " + err.Error())
 			return
 		}
 
 		accountNum, err := awss.GetAccountID()
 		if err != nil {
-			sess.Log("ERROR @ GetAccountID: " + err.Error())
+			sess.Panic("ERROR @ GetAccountID: " + err.Error())
 			return
 		}
 		sess.Log("good aws creds, account #: " + accountNum)
 
-		turkeyDomain, gotDomain := cfg["Domain"]
-		if !gotDomain {
-			internal.GetLogger().Panic("missing: Domain")
-		}
-
-		deploymentName, ok := cfg["DeploymentName"]
-		if !ok {
-			deploymentName = "z"
-		}
-
-		turkeyEnv, ok = cfg["Env"]
-		if !ok {
-			turkeyEnv = "dev"
-		}
-		stackName := deploymentName + "-" + internal.StackNameGen()
-
-		_, ok = cfg["CF_deploymentId"]
-		if !ok {
-			cfg["CF_deploymentId"] = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
-		}
-
-		cfS3Folder := "https://s3.amazonaws.com/" + turkeycfg_s3_bucket + turkeyEnv + "/"
-		cfg["cf_cfS3Folder"] = cfS3Folder
-
+		// #2. for keys in cfg start with 'cf_' prefix, pass into cloudformation without the prefix
+		//     also generate password for values like "PwdGen(int_length)"
 		cfParams, err := parseCFparams(cfg)
 		if err != nil {
-			sess.Log("ERROR @ parseCFparams: " + err.Error())
+			sess.Panic("ERROR @ parseCFparams: " + err.Error())
 		}
+		// #3. add turkey cluster tags
 		cfTags := []*cloudformation.Tag{
 			{Key: aws.String("customer-id"), Value: aws.String("not-yet-place-holder-only")},
-			{Key: aws.String("turkeyEnv"), Value: aws.String(turkeyEnv)},
-			{Key: aws.String("turkeyDomain"), Value: aws.String(turkeyDomain)},
+			{Key: aws.String("turkeyEnv"), Value: aws.String(cfg["Env"])},
+			{Key: aws.String("turkeyDomain"), Value: aws.String(cfg["Domain"])},
 		}
 
+		// #4. run the cloudformation template
+		stackName := cfg["DeploymentName"] + "-" + cfg["cf_deploymentId"]
+		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/cf/" + cfg["Env"] + "/"
 		go func() {
 			err = awss.CreateCFstack(stackName, cfS3Folder+"main.yaml", cfParams, cfTags)
 			if err != nil {
-				sess.Log("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
+				sess.Panic("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
 				return
 			}
-			// createSSMparam(stackName, accountNum, cfg, awss, sess)
+			// #4.1. post deployment configs
+			err = createSSMparam(stackName, cfg, awss)
+			if err != nil {
+				sess.Panic("post cf deployment: failed to createSSMparam: " + err.Error())
+			}
+			k8sCfg, err := awss.GetK8sConfigFromEks(stackName)
+			if err != nil {
+				sess.Panic("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
+			}
+			sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+
 		}()
 		sess.Log("&#128640;CreateCFstack started for stackName=" + stackName)
 
@@ -133,6 +114,42 @@ var TcoAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
+func tco_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) map[string]string {
+	cfg, err := internal.ParseJsonReqBody(r.Body)
+	if err != nil {
+		sess.Panic("ERROR @ Unmarshal r.body, will try configs in cache, btw json.Unmarshal error = " + err.Error())
+		return nil
+	}
+	_, ok := cfg["Region"]
+	if !ok {
+		sess.Log("no Region input, using default: " + internal.Cfg.DefaultRegion_aws)
+		cfg["Region"] = internal.Cfg.DefaultRegion_aws
+	}
+
+	_, ok = cfg["Domain"]
+	if !ok {
+		sess.Panic("missing: Domain")
+	}
+
+	_, ok = cfg["DeploymentName"]
+	if !ok {
+		cfg["DeploymentName"] = "z"
+	}
+
+	_, ok = cfg["Env"]
+	if !ok {
+		sess.Log("no Env input, using dev")
+		cfg["Env"] = "dev"
+	}
+
+	_, ok = cfg["cf_deploymentId"]
+	if !ok {
+		cfg["cf_deploymentId"] = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
+	}
+
+	return cfg
+}
+
 func parseCFparams(cfg map[string]string) ([]*cloudformation.Parameter, error) {
 
 	cfParams := []*cloudformation.Parameter{}
@@ -159,10 +176,9 @@ func parseCFparams(cfg map[string]string) ([]*cloudformation.Parameter, error) {
 	return cfParams, nil
 }
 
-func createSSMparam(stackName string, accountNum string, cfg map[string]string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) error {
+func createSSMparam(stackName string, cfg map[string]string, awss *internal.AwsSvs) error {
 	stacks, err := awss.GetStack(stackName)
 	if err != nil {
-		sess.Log("ERROR @ createSSMparam -- GetStack: " + err.Error())
 		return err
 	}
 	//----------create SSM parameter
@@ -185,7 +201,6 @@ func createSSMparam(stackName string, accountNum string, cfg map[string]string, 
 	paramJSONbytes, _ := json.Marshal(paramMap)
 	err = awss.CreateSSMparameter(stackName, string(paramJSONbytes))
 	if err != nil {
-		sess.Log("ERROR @ createSSMparamFromS3json: " + err.Error())
 		return err
 	}
 	return nil
@@ -197,13 +212,13 @@ func reportCreateCFstackStatus(stackName string, cfg map[string]string, sess *in
 	for strings.Contains(stackStatus, "IN_PROGRESS") {
 		stacks, err := awss.GetStack(stackName)
 		if err != nil {
-			sess.Log("ERROR @ reportCreateCFstackStatus: " + err.Error())
+			sess.Panic("ERROR @ reportCreateCFstackStatus: " + err.Error())
 			return err
 		}
 		stack := *stacks[0]
 		stackStatus = *stack.StackStatus
 		sinceStart := time.Now().UTC().Sub(stack.CreationTime.UTC()).Round(time.Second).String()
-		stackLink := "https://" + region + ".console.aws.amazon.com/cloudformation/home?region=" + region + "#/stacks/stackinfo?stackId=" + *stack.StackId
+		stackLink := "https://" + cfg["Region"] + ".console.aws.amazon.com/cloudformation/home?region=" + cfg["Region"] + "#/stacks/stackinfo?stackId=" + *stack.StackId
 		reportMsg := "<span style=\"color:white\">(" + sinceStart + ")</span> status of CF stack " +
 			"<a href=\"" + stackLink + "\" target=\"_blank\"><b>&#128279;" + stackName + "</b></a>" + " is " + stackStatus
 		if stack.StackStatusReason != nil {

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-yam="../../api/_files/turkey.yam"
+yam="../hc.yam"
 # yam="./test.yam"
 
 cp hc-dev0.yaml $yam

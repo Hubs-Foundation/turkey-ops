@@ -18,17 +18,9 @@ import (
 	"text/template"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/discovery/cached/memory"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/restmapper"
 
 	"main/internal"
 )
@@ -88,7 +80,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
 	sess.Log("&#128640; --- deployment started")
-	err = ssa_k8sChartYaml(cfg.TurkeyId, k8sChartYaml, k8sCfg)
+	err = internal.Ssa_k8sChartYaml(cfg.TurkeyId, k8sChartYaml, k8sCfg)
 	if err != nil {
 		sess.Log("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 		sess.Panic(err.Error())
@@ -114,7 +106,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	sess.Log("&#128024; --- db created: " + cfg.DBname)
 
-	// // #6 load schema to new db .................. doing it on reticulum boot-up for now, trival perf cost for zero dev impact, good tradeoff until we scaled to millions
+	// // #6 load schema to new db .................. doing it on reticulum boot-up for now
 	// retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
 	// if err != nil {
 	// 	sess.Panic(err.Error())
@@ -133,67 +125,6 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// #7 done, (todo) return a json report for portal to consume
 
 })
-
-var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
-
-func ssa_k8sChartYaml(userId, k8sChartYaml string, cfg *rest.Config) error {
-	// Prepare a RESTMapper to find GVR
-	dc, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return err
-	}
-	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
-	// Prepare the dynamic client
-	dyn, err := dynamic.NewForConfig(cfg)
-	if err != nil {
-		return err
-	}
-	for _, k8sYaml := range strings.Split(k8sChartYaml, "\n---\n") {
-		// fmt.Println("\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
-		// fmt.Println(k8sYaml)
-		// fmt.Println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n\n")
-		// continue
-
-		// Decode YAML manifest into unstructured.Unstructured
-		obj := &unstructured.Unstructured{}
-		_, gvk, err := decUnstructured.Decode([]byte(k8sYaml), nil, obj)
-		if err != nil {
-			return err
-		}
-		// Find GVR
-		mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
-		if err != nil {
-			return err
-		}
-		// Obtain REST interface for the GVR
-		var dr dynamic.ResourceInterface
-		if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
-			// namespaced resources should specify the namespace
-			dr = dyn.Resource(mapping.Resource).Namespace(obj.GetNamespace())
-		} else {
-			// for cluster-wide resources
-			dr = dyn.Resource(mapping.Resource)
-		}
-		// Marshal object into JSON
-		data, err := json.Marshal(obj)
-		if err != nil {
-			return err
-		}
-
-		force := true
-		// Create or Update the object with SSA // types.ApplyPatchType indicates SSA. // FieldManager specifies the field owner ID.
-		_, err = dr.Patch(context.TODO(),
-			obj.GetName(), types.ApplyPatchType, data,
-			metav1.PatchOptions{
-				FieldManager: "turkey-userid-" + userId,
-				Force:        &force,
-			})
-		if err != nil {
-			return err
-		}
-	}
-	return err
-}
 
 var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/hc_get" || r.Method != "POST" {

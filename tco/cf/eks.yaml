@@ -40,7 +40,7 @@ Resources:
             Service:
               - ec2.amazonaws.com
           Action: sts:AssumeRole        
-  myCluster:
+  Cluster:
     Type: 'AWS::EKS::Cluster'
     Properties:
       Name: !Ref mainStackName
@@ -52,18 +52,22 @@ Resources:
         - !Ref PublicSubnet2Id
         # SecurityGroupIds:
         #   - sg-6979fe18:
-  EKSNodegroup:
+  Nodegroup:
     Type: 'AWS::EKS::Nodegroup'
     Properties:
-      ClusterName: prod
+      ClusterName: !Sub ${Cluster}
       NodeRole: !GetAtt nodeRole.Arn
       ScalingConfig:
         MinSize: 3
         DesiredSize: 5
         MaxSize: 7
-      Labels:
-        Key1: Value1
-        Key2: Value2
+      # Labels:
+      #   Key1: Value1
+      #   Key2: Value2
       Subnets:
       - !Ref PublicSubnet1Id
       - !Ref PublicSubnet2Id
+
+Outputs:
+  eksArn:
+    Value: !GetAtt Cluster.Arn
