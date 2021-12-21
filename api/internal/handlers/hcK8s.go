@@ -51,8 +51,8 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("bad turkeyCfg: " + err.Error())
 	}
 
-	// #2 render turkey-k8s-chart by apply cfg to turkey.yam
-	t, err := template.ParseFiles("./_files/turkey.yam")
+	// #2 render turkey-k8s-chart by apply cfg to hc.yam
+	t, err := template.ParseFiles("./_files/hc.yam")
 	if err != nil {
 		sess.Panic(err.Error())
 	}
