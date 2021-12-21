@@ -26,7 +26,7 @@ func MakeCfg() {
 	Cfg.Env = getEnv("ENV", "dev")
 	Cfg.Domain = os.Getenv("DOMAIN")
 	Cfg.DBconn = os.Getenv("DB_CONN")
-	Cfg.DBuser = "postgres"
+	Cfg.DBuser = getEnv("DB_USER", "postgres")
 	Cfg.AwsKey = os.Getenv("AWS_KEY")
 	Cfg.AwsSecret = os.Getenv("AWS_SECRET")
 	Cfg.AwsRegion = os.Getenv("AWS_REGION")

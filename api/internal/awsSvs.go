@@ -133,7 +133,7 @@ func (as AwsSvs) DownloadS3item(bucket, key string, f *os.File) error {
 			Key:    aws.String(key),
 		})
 	if err != nil {
-		fmt.Println("---DownloadS3item---err: " + err.Error())
+		fmt.Println("---DownloadS3item---failed ~~~ bucket: " + bucket + ", key: " + key + ", error: " + err.Error())
 		return err
 	}
 	return nil
