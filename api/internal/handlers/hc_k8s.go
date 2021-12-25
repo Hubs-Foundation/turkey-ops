@@ -247,11 +247,14 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 	//making cfg.JWK out of permsKey_in
 	perms_key_str := strings.Replace(cfg.PermsKey, `\\n`, "\n", -1)
 	pb, _ := pem.Decode([]byte(perms_key_str))
-	perms_key, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
-	if err != nil {
-		fmt.Println("x509.ParsePKCS1P rivateKey failed")
+	if pb == nil {
+		fmt.Println("failed to decode perms key")
 		fmt.Println("perms_key_str: " + perms_key_str)
 		fmt.Println("cfg.PermsKey: " + cfg.PermsKey)
+		return cfg, errors.New("failed to decode perms key")
+	}
+	perms_key, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
+	if err != nil {
 		return cfg, err
 	}
 	//for postgrest to auth reticulum requests
