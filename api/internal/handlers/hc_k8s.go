@@ -240,13 +240,13 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 		return cfg, errors.New("bad perms_key: " + cfg.PermsKey)
 	}
 
-	if !strings.HasPrefix(cfg.PermsKey, `-----BEGIN RSA PRIVATE KEY-----\n`) {
-		fmt.Println(`cfg.PermsKey: replacing \n with \\n`)
-		cfg.PermsKey = strings.ReplaceAll(cfg.PermsKey, `\n`, `\\n`)
-	}
+	// if !strings.HasPrefix(cfg.PermsKey, `-----BEGIN RSA PRIVATE KEY-----\n`) {
+	// 	fmt.Println(`cfg.PermsKey: replacing \n with \\n`)
+	// 	cfg.PermsKey = strings.ReplaceAll(cfg.PermsKey, `\n`, `\\n`)
+	// }
 
 	//making cfg.JWK out of cfg.PermsKey ... pem.Decode needs "real" line breakers in the "pem byte array"
-	perms_key_str := strings.Replace(cfg.PermsKey, `\n`, "\n", -1)
+	perms_key_str := strings.Replace(cfg.PermsKey, `\\n`, "\n", -1)
 	pb, _ := pem.Decode([]byte(perms_key_str))
 	if pb == nil {
 		fmt.Println("failed to decode perms key")
