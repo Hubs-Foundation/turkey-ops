@@ -1,9 +1,37 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: hc-dev0
+  name: hc-{{.Subdomain}}
   labels:
-    TurkeyId: someString
+    TurkeyId: {{.TurkeyId}}
+---
+########################################################################
+###################### configs #########################################
+########################################################################  
+apiVersion: v1
+kind: Secret
+metadata:
+  name: configs
+  namespace: hc-{{.Subdomain}}
+stringData:
+  NODE_COOKIE: foobar
+  SUB_DOMAIN: {{.Subdomain}}
+  DOMAIN: {{.Domain}}
+  DB_USER: postgres
+  DB_PASS: itjfHE4HuS
+  DB_NAME: {{.DBname}}
+  DB_HOST: pgbouncer.turkey-services
+  DB_HOST_T: pgbouncer-t.turkey-services
+  GUARDIAN_KEY: strongSecret#1
+  PERMS_KEY: {{.PermsKey}}
+  PHX_KEY: strongSecret#2
+  SMTP_SERVER: email-smtp.us-east-1.amazonaws.com
+  SMTP_PORT: "25"
+  SMTP_USER: AKIAYEJRSWRAQUI7U3J4
+  SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
+  ADM_EMAIL: {{.UserEmail}}
+  PGRST_DB_URI: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/{{.DBname}}
+  PGRST_JWT_SECRET: "{{.JWK}}"
 ---
 ######################################################################################
 ###################################### ingress #######################################
@@ -12,20 +40,20 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: turkey-https
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   entryPoints:
     - https
   routes:
   - kind: Rule
-    match: Host(`dev0.myhubs.net`) && PathPrefix(`/`)
+    match: Host(`{{.Subdomain}}.{{.Domain}}`) && PathPrefix(`/`)
     services:
     - kind: Service
       name: ret
       passHostHeader: true
       port: 4000
   - kind: Rule
-    match: (Host(`dev0-assets.myhubs.net`) || Host(`dev0-cors.myhubs.net`)) && (PathPrefix(`/files/`) || PathPrefix(`/http`))
+    match: (Host(`{{.Subdomain}}-assets.{{.Domain}}`) || Host(`{{.Subdomain}}-cors.{{.Domain}}`)) && (PathPrefix(`/files/`) || PathPrefix(`/http`))
     services:
     - kind: Service
       name: ret
@@ -33,16 +61,16 @@ spec:
       port: 4000
     middlewares:
     - name: ret-cors
-      namespace: hc-dev0
+      namespace: hc-{{.Subdomain}}
   - kind: Rule
-    match: (Host(`dev0-assets.myhubs.net`) || Host(`dev0-cors.myhubs.net`)) && PathPrefix(`/hubs`)
+    match: (Host(`{{.Subdomain}}-assets.{{.Domain}}`) || Host(`{{.Subdomain}}-cors.{{.Domain}}`)) && PathPrefix(`/hubs`)
     services:
     - kind: Service
       name: hubs
       passHostHeader: true
       port: 8080
   - kind: Rule
-    match: (Host(`dev0-assets.myhubs.net`) || Host(`dev0-cors.myhubs.net`)) && PathPrefix(`/spoke`)
+    match: (Host(`{{.Subdomain}}-assets.{{.Domain}}`) || Host(`{{.Subdomain}}-cors.{{.Domain}}`)) && PathPrefix(`/spoke`)
     services:
     - kind: Service
       name: spoke
@@ -53,39 +81,11 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: ret-cors
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   headers:
     customResponseHeaders:
       Access-Control-Allow-Origin: "*"
----
-########################################################################
-###################### configs #########################################
-########################################################################  
-apiVersion: v1
-kind: Secret
-metadata:
-  name: configs
-  namespace: hc-dev0
-stringData:
-  NODE_COOKIE: foobar
-  SUB_DOMAIN: dev0
-  DOMAIN: myhubs.net
-  DB_USER: postgres
-  DB_PASS: itjfHE4HuS
-  DB_NAME: ret_dev0
-  DB_HOST: pgbouncer.turkey-services
-  DB_HOST_T: pgbouncer-t.turkey-services
-  GUARDIAN_KEY: strongSecret#1
-  PERMS_KEY: -----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBAAKCAQEA3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf\\n/otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD+F\\noHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD+UfOCMctlwudNSs+AkmiP\\nSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj+Oa/ZQVH44lmPI9Ih0OakXWpIfOob3X0\\nXqcdywlMVI2hzBR3JNodRjyEz33p6E//lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIa\\ncr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqwIDAQABAoIBAQCgwy/hbK9wo3MU\\nTNRrdzaTob6b/l1jfanUgRYEYl/WyYAu9ir0JhcptVwERmYGNVIoBRQfQClaSHjo\\n0L1/b74aO5oe1rR8Yhh+yL1gWz9gRT0hyEr7paswkkhsmiY7+3m5rxsrfinlM+6+\\nJ7dsSi3U0ofOBbZ4kvAeEz/Y3OaIOUbQraP312hQnTVQ3kp7HNi9GcLK9rq2mASu\\nO0DxDHXdZMsRN1K4tOKRZDsKGAEfL2jKN7+ndvsDhb4mAQaVKM8iw+g5O4HDA8uB\\nmwycaWhjilZWEyUyqvXE8tOMLS59sq6i1qrf8zIMWDOizebF/wnrQ42kzt5kQ0ZJ\\nwCPOC3sxAoGBAO6KfWr6WsXD6phnjVXXi+1j3azRKJGQorwQ6K3bXmISdlahngas\\nmBGBmI7jYTrPPeXAHUbARo/zLcbuGCf1sPipkAHYVC8f9aUbA205BREB15jNyXr3\\nXzhR/ronbn0VeR9iRua2FZjVChz22fdz9MvRJiinP8agYIQ4LovDk3lzAoGBAO1E\\nrZpOuv3TMQffPaPemWuvMYfZLgx2/AklgYqSoi683vid9HEEAdVzNWMRrOg0w5EH\\nWMEMPwJTYvy3xIgcFmezk5RMHTX2J32JzDJ8Y/uGf1wMrdkt3LkPRfuGepEDDtBa\\nrUSO/MeGXLu5p8QByUZkvTLJ4rJwF2HZBUehrm3pAoGBANg1+tveNCyRGbAuG/M0\\nvgXbwO+FXWojWP1xrhT3gyMNbOm079FI20Ty3F6XRmfRtF7stRyN5udPGaz33jlJ\\n/rBEsNybQiK8qyCNzZtQVYFG1C4SSI8GbO5Vk7cTSphhwDlsEKvJWuX+I36BWKts\\nFPQwjI/ImIvmjdUKP1Y7XQ51AoGBALWa5Y3ASRvStCqkUlfFH4TuuWiTcM2VnN+b\\nV4WrKnu/kKKWs+x09rpbzjcf5kptaGrvRp2sM+Yh0RhByCmt5fBF4OWXRJxy5lMO\\nT78supJgpcbc5YvfsJvs9tHIYrPvtT0AyrI5B33od74wIhrCiz5YCQCAygVuCleY\\ndpQXSp1RAoGBAKjasot7y/ErVxq7LIpGgoH+XTxjvMsj1JwlMeK0g3sjnun4g4oI\\nPBtpER9QaSFi2OeYPklJ2g2yvFcVzj/pFk/n1Zd9pWnbU+JIXBYaHTjmktLeZHsb\\nrTEKATo+Y1Alrhpr/z7gXXDfuKKXHkVRiper1YRAxELoLJB8r7LWeuIb\\n-----END RSA PRIVATE KEY-----
-  PHX_KEY: strongSecret#2
-  SMTP_SERVER: email-smtp.us-east-1.amazonaws.com
-  SMTP_PORT: "25"
-  SMTP_USER: AKIAYEJRSWRAQUI7U3J4
-  SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
-  ADM_EMAIL: gtan@mozilla.com
-  PGRST_DB_URI: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/ret_dev0
-  PGRST_JWT_SECRET: "{\"e\":\"AQAB\",\"kty\":\"RSA\",\"n\":\"3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf_otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD-FoHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD-UfOCMctlwudNSs-AkmiPSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj-Oa_ZQVH44lmPI9Ih0OakXWpIfOob3X0XqcdywlMVI2hzBR3JNodRjyEz33p6E__lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIacr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqw\"}"
 ---
 ########################################################################
 ###################### reticulum #######################################
@@ -93,8 +93,8 @@ stringData:
 apiVersion: v1
 kind: PersistentVolumeClaim # no plan to polluting the cluster with custom k8s operator managed storageClass so aws' gp2/ebs will be used
 metadata:
-  name: dev0-pvc
-  namespace: hc-dev0
+  name: {{.Subdomain}}-pvc
+  namespace: hc-{{.Subdomain}}
 spec:
   accessModes:
     - ReadWriteOnce # only mode supported by the cheap and clean gp2 / ebs on aws. effectively preventing deployment/pod scaling -- not needed after we made ret stateless with storage redesign
@@ -106,7 +106,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: reticulum
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1
   selector:
@@ -126,7 +126,7 @@ spec:
       volumes:
       - name: storage 
         persistentVolumeClaim:
-          claimName: dev0-pvc
+          claimName: {{.Subdomain}}-pvc
       containers:
       - name: reticulum
         image: mozillareality/ret:58
@@ -232,7 +232,7 @@ spec:
         - name: turkeyCfg_ITA_HOST
           value: http://turkey-api.turkey-services
         - name: turkeyCfg_IMG_PROXY
-          value: http://nearspark.hc-dev0
+          value: http://nearspark.hc-{{.Subdomain}}
         - name: turkeyCfg_HEADER_AUTHZ
           value: "duuuuuuuuuuuuuuuuuuuuuuuuumy"
         - name: turkeyCfg_YTDL_HOST
@@ -241,7 +241,7 @@ spec:
         #   value: "http://turkey-api.turkey-services:888/ytdl"            
         livenessProbe:
           httpGet:
-            path: "http://reticulum.dev0"
+            path: "http://reticulum.{{.Subdomain}}"
             port: 1111
           initialDelaySeconds: 20
           timeoutSeconds: 1
@@ -285,7 +285,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ret
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   clusterIP: None
   ports:
@@ -302,7 +302,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hubs
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1 
   selector:
@@ -339,13 +339,13 @@ spec:
           - name: turkeyCfg_thumbnail_server
             value: notyet
           - name: turkeyCfg_base_assets_path
-            value: https://dev0-assets.myhubs.net/hubs/
+            value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
           - name: turkeyCfg_non_cors_proxy_domains
-            value: dev0.myhubs.net,dev0-assets.myhubs.net
+            value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
           - name: turkeyCfg_reticulum_server
-            value: dev0.myhubs.net
+            value: {{.Subdomain}}.{{.Domain}}
           - name: turkeyCfg_cors_proxy_server
-            value: dev0-cors.myhubs.net
+            value: {{.Subdomain}}-cors.{{.Domain}}
           - name: turkeyCfg_ga_tracking_id
             value: 
           - name: turkeyCfg_shortlink_domain
@@ -356,7 +356,7 @@ spec:
             value: 
           livenessProbe:
             httpGet:
-              path: "http://hubs.dev0"
+              path: "http://hubs.{{.Subdomain}}"
               port: 1111
             initialDelaySeconds: 20
             timeoutSeconds: 1
@@ -373,7 +373,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: hubs
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   clusterIP: None
   ports:
@@ -390,7 +390,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spoke
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1 
   selector:
@@ -423,26 +423,26 @@ spec:
                 name: configs
                 key: DOMAIN
           - name: turkeyCfg_base_assets_path
-            value: https://dev0-assets.myhubs.net/spoke/
+            value: https://{{.Subdomain}}-assets.{{.Domain}}/spoke/
           - name: turkeyCfg_cors_proxy_server
-            value: dev0-cors.myhubs.net
+            value: {{.Subdomain}}-cors.{{.Domain}}
           - name: turkeyCfg_ga_tracking_id
             value: 
           - name: turkeyCfg_hubs_server
-            value: dev0.myhubs.net
+            value: {{.Subdomain}}.{{.Domain}}
           - name: turkeyCfg_is_moz
             value: "false"
           - name: turkeyCfg_non_cors_proxy_domains
-            value: dev0.myhubs.net,dev0-assets.myhubs.net
+            value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
           - name: turkeyCfg_reticulum_server
-            value: dev0.myhubs.net
+            value: {{.Subdomain}}.{{.Domain}}
           - name: turkeyCfg_sentry_dsn
             value: 
           - name: turkeyCfg_thumbnail_server
-            value: nearspark.hc-dev0:5000
+            value: nearspark.hc-{{.Subdomain}}:5000
           livenessProbe:
             httpGet:
-              path: "http://spoke.dev0"
+              path: "http://spoke.{{.Subdomain}}"
               port: 1111
             initialDelaySeconds: 20
             timeoutSeconds: 1
@@ -459,7 +459,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: spoke
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   clusterIP: None
   ports:
@@ -476,7 +476,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nearspark
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1 
   selector:
@@ -504,7 +504,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nearspark
-  namespace: hc-dev0
+  namespace: hc-{{.Subdomain}}
 spec:
   ports:
   - name: http

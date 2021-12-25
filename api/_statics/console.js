@@ -35,7 +35,7 @@ document.getElementById("cfgEx_del").addEventListener("click", cfgEx_delClicked)
 function cfgEx_delClicked(){
   document.getElementById("cfg").value = `{
   "turkeyid": "someString",
-  "subdomain": "subdomain1"
+  "subdomain": "changeMe"
 }`
 }
 
@@ -43,7 +43,7 @@ document.getElementById("cfgEx_deploy").addEventListener("click", cfgEx_deployCl
 function cfgEx_deployClicked(){
   document.getElementById("cfg").value = `{
   "turkeyid": "someString",
-  "subdomain": "subdomain1"
+  "subdomain": "changeMe"
 }`
 }
 
@@ -87,7 +87,7 @@ function delDbClicked() {
   xhttp.send(cfg);
 }
 //-----------
-document.getElementById("tcoAws").addEventListener("click", getBtnClicked);
+document.getElementById("turkeyAws").addEventListener("click", getBtnClicked);
 function getBtnClicked() {
   cfg=document.getElementById("cluster_cfg").value
   var xhttp = new XMLHttpRequest(); res=""

@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -124,7 +125,7 @@ func (as AwsSvs) S3WaitForBucket(bucket string, timeoutSec int) error {
 	return nil
 }
 
-func (as AwsSvs) DownloadS3item(bucket, key string, f *os.File) error {
+func (as AwsSvs) S3Download_file(bucket, key string, f *os.File) error {
 	downloader := s3manager.NewDownloader(as.Sess)
 	_, err := downloader.Download(
 		f,
@@ -137,6 +138,18 @@ func (as AwsSvs) DownloadS3item(bucket, key string, f *os.File) error {
 		return err
 	}
 	return nil
+}
+func (as AwsSvs) S3Download_string(bucket, key string) (string, error) {
+	f, _ := ioutil.TempFile("./", "hubs-tmp-")
+	err := as.S3Download_file(bucket, key, f)
+	if err != nil {
+		return "", err
+	}
+	fBytes, err := ioutil.ReadFile(f.Name())
+	if err != nil {
+		return "", err
+	}
+	return string(fBytes), nil
 }
 
 func (as AwsSvs) S3UploadFile(f *os.File, bucket, bktKey string) error {

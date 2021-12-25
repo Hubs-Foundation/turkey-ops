@@ -1,9 +1,11 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"strings"
+	"text/template"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,7 +22,7 @@ import (
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
-func Ssa_k8sChartYaml(userId, k8sChartYaml string, cfg *rest.Config) error {
+func Ssa_k8sChartYaml(ssa_userId, k8sChartYaml string, cfg *rest.Config) error {
 	// Prepare a RESTMapper to find GVR
 	dc, err := discovery.NewDiscoveryClientForConfig(cfg)
 	if err != nil {
@@ -69,7 +71,7 @@ func Ssa_k8sChartYaml(userId, k8sChartYaml string, cfg *rest.Config) error {
 		_, err = dr.Patch(context.TODO(),
 			obj.GetName(), types.ApplyPatchType, data,
 			metav1.PatchOptions{
-				FieldManager: "turkey-userid-" + userId,
+				FieldManager: "ssa_userid-" + ssa_userId,
 				Force:        &force,
 			})
 		if err != nil {
@@ -77,4 +79,19 @@ func Ssa_k8sChartYaml(userId, k8sChartYaml string, cfg *rest.Config) error {
 		}
 	}
 	return err
+}
+
+func K8s_render_yams(yams []string, params interface{}) ([]string, error) {
+	var yamls []string
+	for _, yam := range yams {
+		t, err := template.New("yam").Parse(yam)
+		if err != nil {
+			return yamls, err
+		}
+		var buf bytes.Buffer
+		t.Execute(&buf, params)
+		yamls = append(yamls, buf.String())
+	}
+
+	return yamls, nil
 }

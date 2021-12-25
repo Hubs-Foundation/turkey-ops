@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 
 	"net/http"
 	"strconv"
@@ -25,16 +24,18 @@ import (
 	"main/internal"
 )
 
-type turkeyCfg struct {
-	Key       string `json:"key"`
-	TurkeyId  string `json:"turkeyid"`
+type hcCfg struct {
+	//required input
 	Subdomain string `json:"subdomain"`
-	Domain    string `json:"domain"`
 	Tier      string `json:"tier"`
 	UserEmail string `json:"useremail"`
-	DBname    string `json:"dbname"`
-	PermsKey  string `json:"permskey"`
-	JWK       string `json:"jwk"`
+	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
+	Domain   string `json:"domain"`
+	DBname   string `json:"dbname"`
+	PermsKey string `json:"permskey"`
+	//produced here
+	TurkeyId string `json:"turkeyid"` // retrieved from db for UserEmail  fallback to calculated
+	JWK      string `json:"jwk"`      // encoded from PermsKey.public
 }
 
 var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -46,9 +47,9 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 
 	// #1 prepare configs
-	cfg, err := makeCfg(r)
+	hcCfg, err := makehcCfg(r)
 	if err != nil {
-		sess.Log("bad turkeyCfg: " + err.Error())
+		sess.Log("bad hcCfg: " + err.Error())
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
@@ -57,12 +58,13 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Panic(err.Error())
 	}
 	var buf bytes.Buffer
-	t.Execute(&buf, cfg)
+	t.Execute(&buf, hcCfg)
 	k8sChartYaml := buf.String()
+	// todo -- sanity check k8sChartYaml?
 
 	// #2.5 dry run option
-	if cfg.Tier == "dryrun" {
-		w.Header().Set("Content-Disposition", "attachment; filename="+cfg.Subdomain+".yaml")
+	if hcCfg.Tier == "dryrun" {
+		w.Header().Set("Content-Disposition", "attachment; filename="+hcCfg.Subdomain+".yaml")
 		w.Header().Set("Content-Type", "text/plain")
 		io.Copy(w, strings.NewReader(k8sChartYaml))
 		return
@@ -80,31 +82,31 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
 	sess.Log("&#128640; --- deployment started")
-	err = internal.Ssa_k8sChartYaml(cfg.TurkeyId, k8sChartYaml, k8sCfg)
+	err = internal.Ssa_k8sChartYaml(hcCfg.TurkeyId, k8sChartYaml, k8sCfg)
 	if err != nil {
 		sess.Log("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 		sess.Panic(err.Error())
 	}
 
 	// quality of life improvement for /console people
-	skipadminLink := "https://" + cfg.Subdomain + "." + cfg.Domain + "?skipadmin"
+	skipadminLink := "https://" + hcCfg.Subdomain + "." + hcCfg.Domain + "?skipadmin"
 	sess.Log("&#128640; --- deployment completed for: <a href=\"" +
-		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + cfg.TurkeyId + ":" + cfg.Subdomain + "</b></a>")
-	sess.Log("&#128231; --- admin email: " + cfg.UserEmail)
+		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + hcCfg.TurkeyId + ":" + hcCfg.Subdomain + "</b></a>")
+	sess.Log("&#128231; --- admin email: " + hcCfg.UserEmail)
 
 	// #5 create db
-	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+cfg.DBname+"\"")
+	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+hcCfg.DBname+"\"")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			sess.Log("db already exists")
-			internal.GetLogger().Warn("db <" + cfg.DBname + "> already exists")
+			internal.GetLogger().Warn("db <" + hcCfg.DBname + "> already exists")
 			return
 		} else {
 			sess.Log("ERROR --- DB.conn.Exec FAILED !!! because" + fmt.Sprint(err))
 			sess.Panic(err.Error())
 		}
 	}
-	sess.Log("&#128024; --- db created: " + cfg.DBname)
+	sess.Log("&#128024; --- db created: " + hcCfg.DBname)
 
 	// // #6 load schema to new db .................. doing it on reticulum boot-up for now
 	// retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
@@ -133,9 +135,9 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	sess := internal.GetSession(r.Cookie)
 
-	cfg, err := makeCfg(r)
+	cfg, err := makehcCfg(r)
 	if err != nil {
-		sess.Log("bad turkeyCfg: " + err.Error())
+		sess.Log("bad hcCfg: " + err.Error())
 		return
 	}
 
@@ -193,8 +195,8 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
-func makeCfg(r *http.Request) (turkeyCfg, error) {
-	var cfg turkeyCfg
+func makehcCfg(r *http.Request) (hcCfg, error) {
+	var cfg hcCfg
 
 	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
@@ -205,13 +207,21 @@ func makeCfg(r *http.Request) (turkeyCfg, error) {
 	//make cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
-		fmt.Println("bad turkeyCfg: " + string(rBodyBytes))
+		fmt.Println("bad hcCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
 
-	// userid is required
+	//use authenticated useremail
+	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail")
+	if cfg.UserEmail == "" { //verify format?
+		return cfg, errors.New("bad input, missing UserEmail or X-Forwarded-UserEmail")
+		// cfg.UserEmail = "fooooo@barrrr.com"
+	}
+
+	// TurkeyId is required
 	if cfg.TurkeyId == "" {
-		return cfg, errors.New("ERROR bad turkeyCfg.UserId")
+		cfg.TurkeyId = cfg.UserEmail
+		return cfg, errors.New("ERROR bad hcCfg.TurkeyId")
 	}
 	cfg.Domain = internal.Cfg.Domain
 	//default Tier is free
@@ -223,20 +233,19 @@ func makeCfg(r *http.Request) (turkeyCfg, error) {
 		cfg.Subdomain = cfg.TurkeyId + "-" + strconv.FormatInt(time.Now().Unix()-1626102245, 36)
 	}
 	cfg.DBname = "ret_" + strings.ReplaceAll(cfg.Subdomain, "-", "_")
-	//use authenticated useremail
-	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail")
-	if cfg.UserEmail == "" {
-		// return cfg, errors.New("failed to get cfg.UserEmail")
-		cfg.UserEmail = "fooooo@barrrr.com"
-	}
 
 	//cluster wide private key for all reticulum authentications
-	permskey_in := os.Getenv("PERMS_KEY")
-	if permskey_in == "" {
-		return cfg, errors.New("bad perms_key")
+	cfg.PermsKey = internal.Cfg.PermsKey
+	if !strings.HasPrefix(cfg.PermsKey, `-----BEGIN RSA PRIVATE KEY-----`) {
+		return cfg, errors.New("bad perms_key: " + cfg.PermsKey)
 	}
-	cfg.PermsKey = strings.ReplaceAll(permskey_in, `\n`, `\\n`)
-	perms_key_str := strings.Replace(permskey_in, `\n`, "\n", -1)
+
+	if !strings.HasPrefix(cfg.PermsKey, `-----BEGIN RSA PRIVATE KEY-----\n`) {
+		cfg.PermsKey = strings.ReplaceAll(cfg.PermsKey, `\n`, `\\n`)
+	}
+
+	//making cfg.JWK out of permsKey_in
+	perms_key_str := strings.Replace(cfg.PermsKey, `\\n`, "\n", -1)
 	pb, _ := pem.Decode([]byte(perms_key_str))
 	perms_key, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
 	if err != nil {
@@ -258,9 +267,9 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess := internal.GetSession(r.Cookie)
-	cfg, err := makeCfg(r)
+	cfg, err := makehcCfg(r)
 	if err != nil {
-		sess.Panic("bad turkeyCfg: " + err.Error())
+		sess.Panic("bad hcCfg: " + err.Error())
 		return
 	}
 
@@ -284,7 +293,7 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	sess.Log("&#128024 deleted db: " + cfg.DBname)
 })
 
-func pg_kick_all(cfg turkeyCfg, sess *internal.CacheBoxSessData) error {
+func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
 	sqatterCount := -1
 	tries := 0
 	for sqatterCount != 0 && tries < 3 {
@@ -310,9 +319,9 @@ var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sess := internal.GetSession(r.Cookie)
-	cfg, err := makeCfg(r)
+	cfg, err := makehcCfg(r)
 	if err != nil {
-		sess.Log("bad turkeyCfg: " + err.Error())
+		sess.Log("bad hcCfg: " + err.Error())
 		return
 	}
 

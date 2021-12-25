@@ -98,7 +98,7 @@ func DeployHubsAssets(awss *AwsSvs, metaMap map[string]string, turkeycfgBucket, 
 				isCss := ext == ".css"
 				if isHtml || isCss {
 					f, _ := ioutil.TempFile("./", "hubs-tmp-")
-					awss.DownloadS3item("turkeycfg", key, f)
+					awss.S3Download_file("turkeycfg", key, f)
 					fBytes, _ := ioutil.ReadFile(f.Name())
 					fStr := string(fBytes)
 					fStr = hubsCfg_baseAssetsPath(fStr, metaMap["base_assets_path"])

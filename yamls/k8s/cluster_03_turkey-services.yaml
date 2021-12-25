@@ -1,0 +1,430 @@
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: turkey-services
+---
+########################################################################
+###################### configs #########################################
+########################################################################  
+apiVersion: v1
+kind: Secret
+metadata:
+  name: configs
+  namespace: turkey-services
+stringData:
+  DB_USER: postgres
+  # OAUTH_CLIENT_ID_GOOGLE: secret
+  # OAUTH_CLIENT_SECRET_GOOGLE: secret
+  OAUTH_CLIENT_ID_FXA: secret
+  OAUTH_CLIENT_SECRET_FXA: secret    
+  COOKIE_SECRET: secret
+  DB_CONN: secret
+  AWS_KEY: secret
+  AWS_SECRET: secret
+  AWS_REGION: secret
+  PERMS_KEY: secret
+  DB_PASS: secret
+  DB_HOST: secret  
+# stringData:
+#   DB_USER: postgres
+#   OAUTH_CLIENT_ID_GOOGLE: placeholderrrrrrrrrrrrrrrrrrrr
+#   OAUTH_CLIENT_SECRET_GOOGLE: placeholderrrrrrrrrrrrrrrrrrrr
+#   OAUTH_CLIENT_ID_FXA: placeholderrrrrrrrrrrrrrrrrrrr
+#   OAUTH_CLIENT_SECRET_FXA: placeholderrrrrrrrrrrrrrrrrrrr    
+#   COOKIE_SECRET: a-random-string-to-sign-auth-cookies
+#   DB_CONN: postgres://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+#   AWS_KEY: AKIAYEJRSWRAQSAMLSGX
+#   AWS_SECRET: placeholderrrrrrrrrrrrrrrrrrrr
+#   AWS_REGION: placeholderrrrrrrrrrrrrrrrrrrr
+#   PERMS_KEY: -----BEGIN RSA PRIVATE KEY-----placeholderrrrrrrrrrrrrrrrrrrr-----END RSA PRIVATE KEY-----
+#   DB_PASS: itjfHE4HuS
+#   DB_HOST: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+---
+####################################################################################
+####################################### auth #######################################
+####################################################################################  
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: turkey-auth
+  namespace: turkey-services
+spec:
+  entryPoints:
+    - https
+  routes:
+  - kind: Rule
+    match: Host(`auth.myhubs.net`) && PathPrefix(`/`)
+    # middlewares:
+    # - name: turkeyauth
+    #   namespace: turkey-services
+    services:
+    - kind: Service
+      name: auth
+      passHostHeader: true
+      port: 9001
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: turkeyauth
+  namespace: turkey-services
+spec:
+  forwardAuth:
+    address: http://auth.turkey-services:9001/authn
+    authResponseHeaders:
+      - X-Forwarded-User
+      - X-Forwarded-UserEmail
+      - X-Forwarded-UserPicture
+    trustForwardHeader: true        
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  namespace: turkey-services
+  labels:
+    app: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      # terminationGracePeriodSeconds: 3
+      containers:
+      - name: turkeyauth
+        image: mozillareality/turkeyauth:86
+        imagePullPolicy: IfNotPresent        
+        env:
+        - name: trustedClients  # must end with ','
+          value: https://api.myhubs.net/console,http://localhost:3030,
+        - name: COOKIE_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: COOKIE_SECRET
+        # - name: trusted_IPs
+        #   value: 73.53.171.231,107.137.66.24
+        - name: oauthClientId_google
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: OAUTH_CLIENT_ID_GOOGLE          
+        - name: oauthClientSecret_google
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: OAUTH_CLIENT_SECRET_GOOGLE          
+        - name: oauthClientId_fxa
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: OAUTH_CLIENT_ID_FXA
+        - name: oauthClientSecret_fxa
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: OAUTH_CLIENT_SECRET_FXA
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1        
+          limits:
+            memory: 2Gi
+            cpu: 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  namespace: turkey-services
+  labels:
+    app: auth
+spec:
+  type: ClusterIP
+  selector:
+    app: auth
+  ports:
+  - name: http
+    port: 9001
+    targetPort: 9001
+---
+####################################################################################
+######################################### api ######################################
+####################################################################################
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: turkey-api
+  namespace: turkey-services
+spec:
+  entryPoints:
+    - https
+  routes:  
+  - kind: Rule
+    match: Host(`api.myhubs.net`) && PathPrefix(`/`)
+    middlewares:
+    - name: turkeyauth
+      namespace: turkey-services
+    services:
+    - kind: Service
+      name: turkey-api
+      passHostHeader: true
+      port: 888
+  - kind: Rule
+    match: Host(`api.myhubs.net`) && PathPrefix(`/webhooks/`)
+    services:
+    - kind: Service
+      name: turkey-api
+      passHostHeader: true
+      port: 888
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: regcred
+  namespace: turkey-services
+data:
+  .dockerconfigjson: ewoJImF1dGhzIjogewoJCSJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOiB7CgkJCSJhdXRoIjogImJXOTZhV3hzWVhKbFlXeHBkSGs2Y21Wd2IzSjBJR0psWjJGMElIWmxjM1J0Wlc1MElHRnNkbVZ2YkdGeUlHTnNiM1JvIgoJCX0KCX0KfQ==
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: turkey-api
+  namespace: turkey-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turkey-api
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: turkey-api
+    spec:
+      serviceAccountName: api-sa
+      containers:
+      - name: turkey-orc
+        image: mozillareality/turkeyapi:105
+        imagePullPolicy: IfNotPresent        
+        env:
+        - name: DOMAIN
+          value: myhubs.net
+        - name: DB_CONN
+          # value: postgres://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_CONN          
+        - name: DB_USER
+          # value: postgres
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_USER           
+        - name: AWS_KEY
+          # value: AKIAYEJRSWRAQSAMLSGX
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_KEY           
+        - name: AWS_SECRET
+          # value: Qsl4r/h7pxoDE1CMaH5mDtPmmcpjkY2+NQMMUWPD
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_SECRET           
+        - name: AWS_REGION
+          # value: us-east-1
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_REGION           
+        - name: PERMS_KEY
+          # value: -----BEGIN RSA PRIVATE KEY-----\nMIIEpgIBAAKCAQEA3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf\n/otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD+F\noHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD+UfOCMctlwudNSs+AkmiP\nSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj+Oa/ZQVH44lmPI9Ih0OakXWpIfOob3X0\nXqcdywlMVI2hzBR3JNodRjyEz33p6E//lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIa\ncr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqwIDAQABAoIBAQCgwy/hbK9wo3MU\nTNRrdzaTob6b/l1jfanUgRYEYl/WyYAu9ir0JhcptVwERmYGNVIoBRQfQClaSHjo\n0L1/b74aO5oe1rR8Yhh+yL1gWz9gRT0hyEr7paswkkhsmiY7+3m5rxsrfinlM+6+\nJ7dsSi3U0ofOBbZ4kvAeEz/Y3OaIOUbQraP312hQnTVQ3kp7HNi9GcLK9rq2mASu\nO0DxDHXdZMsRN1K4tOKRZDsKGAEfL2jKN7+ndvsDhb4mAQaVKM8iw+g5O4HDA8uB\nmwycaWhjilZWEyUyqvXE8tOMLS59sq6i1qrf8zIMWDOizebF/wnrQ42kzt5kQ0ZJ\nwCPOC3sxAoGBAO6KfWr6WsXD6phnjVXXi+1j3azRKJGQorwQ6K3bXmISdlahngas\nmBGBmI7jYTrPPeXAHUbARo/zLcbuGCf1sPipkAHYVC8f9aUbA205BREB15jNyXr3\nXzhR/ronbn0VeR9iRua2FZjVChz22fdz9MvRJiinP8agYIQ4LovDk3lzAoGBAO1E\nrZpOuv3TMQffPaPemWuvMYfZLgx2/AklgYqSoi683vid9HEEAdVzNWMRrOg0w5EH\nWMEMPwJTYvy3xIgcFmezk5RMHTX2J32JzDJ8Y/uGf1wMrdkt3LkPRfuGepEDDtBa\nrUSO/MeGXLu5p8QByUZkvTLJ4rJwF2HZBUehrm3pAoGBANg1+tveNCyRGbAuG/M0\nvgXbwO+FXWojWP1xrhT3gyMNbOm079FI20Ty3F6XRmfRtF7stRyN5udPGaz33jlJ\n/rBEsNybQiK8qyCNzZtQVYFG1C4SSI8GbO5Vk7cTSphhwDlsEKvJWuX+I36BWKts\nFPQwjI/ImIvmjdUKP1Y7XQ51AoGBALWa5Y3ASRvStCqkUlfFH4TuuWiTcM2VnN+b\nV4WrKnu/kKKWs+x09rpbzjcf5kptaGrvRp2sM+Yh0RhByCmt5fBF4OWXRJxy5lMO\nT78supJgpcbc5YvfsJvs9tHIYrPvtT0AyrI5B33od74wIhrCiz5YCQCAygVuCleY\ndpQXSp1RAoGBAKjasot7y/ErVxq7LIpGgoH+XTxjvMsj1JwlMeK0g3sjnun4g4oI\nPBtpER9QaSFi2OeYPklJ2g2yvFcVzj/pFk/n1Zd9pWnbU+JIXBYaHTjmktLeZHsb\nrTEKATo+Y1Alrhpr/z7gXXDfuKKXHkVRiper1YRAxELoLJB8r7LWeuIb\n-----END RSA PRIVATE KEY-----
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PERMS_KEY           
+        livenessProbe:
+          httpGet:
+            path: "http://turkey-api.turkey-services/Healthz"
+            port: 888
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1        
+          limits:
+            memory: 2Gi
+            cpu: 1
+      imagePullSecrets:
+      - name: regcred      
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: turkey-api
+  namespace: turkey-services
+spec:
+  ports:
+  - name: http
+    port: 888
+    targetPort: 888
+  selector:
+    app: turkey-api
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api-sa
+  namespace: turkey-services
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: api-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin  
+subjects:
+- kind: ServiceAccount
+  name: api-sa
+  namespace: turkey-services
+---
+####################################################################################
+################################### pgbouncer ######################################
+####################################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  namespace: turkey-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: pgbouncer
+    spec:
+      containers:
+      - image: mozillareality/pgbouncer:6
+        imagePullPolicy: IfNotPresent
+        name: pgbouncer
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_USER          
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_PASS
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_HOST          
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1         
+          limits:
+            memory: 2Gi
+            cpu: 1            
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+  namespace: turkey-services
+spec:
+  ports:
+  - name: http
+    port: 5432
+    targetPort: 5432
+  selector:
+    app: pgbouncer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-t
+  namespace: turkey-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-t
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-t
+    spec:
+      containers:
+      - image: mozillareality/pgbouncer:6
+        imagePullPolicy: IfNotPresent
+        name: pgbouncer-t
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_USER          
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_PASS
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_HOST   
+        - name: POOL_MODE
+          value: transaction
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1        
+          limits:
+            memory: 2Gi
+            cpu: 1                       
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-t
+  namespace: turkey-services
+spec:
+  ports:
+  - name: http
+    port: 5432
+    targetPort: 5432
+  selector:
+    app: pgbouncer-t
+
+
+
+
+
