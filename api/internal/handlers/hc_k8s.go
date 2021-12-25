@@ -49,7 +49,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// #1 prepare configs
 	hcCfg, err := makehcCfg(r)
 	if err != nil {
-		sess.Log("bad hcCfg: " + err.Error())
+		sess.Panic("bad hcCfg: " + err.Error())
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
@@ -245,12 +245,12 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 	}
 
 	//making cfg.JWK out of permsKey_in
-	perms_key_str := strings.Replace(cfg.PermsKey, `\\n`, "\n", -1)
+	perms_key_str := strings.Replace(cfg.PermsKey, `\n`, "\n", -1)
 	pb, _ := pem.Decode([]byte(perms_key_str))
 	if pb == nil {
 		fmt.Println("failed to decode perms key")
 		fmt.Println("perms_key_str: " + perms_key_str)
-		fmt.Println("cfg.PermsKey: " + cfg.PermsKey)
+		fmt.Println(" cfg.PermsKey: " + cfg.PermsKey)
 		return cfg, errors.New("failed to decode perms key")
 	}
 	perms_key, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
