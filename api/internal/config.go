@@ -57,8 +57,8 @@ func MakeCfg() {
 
 	Cfg.TurkeyCfg_s3_bkt = "turkeycfg"
 
-	f, _ := os.Create("./_files/hc.yam")
-	Awss.S3Download_file(Cfg.TurkeyCfg_s3_bkt, Cfg.Env+"/yams/hc.yam", f)
+	f, _ := os.Create("./_files/ns_hc.yam")
+	Awss.S3Download_file(Cfg.TurkeyCfg_s3_bkt, Cfg.Env+"/yams/ns_hc.yam", f)
 	f.Close()
 
 }

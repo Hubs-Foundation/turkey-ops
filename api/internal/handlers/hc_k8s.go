@@ -61,7 +61,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-	t, err := template.ParseFiles("./_files/hc.yam")
+	t, err := template.ParseFiles("./_files/ns_hc.yam")
 	if err != nil {
 		sess.Panic(err.Error())
 	}
