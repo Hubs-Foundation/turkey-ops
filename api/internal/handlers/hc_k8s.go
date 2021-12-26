@@ -30,12 +30,20 @@ type hcCfg struct {
 	Tier      string `json:"tier"`
 	UserEmail string `json:"useremail"`
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
-	Domain   string `json:"domain"`
-	DBname   string `json:"dbname"`
-	PermsKey string `json:"permskey"`
+	Domain     string `json:"domain"`
+	DBname     string `json:"dbname"`
+	DBpass     string `json:"dbpass"`
+	PermsKey   string `json:"permskey"`
+	SmtpServer string `json:"smtpserver"`
+	SmtpPort   string `json:"smtpport"`
+	SmtpUser   string `json:"smtpuser"`
+	SmtpPass   string `json:"smtppass"`
+
 	//produced here
-	TurkeyId string `json:"turkeyid"` // retrieved from db for UserEmail  fallback to calculated
-	JWK      string `json:"jwk"`      // encoded from PermsKey.public
+	TurkeyId    string `json:"turkeyid"` // retrieved from db for UserEmail  fallback to calculated
+	JWK         string `json:"jwk"`      // encoded from PermsKey.public
+	GuardianKey string `json:"guardiankey"`
+	PhxKey      string `json:"phxkey"`
 }
 
 var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -223,7 +231,7 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 		cfg.TurkeyId = cfg.UserEmail
 		return cfg, errors.New("ERROR bad hcCfg.TurkeyId")
 	}
-	cfg.Domain = internal.Cfg.Domain
+
 	//default Tier is free
 	if cfg.Tier == "" {
 		cfg.Tier = "free"
@@ -264,6 +272,18 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 		return cfg, err
 	}
 	cfg.JWK = strings.ReplaceAll(jwk, `"`, `\"`)
+
+	//inherit from cluster
+	cfg.Domain = internal.Cfg.Domain
+	cfg.DBpass = internal.Cfg.DBpass
+	cfg.SmtpServer = internal.Cfg.SmtpServer
+	cfg.SmtpPort = internal.Cfg.SmtpPort
+	cfg.SmtpUser = internal.Cfg.SmtpUser
+	cfg.SmtpPass = internal.Cfg.SmtpPass
+
+	//produc the rest
+	cfg.GuardianKey = "strongSecret#1"
+	cfg.PhxKey = "strongSecret#2"
 
 	return cfg, nil
 }

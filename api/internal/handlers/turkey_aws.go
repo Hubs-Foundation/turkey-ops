@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,17 +20,24 @@ import (
 
 type clusterCfg struct {
 	//required inputs
-	Region                  string `json:"region`                   //us-east-1
-	Domain                  string `json:"Domain"`                  //myhubs.net
+	Region string `json:"REGION"` //us-east-1
+	Domain string `json:"DOMAIN"` //myhubs.net
+	//required? but possible to fallback to locally available values
 	OAUTH_CLIENT_ID_FXA     string `json:"OAUTH_CLIENT_ID_FXA"`     //2db93e6523568888
 	OAUTH_CLIENT_SECRET_FXA string `json:"OAUTH_CLIENT_SECRET_FXA"` //06e08133333333333387dd5425234388ac4e29999999999905a2eaea7e1d8888
 	AWS_KEY                 string `json:"AWS_KEY"`                 //AKIAYEJRSWRAQSAM8888
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
 	AWS_REGION              string `json:"AWS_REGION"`              //us-east-1
+	SMTP_SERVER             string `json:"SMTP_SERVER"`             //email-smtp.us-east-1.amazonaws.com
+	SMTP_PORT               string `json:"SMTP_PORT"`               //25
+	SMTP_USER               string `json:"SMTP_USER"`               //AKIAYEJRSWRAQUI7U3J4
+	SMTP_PASS               string `json:"SMTP_PASS"`               //BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
+
 	//optional inputs
 	Env             string `json:"env"`             //dev
 	DeploymentName  string `json:"name"`            //z
 	CF_deploymentId string `json:"cf_deploymentId"` //s0meid
+
 	//produced here
 	DB_PASS       string `json:"DB_PASS"`       //itjfHE8888
 	COOKIE_SECRET string `json:"COOKIE_SECRET"` //a-random-string-to-sign-auth-cookies
@@ -168,6 +176,48 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 	}
 	if cfg.Domain == "" {
 		return cfg, errors.New("bad input: Domain is required")
+	}
+	//required but with fallbacks
+	if cfg.OAUTH_CLIENT_ID_FXA == "" {
+		fallback := os.Getenv("OAUTH_CLIENT_ID_FXA")
+		internal.GetLogger().Warn("OAUTH_CLIENT_ID_FXA not supplied, falling back to: " + fallback)
+		cfg.OAUTH_CLIENT_ID_FXA = fallback
+	}
+	if cfg.OAUTH_CLIENT_SECRET_FXA == "" {
+		fallback := os.Getenv("OAUTH_CLIENT_SECRET_FXA")
+		internal.GetLogger().Warn("OAUTH_CLIENT_SECRET_FXA not supplied, falling back to: " + fallback)
+		cfg.OAUTH_CLIENT_SECRET_FXA = fallback
+	}
+	if cfg.AWS_KEY == "" {
+		fallback := internal.Cfg.AwsKey
+		internal.GetLogger().Warn("AWS_KEY not supplied, falling back to: " + fallback)
+		cfg.AWS_KEY = fallback
+	}
+	if cfg.AWS_SECRET == "" {
+		fallback := internal.Cfg.AwsSecret
+		internal.GetLogger().Warn("AWS_SECRET not supplied, falling back to: " + fallback)
+		cfg.AWS_SECRET = fallback
+	}
+
+	if cfg.SMTP_SERVER == "" {
+		fallback := internal.Cfg.SmtpServer
+		internal.GetLogger().Warn("SMTP_SERVER not supplied, falling back to: " + fallback)
+		cfg.SMTP_SERVER = fallback
+	}
+	if cfg.SMTP_PORT == "" {
+		fallback := internal.Cfg.SmtpPort
+		internal.GetLogger().Warn("SMTP_PORT not supplied, falling back to: " + fallback)
+		cfg.SMTP_PORT = fallback
+	}
+	if cfg.SMTP_USER == "" {
+		fallback := internal.Cfg.SmtpUser
+		internal.GetLogger().Warn("SMTP_USER not supplied, falling back to: " + fallback)
+		cfg.SMTP_USER = fallback
+	}
+	if cfg.SMTP_PASS == "" {
+		fallback := internal.Cfg.SmtpPass
+		internal.GetLogger().Warn("SMTP_PASS not supplied, falling back to: " + fallback)
+		cfg.SMTP_PASS = fallback
 	}
 
 	//optional inputs

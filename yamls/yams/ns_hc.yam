@@ -25,10 +25,10 @@ stringData:
   GUARDIAN_KEY: strongSecret#1
   PERMS_KEY: {{.PermsKey}}
   PHX_KEY: strongSecret#2
-  SMTP_SERVER: email-smtp.us-east-1.amazonaws.com
-  SMTP_PORT: "25"
-  SMTP_USER: AKIAYEJRSWRAQUI7U3J4
-  SMTP_PASS: BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
+  SMTP_SERVER: {{.Smtp_Server}}
+  SMTP_PORT: "{{.Smtp_Port}}"
+  SMTP_USER: {{.Smtp_User}}
+  SMTP_PASS: {{.Smtp_Pass}}
   ADM_EMAIL: {{.UserEmail}}
   PGRST_DB_URI: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/{{.DBname}}
   PGRST_JWT_SECRET: "{{.JWK}}"
