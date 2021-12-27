@@ -25,10 +25,10 @@ stringData:
   GUARDIAN_KEY: strongSecret#1
   PERMS_KEY: {{.PermsKey}}
   PHX_KEY: strongSecret#2
-  SMTP_SERVER: {{.Smtp_Server}}
-  SMTP_PORT: "{{.Smtp_Port}}"
-  SMTP_USER: {{.Smtp_User}}
-  SMTP_PASS: {{.Smtp_Pass}}
+  SMTP_SERVER: {{.SmtpServer}}
+  SMTP_PORT: "{{.SmtpPort}}"
+  SMTP_USER: {{.SmtpUser}}
+  SMTP_PASS: {{.SmtpPass}}
   ADM_EMAIL: {{.UserEmail}}
   PGRST_DB_URI: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/{{.DBname}}
   PGRST_JWT_SECRET: "{{.JWK}}"
