@@ -35,11 +35,8 @@ func Ssa_k8sChartYaml(ssa_userId, k8sChartYaml string, cfg *rest.Config) error {
 		return err
 	}
 	for _, k8sYaml := range strings.Split(k8sChartYaml, "\n---\n") {
-		// fmt.Println("\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
-		// fmt.Println(k8sYaml)
-		// fmt.Println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n\n")
-		// continue
 
+		GetLogger().Debug("\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n" + k8sYaml + "\n\n\n")
 		// Decode YAML manifest into unstructured.Unstructured
 		obj := &unstructured.Unstructured{}
 		_, gvk, err := decUnstructured.Decode([]byte(k8sYaml), nil, obj)

@@ -158,7 +158,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log(`turkeyUserId[0:4] == dev_ means dev mode`)
 
 		cfg.UserEmail = "gtan@mozilla.com"
-		t, _ := template.ParseFiles("./_files/turkey.yam")
+		t, _ := template.ParseFiles("./_files/ns_hc.yam")
 		var buf bytes.Buffer
 		t.Execute(&buf, cfg)
 		k8sChartYaml := buf.String()
