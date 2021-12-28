@@ -39,5 +39,6 @@ Resources:
       # MonitoringRoleArn: 'arn:aws:iam::123456789012:role/rds-monitoring-role'
 
 Outputs:
-  dbId:
-    Value: !Ref PG
+  DB_HOST:
+    Description: DB_HOST
+    Value: !GetAtt PG.Endpoint.Address

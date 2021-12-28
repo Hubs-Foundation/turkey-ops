@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -23,28 +27,29 @@ type clusterCfg struct {
 	Region string `json:"REGION"` //us-east-1
 	Domain string `json:"DOMAIN"` //myhubs.net
 	//required? but possible to fallback to locally available values
+	Env                     string `json:"env"`                     //dev
 	OAUTH_CLIENT_ID_FXA     string `json:"OAUTH_CLIENT_ID_FXA"`     //2db93e6523568888
 	OAUTH_CLIENT_SECRET_FXA string `json:"OAUTH_CLIENT_SECRET_FXA"` //06e08133333333333387dd5425234388ac4e29999999999905a2eaea7e1d8888
-	AWS_KEY                 string `json:"AWS_KEY"`                 //AKIAYEJRSWRAQSAM8888
-	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
-	AWS_REGION              string `json:"AWS_REGION"`              //us-east-1
 	SMTP_SERVER             string `json:"SMTP_SERVER"`             //email-smtp.us-east-1.amazonaws.com
 	SMTP_PORT               string `json:"SMTP_PORT"`               //25
 	SMTP_USER               string `json:"SMTP_USER"`               //AKIAYEJRSWRAQUI7U3J4
 	SMTP_PASS               string `json:"SMTP_PASS"`               //BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
+	AWS_KEY                 string `json:"AWS_KEY"`                 //AKIAYEJRSWRAQSAM8888
+	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
+	// AWS_REGION              string `json:"AWS_REGION"`              //us-east-1
 
 	//optional inputs
-	Env             string `json:"env"`             //dev
 	DeploymentName  string `json:"name"`            //z
 	CF_deploymentId string `json:"cf_deploymentId"` //s0meid
 
-	//produced here
+	//generated pre-infra-deploy
 	DB_PASS       string `json:"DB_PASS"`       //itjfHE8888
 	COOKIE_SECRET string `json:"COOKIE_SECRET"` //a-random-string-to-sign-auth-cookies
-	DB_HOST       string `json:"DB_HOST"`       //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
-	DB_CONN       string `json:"DB_CONN"`       //postgres://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
 	PERMS_KEY     string `json:"PERMS_KEY"`     //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBAAKCAQEA3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf\\n/otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD+F\\noHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD+UfOCMctlwudNSs+AkmiP\\nSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj+Oa/ZQVH44lmPI9Ih0OakXWpIfOob3X0\\nXqcdywlMVI2hzBR3JNodRjyEz33p6E//lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIa\\ncr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqwIDAQABAoIBAQCgwy/hbK9wo3MU\\nTNRrdzaTob6b/l1jfanUgRYEYl/WyYAu9ir0JhcptVwERmYGNVIoBRQfQClaSHjo\\n0L1/b74aO5oe1rR8Yhh+yL1gWz9gRT0hyEr7paswkkhsmiY7+3m5rxsrfinlM+6+\\nJ7dsSi3U0ofOBbZ4kvAeEz/Y3OaIOUbQraP312hQnTVQ3kp7HNi9GcLK9rq2mASu\\nO0DxDHXdZMsRN1K4tOKRZDsKGAEfL2jKN7+ndvsDhb4mAQaVKM8iw+g5O4HDA8uB\\nmwycaWhjilZWEyUyqvXE8tOMLS59sq6i1qrf8zIMWDOizebF/wnrQ42kzt5kQ0ZJ\\nwCPOC3sxAoGBAO6KfWr6WsXD6phnjVXXi+1j3azRKJGQorwQ6K3bXmISdlahngas\\nmBGBmI7jYTrPPeXAHUbARo/zLcbuGCf1sPipkAHYVC8f9aUbA205BREB15jNyXr3\\nXzhR/ronbn0VeR9iRua2FZjVChz22fdz9MvRJiinP8agYIQ4LovDk3lzAoGBAO1E\\nrZpOuv3TMQffPaPemWuvMYfZLgx2/AklgYqSoi683vid9HEEAdVzNWMRrOg0w5EH\\nWMEMPwJTYvy3xIgcFmezk5RMHTX2J32JzDJ8Y/uGf1wMrdkt3LkPRfuGepEDDtBa\\nrUSO/MeGXLu5p8QByUZkvTLJ4rJwF2HZBUehrm3pAoGBANg1+tveNCyRGbAuG/M0\\nvgXbwO+FXWojWP1xrhT3gyMNbOm079FI20Ty3F6XRmfRtF7stRyN5udPGaz33jlJ\\n/rBEsNybQiK8qyCNzZtQVYFG1C4SSI8GbO5Vk7cTSphhwDlsEKvJWuX+I36BWKts\\nFPQwjI/ImIvmjdUKP1Y7XQ51AoGBALWa5Y3ASRvStCqkUlfFH4TuuWiTcM2VnN+b\\nV4WrKnu/kKKWs+x09rpbzjcf5kptaGrvRp2sM+Yh0RhByCmt5fBF4OWXRJxy5lMO\\nT78supJgpcbc5YvfsJvs9tHIYrPvtT0AyrI5B33od74wIhrCiz5YCQCAygVuCleY\\ndpQXSp1RAoGBAKjasot7y/ErVxq7LIpGgoH+XTxjvMsj1JwlMeK0g3sjnun4g4oI\\nPBtpER9QaSFi2OeYPklJ2g2yvFcVzj/pFk/n1Zd9pWnbU+JIXBYaHTjmktLeZHsb\\nrTEKATo+Y1Alrhpr/z7gXXDfuKKXHkVRiper1YRAxELoLJB8r7LWeuIb\\n-----END RSA PRIVATE KEY-----
-	PSQL          string `json:"PSQL"`          //postgresql://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
+	//generated post-infra-deploy
+	DB_HOST string `json:"DB_HOST"` //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+	DB_CONN string `json:"DB_CONN"` //postgres://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+	PSQL    string `json:"PSQL"`    //postgresql://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
 }
 
 // var turkeycfg_s3_bucket = "turkeycfg/cf/"
@@ -101,27 +106,8 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// #4.1. post deployment configs
-			// err = createSSMparam(stackName, cfg, awss)
-			// if err != nil {
-			// 	sess.Panic("post cf deployment: failed to createSSMparam: " + err.Error())
-			// }
-			k8sCfg, err := awss.GetK8sConfigFromEks(stackName)
-			if err != nil {
-				sess.Panic("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
-			}
-			sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+			postDeploymentConfigs(cfg, stackName, awss, sess)
 
-			yams, err := collectYams(cfg.Env, awss)
-			if err != nil {
-				sess.Panic("failed to collectYams: " + err.Error())
-			}
-			yamls, err := internal.K8s_render_yams(yams, cfg)
-			if err != nil {
-				sess.Panic("failed to K8s_render_yams: " + err.Error())
-			}
-			for _, yaml := range yamls {
-				internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg)
-			}
 		}()
 		sess.Log("&#128640;CreateCFstack started for stackName=" + stackName)
 
@@ -153,6 +139,36 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// fmt.Fprintf(w, "unexpected method: "+r.Method)
 	}
 })
+
+func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) error {
+	cfParams, err := getCfOutputParamMap(stackName, awss)
+	if err != nil {
+		sess.Panic("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
+	}
+	cfg.DB_HOST = cfParams["DB_HOST"]
+	k8sCfg, err := awss.GetK8sConfigFromEks(stackName)
+	if err != nil {
+		sess.Panic("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
+	}
+	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+
+	yams, err := collectYams(cfg.Env, awss)
+	if err != nil {
+		sess.Panic("failed @ collectYams: " + err.Error())
+	}
+	yamls, err := internal.K8s_render_yams(yams, cfg)
+	if err != nil {
+		sess.Panic("post cf deployment: failed @ K8s_render_yams: " + err.Error())
+	}
+
+	for _, yaml := range yamls {
+		err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg)
+		if err != nil {
+			sess.Panic("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
+		}
+	}
+	return nil
+}
 
 func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCfg, error) {
 	var cfg clusterCfg
@@ -188,17 +204,6 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 		internal.GetLogger().Warn("OAUTH_CLIENT_SECRET_FXA not supplied, falling back to: " + fallback)
 		cfg.OAUTH_CLIENT_SECRET_FXA = fallback
 	}
-	if cfg.AWS_KEY == "" {
-		fallback := internal.Cfg.AwsKey
-		internal.GetLogger().Warn("AWS_KEY not supplied, falling back to: " + fallback)
-		cfg.AWS_KEY = fallback
-	}
-	if cfg.AWS_SECRET == "" {
-		fallback := internal.Cfg.AwsSecret
-		internal.GetLogger().Warn("AWS_SECRET not supplied, falling back to: " + fallback)
-		cfg.AWS_SECRET = fallback
-	}
-
 	if cfg.SMTP_SERVER == "" {
 		fallback := internal.Cfg.SmtpServer
 		internal.GetLogger().Warn("SMTP_SERVER not supplied, falling back to: " + fallback)
@@ -219,20 +224,42 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 		internal.GetLogger().Warn("SMTP_PASS not supplied, falling back to: " + fallback)
 		cfg.SMTP_PASS = fallback
 	}
-
-	//optional inputs
+	if cfg.AWS_KEY == "" {
+		fallback := internal.Cfg.AwsKey
+		internal.GetLogger().Warn("AWS_KEY not supplied, falling back to: " + fallback)
+		cfg.AWS_KEY = fallback
+	}
+	if cfg.AWS_SECRET == "" {
+		fallback := internal.Cfg.AwsSecret
+		internal.GetLogger().Warn("AWS_SECRET not supplied, falling back to: " + fallback)
+		cfg.AWS_SECRET = fallback
+	}
 	if cfg.Env == "" {
 		cfg.Env = "dev"
 		internal.GetLogger().Warn("Env unspecified -- using dev")
 	}
+
+	//optional inputs
 	if cfg.DeploymentName == "" {
 		cfg.DeploymentName = "z"
 		internal.GetLogger().Warn("DeploymentName unspecified -- using z")
 	}
 	if cfg.CF_deploymentId == "" {
 		cfg.CF_deploymentId = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
-		internal.GetLogger().Debug("CF_deploymentId unspecified -- using " + cfg.CF_deploymentId)
+		internal.GetLogger().Info("CF_deploymentId: " + cfg.CF_deploymentId)
 	}
+
+	//generate the rest
+	cfg.DB_PASS = internal.PwdGen(15)
+	cfg.COOKIE_SECRET = internal.PwdGen(15)
+	cfg.DB_HOST = "to-be-determined-after-infra-deployment"
+	cfg.DB_CONN = "to-be-determined-after-infra-deployment"
+	cfg.PSQL = "to-be-determined-after-infra-deployment"
+	var pvtKey, _ = rsa.GenerateKey(rand.Reader, 2048)
+	pvtKeyBytes := x509.MarshalPKCS1PrivateKey(pvtKey)
+	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: pvtKeyBytes})
+	pemString := string(pemBytes)
+	cfg.PERMS_KEY = strings.ReplaceAll(pemString, "\n", `\\n`)
 
 	return cfg, nil
 }
@@ -268,6 +295,17 @@ func parseCFparams(clusterCfg clusterCfg) ([]*cloudformation.Parameter, error) {
 		}
 	}
 	return cfParams, nil
+}
+func getCfOutputParamMap(stackName string, awss *internal.AwsSvs) (map[string]string, error) {
+	paramMap := make(map[string]string)
+	stacks, err := awss.GetStack(stackName)
+	if err != nil {
+		return paramMap, err
+	}
+	for _, output := range stacks[0].Outputs {
+		paramMap[*output.Description] = *output.OutputValue
+	}
+	return paramMap, nil
 }
 
 // func createSSMparam(stackName string, cfg map[string]string, awss *internal.AwsSvs) error {
