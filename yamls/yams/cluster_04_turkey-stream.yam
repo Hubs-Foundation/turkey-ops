@@ -85,7 +85,7 @@ spec:
       hostNetwork: true
       containers:
       - name: dialog
-        image: mozillareality/dialog:17
+        image: mozillareality/dialog:60
         imagePullPolicy: Always
         ports:        
         - hostPort: 4443
@@ -151,7 +151,7 @@ spec:
       hostNetwork: true
       containers:
       - name: coturn
-        image: mozillareality/coturn:14
+        image: mozillareality/coturn:dev
         imagePullPolicy: Always
         ports:
         - hostPort: 5349
