@@ -57,6 +57,7 @@ func MakeCfg() {
 
 	Cfg.TurkeyCfg_s3_bkt = "turkeycfg"
 
+	_ = os.Mkdir("./_files", os.ModePerm)
 	f, _ := os.Create("./_files/ns_hc.yam")
 	Awss.S3Download_file(Cfg.TurkeyCfg_s3_bkt, Cfg.Env+"/yams/ns_hc.yam", f)
 	f.Close()
