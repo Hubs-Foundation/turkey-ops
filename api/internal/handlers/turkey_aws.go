@@ -271,6 +271,7 @@ func parseCFparams(clusterCfg clusterCfg) ([]*cloudformation.Parameter, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("@@@@@@@@@@@ parseCFparams @@@@@@@: " + string(jCfg))
 	json.Unmarshal(jCfg, &cfg)
 
 	cfParams := []*cloudformation.Parameter{}

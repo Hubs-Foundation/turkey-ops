@@ -7,7 +7,7 @@ Parameters:
     Default: asdf123
   cfS3Folder:
     Type: String
-    Default: https://s3.amazonaws.com/turkeycfg/cf/<env>
+    Default: https://s3.amazonaws.com/turkeycfg/<env>/cf/
   turkeyDomain:
     Type: String
     Default: myhubs.net
