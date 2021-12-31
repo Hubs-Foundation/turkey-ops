@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -83,20 +82,19 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.Log("good aws creds, account #: " + accountNum)
 
-		// #2. for keys in cfg start with 'cf_' prefix, pass into cloudformation without the prefix
-		//     also generate password for values like "PwdGen(int_length)"
-		cfParams, err := parseCFparams(cfg)
-		if err != nil {
-			sess.Panic("ERROR @ parseCFparams: " + err.Error())
-		}
-		// #3. add turkey cluster tags
+		// #2. prepare params for cloudformation
+		cfParams := parseCFparams(map[string]string{
+			"deploymentId": cfg.CF_deploymentId,
+			"cfS3Folder":   internal.Cfg.TurkeyCfg_s3_bkt,
+			"turkeyDomain": cfg.Domain,
+			"PGpwd":        cfg.DB_PASS,
+		})
 		cfTags := []*cloudformation.Tag{
 			{Key: aws.String("customer-id"), Value: aws.String("not-yet-place-holder-only")},
 			{Key: aws.String("turkeyEnv"), Value: aws.String(cfg.Env)},
 			{Key: aws.String("turkeyDomain"), Value: aws.String(cfg.Domain)},
 		}
-
-		// #4. run the cloudformation template
+		// #3. run cloudformation
 		stackName := cfg.DeploymentName + "-" + cfg.CF_deploymentId
 		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cf/"
 		go func() {
@@ -105,7 +103,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Panic("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
 				return
 			}
-			// #4.1. post deployment configs
+			// #3.1. post deployment configs
 			postDeploymentConfigs(cfg, stackName, awss, sess)
 
 		}()
@@ -264,39 +262,15 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 	return cfg, nil
 }
 
-func parseCFparams(clusterCfg clusterCfg) ([]*cloudformation.Parameter, error) {
-
-	var cfg map[string]string
-	jCfg, err := json.Marshal(clusterCfg)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("@@@@@@@@@@@ parseCFparams @@@@@@@: " + string(jCfg))
-	json.Unmarshal(jCfg, &cfg)
-
+func parseCFparams(cfg map[string]string) []*cloudformation.Parameter {
 	cfParams := []*cloudformation.Parameter{}
-
-	for k := range cfg {
-		if k[0:3] == "cf_" {
-			key := k[3:]
-			val := cfg[k]
-			// isPwdGen, _ := regexp.MatchString(`PwdGen\(\d+\)`, val)
-			if strings.HasPrefix(val, "PwdGen(") {
-				compRegEx := regexp.MustCompile(`PwdGen\((?P<len>\d+)\)`)
-				lenStr := compRegEx.FindStringSubmatch(val)[1]
-				len, err := strconv.Atoi(lenStr)
-				if err != nil {
-					return nil, err
-				}
-				val = internal.PwdGen(len)
-			}
-			cfg[k] = val
-			cfParams = append(cfParams,
-				&cloudformation.Parameter{ParameterKey: aws.String(key), ParameterValue: aws.String(val)})
-		}
+	for key, val := range cfg {
+		cfParams = append(cfParams,
+			&cloudformation.Parameter{ParameterKey: aws.String(key), ParameterValue: aws.String(val)})
 	}
-	return cfParams, nil
+	return cfParams
 }
+
 func getCfOutputParamMap(stackName string, awss *internal.AwsSvs) (map[string]string, error) {
 	paramMap := make(map[string]string)
 	stacks, err := awss.GetStack(stackName)
