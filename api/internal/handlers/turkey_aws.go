@@ -98,7 +98,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// #4. run the cloudformation template
 		stackName := cfg.DeploymentName + "-" + cfg.CF_deploymentId
-		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + cfg.Env + "/cf/" + "/"
+		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cf/"
 		go func() {
 			err = awss.CreateCFstack(stackName, cfS3Folder+"main.yaml", cfParams, cfTags)
 			if err != nil {
