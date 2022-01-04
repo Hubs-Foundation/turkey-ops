@@ -83,9 +83,10 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("good aws creds, account #: " + accountNum)
 
 		// #2. prepare params for cloudformation
+		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cf/"
 		cfParams := parseCFparams(map[string]string{
 			"deploymentId": cfg.CF_deploymentId,
-			"cfS3Folder":   internal.Cfg.TurkeyCfg_s3_bkt,
+			"cfS3Folder":   cfS3Folder,
 			"turkeyDomain": cfg.Domain,
 			"PGpwd":        cfg.DB_PASS,
 		})
@@ -96,7 +97,6 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		// #3. run cloudformation
 		stackName := cfg.DeploymentName + "-" + cfg.CF_deploymentId
-		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cf/"
 		go func() {
 			err = awss.CreateCFstack(stackName, cfS3Folder+"main.yaml", cfParams, cfTags)
 			if err != nil {
