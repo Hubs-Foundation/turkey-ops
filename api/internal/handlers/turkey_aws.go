@@ -103,12 +103,12 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Panic("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
 				return
 			}
-			// #3.1. post deployment configs
+			// #4. post deployment configs
 			err = postDeploymentConfigs(cfg, stackName, awss, sess)
 			if err != nil {
 				sess.Panic("ERROR @ postDeploymentConfigs for " + stackName + ": " + err.Error())
 			}
-
+			sess.Log("done: " + cfg.CF_deploymentId)
 		}()
 		sess.Log("&#128640;CreateCFstack started for stackName=" + stackName)
 
@@ -132,7 +132,6 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 	stackName+"-assets-"+cfg.CF_deploymentId)
 
 		// go internal.DeployKeys(awss, stackName, stackName+"-assets-"+cfg.CF_deploymentId)
-		sess.Log("done: " + cfg.CF_deploymentId)
 
 		return
 
