@@ -63,7 +63,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess := internal.GetSession(r.Cookie)
 
-		// #1. get cfg from r.body
+		// ######################################### 1. get cfg from r.body ########################################
 		cfg, err := turkey_makeCfg(r, sess)
 		if err != nil {
 			sess.Panic("ERROR @ turkey_makeCfg: " + err.Error())
@@ -82,7 +82,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.Log("good aws creds, account #: " + accountNum)
 
-		// #2. prepare params for cloudformation
+		// ######################################### 2. prepare params for cloudformation ##########################
 		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cf/"
 		cfParams := parseCFparams(map[string]string{
 			"deploymentId": cfg.CF_deploymentId,
@@ -95,7 +95,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			{Key: aws.String("turkeyEnv"), Value: aws.String(cfg.Env)},
 			{Key: aws.String("turkeyDomain"), Value: aws.String(cfg.Domain)},
 		}
-		// #3. run cloudformation
+		// ######################################### 3. run cloudformation #########################################
 		stackName := cfg.DeploymentName + "-" + cfg.CF_deploymentId
 		go func() {
 			err = awss.CreateCFstack(stackName, cfS3Folder+"main.yaml", cfParams, cfTags)
@@ -103,17 +103,19 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Panic("ERROR @ CreateCFstack for " + stackName + ": " + err.Error())
 				return
 			}
-			// #4. post deployment configs
-			err = postDeploymentConfigs(cfg, stackName, awss, sess)
-			if err != nil {
-				sess.Panic("ERROR @ postDeploymentConfigs for " + stackName + ": " + err.Error())
-			}
-			sess.Log("done: " + cfg.CF_deploymentId)
+
 		}()
 		sess.Log("&#128640;CreateCFstack started for stackName=" + stackName)
 
-		go reportCreateCFstackStatus(stackName, cfg, sess, awss)
+		// go reportCreateCFstackStatus(stackName, cfg, sess, awss)
+		reportCreateCFstackStatus(stackName, cfg, sess, awss)
 
+		// ######################################### 4. post deployment configs ###################################
+		err = postDeploymentConfigs(cfg, stackName, awss, sess)
+		if err != nil {
+			sess.Panic("ERROR @ postDeploymentConfigs for " + stackName + ": " + err.Error())
+		}
+		sess.Log("done: " + cfg.CF_deploymentId)
 		// go internal.DeployHubsAssets(
 		// 	awss,
 		// 	map[string]string{
