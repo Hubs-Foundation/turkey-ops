@@ -345,11 +345,11 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.
 func collectYams(env string, awss *internal.AwsSvs) ([]string, error) {
 	var yams []string
 	for _, key := range []string{
-		env + "/k8s/cluster_00_deps.yam",
-		env + "/k8s/cluster_01_ingress.yam",
-		env + "/k8s/cluster_02_tools.yam",
-		env + "/k8s/cluster_03_turkey-services.yam",
-		env + "/k8s/cluster_04_turkey-stream.yam",
+		env + "/yams/cluster_00_deps.yam",
+		env + "/yams/cluster_01_ingress.yam",
+		env + "/yams/cluster_02_tools.yam",
+		env + "/yams/cluster_03_turkey-services.yam",
+		env + "/yams/cluster_04_turkey-stream.yam",
 	} {
 		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, key)
 		if err != nil {
