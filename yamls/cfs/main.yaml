@@ -61,8 +61,8 @@ Resources:
         PublicSubnet2Id: !GetAtt network.Outputs.PublicSubnet2
 
 Outputs:
-  dbId:
-    Value: !GetAtt db.Outputs.dbId
+  DB_HOST:
+    Value: !GetAtt db.Outputs.DB_HOST
 
 
 

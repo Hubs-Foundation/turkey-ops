@@ -40,5 +40,4 @@ Resources:
 
 Outputs:
   DB_HOST:
-    Description: DB_HOST
     Value: !GetAtt PG.Endpoint.Address
