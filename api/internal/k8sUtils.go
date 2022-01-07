@@ -88,7 +88,9 @@ func K8s_render_yams(yams []string, params interface{}) ([]string, error) {
 		}
 		var buf bytes.Buffer
 		t.Execute(&buf, params)
-		yamls = append(yamls, buf.String())
+		yaml := buf.String()
+		yamls = append(yamls, yaml)
+		GetLogger().Debug("@@@@@@K8s_render_yams @@@@@@ : " + yaml)
 	}
 
 	return yamls, nil

@@ -30,20 +30,6 @@ stringData:
   SMTP_PORT: {{.SMTP_PORT}}
   SMTP_USER: {{.SMTP_USER}}
   SMTP_PASS: {{.SMTP_PASS}}
-# stringData:
-#   DB_USER: postgres
-#   OAUTH_CLIENT_ID_GOOGLE: placeholderrrrrrrrrrrrrrrrrrrr
-#   OAUTH_CLIENT_SECRET_GOOGLE: placeholderrrrrrrrrrrrrrrrrrrr
-#   OAUTH_CLIENT_ID_FXA: placeholderrrrrrrrrrrrrrrrrrrr
-#   OAUTH_CLIENT_SECRET_FXA: placeholderrrrrrrrrrrrrrrrrrrr    
-#   COOKIE_SECRET: a-random-string-to-sign-auth-cookies
-#   DB_CONN: postgres://postgres:itjfHE4HuS@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
-#   AWS_KEY: AKIAYEJRSWRAQSAMLSGX
-#   AWS_SECRET: placeholderrrrrrrrrrrrrrrrrrrr
-#   AWS_REGION: placeholderrrrrrrrrrrrrrrrrrrr
-#   PERMS_KEY: -----BEGIN RSA PRIVATE KEY-----placeholderrrrrrrrrrrrrrrrrrrr-----END RSA PRIVATE KEY-----
-#   DB_PASS: itjfHE4HuS
-#   DB_HOST: geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
 ---
 ####################################################################################
 ####################################### auth #######################################

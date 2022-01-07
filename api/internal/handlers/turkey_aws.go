@@ -25,6 +25,7 @@ type clusterCfg struct {
 	//required inputs
 	Region string `json:"REGION"` //us-east-1
 	Domain string `json:"DOMAIN"` //myhubs.net
+
 	//required? but possible to fallback to locally available values
 	Env                     string `json:"env"`                     //dev
 	OAUTH_CLIENT_ID_FXA     string `json:"OAUTH_CLIENT_ID_FXA"`     //2db93e6523568888
@@ -35,7 +36,8 @@ type clusterCfg struct {
 	SMTP_PASS               string `json:"SMTP_PASS"`               //BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
 	AWS_KEY                 string `json:"AWS_KEY"`                 //AKIAYEJRSWRAQSAM8888
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
-	// AWS_REGION              string `json:"AWS_REGION"`              //us-east-1
+	// this will just be Region ...
+	AWS_REGION string `json:"AWS_REGION"` //us-east-1
 
 	//optional inputs
 	DeploymentName  string `json:"name"`            //z
@@ -214,6 +216,8 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 	if cfg.Region == "" {
 		return cfg, errors.New("bad input: Region is required")
 	}
+	cfg.AWS_REGION = cfg.Region
+
 	if cfg.Domain == "" {
 		return cfg, errors.New("bad input: Domain is required")
 	}
