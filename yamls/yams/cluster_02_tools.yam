@@ -39,8 +39,6 @@ spec:
             cpu: 0.5          
       nodeSelector:
         'beta.kubernetes.io/os': linux
-
-
 ---
 kind: Service
 apiVersion: v1
@@ -68,9 +66,9 @@ spec:
   routes:
   - kind: Rule
     match: Host(`dash.{{.Domain}}`) && PathPrefix(`/`)
-    middlewares:
-    - name: turkeyauth
-      namespace: tools
+    # middlewares:
+    # - name: turkeyauth
+    #   namespace: tools
     services:                       
     - kind: Service
       name: skooner

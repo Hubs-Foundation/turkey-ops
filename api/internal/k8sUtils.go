@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 )
@@ -91,4 +92,34 @@ func K8s_render_yams(yams []string, params interface{}) ([]string, error) {
 	}
 
 	return yamls, nil
+}
+
+func K8s_GetAllSecrets(cfg *rest.Config, namespace string) (map[string]map[string][]byte, error) {
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	secretsClient := clientset.CoreV1().Secrets(namespace)
+	secrets, err := secretsClient.List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	secretMap := make(map[string]map[string][]byte)
+	for _, secret := range secrets.Items {
+		secretMap[secret.Name] = secret.Data
+	}
+	return secretMap, nil
+}
+
+func K8s_GetServiceExtIp(cfg *rest.Config, namespace string, serviceName string) (string, error) {
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return "", err
+	}
+	svcsClient := clientset.CoreV1().Services(namespace)
+	svc, err := svcsClient.Get(context.Background(), serviceName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return svc.Spec.ExternalIPs[0], nil
 }

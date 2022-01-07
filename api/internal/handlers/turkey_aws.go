@@ -111,10 +111,13 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reportCreateCFstackStatus(stackName, cfg, sess, awss)
 
 		// ######################################### 4. post deployment configs ###################################
-		err = postDeploymentConfigs(cfg, stackName, awss, sess)
+		report, err := postDeploymentConfigs(cfg, stackName, awss, sess)
 		if err != nil {
 			sess.Panic("ERROR @ postDeploymentConfigs for " + stackName + ": " + err.Error())
 		}
+		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- sknoonerToken: " + report["skoonerToken"])
+		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- you must create this CNAME record manually in your nameserver {" +
+			cfg.Domain + ":" + report["lb"] + "}, and then go to dash." + cfg.Domain + " to view and configure cluster access")
 		sess.Log("done: " + cfg.CF_deploymentId)
 		// go internal.DeployHubsAssets(
 		// 	awss,
@@ -143,7 +146,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
-func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) error {
+func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) (map[string]string, error) {
 	cfParams, err := getCfOutputParamMap(stackName, awss)
 	if err != nil {
 		sess.Panic("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
@@ -170,7 +173,23 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 			sess.Panic("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
 		}
 	}
-	return nil
+	report := make(map[string]string)
+	toolsSecrets, err := internal.K8s_GetAllSecrets(k8sCfg, "tools")
+	if err != nil {
+		sess.Panic("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
+	}
+	for k, v := range toolsSecrets {
+		if strings.HasPrefix(k, "skooner-sa-token-") {
+			report["skoonerToken"] = string(v["token"])
+		}
+	}
+	lb, err := internal.K8s_GetServiceExtIp(k8sCfg, "ingress", "lb")
+	if err != nil {
+		sess.Panic("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
+	}
+	report["lb"] = lb
+
+	return report, nil
 }
 
 func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCfg, error) {
