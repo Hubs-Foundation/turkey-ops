@@ -183,11 +183,13 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 			report["skoonerToken"] = string(v["token"])
 		}
 	}
+	fmt.Println("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
 	lb, err := internal.K8s_GetServiceExtIp(k8sCfg, "ingress", "lb")
 	if err != nil {
 		sess.Panic("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
 	}
 	report["lb"] = lb
+	fmt.Println("~~~~~~~~~~lb: " + report["lb"])
 
 	return report, nil
 }

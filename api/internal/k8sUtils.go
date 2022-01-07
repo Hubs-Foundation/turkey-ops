@@ -121,5 +121,9 @@ func K8s_GetServiceExtIp(cfg *rest.Config, namespace string, serviceName string)
 	if err != nil {
 		return "", err
 	}
+	if len(svc.Spec.ExternalIPs) < 1 {
+		return "", nil
+	}
+
 	return svc.Spec.ExternalIPs[0], nil
 }
