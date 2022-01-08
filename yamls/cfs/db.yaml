@@ -39,5 +39,5 @@ Resources:
       # MonitoringRoleArn: 'arn:aws:iam::123456789012:role/rds-monitoring-role'
 
 Outputs:
-  DB_HOST:
+  dbHost:
     Value: !GetAtt PG.Endpoint.Address

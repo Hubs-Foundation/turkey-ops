@@ -63,7 +63,7 @@ Resources:
 Outputs:
   dbHost:
     Description: DB_HOST
-    Value: !GetAtt db.Outputs.DB_HOST
+    Value: !GetAtt db.Outputs.dbHost
 
 
 

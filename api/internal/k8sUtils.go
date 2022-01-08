@@ -37,7 +37,7 @@ func Ssa_k8sChartYaml(ssa_userId, k8sChartYaml string, cfg *rest.Config) error {
 	}
 	for _, k8sYaml := range strings.Split(k8sChartYaml, "\n---\n") {
 
-		GetLogger().Debug("\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n" + k8sYaml + "\n\n\n")
+		// GetLogger().Debug("\n\n\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n" + k8sYaml + "\n\n\n")
 		// Decode YAML manifest into unstructured.Unstructured
 		obj := &unstructured.Unstructured{}
 		_, gvk, err := decUnstructured.Decode([]byte(k8sYaml), nil, obj)
@@ -90,7 +90,11 @@ func K8s_render_yams(yams []string, params interface{}) ([]string, error) {
 		t.Execute(&buf, params)
 		yaml := buf.String()
 		yamls = append(yamls, yaml)
-		GetLogger().Debug("@@@@@@K8s_render_yams @@@@@@ : " + yaml)
+		if yaml == yam {
+			GetLogger().Debug("@@@@@@K8s_render_yams @@@@@@: no change for yam string <" + yam[:32] + "......>")
+		} else {
+			GetLogger().Debug("@@@@@@K8s_render_yams @@@@@@ : " + yaml)
+		}
 	}
 
 	return yamls, nil
