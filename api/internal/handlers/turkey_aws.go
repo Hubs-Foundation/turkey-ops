@@ -85,7 +85,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("good aws creds, account #: " + accountNum)
 
 		// ######################################### 2. prepare params for cloudformation ##########################
-		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cf/"
+		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cfs/"
 		cfParams := parseCFparams(map[string]string{
 			"deploymentId": cfg.CF_deploymentId,
 			"cfS3Folder":   cfS3Folder,
