@@ -14,8 +14,8 @@ metadata:
   namespace: turkey-services
 stringData:
   DB_USER: postgres
-  # OAUTH_CLIENT_ID_GOOGLE: secret
-  # OAUTH_CLIENT_SECRET_GOOGLE: secret
+  OAUTH_CLIENT_ID_GOOGLE: secret
+  OAUTH_CLIENT_SECRET_GOOGLE: secret
   OAUTH_CLIENT_ID_FXA: {{.OAUTH_CLIENT_ID_FXA}}
   OAUTH_CLIENT_SECRET_FXA: {{.OAUTH_CLIENT_SECRET_FXA}}    
   COOKIE_SECRET: {{.COOKIE_SECRET}}

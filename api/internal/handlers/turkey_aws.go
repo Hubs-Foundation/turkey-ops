@@ -308,7 +308,7 @@ func getCfOutputParamMap(stackName string, awss *internal.AwsSvs) (map[string]st
 		return paramMap, err
 	}
 	for _, output := range stacks[0].Outputs {
-		paramMap[*output.OutputKey] = *output.OutputValue
+		paramMap[*output.Description] = *output.OutputValue
 	}
 	return paramMap, nil
 }
