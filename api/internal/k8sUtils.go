@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,6 +128,18 @@ func K8s_GetServiceExtIp(cfg *rest.Config, namespace string, serviceName string)
 	svc, err := svcsClient.Get(context.Background(), serviceName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
+	}
+
+	tries := 1
+	for len(svc.Spec.ExternalIPs) < 1 {
+		if tries > 20 {
+			GetLogger().Warn("got nothing and max retry(20) reached")
+			break
+		}
+		GetLogger().Debug("got nothing -- retrying: " + fmt.Sprint(tries))
+		time.Sleep(time.Second * 15)
+		svc, _ = svcsClient.Get(context.Background(), serviceName, metav1.GetOptions{})
+		tries++
 	}
 	if len(svc.Spec.ExternalIPs) < 1 {
 		return "", nil
