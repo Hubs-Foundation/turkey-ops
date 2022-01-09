@@ -119,7 +119,7 @@ func K8s_GetAllSecrets(cfg *rest.Config, namespace string) (map[string]map[strin
 	return secretMap, nil
 }
 
-func K8s_GetServiceExtIp(cfg *rest.Config, namespace string, serviceName string) (string, error) {
+func K8s_GetServiceHostName(cfg *rest.Config, namespace string, serviceName string) (string, error) {
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return "", err
@@ -131,9 +131,10 @@ func K8s_GetServiceExtIp(cfg *rest.Config, namespace string, serviceName string)
 	}
 
 	tries := 1
-	for len(svc.Spec.ExternalIPs) < 1 {
-		if tries > 20 {
-			GetLogger().Warn("got nothing and max retry(20) reached")
+
+	for len(svc.Status.LoadBalancer.Ingress) < 1 {
+		if tries > 10 {
+			GetLogger().Warn("got nothing and max retry(10) reached")
 			break
 		}
 		GetLogger().Debug("got nothing -- retrying: " + fmt.Sprint(tries))
@@ -142,9 +143,9 @@ func K8s_GetServiceExtIp(cfg *rest.Config, namespace string, serviceName string)
 		tries++
 		fmt.Printf("svc: %v\n", svc)
 	}
-	if len(svc.Spec.ExternalIPs) < 1 {
+	if len(svc.Status.LoadBalancer.Ingress) < 1 {
 		return "", nil
 	}
 
-	return svc.Spec.ExternalIPs[0], nil
+	return svc.Status.LoadBalancer.Ingress[0].Hostname, nil
 }
