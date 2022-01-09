@@ -137,9 +137,10 @@ func K8s_GetServiceExtIp(cfg *rest.Config, namespace string, serviceName string)
 			break
 		}
 		GetLogger().Debug("got nothing -- retrying: " + fmt.Sprint(tries))
-		time.Sleep(time.Second * 15)
+		time.Sleep(time.Second * 30)
 		svc, _ = svcsClient.Get(context.Background(), serviceName, metav1.GetOptions{})
 		tries++
+		fmt.Printf("svc: %v\n", svc)
 	}
 	if len(svc.Spec.ExternalIPs) < 1 {
 		return "", nil
