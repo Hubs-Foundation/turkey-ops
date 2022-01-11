@@ -18,7 +18,7 @@ stringData:
   SUB_DOMAIN: {{.Subdomain}}
   DOMAIN: {{.Domain}}
   DB_USER: postgres
-  DB_PASS: itjfHE4HuS
+  DB_PASS: {{.DBpass}}
   DB_NAME: {{.DBname}}
   DB_HOST: pgbouncer.turkey-services
   DB_HOST_T: pgbouncer-t.turkey-services
@@ -30,7 +30,7 @@ stringData:
   SMTP_USER: {{.SmtpUser}}
   SMTP_PASS: {{.SmtpPass}}
   ADM_EMAIL: {{.UserEmail}}
-  PGRST_DB_URI: postgres://postgres:itjfHE4HuS@pgbouncer.turkey-services/{{.DBname}}
+  PGRST_DB_URI: postgres://postgres:{{.DBpass}}@pgbouncer.turkey-services/{{.DBname}}
   PGRST_JWT_SECRET: "{{.JWK}}"
 ---
 ######################################################################################

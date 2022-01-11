@@ -25,6 +25,7 @@ Resources:
         - !Ref PrivateSubnet2Id
 
   PG:
+    DependsOn: SubnetGrp
     Type: 'AWS::RDS::DBInstance'
     Properties:
       DBInstanceIdentifier: !Ref mainStackName
@@ -35,6 +36,7 @@ Resources:
       EngineVersion: 13.4
       MasterUsername: postgres
       MasterUserPassword: !Ref PGpwd
+      DBSubnetGroupName: !Ref SubnetGrp
       # MonitoringInterval: '60'
       # MonitoringRoleArn: 'arn:aws:iam::123456789012:role/rds-monitoring-role'
 
