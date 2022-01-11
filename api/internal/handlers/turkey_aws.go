@@ -159,6 +159,7 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 		sess.Panic("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
 	}
 	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com"
 
 	yams, err := collectYams(cfg.Env, awss)
 	if err != nil {
