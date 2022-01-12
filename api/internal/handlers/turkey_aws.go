@@ -149,7 +149,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
-func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, reqUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
+func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
 	cfParams, err := getCfOutputParamMap(stackName, awss)
 	if err != nil {
 		sess.Panic("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
@@ -195,17 +195,17 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	report["lb"] = lb
 	fmt.Println("~~~~~~~~~~lb: " + report["lb"])
 
-	//email the final manual steps to authenticated user email
+	//email the final manual steps to authenticated user
 	err = smtp.SendMail(
 		internal.Cfg.SmtpServer+":"+internal.Cfg.SmtpPort,
 		smtp.PlainAuth("", internal.Cfg.SmtpUser, internal.Cfg.SmtpPass, internal.Cfg.SmtpServer),
 		"noreply@"+internal.Cfg.Domain,
-		[]string{reqUser, "gtan@mozilla.com"},
-		[]byte("To: "+reqUser+"\r\n"+
-			"Subject: turkey_aws deployment <b>"+stackName+"</b> \r\n"+
-			"\r\n<b>1. CNAME required:</b> \"*."+cfg.Domain+"\" : \""+report["lb"]+"\""+
-			"\r\n<b>2. sknoonerToken:</b> "+report["skoonerToken"]+
-			"\r\n<b>3. update https cert at:</b> https://dash."+cfg.Domain+"/#!service/ingress/lb"+
+		[]string{authnUser, "gtan@mozilla.com"},
+		[]byte("To: "+authnUser+"\r\n"+
+			"Subject: turkey_aws deployment <"+stackName+"> \r\n"+
+			"\r\n1. CNAME required: *."+cfg.Domain+" : "+report["lb"]+
+			"\r\n2. sknoonerToken: "+report["skoonerToken"]+
+			"\r\n3. update https cert at: https://dash."+cfg.Domain+"/#!service/ingress/lb"+
 			"\r\n"),
 	)
 	if err != nil {
