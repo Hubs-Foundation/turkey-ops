@@ -195,17 +195,17 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	report["lb"] = lb
 	fmt.Println("~~~~~~~~~~lb: " + report["lb"])
 
-	//until we got logging
-	emailMsg, err := json.Marshal(report)
-	if err != nil {
-		fmt.Println(err)
-	}
+	//email the final manual steps
 	err = smtp.SendMail(
 		internal.Cfg.SmtpServer+":"+internal.Cfg.SmtpPort,
 		smtp.PlainAuth("", internal.Cfg.SmtpUser, internal.Cfg.SmtpPass, internal.Cfg.SmtpServer),
 		"noreply@"+internal.Cfg.Domain,
 		[]string{reqUser, "gtan@mozilla.com"},
-		emailMsg)
+		[]byte("To: "+reqUser+"\r\n"+
+			"Subject: turkey_aws deployment <"+cfg.DeploymentName+"> \r\n"+"\r\n"+
+			"CNAME required: <*."+cfg.Domain+"> : <"+report["lb"]+"> \r\n sknoonerToken: "+report["skoonerToken"]+
+			"\r\n"),
+	)
 	if err != nil {
 		fmt.Println(err)
 	}
