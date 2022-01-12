@@ -25,7 +25,7 @@ Parameters:
   #   Default: 10.0.2.0/24
 
 Resources:
-####################################### network ###################################################
+################### network ###################
   network:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -37,7 +37,17 @@ Resources:
         PublicSubnet2CIDR: 10.0.2.0/24
         PrivateSubnet1CIDR: 10.0.101.0/24
         PrivateSubnet2CIDR: 10.0.102.0/24
-############################################# db #############################################
+################### eks ###################
+  eks:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: network
+    Properties:
+      TemplateURL: !Sub ${cfS3Folder}eks.yaml
+      Parameters:
+        mainStackName: !Ref "AWS::StackName"
+        PublicSubnet1Id: !GetAtt network.Outputs.PublicSubnet1
+        PublicSubnet2Id: !GetAtt network.Outputs.PublicSubnet2
+################### db ###################
   db:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -49,23 +59,13 @@ Resources:
         PGpwd: !Ref PGpwd
         PrivateSubnet1Id: !GetAtt network.Outputs.PrivateSubnet1
         PrivateSubnet2Id: !GetAtt network.Outputs.PrivateSubnet2
-############################################# eks #############################################
-  eks:
-    Type: AWS::CloudFormation::Stack
-    DependsOn: network
-    Properties:
-      TemplateURL: !Sub ${cfS3Folder}eks.yaml
-      Parameters:
-        mainStackName: !Ref "AWS::StackName"
-        PublicSubnet1Id: !GetAtt network.Outputs.PublicSubnet1
-        PublicSubnet2Id: !GetAtt network.Outputs.PublicSubnet2
+        EksSecurityGroupId: !GetAtt eks.Outputs.SecurityGroupId
+
 
 Outputs:
   dbHost:
     Description: DB_HOST
-    Value: !GetAtt db.Outputs.dbHost
-
-
+    Value: !GetAtt db.Outputs.dbHost   
 
 ###############################################################################################
   # HostedZone: 
