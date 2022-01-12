@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/smtp"
 	"os"
 	"strconv"
 	"strings"
@@ -113,7 +114,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reportCreateCFstackStatus(stackName, cfg, sess, awss)
 
 		// ######################################### 4. post deployment configs ###################################
-		report, err := postDeploymentConfigs(cfg, stackName, awss, sess)
+		report, err := postDeploymentConfigs(cfg, stackName, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
 		if err != nil {
 			sess.Panic("ERROR @ postDeploymentConfigs for " + stackName + ": " + err.Error())
 		}
@@ -148,7 +149,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
-func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, sess *internal.CacheBoxSessData) (map[string]string, error) {
+func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, reqUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
 	cfParams, err := getCfOutputParamMap(stackName, awss)
 	if err != nil {
 		sess.Panic("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
@@ -193,6 +194,21 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	}
 	report["lb"] = lb
 	fmt.Println("~~~~~~~~~~lb: " + report["lb"])
+
+	//until we got logging
+	emailMsg, err := json.Marshal(report)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = smtp.SendMail(
+		internal.Cfg.SmtpServer+":"+internal.Cfg.SmtpPort,
+		smtp.PlainAuth("", internal.Cfg.SmtpUser, internal.Cfg.SmtpPass, internal.Cfg.SmtpServer),
+		"noreply@"+internal.Cfg.Domain,
+		[]string{reqUser, "gtan@mozilla.com"},
+		emailMsg)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	return report, nil
 }
