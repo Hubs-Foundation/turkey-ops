@@ -202,10 +202,10 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 		"noreply@"+internal.Cfg.Domain,
 		[]string{reqUser, "gtan@mozilla.com"},
 		[]byte("To: "+reqUser+"\r\n"+
-			"Subject: turkey_aws deployment <"+stackName+"> \r\n"+
-			"\r\n1. CNAME required: *."+cfg.Domain+" : "+report["lb"]+
-			"\r\n2. sknoonerToken: "+report["skoonerToken"]+
-			"\r\n3. update https cert at: https://dash."+cfg.Domain+"/#!service/ingress/lb"+
+			"Subject: turkey_aws deployment <b>"+stackName+"</b> \r\n"+
+			"\r\n<b>1. CNAME required:</b> \"*."+cfg.Domain+"\" : \""+report["lb"]+"\""+
+			"\r\n<b>2. sknoonerToken:</b> "+report["skoonerToken"]+
+			"\r\n<b>3. update https cert at:</b> https://dash."+cfg.Domain+"/#!service/ingress/lb"+
 			"\r\n"),
 	)
 	if err != nil {
