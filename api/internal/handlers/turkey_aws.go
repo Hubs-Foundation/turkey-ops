@@ -195,15 +195,17 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	report["lb"] = lb
 	fmt.Println("~~~~~~~~~~lb: " + report["lb"])
 
-	//email the final manual steps
+	//email the final manual steps to authenticated user email
 	err = smtp.SendMail(
 		internal.Cfg.SmtpServer+":"+internal.Cfg.SmtpPort,
 		smtp.PlainAuth("", internal.Cfg.SmtpUser, internal.Cfg.SmtpPass, internal.Cfg.SmtpServer),
 		"noreply@"+internal.Cfg.Domain,
 		[]string{reqUser, "gtan@mozilla.com"},
 		[]byte("To: "+reqUser+"\r\n"+
-			"Subject: turkey_aws deployment <"+cfg.DeploymentName+"> \r\n"+"\r\n"+
-			"CNAME required: <*."+cfg.Domain+"> : <"+report["lb"]+"> \r\n sknoonerToken: "+report["skoonerToken"]+
+			"Subject: turkey_aws deployment <"+stackName+"> \r\n"+
+			"\r\n1. CNAME required: *."+cfg.Domain+" : "+report["lb"]+
+			"\r\n2. sknoonerToken: "+report["skoonerToken"]+
+			"\r\n3. update https cert at: https://dash."+cfg.Domain+"/#!service/ingress/lb"+
 			"\r\n"),
 	)
 	if err != nil {
