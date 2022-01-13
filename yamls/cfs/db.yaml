@@ -41,7 +41,8 @@ Resources:
       DBSubnetGroupName: !Ref SubnetGrp
       # MonitoringInterval: '60'
       # MonitoringRoleArn: 'arn:aws:iam::123456789012:role/rds-monitoring-role'
-      VPCSecurityGroups: !Ref EksSecurityGroupId
+      VPCSecurityGroups: 
+        - !Ref EksSecurityGroupId
 
 Outputs:
   dbHost:
