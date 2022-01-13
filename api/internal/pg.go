@@ -13,6 +13,5 @@ func MakePgxPool() {
 	if err != nil {
 		logger.Error("Unable to connect to database: " + err.Error())
 	}
-	logger.Debug("connected to: " + p.Config().ConnConfig.Host)
 	PgxPool = p
 }
