@@ -32,11 +32,11 @@ jobs:
           echo "GITHUB_REF==$GITHUB_REF"
           if [ "$GITHUB_REF" = "refs/heads/dev" ] || [ "$GITHUB_REF" = "refs/heads/master" ]; then
             echo "pushing :dev for $GITHUB_REF"
-            docker tag $registryName/$containerName:$GITHUB_RUN_NUMBER $registryName/$containerName:dev
+            docker tag $registryName/$containerName:$GITHUB_RUN_NUMBER $registryName/$containerName:dev-$GITHUB_RUN_NUMBER
             sudo docker push $registryName/$containerName:dev; fi
           if [ "$GITHUB_REF" = "refs/heads/master" ]; then
             echo "pushing :prod for $GITHUB_REF"
-            docker tag $registryName/$containerName:$GITHUB_RUN_NUMBER $registryName/$containerName:prod
+            docker tag $registryName/$containerName:$GITHUB_RUN_NUMBER $registryName/$containerName:prod-$GITHUB_RUN_NUMBER
             sudo docker push $registryName/$containerName:prod; fi
   deploy-dev:
     runs-on: ubuntu-latest
