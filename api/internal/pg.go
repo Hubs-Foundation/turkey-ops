@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -14,6 +13,6 @@ func MakePgxPool() {
 	if err != nil {
 		logger.Error("Unable to connect to database: " + err.Error())
 	}
-	logger.Debug(fmt.Sprintf("pgxpool.Pool.Stat: %v\n", p.Stat()))
+	logger.Debug("connected to: " + p.Config().ConnConfig.Host)
 	PgxPool = p
 }
