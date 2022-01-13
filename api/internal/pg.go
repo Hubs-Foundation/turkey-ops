@@ -14,6 +14,6 @@ func MakePgxPool() {
 	if err != nil {
 		logger.Error("Unable to connect to database: " + err.Error())
 	}
-	logger.Debug(fmt.Sprintf("p: %v\n", p))
+	logger.Debug(fmt.Sprintf("pgxpool.Pool.Stat: %v\n", p.Stat()))
 	PgxPool = p
 }
