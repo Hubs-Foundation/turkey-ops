@@ -228,8 +228,7 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 
 	// TurkeyId is required
 	if cfg.TurkeyId == "" {
-		cfg.TurkeyId = cfg.UserEmail
-		return cfg, errors.New("ERROR bad hcCfg.TurkeyId")
+		return cfg, errors.New("ERROR missing hcCfg.TurkeyId")
 	}
 
 	//default Tier is free

@@ -23,6 +23,27 @@ import (
 	"k8s.io/client-go/restmapper"
 )
 
+type K8sSvs struct {
+	Cfg       *rest.Config
+	ClientSet *kubernetes.Clientset
+}
+
+func NewK8sSvs_local() *K8sSvs {
+
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		GetLogger().Error(err.Error())
+	}
+	clientSet, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		GetLogger().Panic(err.Error())
+	}
+	return &K8sSvs{
+		Cfg:       cfg,
+		ClientSet: clientSet,
+	}
+}
+
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
 func Ssa_k8sChartYaml(ssa_userId, k8sChartYaml string, cfg *rest.Config) error {

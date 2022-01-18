@@ -24,7 +24,8 @@ type Config struct {
 	TurkeyCfg_s3_bkt  string
 	DefaultRegion_aws string
 
-	Awss *AwsSvs
+	Awss       *AwsSvs
+	K8ss_local *K8sSvs
 }
 
 var Cfg *Config
@@ -61,6 +62,8 @@ func MakeCfg() {
 	f, _ := os.Create("./_files/ns_hc.yam")
 	Awss.S3Download_file(Cfg.TurkeyCfg_s3_bkt, Cfg.Env+"/yams/ns_hc.yam", f)
 	f.Close()
+
+	Cfg.K8ss_local = NewK8sSvs_local()
 
 }
 

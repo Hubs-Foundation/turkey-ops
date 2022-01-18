@@ -2,26 +2,30 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"main/internal"
 	"net/http"
 	"strings"
+
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload
 type dockerhubWebhookJson struct {
-	Callback_url string
-	Push_data    dockerhubWebhookJson_push_data
-	Repository   dockerhubWebhookJson_Repository
+	Callback_url string                          `json:"callback_url"`
+	Push_data    dockerhubWebhookJson_push_data  `json:"push_data"`
+	Repository   dockerhubWebhookJson_Repository `json:"repository"`
 }
 type dockerhubWebhookJson_push_data struct {
-	Pusher string
-	Tag    string
+	Pusher string `json:"pusher"`
+	Tag    string `json:"tag"`
 }
 type dockerhubWebhookJson_Repository struct {
-	repo_name string
+	Repo_name string `json:"repo_name"`
 }
 
 var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,24 +44,97 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//decoder := json.NewDecoder(r.Body)
 	//-----------------------
 
-	var v dockerhubWebhookJson
-	err := decoder.Decode(&v)
-	if err != nil || !strings.HasPrefix(v.Callback_url, "https://registry.hub.docker.com/u/mozillareality/") {
+	var dockerJson dockerhubWebhookJson
+	err := decoder.Decode(&dockerJson)
+	if err != nil || !strings.HasPrefix(dockerJson.Callback_url, "https://registry.hub.docker.com/u/mozillareality/") {
 		internal.GetLogger().Debug(" bad r.Body, is it json? have they changed it? (https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload)")
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
-	internal.GetLogger().Debug(fmt.Sprintf("%+v", v))
+	//todo: verify ... docker's really lacking here, maybe check with docker and then cross check with github action?
 
-	if strings.HasPrefix(v.Push_data.Tag, "dev-") ||
-		strings.HasPrefix(v.Push_data.Tag, "staging-") ||
-		strings.HasPrefix(v.Push_data.Tag, "prod-") {
-		tag := v.Repository.repo_name + ":" + v.Push_data.Tag
-		internal.GetLogger().Info("deploying: " + tag)
+	//assume we can trust the payload at this point
+	internal.GetLogger().Debug(fmt.Sprintf("parsed dockerJson: %+v", dockerJson))
+	channel := ""
+	switch {
+	case strings.HasPrefix(dockerJson.Push_data.Tag, "dev-"):
+		channel = "dev"
+	case strings.HasPrefix(dockerJson.Push_data.Tag, "stagging-"):
+		channel = "stagging"
+	case strings.HasPrefix(dockerJson.Push_data.Tag, "prod-"):
+		channel = "prod"
+	}
+	fulltag := dockerJson.Repository.Repo_name + ":" + dockerJson.Push_data.Tag
+	internal.GetLogger().Debug("channel: " + channel + ", fulltag: " + fulltag)
+
+	if channel == "" {
+		return
 	}
 
+	//deploy? publish?
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "turkey-services", metav1.GetOptions{})
+	if err != nil {
+		internal.GetLogger().Panic(err.Error())
+	}
+	publishNewContainerToK8sNamespaceTag(ns, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+
+	// batchSize := int64(1000)
+	// nsList, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.TODO(),
+	// 	metav1.ListOptions{Limit: batchSize})
+	// if err != nil {
+	// 	internal.GetLogger().Panic(err.Error())
+	// }
+	// processNsList(nsList, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+
+	// internal.GetLogger().Debug("nsList.ListMeta.Continue = " + nsList.ListMeta.Continue)
+	// for nsList.ListMeta.Continue != "" {
+	// 	nsList, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.TODO(),
+	// 		metav1.ListOptions{Limit: batchSize, Continue: nsList.ListMeta.Continue})
+	// 	if err != nil {
+	// 		internal.GetLogger().Panic(err.Error())
+	// 	}
+	// 	processNsList(nsList, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	// }
+
+	// internal.GetLogger().Debug("done")
+
 })
+
+func publishNewContainerToK8sNamespaceTag(ns *v1.Namespace, imgRepoName string, imgTag string) {
+	ns.Labels[imgRepoName] = imgTag
+
+	internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+}
+
+func processNsList(nsList *v1.NamespaceList, channel string, repoName string, tag string) {
+	for _, item := range nsList.Items {
+		nsName := item.Name
+		internal.GetLogger().Debug("nsName: " + nsName)
+
+		dClient := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName)
+
+		if strings.HasPrefix(nsName, "hc-") && item.Labels["channel"] == channel {
+			dList, err := dClient.List(context.Background(), metav1.ListOptions{})
+			if err != nil {
+				internal.GetLogger().Panic(err.Error())
+			}
+			for _, d := range dList.Items {
+				for i, c := range d.Spec.Template.Spec.Containers {
+					internal.GetLogger().Debug("c.Image: " + c.Image + ", repoName: " + repoName)
+
+					if strings.Split(c.Image, ":")[0] == repoName {
+						d.Spec.Template.Spec.Containers[i].Image = repoName + ":" + tag
+						_, err := dClient.Update(context.Background(), &d, metav1.UpdateOptions{})
+						if err != nil {
+							internal.GetLogger().Panic(err.Error())
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
 func prettyPrintJson(jsonBytes []byte) string {
 	d := json.NewDecoder(bytes.NewBuffer(jsonBytes))
