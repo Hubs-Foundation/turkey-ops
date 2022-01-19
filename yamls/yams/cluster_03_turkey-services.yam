@@ -31,6 +31,22 @@ stringData:
   SMTP_USER: {{.SMTP_USER}}
   SMTP_PASS: {{.SMTP_PASS}}
 ---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: hc-launch-fallback
+  namespace: turkey-services
+spec:
+  errors:
+    status:
+      - "404"
+      - "502"
+      - "503"
+    query: /hc_launch_fallback
+    service:
+      name: turkey-api
+      port: 888
+---
 ####################################################################################
 ####################################### auth #######################################
 ####################################################################################  

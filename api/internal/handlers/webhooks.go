@@ -28,6 +28,55 @@ type dockerhubWebhookJson_Repository struct {
 	Repo_name string `json:"repo_name"`
 }
 
+type ghaReport struct {
+	Repo_name string `json:"repo_name"`
+	Tag       string `json:"tag"`
+	Channel   string `json:"channel"`
+}
+
+var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/webhooks/ghaturkey" || r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	//check api key for ddos protection?
+
+	internal.GetLogger().Debug(dumpHeader(r))
+
+	//++++++++++++++++++++++++
+
+	//get bytes for debug print + decode
+	rBodyBytes, _ := ioutil.ReadAll(r.Body)
+	internal.GetLogger().Debug(prettyPrintJson(rBodyBytes))
+	decoder := json.NewDecoder(bytes.NewBuffer(rBodyBytes))
+
+	//or if we don't need debug print:
+	//decoder := json.NewDecoder(r.Body)
+
+	//-----------------------
+
+	var ghaReport ghaReport
+	err := decoder.Decode(&ghaReport)
+	if err != nil {
+		internal.GetLogger().Debug(" bad r.Body")
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	if ghaReport.Channel == "" {
+		return
+	}
+
+	//publish
+
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "turkey-services", metav1.GetOptions{})
+	if err != nil {
+		internal.GetLogger().Panic(err.Error())
+	}
+	publishToNamespaceTag(ns, ghaReport.Channel, ghaReport.Repo_name, ghaReport.Tag)
+
+})
+
 var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/webhooks/dockerhub" || r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -57,12 +106,11 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//assume we can trust the payload at this point
 	internal.GetLogger().Debug(fmt.Sprintf("parsed dockerJson: %+v", dockerJson))
 	channel := ""
-	switch {
-	case strings.HasPrefix(dockerJson.Push_data.Tag, "dev-"):
+	if dockerJson.Push_data.Tag == "dev-" {
 		channel = "dev"
-	case strings.HasPrefix(dockerJson.Push_data.Tag, "stagging-"):
+	} else if dockerJson.Push_data.Tag == "stagging-" {
 		channel = "stagging"
-	case strings.HasPrefix(dockerJson.Push_data.Tag, "prod-"):
+	} else if dockerJson.Push_data.Tag == "prod-" {
 		channel = "prod"
 	}
 	fulltag := dockerJson.Repository.Repo_name + ":" + dockerJson.Push_data.Tag
@@ -73,11 +121,12 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//deploy? publish?
+
 	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "turkey-services", metav1.GetOptions{})
 	if err != nil {
 		internal.GetLogger().Panic(err.Error())
 	}
-	publishNewContainerToK8sNamespaceTag(ns, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	publishToNamespaceTag(ns, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 
 	// batchSize := int64(1000)
 	// nsList, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.TODO(),
@@ -101,10 +150,13 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 })
 
-func publishNewContainerToK8sNamespaceTag(ns *v1.Namespace, imgRepoName string, imgTag string) {
-	ns.Labels[imgRepoName] = imgTag
-
+func publishToNamespaceTag(ns *v1.Namespace, channel string, imgRepoName string, imgTag string) {
+	ns.Labels[channel+"."+imgRepoName] = imgTag
 	internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+}
+
+func publishToConfigmap(configmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) {
+	internal.GetLogger().Panic("not implemented yet")
 }
 
 func processNsList(nsList *v1.NamespaceList, channel string, repoName string, tag string) {

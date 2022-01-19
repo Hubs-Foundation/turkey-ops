@@ -52,6 +52,7 @@ spec:
         - --entrypoints.http.http.redirections.entryPoint.scheme=https
         - --entrypoints.http.http.redirections.entrypoint.permanent=true
         - --metrics.prometheus=true
+        - --providers.kubernetescrd.allowcrossnamespace
         resources:
           requests:
             memory: 200Mi

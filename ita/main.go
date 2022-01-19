@@ -18,9 +18,14 @@ func main() {
 
 	router := http.NewServeMux()
 	router.Handle("/healthz", internal.Healthz())
+
 	router.Handle("/admin-info", internal.Ita_admin_info)
 	router.Handle("/configs/reticulum/ps", internal.Ita_cfg_ret_ps)
+
+	// router.Handle("/hc_launch_fallback", internal.HC_launch_fallback)
+
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
+
 	internal.StartServer(router, 9001)
 
 }

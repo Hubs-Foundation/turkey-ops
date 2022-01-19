@@ -42,3 +42,14 @@ var Ita_cfg_ret_ps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 	json.NewEncoder(w).Encode(resp)
 	return
 })
+
+// var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 	if r.URL.Path != "/hc_launch_fallback" || r.Method != "GET" {
+// 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 		return
+// 	}
+// 	Logger.Debug(dumpHeader(r))
+
+// 	fmt.Fprintf(w, "wip")
+// 	return
+// })

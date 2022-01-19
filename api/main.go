@@ -28,10 +28,12 @@ func main() {
 	router.Handle("/hc_delNS", handlers.Hc_delNS)
 	router.Handle("/hc_delDB", handlers.Hc_delDB)
 
-	router.Handle("/admin-info", handlers.Ita_admin_info)
-	router.Handle("/configs/reticulum/ps", handlers.Ita_cfg_ret_ps)
+	// router.Handle("/admin-info", handlers.Ita_admin_info)
+	// router.Handle("/configs/reticulum/ps", handlers.Ita_cfg_ret_ps)
+	router.Handle("/hc_launch_fallback", handlers.HC_launch_fallback)
 
 	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
+	router.Handle("/webhooks/ghaturkey", handlers.GhaTurkey)
 
 	router.Handle("/ytdl/api/info", handlers.Ytdl)
 

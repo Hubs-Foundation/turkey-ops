@@ -21,6 +21,9 @@ type Config struct {
 	SmtpUser   string
 	SmtpPass   string
 
+	DockerhubUser string
+	DockerhubPass string
+
 	TurkeyCfg_s3_bkt  string
 	DefaultRegion_aws string
 
@@ -46,6 +49,9 @@ func MakeCfg() {
 	Cfg.SmtpPort = os.Getenv("SMTP_PORT")
 	Cfg.SmtpUser = os.Getenv("SMTP_USER")
 	Cfg.SmtpPass = os.Getenv("SMTP_PASS")
+
+	Cfg.DockerhubUser = os.Getenv("DOCKERHUB_USER")
+	Cfg.DockerhubPass = os.Getenv("DOCKERHUB_PASS")
 
 	Awss, err := NewAwsSvs(Cfg.AwsKey, Cfg.AwsSecret, Cfg.AwsRegion)
 	if err != nil {
