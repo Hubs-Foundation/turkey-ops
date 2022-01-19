@@ -203,9 +203,13 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 		[]string{authnUser, "gtan@mozilla.com"},
 		[]byte("To: "+authnUser+"\r\n"+
 			"Subject: turkey_aws deployment <"+stackName+"> \r\n"+
-			"\r\n1. CNAME required: *."+cfg.Domain+" : "+report["lb"]+
-			"\r\n2. sknoonerToken: "+report["skoonerToken"]+
-			"\r\n3. update https cert at: https://dash."+cfg.Domain+"/#!service/ingress/lb"+
+			"\r\n******required manual steps******"+
+			"\r\n- CNAME required: *."+cfg.Domain+" : "+report["lb"]+
+			"\r\n******optional manual steps******"+
+			"\r\n- update https cert at: https://dash."+cfg.Domain+"/#!service/ingress/lb"+
+			"\r\n- for aws-eks, update role mappings at: https://dash."+cfg.Domain+"/#!configmap/kube-system/aws-auth"+
+			"\r\n******things you need******"+
+			"\r\n- sknoonerToken: "+report["skoonerToken"]+
 			"\r\n"),
 	)
 	if err != nil {
