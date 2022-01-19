@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	mrand "math/rand"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -90,21 +90,27 @@ func AddCacheData(c *http.Cookie) *CacheBoxSessData {
 // PwDGen -- will use all printable chars except space and delete (why is delete a printable char?)
 // aka. ascii code 33 - 126
 func PwdGen(length int) string {
-	var seed int64
-	binary.Read(crand.Reader, binary.BigEndian, &seed)
-	mr := mrand.New(mrand.NewSource(seed))
+	// var seed int64
+	// binary.Read(crand.Reader, binary.BigEndian, &seed)
+	// mr := mrand.New(mrand.NewSource(seed))
+	// var pwd string
+	// for i := 0; i < length-2; i++ {
+	// 	roll := mr.Intn(95) + 32
+	// 	pwd = pwd + string(byte(roll))
+	// }
+	// troubleChars := []string{`/`, `"`, `@`, ` `, `\`, `<`, `>`, `:`, `{`, `}`, "'", "`", "|", "%"}
+	// for _, c := range troubleChars {
+	// 	replace := string(byte(mr.Intn(26) + 65)) //ascii 65~90 aka. A~Z
+	// 	pwd = strings.Replace(pwd, c, replace, -1)
+	// }
 
-	var pwd string
-	for i := 0; i < length-2; i++ {
-		roll := mr.Intn(95) + 32
-		pwd = pwd + string(byte(roll))
+	pwd := make([]rune, length)
+	var dict = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	dictLen := len(dict)
+	for i := range pwd {
+		pwd[i] = dict[rand.Intn(dictLen)]
 	}
-	troubleChars := []string{`/`, `"`, `@`, ` `, `\`, `<`, `>`, `:`, `{`, `}`, "'", "`", "|", "%"}
-	for _, c := range troubleChars {
-		replace := string(byte(mr.Intn(26) + 65)) //ascii 65~90 aka. A~Z
-		pwd = strings.Replace(pwd, c, replace, -1)
-	}
-	return "~" + pwd + "~"
+	return "~" + string(pwd) + "~"
 }
 
 func StackNameGen() string {
