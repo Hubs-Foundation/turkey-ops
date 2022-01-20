@@ -33,10 +33,11 @@ func NewK8sSvs_local() *K8sSvs {
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		GetLogger().Error(err.Error())
+		return nil
 	}
 	clientSet, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		GetLogger().Panic(err.Error())
+		GetLogger().Error(err.Error())
 	}
 	return &K8sSvs{
 		Cfg:       cfg,

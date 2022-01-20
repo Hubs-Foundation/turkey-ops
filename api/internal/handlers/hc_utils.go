@@ -35,8 +35,17 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 		return
 	}
 	internal.GetLogger().Debug(dumpHeader(r))
-
-	fmt.Fprintf(w, "wip ... /hc_launch_fallback ... \r\n keep refreshing please << todo: make a better looking one")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	html := `
+	<h1> your hubs services are warming up, <br>
+	it went cold because it's a free tier<br>
+	or the pod somehow dead... <br>
+	anyway check back in 30-ish-seconds </h1> <br>
+	this is still wip ... <b>/hc_launch_fallback</> ... <br>
+	todo: <br>
+	need a better looking page here
+	`
+	fmt.Fprintf(w, html)
 	return
 })
 
@@ -46,7 +55,15 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 		return
 	}
 	internal.GetLogger().Debug(dumpHeader(r))
-
-	fmt.Fprintf(w, "wip ... /Global_404_launch_fallback \r\n todo: check for (free) subdomain and scale it back up")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	html := `
+	<h1> your hubs infra's starting up, when the code's there, it's not yet </h1>
+	this is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
+	todo: <br>
+	1. check for (free) subdomain <br>
+	2. scale it back up <br>
+	3. need a better looking page here
+	`
+	fmt.Fprintf(w, html)
 	return
 })
