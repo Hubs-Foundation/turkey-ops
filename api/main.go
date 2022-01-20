@@ -31,6 +31,7 @@ func main() {
 	// router.Handle("/admin-info", handlers.Ita_admin_info)
 	// router.Handle("/configs/reticulum/ps", handlers.Ita_cfg_ret_ps)
 	router.Handle("/hc_launch_fallback", handlers.HC_launch_fallback)
+	router.Handle("/global_404_fallback", handlers.Global_404_launch_fallback)
 
 	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
 	router.Handle("/webhooks/ghaturkey", handlers.GhaTurkey)

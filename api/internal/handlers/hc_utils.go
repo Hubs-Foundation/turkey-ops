@@ -36,6 +36,17 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	}
 	internal.GetLogger().Debug(dumpHeader(r))
 
-	fmt.Fprintf(w, "wip")
+	fmt.Fprintf(w, "wip ... /hc_launch_fallback ... \r\n keep refreshing please << todo: make a better looking one")
+	return
+})
+
+var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/global_404_fallback" || r.Method != "GET" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	internal.GetLogger().Debug(dumpHeader(r))
+
+	fmt.Fprintf(w, "wip ... /Global_404_launch_fallback \r\n todo: check for (free) subdomain and scale it back up")
 	return
 })

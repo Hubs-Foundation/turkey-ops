@@ -48,6 +48,9 @@ spec:
   routes:
   - kind: Rule
     match: Host(`{{.Subdomain}}.{{.Domain}}`) && PathPrefix(`/`)
+    middlewares:
+    - name: hc-launch-fallback
+      namespace: turkey-services    
     services:
     - kind: Service
       name: ret

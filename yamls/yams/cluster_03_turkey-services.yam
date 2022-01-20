@@ -47,6 +47,20 @@ spec:
       name: turkey-api
       port: 888
 ---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: global-404-fallback
+  namespace: turkey-services
+spec:
+  errors:
+    status:
+      - "404"
+    query: /global_404_fallback
+    service:
+      name: turkey-api
+      port: 888
+---
 ####################################################################################
 ####################################### auth #######################################
 ####################################################################################  

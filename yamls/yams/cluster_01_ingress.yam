@@ -179,6 +179,27 @@ spec:
       passHostHeader: true
       port: 1080
 ---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: global-404-fallback
+  namespace: ingress
+spec:
+  entryPoints:
+    - https
+  routes:
+  - kind: Rule
+    match: HostRegexp(`{subdomain:.*}.dev1.myhubs.net`) && PathPrefix(`/`)
+    priority: 1
+    middlewares:
+    - name: global-404-fallback
+      namespace: turkey-services
+    services:                       
+    - kind: Service
+      namespace: turkey-services
+      name: turkey-api      
+      port: 888
+---
 ################### middlewares ##########################
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
