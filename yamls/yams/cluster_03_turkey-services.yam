@@ -61,6 +61,16 @@ spec:
       name: turkey-api
       port: 888
 ---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: ret-cors
+  namespace: turkey-services
+spec:
+  headers:
+    customResponseHeaders:
+      Access-Control-Allow-Origin: "*"
+---
 ####################################################################################
 ####################################### auth #######################################
 ####################################################################################  

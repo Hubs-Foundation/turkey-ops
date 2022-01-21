@@ -65,7 +65,7 @@ spec:
       port: 4000
     middlewares:
     - name: ret-cors
-      namespace: hc-{{.Subdomain}}
+      namespace: turkey-services
   - kind: Rule
     match: (Host(`{{.Subdomain}}-assets.{{.Domain}}`) || Host(`{{.Subdomain}}-cors.{{.Domain}}`)) && PathPrefix(`/hubs`)
     services:
@@ -80,16 +80,16 @@ spec:
       name: spoke
       passHostHeader: true
       port: 8080      
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: ret-cors
-  namespace: hc-{{.Subdomain}}
-spec:
-  headers:
-    customResponseHeaders:
-      Access-Control-Allow-Origin: "*"
+# ---
+# apiVersion: traefik.containo.us/v1alpha1
+# kind: Middleware
+# metadata:
+#   name: ret-cors
+#   namespace: hc-{{.Subdomain}}
+# spec:
+#   headers:
+#     customResponseHeaders:
+#       Access-Control-Allow-Origin: "*"
 ---
 ########################################################################
 ###################### reticulum #######################################
