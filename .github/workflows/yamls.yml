@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: api
+name: yamls
 
 on:
   push:
@@ -19,7 +19,6 @@ jobs:
     #   matrix:
     #     ghaEnv: [dev, staging, prod]
     runs-on: ubuntu-latest
-    needs: build
     environment:
       name: dev
     steps:
