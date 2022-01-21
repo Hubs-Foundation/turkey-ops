@@ -196,6 +196,7 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	fmt.Println("~~~~~~~~~~lb: " + report["lb"])
 
 	//email the final manual steps to authenticated user
+	clusterCfgBytes, _ := json.Marshal(cfg)
 	err = smtp.SendMail(
 		internal.Cfg.SmtpServer+":"+internal.Cfg.SmtpPort,
 		smtp.PlainAuth("", internal.Cfg.SmtpUser, internal.Cfg.SmtpPass, internal.Cfg.SmtpServer),
@@ -210,6 +211,8 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 			"\r\n- for aws-eks, update role mappings at: https://dash."+cfg.Domain+"/#!configmap/kube-system/aws-auth"+
 			"\r\n******things you need******"+
 			"\r\n- sknoonerToken: "+report["skoonerToken"]+
+			"\r\n******clusterCfg******"+
+			"\r\n"+string(clusterCfgBytes)+
 			"\r\n"),
 	)
 	if err != nil {
