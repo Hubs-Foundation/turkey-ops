@@ -44,7 +44,6 @@ jobs:
     environment:
       name: dev
     steps:
-      - uses: actions/checkout@v2
       - name: deploy container to dev cluster
         run: |
           export AWS_DEFAULT_REGION=us-east-1
@@ -52,8 +51,7 @@ jobs:
           export AWS_SECRET_ACCESS_KEY=${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
           aws eks update-kubeconfig --name $eksName
           kubectl -n turkey-services set image deployment/turkey-api turkey-orc=$registryName/$containerName:$GITHUB_RUN_NUMBER            
-          cd ./yamls
-          env=dev bash push_s3.sh
+
   # push-dev:
   #   runs-on: ubuntu-latest
   #   needs: build

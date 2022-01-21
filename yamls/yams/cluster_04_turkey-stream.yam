@@ -18,7 +18,7 @@ metadata:
 
 spec:
   rules:
-  - host: stream.myhubs.net
+  - host: stream.{{.Domain}}
     http:
       paths:
       - path: /
@@ -38,7 +38,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.entrypoints: turn
 spec:
   rules:
-  - host: stream.myhubs.net
+  - host: stream.{{.Domain}}
     http:
       paths:
       - path: /
