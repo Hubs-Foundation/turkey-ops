@@ -6,7 +6,8 @@ import (
 
 	"github.com/golang/groupcache"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,11 +36,13 @@ func (c *GCache) StartWatchingPeerPods() (chan struct{}, error) {
 		return nil, errors.New("Cfg.K8ss_local == nil")
 	}
 
-	watchlist := cache.NewListWatchFromClient(
+	watchlist := cache.NewFilteredListWatchFromClient(
 		Cfg.K8ss_local.ClientSet.CoreV1().RESTClient(),
 		"pods",
 		Cfg.PodNS,
-		fields.OneTermEqualSelector("metadata.labels['app']", "turkey-api"),
+		func(options *metav1.ListOptions) {
+			options.LabelSelector = labels.SelectorFromSet(labels.Set(map[string]string{"app": Cfg.PodLabelApp})).String()
+		},
 	)
 
 	_, controller := cache.NewInformer(
