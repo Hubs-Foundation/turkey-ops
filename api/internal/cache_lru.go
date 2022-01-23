@@ -59,7 +59,8 @@ func (c *GCache) StartWatchingPeerPods() (chan struct{}, error) {
 				c.updatePeers(obj)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				logger.Sugar().Debugf("pod changed from %s to %s\n", oldObj, newObj)
+				logger.Sugar().Debugf("pod changed from %s", oldObj)
+				logger.Sugar().Debugf("pod changed to %s", newObj)
 				c.updatePeers(newObj)
 			},
 		},
@@ -74,6 +75,7 @@ func (c *GCache) updatePeers(obj interface{}) {
 	if !ok {
 		logger.Error("expected type v1.Endpoints but got:" + reflect.TypeOf(obj).String())
 	}
-	logger.Sugar().Debugf("updatePeers : %s \n", pod)
+	// logger.Sugar().Debugf("updatePeers : %s \n", pod)
+	logger.Debug("updatePeers: pod.Status.PodIP == " + pod.Status.PodIP)
 	// c.Pool.Set(peers...)
 }
