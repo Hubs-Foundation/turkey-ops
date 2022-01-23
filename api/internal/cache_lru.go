@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/golang/groupcache"
@@ -77,5 +78,8 @@ func (c *GCache) updatePeers(obj interface{}) {
 	}
 	// logger.Sugar().Debugf("updatePeers : %s \n", pod)
 	logger.Debug("updatePeers: pod.Status.PodIP == " + pod.Status.PodIP)
+	logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].String() == " + pod.Status.ContainerStatuses[0].String())
+	logger.Debug(fmt.Sprintf("pod.Status %v", pod.Status))
+
 	// c.Pool.Set(peers...)
 }
