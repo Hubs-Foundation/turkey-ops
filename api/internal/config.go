@@ -1,10 +1,16 @@
 package internal
 
 import (
+	"net"
 	"os"
 )
 
 type Config struct {
+	Port        string
+	PodIp       string
+	PodNS       string
+	PodLabelApp string
+
 	Env      string `long:"environment" env:"ENV" description:"env config"`
 	Domain   string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
 	DBuser   string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
@@ -35,6 +41,20 @@ var Cfg *Config
 
 func MakeCfg() {
 	Cfg = &Config{}
+
+	Cfg.Port = getEnv("POD_PORT", "888")
+	Cfg.PodIp = os.Getenv("POD_IP")
+	if net.ParseIP(Cfg.PodIp) == nil {
+		logger.Error("bad PodIp: " + Cfg.PodIp + ", things like groupcache will not work properly")
+	}
+	Cfg.PodNS = os.Getenv("POD_NS")
+	if Cfg.PodNS == "" {
+		logger.Error("missing env var: POD_NS")
+	}
+	Cfg.PodLabelApp = os.Getenv("POD_LABEL_APP")
+	if Cfg.PodLabelApp == "" {
+		logger.Error("missing env var: POD_LABEL_APP")
+	}
 	Cfg.Env = getEnv("ENV", "dev")
 	Cfg.Domain = os.Getenv("DOMAIN")
 	Cfg.DBconn = os.Getenv("DB_CONN")

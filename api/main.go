@@ -2,16 +2,20 @@ package main
 
 import (
 	"net/http"
+	"strconv"
 
 	"main/internal"
 	"main/internal/handlers"
 )
 
 func main() {
-
 	internal.InitLogger()
 	internal.MakeCfg()
 	internal.MakePgxPool()
+
+	//++++++++++++++++++++++++ testing...
+	internal.StartLruCache()
+	//-----------------------------------
 
 	router := http.NewServeMux()
 
@@ -41,7 +45,12 @@ func main() {
 	router.Handle("/tco_aws", handlers.TurkeyAws)
 
 	router.Handle("/Dummy", handlers.Dummy)
-	internal.StartServer(router, 888)
+
+	port, err := strconv.Atoi(internal.Cfg.Port)
+	if err != nil {
+		internal.GetLogger().Panic("bad port: " + err.Error())
+	}
+	internal.StartServer(router, port)
 
 }
 
