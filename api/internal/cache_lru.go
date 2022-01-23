@@ -2,8 +2,8 @@ package internal
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/golang/groupcache"
 	v1 "k8s.io/api/core/v1"
@@ -78,8 +78,8 @@ func (c *GCache) updatePeers(obj interface{}) {
 	}
 	// logger.Sugar().Debugf("updatePeers : %s \n", pod)
 	logger.Debug("updatePeers: pod.Status.PodIP == " + pod.Status.PodIP)
-	logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].String() == " + pod.Status.ContainerStatuses[0].String())
-	logger.Debug(fmt.Sprintf("pod.Status %v", pod.Status))
-
+	logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Name == " + pod.Status.ContainerStatuses[0].Name)
+	logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Ready == " + strconv.FormatBool(pod.Status.ContainerStatuses[0].Ready))
 	// c.Pool.Set(peers...)
+
 }
