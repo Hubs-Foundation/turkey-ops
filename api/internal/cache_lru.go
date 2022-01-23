@@ -14,6 +14,7 @@ import (
 
 type GCache struct {
 	Pool  *groupcache.HTTPPool
+	Peers []string
 	Group *groupcache.Group
 }
 
@@ -52,16 +53,16 @@ func (c *GCache) StartWatchingPeerPods() (chan struct{}, error) {
 		0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				logger.Sugar().Debugf("pod added: %s \n", obj)
+				// logger.Sugar().Debugf("pod added: %s \n", obj)
+				logger.Sugar().Debugf("pod added")
 				c.updatePeers(obj)
 			},
 			DeleteFunc: func(obj interface{}) {
-				logger.Sugar().Debugf("pod deleted: %s \n", obj)
+				logger.Sugar().Debugf("pod deleted")
 				c.updatePeers(obj)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				logger.Sugar().Debugf("pod changed from %s", oldObj)
-				logger.Sugar().Debugf("pod changed to %s", newObj)
+				logger.Sugar().Debugf("pod updated")
 				c.updatePeers(newObj)
 			},
 		},
@@ -78,8 +79,11 @@ func (c *GCache) updatePeers(obj interface{}) {
 	}
 	// logger.Sugar().Debugf("updatePeers : %s \n", pod)
 	logger.Debug("updatePeers: pod.Status.PodIP == " + pod.Status.PodIP)
-	logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Name == " + pod.Status.ContainerStatuses[0].Name)
-	logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Ready == " + strconv.FormatBool(pod.Status.ContainerStatuses[0].Ready))
+	for _, c := range pod.Status.ContainerStatuses {
+		logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Name == " + c.Name)
+		logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Ready == " + strconv.FormatBool(c.Ready))
+	}
+
 	// c.Pool.Set(peers...)
 
 }
