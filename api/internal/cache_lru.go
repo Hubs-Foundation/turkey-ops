@@ -24,13 +24,13 @@ func StartLruCache() {
 		Pool: pool,
 	}
 
-	_, err := Cache.StartWatchingPods()
+	_, err := Cache.StartWatchingPeerPods()
 	if err != nil {
 		logger.Error("failed to StartCache: " + err.Error())
 	}
 }
 
-func (c *GCache) StartWatchingPods() (chan struct{}, error) {
+func (c *GCache) StartWatchingPeerPods() (chan struct{}, error) {
 	if Cfg.K8ss_local == nil {
 		return nil, errors.New("Cfg.K8ss_local == nil")
 	}
@@ -39,7 +39,7 @@ func (c *GCache) StartWatchingPods() (chan struct{}, error) {
 		Cfg.K8ss_local.ClientSet.CoreV1().RESTClient(),
 		"pods",
 		Cfg.PodNS,
-		fields.OneTermEqualSelector("app", "turkey-api"),
+		fields.OneTermEqualSelector("metadata.labels['app']", "turkey-api"),
 	)
 
 	_, controller := cache.NewInformer(
