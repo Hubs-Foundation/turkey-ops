@@ -94,7 +94,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			"PGpwd":        cfg.DB_PASS,
 		})
 		cfTags := []*cloudformation.Tag{
-			{Key: aws.String("customer-id"), Value: aws.String("not-yet-place-holder-only")},
+			{Key: aws.String("customer-id"), Value: aws.String(r.Header.Get("X-Forwarded-UserEmail"))},
 			{Key: aws.String("turkeyEnv"), Value: aws.String(cfg.Env)},
 			{Key: aws.String("turkeyDomain"), Value: aws.String(cfg.Domain)},
 		}

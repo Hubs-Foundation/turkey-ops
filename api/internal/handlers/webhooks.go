@@ -58,7 +58,7 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	var ghaReport ghaReport
 	err := decoder.Decode(&ghaReport)
 	if err != nil {
-		internal.GetLogger().Debug(" bad r.Body")
+		internal.GetLogger().Debug(" bad r.Body" + err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
