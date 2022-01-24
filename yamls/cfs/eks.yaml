@@ -60,7 +60,7 @@ Resources:
       RoleArn: !GetAtt clusterRole.Arn
       ResourcesVpcConfig:
         SecurityGroupIds:
-        - !Ref udpSg
+        - !Ref streamSg
         SubnetIds:
         - !Ref PublicSubnet1Id
         - !Ref PublicSubnet2Id
