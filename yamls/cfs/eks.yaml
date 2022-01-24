@@ -60,7 +60,6 @@ Resources:
       RoleArn: !GetAtt clusterRole.Arn
       ResourcesVpcConfig:
         SecurityGroupIds:
-        - !Ref controlPlaneSg
         - !Ref udpSg
         SubnetIds:
         - !Ref PublicSubnet1Id
