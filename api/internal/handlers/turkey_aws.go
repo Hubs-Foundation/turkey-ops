@@ -71,13 +71,13 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			sess.Panic("ERROR @ turkey_makeCfg: " + err.Error())
 		}
-
-		awss, err := internal.NewAwsSvs(internal.Cfg.AwsKey, internal.Cfg.AwsSecret, cfg.Region)
+		//aws service
+		awss, err := internal.NewAwsSvs(cfg.AWS_KEY, cfg.AWS_SECRET, cfg.AWS_REGION)
 		if err != nil {
 			sess.Panic("ERROR @ NewAwsSvs: " + err.Error())
 			return
 		}
-
+		//test aws creds
 		accountNum, err := awss.GetAccountID()
 		if err != nil {
 			sess.Panic("ERROR @ GetAccountID: " + err.Error())
@@ -109,10 +109,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		}()
 		sess.Log("&#128640;CreateCFstack started for stackName=" + stackName)
-
-		// go reportCreateCFstackStatus(stackName, cfg, sess, awss)
 		reportCreateCFstackStatus(stackName, cfg, sess, awss)
-
 		// ######################################### 4. post deployment configs ###################################
 		report, err := postDeploymentConfigs(cfg, stackName, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
 		if err != nil {
@@ -296,7 +293,7 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 
 	//optional inputs
 	if cfg.DeploymentName == "" {
-		cfg.DeploymentName = "z"
+		cfg.DeploymentName = "t"
 		internal.GetLogger().Warn("DeploymentName unspecified -- using z")
 	}
 	if cfg.CF_deploymentId == "" {
