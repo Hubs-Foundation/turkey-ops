@@ -45,6 +45,7 @@ Resources:
       TemplateURL: !Sub ${cfS3Folder}eks.yaml
       Parameters:
         mainStackName: !Ref "AWS::StackName"
+        VPC: !GetAtt network.Outputs.VPC
         PublicSubnet1Id: !GetAtt network.Outputs.PublicSubnet1
         PublicSubnet2Id: !GetAtt network.Outputs.PublicSubnet2
 ################### db ###################

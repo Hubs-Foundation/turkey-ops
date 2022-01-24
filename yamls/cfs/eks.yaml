@@ -2,6 +2,8 @@ AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
   mainStackName:
+    Type: String
+  VPC:
     Type: String  
   PublicSubnet1Id:
     Type: String
@@ -39,7 +41,17 @@ Resources:
           Principal:
             Service:
               - ec2.amazonaws.com
-          Action: sts:AssumeRole        
+          Action: sts:AssumeRole       
+  streamSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: provides udp access for turkey stream services
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: udp
+        FromPort: 35000
+        ToPort: 65000
+        CidrIp: 0.0.0.0/0
   Cluster:
     Type: 'AWS::EKS::Cluster'
     Properties:
@@ -47,6 +59,9 @@ Resources:
       Version: '1.21'
       RoleArn: !GetAtt clusterRole.Arn
       ResourcesVpcConfig:
+        SecurityGroupIds:
+        - !Ref controlPlaneSg
+        - !Ref udpSg
         SubnetIds:
         - !Ref PublicSubnet1Id
         - !Ref PublicSubnet2Id
@@ -58,9 +73,9 @@ Resources:
       ClusterName: !Sub ${Cluster}
       NodeRole: !GetAtt nodeRole.Arn
       ScalingConfig:
-        MinSize: 3
-        DesiredSize: 5
-        MaxSize: 7
+        MinSize: 2
+        DesiredSize: 3
+        MaxSize: 5
       # Labels:
       #   Key1: Value1
       #   Key2: Value2
