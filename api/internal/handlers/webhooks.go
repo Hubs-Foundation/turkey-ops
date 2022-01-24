@@ -29,9 +29,8 @@ type dockerhubWebhookJson_Repository struct {
 }
 
 type ghaReport struct {
-	Repo_name string `json:"repo_name"`
-	Tag       string `json:"tag"`
-	Channel   string `json:"channel"`
+	Tag     string `json:"tag"`
+	Channel string `json:"channel"`
 }
 
 var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +53,6 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//decoder := json.NewDecoder(r.Body)
 
 	//-----------------------
-
 	var ghaReport ghaReport
 	err := decoder.Decode(&ghaReport)
 	if err != nil {
@@ -66,18 +64,20 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if ghaReport.Channel == "" {
 		return
 	}
-
 	//publish
-
 	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "turkey-services", metav1.GetOptions{})
 	if err != nil {
-		internal.GetLogger().Panic(err.Error())
+		internal.GetLogger().Error(err.Error())
 	}
-	err = publishToNamespaceTag(ns, ghaReport.Channel, ghaReport.Repo_name, ghaReport.Tag)
+	TagArr := strings.Split(ghaReport.Tag, ":")
+	if len(TagArr) != 2 {
+		internal.GetLogger().Error("bac ghaReport.Tag: " + ghaReport.Tag)
+	}
+	err = publishToNamespaceTag(ns, ghaReport.Channel, TagArr[0], TagArr[1])
 	if err != nil {
 		internal.GetLogger().Error("publishToNamespaceTag failed: " + err.Error())
 	}
-
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 })
 
 var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
