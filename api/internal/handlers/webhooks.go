@@ -73,7 +73,10 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal.GetLogger().Panic(err.Error())
 	}
-	publishToNamespaceTag(ns, ghaReport.Channel, ghaReport.Repo_name, ghaReport.Tag)
+	err = publishToNamespaceTag(ns, ghaReport.Channel, ghaReport.Repo_name, ghaReport.Tag)
+	if err != nil {
+		internal.GetLogger().Error("publishToNamespaceTag failed: " + err.Error())
+	}
 
 })
 
@@ -150,9 +153,12 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 })
 
-func publishToNamespaceTag(ns *v1.Namespace, channel string, imgRepoName string, imgTag string) {
+func publishToNamespaceTag(ns *v1.Namespace, channel string, imgRepoName string, imgTag string) error {
 	ns.Labels[channel+"."+imgRepoName] = imgTag
-	internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	_, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+
+	return err
+
 }
 
 func publishToConfigmap(configmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) {

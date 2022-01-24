@@ -189,7 +189,7 @@ spec:
     - https
   routes:
   - kind: Rule
-    match: HostRegexp(`{subdomain:.*}.dev1.myhubs.net`) && PathPrefix(`/`)
+    match: HostRegexp(`{subdomain:.*}.{{.Domain}}`) && PathPrefix(`/`)
     priority: 1
     middlewares:
     - name: global-404-fallback
