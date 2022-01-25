@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -171,7 +171,7 @@ func publishToConfigmap_data(cfgmapName string, channel string, imgRepoName stri
 	return err
 }
 
-func processNsList(nsList *v1.NamespaceList, channel string, repoName string, tag string) {
+func processNsList(nsList *corev1.NamespaceList, channel string, repoName string, tag string) {
 	for _, item := range nsList.Items {
 		nsName := item.Name
 		internal.GetLogger().Debug("nsName: " + nsName)
