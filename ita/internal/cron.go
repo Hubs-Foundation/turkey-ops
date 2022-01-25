@@ -1,14 +1,12 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 	"time"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Cron struct {
+	Name      string
 	Interval  string
 	IsRunning bool
 	Jobs      map[string]func()
@@ -16,19 +14,16 @@ type Cron struct {
 
 var defaultCronInterval = "10m"
 
-func NewCron(interval string) *Cron {
+func NewCron(name, interval string) *Cron {
 	return &Cron{
+		Name:      name,
 		Interval:  interval,
 		IsRunning: false,
 		Jobs:      nil,
 	}
 }
 
-func (c *Cron) Load() {
-	c.Jobs["dummy"] = Cronjob_dummy
-}
-
-func (c *Cron) LoadAJob(name string, job func()) {
+func (c *Cron) Load(name string, job func()) {
 	c.Jobs[name] = job
 }
 
@@ -57,12 +52,11 @@ func (c *Cron) Start() {
 		time.Sleep(interval)
 		t := time.Tick(interval)
 		for next := range t {
-			Logger.Debug("Cron tick @ " + next.String())
+			Logger.Debug("Cron job: <" + c.Name + "," + c.Interval + "> tick @ " + next.String())
 			for name, job := range c.Jobs {
 				Logger.Debug("running: " + name)
 				job()
 			}
-
 		}
 	}()
 	c.IsRunning = true
@@ -72,16 +66,16 @@ func Cronjob_dummy() {
 	fmt.Println("Cronjob_dummy")
 }
 
-func Cronjob_updateDeployment(deploymentName string) {
+// func Cronjob_updateDeployment(deploymentName string) {
 
-	currentDeployment, err :=
-		cfg.K8sClientSet.AppsV1().
-			Deployments(cfg.K8sNamespace).Get(context.Background(), deploymentName, v1.GetOptions{})
-	if err != nil {
-		Logger.Error("failed to get deployment for <" + deploymentName + "> because: " + err.Error())
-		return
-	}
-	currentImage := currentDeployment.Spec.Template.Spec.Containers[0].Image
-	fmt.Println("currentImage: " + currentImage)
+// 	currentDeployment, err :=
+// 		cfg.K8sClientSet.AppsV1().
+// 			Deployments(cfg.K8sNamespace).Get(context.Background(), deploymentName, v1.GetOptions{})
+// 	if err != nil {
+// 		Logger.Error("failed to get deployment for <" + deploymentName + "> because: " + err.Error())
+// 		return
+// 	}
+// 	currentImage := currentDeployment.Spec.Template.Spec.Containers[0].Image
+// 	fmt.Println("currentImage: " + currentImage)
 
-}
+// }

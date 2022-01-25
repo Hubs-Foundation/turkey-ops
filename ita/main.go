@@ -12,9 +12,11 @@ func main() {
 
 	internal.InitLogger()
 	internal.MakeCfg()
-	cron := internal.NewCron("1m")
-	cron.Load()
+	cron := internal.NewCron("dummy-1h", "1h")
+	cron.Load("dummy", internal.Cronjob_dummy)
 	cron.Start()
+	turkeyUpdater := *internal.NewTurkeyUpdater("dev")
+	turkeyUpdater.Start("turkey-services")
 
 	router := http.NewServeMux()
 	router.Handle("/healthz", internal.Healthz())
