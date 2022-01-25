@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -63,7 +62,7 @@ func (c *Cron) Start() {
 }
 
 func Cronjob_dummy() {
-	fmt.Println("Cronjob_dummy")
+	Logger.Debug("hello from Cronjob_dummy")
 }
 
 // func Cronjob_updateDeployment(deploymentName string) {
