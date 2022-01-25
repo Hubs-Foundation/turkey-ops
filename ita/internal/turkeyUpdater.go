@@ -100,7 +100,8 @@ func (u *TurkeyUpdater) doStuff(obj interface{}) {
 	if !ok {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
 	}
-	Logger.Sugar().Debugf("received : %v", res.Data)
+	Logger.Sugar().Debugf("received, configmap.data : %v", res.Data)
+	Logger.Sugar().Debugf("received, configmap.labels : %v", res.Labels)
 
 	// c.Pool.Set(peers...)
 

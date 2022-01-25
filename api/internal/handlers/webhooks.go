@@ -135,7 +135,11 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
-	publishToConfigmap(cfgmap, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	publishToConfigmap_data(cfgmap, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
+	publishToConfigmap_label(cfgmap, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
@@ -149,12 +153,17 @@ func publishToNamespaceTag(ns *v1.Namespace, channel string, imgRepoName string,
 
 }
 
-func publishToConfigmap(cfgmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) error {
+func publishToConfigmap_label(cfgmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) error {
+	cfgmap.Labels[channel+"."+imgRepoName] = imgTag
+	_, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
+	return err
+}
+
+func publishToConfigmap_data(cfgmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) error {
 	cfgkey := channel + "." + strings.Replace(imgRepoName, "/", "_", -1)
 	cfgmap.Data[cfgkey] = imgTag
 	_, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
 	return err
-
 }
 
 func processNsList(nsList *v1.NamespaceList, channel string, repoName string, tag string) {
