@@ -19,7 +19,7 @@ func NewCron(name, interval string) *Cron {
 		Name:      name,
 		Interval:  interval,
 		IsRunning: false,
-		Jobs:      nil,
+		Jobs:      make(map[string]func()),
 	}
 }
 

@@ -2,10 +2,10 @@ package internal
 
 import (
 	"context"
+	"reflect"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
-	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -25,11 +25,12 @@ func (u *TurkeyUpdater) ReLoad() error {
 
 	u.Containers = make(map[string]string)
 
-	dList, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), apiv1.ListOptions{})
+	dList, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		Logger.Error("failed to list deployments for ns: " + cfg.PodNS + ", err: " + err.Error())
 		return err
 	}
+	Logger.Sugar().Debugf("deployments: %v", len(dList.Items))
 
 	for _, d := range dList.Items {
 		for _, c := range d.Spec.Template.Spec.Containers {
@@ -37,53 +38,70 @@ func (u *TurkeyUpdater) ReLoad() error {
 			u.Containers[imgNameTagArr[0]] = imgNameTagArr[1]
 		}
 	}
+	Logger.Sugar().Debugf("containers: %v", len(u.Containers))
 
 	Logger.Sugar().Debugf("u.Containers: %v", u.Containers)
 
 	return nil
 }
 
-func (u *TurkeyUpdater) Start(publisherNsName string) error {
+func (u *TurkeyUpdater) Start(publisherNsName string) (chan struct{}, error) {
 
 	err := u.ReLoad()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	stop, err := u.startWatchingPublisher(publisherNsName)
+	if err != nil {
+		Logger.Error("failed to startWatchingPublisherNs: " + err.Error())
+	}
+
+	return stop, nil
 }
 
-func (u *TurkeyUpdater) startWatchingPublisherNs(publisherNsName string) (chan struct{}, error) {
+func (u *TurkeyUpdater) startWatchingPublisher(publisherNsName string) (chan struct{}, error) {
 
 	watchlist := cache.NewFilteredListWatchFromClient(
 		cfg.K8sClientSet.CoreV1().RESTClient(),
-		"namespace",
-		cfg.PodNS,
-		func(options *metav1.ListOptions) {},
+		"configmaps",
+		publisherNsName,
+		func(options *metav1.ListOptions) { options.FieldSelector = "metadata.name=hubsbuilds" },
 	)
 
 	_, controller := cache.NewInformer(
 		watchlist,
-		&corev1.Namespace{},
+		&corev1.ConfigMap{},
 		0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				// logger.Sugar().Debugf("pod added: %s \n", obj)
 				Logger.Sugar().Debugf("added")
-				// c.updatePeers(obj)
+				u.doStuff(obj)
 			},
 			DeleteFunc: func(obj interface{}) {
 				Logger.Sugar().Debugf("deleted")
-				// c.updatePeers(obj)
+				u.doStuff(obj)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				Logger.Sugar().Debugf("updated")
-				// c.updatePeers(newObj)
+				u.doStuff(newObj)
 			},
 		},
 	)
 	stop := make(chan struct{})
 	go controller.Run(stop)
 	return stop, nil
+
+}
+
+func (u *TurkeyUpdater) doStuff(obj interface{}) {
+	res, ok := obj.(*corev1.ConfigMap)
+	if !ok {
+		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
+	}
+	Logger.Sugar().Debugf("received : %v", res.Data)
+
+	// c.Pool.Set(peers...)
 
 }

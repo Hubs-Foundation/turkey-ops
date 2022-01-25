@@ -123,34 +123,22 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//deploy? publish?
+	//publish
 
 	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "turkey-services", metav1.GetOptions{})
 	if err != nil {
-		internal.GetLogger().Panic(err.Error())
+		internal.GetLogger().Error(err.Error())
 	}
 	publishToNamespaceTag(ns, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 
-	// batchSize := int64(1000)
-	// nsList, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.TODO(),
-	// 	metav1.ListOptions{Limit: batchSize})
-	// if err != nil {
-	// 	internal.GetLogger().Panic(err.Error())
-	// }
-	// processNsList(nsList, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
-
-	// internal.GetLogger().Debug("nsList.ListMeta.Continue = " + nsList.ListMeta.Continue)
-	// for nsList.ListMeta.Continue != "" {
-	// 	nsList, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.TODO(),
-	// 		metav1.ListOptions{Limit: batchSize, Continue: nsList.ListMeta.Continue})
-	// 	if err != nil {
-	// 		internal.GetLogger().Panic(err.Error())
-	// 	}
-	// 	processNsList(nsList, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
-	// }
-
-	// internal.GetLogger().Debug("done")
-
+	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), "hubsbuilds", metav1.GetOptions{})
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
+	publishToConfigmap(cfgmap, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
 })
 
 func publishToNamespaceTag(ns *v1.Namespace, channel string, imgRepoName string, imgTag string) error {
@@ -161,8 +149,12 @@ func publishToNamespaceTag(ns *v1.Namespace, channel string, imgRepoName string,
 
 }
 
-func publishToConfigmap(configmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) {
-	internal.GetLogger().Panic("not implemented yet")
+func publishToConfigmap(cfgmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) error {
+	cfgkey := channel + "." + strings.Replace(imgRepoName, "/", "_", -1)
+	cfgmap.Data[cfgkey] = imgTag
+	_, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
+	return err
+
 }
 
 func processNsList(nsList *v1.NamespaceList, channel string, repoName string, tag string) {
