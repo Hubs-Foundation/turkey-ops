@@ -1,8 +1,12 @@
 package internal
 
 import (
+	"context"
 	"net"
 	"os"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Config struct {
@@ -91,6 +95,19 @@ func MakeCfg() {
 
 	Cfg.K8ss_local = NewK8sSvs_local()
 
+	_, err = Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(Cfg.PodNS).
+		Create(
+			context.Background(),
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "hubsbuilds",
+					Labels: map[string]string{
+						"foo": "bar"}}},
+			metav1.CreateOptions{},
+		)
+	if err != nil {
+		logger.Warn("touching configmap-hubsbuilds: " + err.Error())
+	}
 }
 
 func getEnv(key, fallback string) string {

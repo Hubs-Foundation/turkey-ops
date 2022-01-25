@@ -64,38 +64,25 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if ghaReport.Channel == "" {
 		return
 	}
+
 	//publish
-	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "turkey-services", metav1.GetOptions{})
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
 	TagArr := strings.Split(ghaReport.Tag, ":")
 	if len(TagArr) != 2 {
 		internal.GetLogger().Error("bac ghaReport.Tag: " + ghaReport.Tag)
 	}
-	err = publishToNamespaceTag(ns, ghaReport.Channel, TagArr[0], TagArr[1])
+
+	err = publishToConfigmap_label("hubsbuilds", ghaReport.Channel, TagArr[0], TagArr[1])
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
+	err = publishToConfigmap_data("hubsbuilds", ghaReport.Channel, TagArr[0], TagArr[1])
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
+	err = publishToNamespaceTag(ghaReport.Channel, TagArr[0], TagArr[1])
 	if err != nil {
 		internal.GetLogger().Error("publishToNamespaceTag failed: " + err.Error())
 	}
-	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), "hubsbuilds", metav1.GetOptions{})
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-
-	publishToConfigmap_label(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-
-	cfgmap, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), "hubsbuilds", metav1.GetOptions{})
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-	publishToConfigmap_data(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 })
 
@@ -143,35 +130,44 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//publish
-
-	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "turkey-services", metav1.GetOptions{})
+	err = publishToNamespaceTag(channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
-	publishToNamespaceTag(ns, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 
 })
 
-func publishToNamespaceTag(ns *v1.Namespace, channel string, imgRepoName string, imgTag string) error {
+func publishToNamespaceTag(channel string, imgRepoName string, imgTag string) error {
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), internal.Cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
 	ns.Labels[channel+"."+imgRepoName] = imgTag
-	_, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
 
 	return err
 
 }
 
-func publishToConfigmap_label(cfgmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) error {
-	cfgmap.Labels[channel+"."+imgRepoName] = imgTag
-	_, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
+func publishToConfigmap_label(cfgmapName string, channel string, imgRepoName string, imgTag string) error {
+	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), cfgmapName, metav1.GetOptions{})
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
 	return err
 }
 
-func publishToConfigmap_data(cfgmap *v1.ConfigMap, channel string, imgRepoName string, imgTag string) error {
+func publishToConfigmap_data(cfgmapName string, channel string, imgRepoName string, imgTag string) error {
+	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), cfgmapName, metav1.GetOptions{})
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
 	cfgkey := channel + "." + strings.Replace(imgRepoName, "/", "_", -1)
 	cfgmap.Data[cfgkey] = imgTag
-	_, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
 	return err
 }
 
