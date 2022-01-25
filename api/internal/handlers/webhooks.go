@@ -77,6 +77,19 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal.GetLogger().Error("publishToNamespaceTag failed: " + err.Error())
 	}
+	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), "hubsbuilds", metav1.GetOptions{})
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
+	publishToConfigmap_data(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
+	publishToConfigmap_label(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
+
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 })
 
@@ -131,18 +144,8 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	publishToNamespaceTag(ns, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 
-	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), "hubsbuilds", metav1.GetOptions{})
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-	publishToConfigmap_data(cfgmap, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-	publishToConfigmap_label(cfgmap, channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+
 })
 
 func publishToNamespaceTag(ns *v1.Namespace, channel string, imgRepoName string, imgTag string) error {
