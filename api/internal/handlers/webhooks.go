@@ -81,11 +81,12 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
-	publishToConfigmap_data(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
+
+	publishToConfigmap_label(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
-	publishToConfigmap_label(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
+	publishToConfigmap_data(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
