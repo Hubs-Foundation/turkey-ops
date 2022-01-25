@@ -226,6 +226,16 @@ data:
   .dockerconfigjson: ewoJImF1dGhzIjogewoJCSJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOiB7CgkJCSJhdXRoIjogImJXOTZhV3hzWVhKbFlXeHBkSGs2Y21Wd2IzSjBJR0psWjJGMElIWmxjM1J0Wlc1MElHRnNkbVZ2YkdGeUlHTnNiM1JvIgoJCX0KCX0KfQ==
 type: kubernetes.io/dockerconfigjson
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hubsbuilds
+  namespace: turkey-services
+  labels:
+    foo: bar
+data:
+  foo: bar
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
