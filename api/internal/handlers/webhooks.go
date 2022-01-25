@@ -86,6 +86,11 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
+
+	cfgmap, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), "hubsbuilds", metav1.GetOptions{})
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
 	publishToConfigmap_data(cfgmap, ghaReport.Channel, TagArr[0], TagArr[1])
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
