@@ -75,14 +75,14 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
-	err = publishToConfigmap_data("hubsbuilds", ghaReport.Channel, TagArr[0], TagArr[1])
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-	err = publishToNamespaceTag(ghaReport.Channel, TagArr[0], TagArr[1])
-	if err != nil {
-		internal.GetLogger().Error("publishToNamespaceTag failed: " + err.Error())
-	}
+	// err = publishToConfigmap_data("hubsbuilds", ghaReport.Channel, TagArr[0], TagArr[1])
+	// if err != nil {
+	// 	internal.GetLogger().Error(err.Error())
+	// }
+	// err = publishToNamespaceTag(ghaReport.Channel, TagArr[0], TagArr[1])
+	// if err != nil {
+	// 	internal.GetLogger().Error("publishToNamespaceTag failed: " + err.Error())
+	// }
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 })
 
