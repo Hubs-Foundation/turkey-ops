@@ -119,24 +119,6 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- you must create this CNAME record manually in your nameserver {" +
 			cfg.Domain + ":" + report["lb"] + "}, and then go to dash." + cfg.Domain + " to view and configure cluster access")
 		sess.Log("done: " + cfg.CF_deploymentId)
-		// go internal.DeployHubsAssets(
-		// 	awss,
-		// 	map[string]string{
-		// 		"base_assets_path":       "https://" + stackName + "-cdn." + turkeyDomain + "/hubs/",
-		// 		"cors_proxy_server":      "",
-		// 		"ga_tracking_id":         "",
-		// 		"ita_server":             "",
-		// 		"non_cors_proxy_domains": stackName + "." + turkeyDomain + "," + stackName + "-cdn." + turkeyDomain,
-		// 		"postgrest_server":       "",
-		// 		"reticulum_server":       stackName + "." + turkeyDomain,
-		// 		"sentry_dsn":             "",
-		// 		"shortlink_domain":       "notyet.link",
-		// 		"thumbnail_server":       "notyet.com",
-		// 	},
-		// 	turkeycfg_s3_bucket,
-		// 	stackName+"-assets-"+cfg.CF_deploymentId)
-
-		// go internal.DeployKeys(awss, stackName, stackName+"-assets-"+cfg.CF_deploymentId)
 
 		return
 
@@ -247,44 +229,36 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 	}
 	//required but with fallbacks
 	if cfg.OAUTH_CLIENT_ID_FXA == "" {
-		fallback := os.Getenv("OAUTH_CLIENT_ID_FXA")
-		internal.GetLogger().Warn("OAUTH_CLIENT_ID_FXA not supplied, falling back to: " + fallback)
-		cfg.OAUTH_CLIENT_ID_FXA = fallback
+		internal.GetLogger().Warn("OAUTH_CLIENT_ID_FXA not supplied, falling back to local value")
+		cfg.OAUTH_CLIENT_ID_FXA = os.Getenv("OAUTH_CLIENT_ID_FXA")
 	}
 	if cfg.OAUTH_CLIENT_SECRET_FXA == "" {
-		fallback := os.Getenv("OAUTH_CLIENT_SECRET_FXA")
-		internal.GetLogger().Warn("OAUTH_CLIENT_SECRET_FXA not supplied, falling back to: " + fallback)
-		cfg.OAUTH_CLIENT_SECRET_FXA = fallback
+		internal.GetLogger().Warn("OAUTH_CLIENT_SECRET_FXA not supplied, falling back to local value")
+		cfg.OAUTH_CLIENT_SECRET_FXA = os.Getenv("OAUTH_CLIENT_SECRET_FXA")
 	}
 	if cfg.SMTP_SERVER == "" {
-		fallback := internal.Cfg.SmtpServer
-		internal.GetLogger().Warn("SMTP_SERVER not supplied, falling back to: " + fallback)
-		cfg.SMTP_SERVER = fallback
+		internal.GetLogger().Warn("SMTP_SERVER not supplied, falling back to local value")
+		cfg.SMTP_SERVER = internal.Cfg.SmtpServer
 	}
 	if cfg.SMTP_PORT == "" {
-		fallback := internal.Cfg.SmtpPort
-		internal.GetLogger().Warn("SMTP_PORT not supplied, falling back to: " + fallback)
-		cfg.SMTP_PORT = fallback
+		internal.GetLogger().Warn("SMTP_PORT not supplied, falling back to local value")
+		cfg.SMTP_PORT = internal.Cfg.SmtpPort
 	}
 	if cfg.SMTP_USER == "" {
-		fallback := internal.Cfg.SmtpUser
-		internal.GetLogger().Warn("SMTP_USER not supplied, falling back to: " + fallback)
-		cfg.SMTP_USER = fallback
+		internal.GetLogger().Warn("SMTP_USER not supplied, falling back to local value")
+		cfg.SMTP_USER = internal.Cfg.SmtpUser
 	}
 	if cfg.SMTP_PASS == "" {
-		fallback := internal.Cfg.SmtpPass
-		internal.GetLogger().Warn("SMTP_PASS not supplied, falling back to: " + fallback)
-		cfg.SMTP_PASS = fallback
+		internal.GetLogger().Warn("SMTP_PASS not supplied, falling back to local value")
+		cfg.SMTP_PASS = internal.Cfg.SmtpPass
 	}
 	if cfg.AWS_KEY == "" {
-		fallback := internal.Cfg.AwsKey
-		internal.GetLogger().Warn("AWS_KEY not supplied, falling back to: " + fallback)
-		cfg.AWS_KEY = fallback
+		internal.GetLogger().Warn("AWS_KEY not supplied, falling back to local value")
+		cfg.AWS_KEY = internal.Cfg.AwsKey
 	}
 	if cfg.AWS_SECRET == "" {
-		fallback := internal.Cfg.AwsSecret
-		internal.GetLogger().Warn("AWS_SECRET not supplied, falling back to: " + fallback)
-		cfg.AWS_SECRET = fallback
+		internal.GetLogger().Warn("AWS_SECRET not supplied, falling back to local value")
+		cfg.AWS_SECRET = internal.Cfg.AwsSecret
 	}
 	if cfg.Env == "" {
 		cfg.Env = "dev"
@@ -294,7 +268,7 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 	//optional inputs
 	if cfg.DeploymentName == "" {
 		cfg.DeploymentName = "t"
-		internal.GetLogger().Warn("DeploymentName unspecified -- using z")
+		internal.GetLogger().Warn("DeploymentName unspecified -- using (default)" + cfg.DeploymentName)
 	}
 	if cfg.CF_deploymentId == "" {
 		cfg.CF_deploymentId = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
@@ -337,44 +311,21 @@ func getCfOutputParamMap(stackName string, awss *internal.AwsSvs) (map[string]st
 	return paramMap, nil
 }
 
-// func createSSMparam(stackName string, cfg map[string]string, awss *internal.AwsSvs) error {
-// 	stacks, err := awss.GetStack(stackName)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	//----------create SSM parameter
-// 	// paramMap, err := getSSMparamFromS3json(awss, cfg, "ssmParam.json")
-// 	// if err != nil {
-// 	// 	sess.Log("ERROR @ createSSMparamFromS3json: " + err.Error())
-// 	// 	return err
-// 	// }
-// 	paramMap := make(map[string]string)
-// 	for _, k := range cfg {
-// 		if k[0:3] == "cf_" {
-// 			paramMap[k[3:]] = cfg[k]
-// 		}
-// 	}
-// 	stackOutputs := stacks[0].Outputs
-// 	for _, output := range stackOutputs {
-// 		paramMap[*output.Description] = *output.OutputValue
-// 	}
-
-// 	paramJSONbytes, _ := json.Marshal(paramMap)
-// 	err = awss.CreateSSMparameter(stackName, string(paramJSONbytes))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
 func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.CacheBoxSessData, awss *internal.AwsSvs) error {
 	time.Sleep(time.Second * 10)
 	stackStatus := "something something IN_PROGRESS"
+	tries := 3
 	for strings.Contains(stackStatus, "IN_PROGRESS") {
 		stacks, err := awss.GetStack(stackName)
 		if err != nil {
-			sess.Panic("ERROR @ reportCreateCFstackStatus: " + err.Error())
-			return err
+			tries--
+			sess.Error("ERROR @ reportCreateCFstackStatus: " + err.Error())
+			sess.Error("tries left @ reportCreateCFstackStatus: " + strconv.Itoa(tries))
+			time.Sleep(time.Second * 30)
+			continue
+		}
+		if tries < 0 {
+			sess.Panic("failed @ reportCreateCFstackStatus")
 		}
 		stack := *stacks[0]
 		stackStatus = *stack.StackStatus
@@ -408,3 +359,33 @@ func collectYams(env string, awss *internal.AwsSvs) ([]string, error) {
 	}
 	return yams, nil
 }
+
+// func createSSMparam(stackName string, cfg map[string]string, awss *internal.AwsSvs) error {
+// 	stacks, err := awss.GetStack(stackName)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	//----------create SSM parameter
+// 	// paramMap, err := getSSMparamFromS3json(awss, cfg, "ssmParam.json")
+// 	// if err != nil {
+// 	// 	sess.Log("ERROR @ createSSMparamFromS3json: " + err.Error())
+// 	// 	return err
+// 	// }
+// 	paramMap := make(map[string]string)
+// 	for _, k := range cfg {
+// 		if k[0:3] == "cf_" {
+// 			paramMap[k[3:]] = cfg[k]
+// 		}
+// 	}
+// 	stackOutputs := stacks[0].Outputs
+// 	for _, output := range stackOutputs {
+// 		paramMap[*output.Description] = *output.OutputValue
+// 	}
+
+// 	paramJSONbytes, _ := json.Marshal(paramMap)
+// 	err = awss.CreateSSMparameter(stackName, string(paramJSONbytes))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }

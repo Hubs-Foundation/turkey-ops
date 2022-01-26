@@ -98,7 +98,10 @@ func (sess *CacheBoxSessData) Panic(msg string) {
 	sess.consoleLog(msg)
 	logger.Panic(msg)
 }
-
+func (sess *CacheBoxSessData) Error(msg string) {
+	sess.consoleLog(msg)
+	logger.Error(msg)
+}
 func (sess *CacheBoxSessData) Log(msg string) {
 	sess.consoleLog(msg)
 	logger.Debug(msg)

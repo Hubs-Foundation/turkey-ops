@@ -49,16 +49,15 @@ Resources:
       Version: '1.21'
       RoleArn: !GetAtt clusterRole.Arn
       ResourcesVpcConfig:
-        # SecurityGroupIds:
-        # - !Ref streamSg
         SubnetIds:
         - !Ref PublicSubnet1Id
         - !Ref PublicSubnet2Id
-        # SecurityGroupIds:
-        #   - sg-6979fe18:
+        SecurityGroupIds:
+        - !Ref eksSg
   Nodegroup:
     Type: 'AWS::EKS::Nodegroup'
     Properties:
+      NodegroupName: !Sub ${mainStackName}-ng
       ClusterName: !Sub ${Cluster}
       NodeRole: !GetAtt nodeRole.Arn
       ScalingConfig:
@@ -66,11 +65,7 @@ Resources:
         DesiredSize: 3
         MaxSize: 5
       LaunchTemplate:
-        LaunchTemplateId: !Ref NodeLaunchTemplate
-        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
-      # Labels:
-      #   Key1: Value1
-      #   Key2: Value2
+        Id: !Ref NodeLaunchTemplate
       Subnets:
       - !Ref PublicSubnet1Id
       - !Ref PublicSubnet2Id
@@ -78,42 +73,14 @@ Resources:
   NodeLaunchTemplate:
     Type: "AWS::EC2::LaunchTemplate"
     Properties:
+      LaunchTemplateName: !Sub ${mainStackName}-lt
       LaunchTemplateData:
         SecurityGroupIds:
-        - !Ref streamSg      
-        # BlockDeviceMappings:
-        #   - DeviceName: /dev/xvda
-        #     Ebs:
-        #       DeleteOnTermination: true
-        #       VolumeSize: !Ref NodeVolumeSize
-        #       VolumeType: gp2
-        # IamInstanceProfile:
-        #   Arn: !GetAtt NodeInstanceProfile.Arn
-        # ImageId: !If
-        #   - HasNodeImageId
-        #   - !Ref NodeImageId
-        #   - !Ref NodeImageIdSSMParam
-        # InstanceType: !Ref NodeInstanceType
-        # KeyName: !Ref KeyName
-        # UserData: !Base64
-        #   "Fn::Sub": |
-        #     #!/bin/bash
-        #     set -o xtrace
-        #     /etc/eks/bootstrap.sh ${ClusterName} ${BootstrapArguments}
-        #     /opt/aws/bin/cfn-signal --exit-code $? \
-        #              --stack  ${AWS::StackName} \
-        #              --resource NodeGroup  \
-        #              --region ${AWS::Region}
-        # MetadataOptions:
-        #   HttpPutResponseHopLimit : 2
-        #   HttpEndpoint: enabled
-        #   HttpTokens: !If
-        #     - IMDSv1Disabled
-        #     - required
-        #     - optional
-  streamSg:
+        - !Ref nodeSg
+  nodeSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      GroupName: !Sub ${mainStackName}-node
       GroupDescription: provides udp access for turkey stream services
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -121,8 +88,32 @@ Resources:
         FromPort: 35000
         ToPort: 65000
         CidrIp: 0.0.0.0/0
-
-
+      - IpProtocol: -1
+        SourceSecurityGroupId: !Ref eksSg
+      - IpProtocol: tcp
+        FromPort: 4443
+        ToPort: 4443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 5349
+        ToPort: 5349
+        CidrIp: 0.0.0.0/0
+  eksSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub ${mainStackName}-eks
+      GroupDescription: provides udp access for turkey stream services
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: -1
+        CidrIp: 0.0.0.0/0
+  SGBaseIngress:
+   Type: 'AWS::EC2::SecurityGroupIngress'
+   Properties:
+      GroupId: !Ref eksSg
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref nodeSg
+        
 Outputs:
   eksArn:
     Value: !GetAtt Cluster.Arn
