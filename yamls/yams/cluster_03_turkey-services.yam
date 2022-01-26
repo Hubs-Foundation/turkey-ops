@@ -255,7 +255,7 @@ spec:
       serviceAccountName: api-sa
       containers:
       - name: turkey-orc
-        image: mozillareality/turkeyapi:199
+        image: mozillareality/turkeyapi:200
         imagePullPolicy: IfNotPresent        
         env:
         - name: POD_IP
