@@ -104,9 +104,6 @@ Resources:
       GroupName: !Sub ${mainStackName}-eks
       GroupDescription: provides udp access for turkey stream services
       VpcId: !Ref VPC
-      SecurityGroupIngress:
-      - IpProtocol: -1
-        CidrIp: 0.0.0.0/0
   SGBaseIngress:
    Type: 'AWS::EC2::SecurityGroupIngress'
    Properties:
