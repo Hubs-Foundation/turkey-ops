@@ -42,16 +42,6 @@ Resources:
             Service:
               - ec2.amazonaws.com
           Action: sts:AssumeRole       
-  streamSg:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: provides udp access for turkey stream services
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-      - IpProtocol: udp
-        FromPort: 35000
-        ToPort: 65000
-        CidrIp: 0.0.0.0/0
   Cluster:
     Type: 'AWS::EKS::Cluster'
     Properties:
@@ -59,8 +49,8 @@ Resources:
       Version: '1.21'
       RoleArn: !GetAtt clusterRole.Arn
       ResourcesVpcConfig:
-        SecurityGroupIds:
-        - !Ref streamSg
+        # SecurityGroupIds:
+        # - !Ref streamSg
         SubnetIds:
         - !Ref PublicSubnet1Id
         - !Ref PublicSubnet2Id
@@ -75,12 +65,63 @@ Resources:
         MinSize: 2
         DesiredSize: 3
         MaxSize: 5
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NodeLaunchTemplate
+        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
       # Labels:
       #   Key1: Value1
       #   Key2: Value2
       Subnets:
       - !Ref PublicSubnet1Id
       - !Ref PublicSubnet2Id
+
+  NodeLaunchTemplate:
+    Type: "AWS::EC2::LaunchTemplate"
+    Properties:
+      LaunchTemplateData:
+        SecurityGroupIds:
+        - !Ref streamSg      
+        # BlockDeviceMappings:
+        #   - DeviceName: /dev/xvda
+        #     Ebs:
+        #       DeleteOnTermination: true
+        #       VolumeSize: !Ref NodeVolumeSize
+        #       VolumeType: gp2
+        # IamInstanceProfile:
+        #   Arn: !GetAtt NodeInstanceProfile.Arn
+        # ImageId: !If
+        #   - HasNodeImageId
+        #   - !Ref NodeImageId
+        #   - !Ref NodeImageIdSSMParam
+        # InstanceType: !Ref NodeInstanceType
+        # KeyName: !Ref KeyName
+        # UserData: !Base64
+        #   "Fn::Sub": |
+        #     #!/bin/bash
+        #     set -o xtrace
+        #     /etc/eks/bootstrap.sh ${ClusterName} ${BootstrapArguments}
+        #     /opt/aws/bin/cfn-signal --exit-code $? \
+        #              --stack  ${AWS::StackName} \
+        #              --resource NodeGroup  \
+        #              --region ${AWS::Region}
+        # MetadataOptions:
+        #   HttpPutResponseHopLimit : 2
+        #   HttpEndpoint: enabled
+        #   HttpTokens: !If
+        #     - IMDSv1Disabled
+        #     - required
+        #     - optional
+  streamSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: provides udp access for turkey stream services
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+      - IpProtocol: udp
+        FromPort: 35000
+        ToPort: 65000
+        CidrIp: 0.0.0.0/0
+
 
 Outputs:
   eksArn:
