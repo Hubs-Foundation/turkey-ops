@@ -108,12 +108,18 @@ Resources:
       GroupName: !Sub ${mainStackName}-eks
       GroupDescription: provides udp access for turkey stream services
       VpcId: !Ref VPC
-  SGBaseIngress:
+  eksSgAllowsNodeSg:
    Type: 'AWS::EC2::SecurityGroupIngress'
    Properties:
       GroupId: !Ref eksSg
       IpProtocol: -1
       SourceSecurityGroupId: !Ref nodeSg
+  nodeSgAllowsItself:
+   Type: 'AWS::EC2::SecurityGroupIngress'
+   Properties:
+      GroupId: !Ref nodeSg
+      IpProtocol: -1
+      SourceSecurityGroupId: !Ref nodeSg  
       
         
 Outputs:
