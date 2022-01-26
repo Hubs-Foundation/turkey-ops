@@ -155,10 +155,10 @@ Resources:
   #   Properties:
   #     RouteTableId: !Ref PrivateRouteTable2
   #     SubnetId: !Ref PrivateSubnet2
-  NoIngressSecurityGroup:
+  BaseVpcSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: "no-ingress-sg"
+      GroupName: !Sub ${mainStackName}-baseSg
       GroupDescription: "Security group with no ingress rule"
       VpcId: !Ref VPC
 
@@ -178,5 +178,6 @@ Outputs:
   PublicSubnet2:
     Description: "network-PublicSubnet2"
     Value: !Ref PublicSubnet2
-
+  BaseVpcSg:
+    Value: !Ref BaseVpcSg
     

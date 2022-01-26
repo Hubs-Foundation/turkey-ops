@@ -9,6 +9,8 @@ Parameters:
     Type: String
   PublicSubnet2Id:
     Type: String
+  BaseVpcSg:
+    Type: String
 
 Resources:
   clusterRole:
@@ -98,6 +100,8 @@ Resources:
         FromPort: 5349
         ToPort: 5349
         CidrIp: 0.0.0.0/0
+      - IpProtocol: -1
+        SourceSecurityGroupId: !Ref BaseVpcSg
   eksSg:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -110,6 +114,7 @@ Resources:
       GroupId: !Ref eksSg
       IpProtocol: -1
       SourceSecurityGroupId: !Ref nodeSg
+      
         
 Outputs:
   eksArn:

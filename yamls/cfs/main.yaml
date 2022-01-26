@@ -48,6 +48,7 @@ Resources:
         VPC: !GetAtt network.Outputs.VPC
         PublicSubnet1Id: !GetAtt network.Outputs.PublicSubnet1
         PublicSubnet2Id: !GetAtt network.Outputs.PublicSubnet2
+        BaseVpcSg: !GetAtt network.Outputs.BaseVpcSg
 ################### db ###################
   db:
     Type: AWS::CloudFormation::Stack
