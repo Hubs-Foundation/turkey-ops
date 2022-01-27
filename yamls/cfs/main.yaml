@@ -61,7 +61,7 @@ Resources:
         PGpwd: !Ref PGpwd
         PrivateSubnet1Id: !GetAtt network.Outputs.PrivateSubnet1
         PrivateSubnet2Id: !GetAtt network.Outputs.PrivateSubnet2
-        EksSecurityGroupId: !GetAtt eks.Outputs.SecurityGroupId
+        DbGroupId: !GetAtt eks.Outputs.nodeSgId
 
 
 Outputs:

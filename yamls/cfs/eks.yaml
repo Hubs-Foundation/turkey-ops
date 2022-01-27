@@ -125,5 +125,6 @@ Resources:
 Outputs:
   eksArn:
     Value: !GetAtt Cluster.Arn
-  SecurityGroupId:
-    Value: !GetAtt Cluster.ClusterSecurityGroupId
+  nodeSgId:
+    Value: !Ref nodeSg
+    # Value: !GetAtt Cluster.ClusterSecurityGroupId

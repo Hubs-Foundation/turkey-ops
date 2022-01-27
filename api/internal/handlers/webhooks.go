@@ -68,7 +68,7 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//publish
 	TagArr := strings.Split(ghaReport.Tag, ":")
 	if len(TagArr) != 2 {
-		internal.GetLogger().Error("bac ghaReport.Tag: " + ghaReport.Tag)
+		internal.GetLogger().Error("bad ghaReport.Tag: " + ghaReport.Tag)
 	}
 
 	err = publishToConfigmap_label("hubsbuilds", ghaReport.Channel, TagArr[0], TagArr[1])
@@ -156,6 +156,8 @@ func publishToConfigmap_label(cfgmapName string, channel string, imgRepoName str
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
+	cfgkey := channel + "." + strings.Replace(imgRepoName, "/", "_", -1)
+	cfgmap.Labels[cfgkey] = imgTag
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
 	return err
 }

@@ -14,7 +14,7 @@ Parameters:
     Type: String
   PrivateSubnet2Id:
     Type: String
-  EksSecurityGroupId:
+  DbGroupId:
     Type: String
 
 Resources:
@@ -42,7 +42,7 @@ Resources:
       # MonitoringInterval: '60'
       # MonitoringRoleArn: 'arn:aws:iam::123456789012:role/rds-monitoring-role'
       VPCSecurityGroups: 
-        - !Ref EksSecurityGroupId
+        - !Ref DbGroupId
 
 Outputs:
   dbHost:
