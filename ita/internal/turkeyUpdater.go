@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"strings"
 
@@ -35,6 +36,9 @@ func (u *TurkeyUpdater) ReLoad() error {
 	for _, d := range dList.Items {
 		for _, c := range d.Spec.Template.Spec.Containers {
 			imgNameTagArr := strings.Split(c.Image, ":")
+			if len(imgNameTagArr) < 2 {
+				return errors.New("problem -- bad Image Name: " + c.Image)
+			}
 			u.Containers[imgNameTagArr[0]] = imgNameTagArr[1]
 		}
 	}
@@ -75,17 +79,16 @@ func (u *TurkeyUpdater) startWatchingPublisher(publisherNsName string) (chan str
 		0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				// logger.Sugar().Debugf("pod added: %s \n", obj)
 				Logger.Sugar().Debugf("added")
-				u.doStuff(obj)
-			},
-			DeleteFunc: func(obj interface{}) {
-				Logger.Sugar().Debugf("deleted")
 				u.doStuff(obj)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				Logger.Sugar().Debugf("updated")
 				u.doStuff(newObj)
+			},
+			DeleteFunc: func(obj interface{}) {
+				Logger.Sugar().Warnf("hubsbuilds label deleted ??? %s", obj)
+				// u.doStuff(obj)
 			},
 		},
 	)
@@ -100,9 +103,40 @@ func (u *TurkeyUpdater) doStuff(obj interface{}) {
 	if !ok {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
 	}
-	Logger.Sugar().Debugf("received, configmap.data : %v", res.Data)
 	Logger.Sugar().Debugf("received, configmap.labels : %v", res.Labels)
+	for k, v := range u.Containers {
+		hubsbuilds_label_key := u.Channel + "." + k
+		newtag, ok := res.Labels[hubsbuilds_label_key]
+		if ok {
+			Logger.Sugar().Info("found update for " + hubsbuilds_label_key + ": " + v + " --> " + newtag)
+			err := u.deployNewContainer(k, newtag)
+			if err != nil {
+				Logger.Error("deployNewContainer failed: " + err.Error())
+			}
+			u.ReLoad()
+		}
 
-	// c.Pool.Set(peers...)
+	}
+}
 
+func (u *TurkeyUpdater) deployNewContainer(repo, newTag string) error {
+	dList, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		Logger.Error("failed to list deployments for ns: " + cfg.PodNS + ", err: " + err.Error())
+		return err
+	}
+	for _, d := range dList.Items {
+		for idx, c := range d.Spec.Template.Spec.Containers {
+			imgNameTagArr := strings.Split(c.Image, ":")
+			if imgNameTagArr[0] == repo {
+				d.Spec.Template.Spec.Containers[idx].Image = repo + ":" + newTag
+				_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), &d, metav1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		}
+	}
+	return errors.New("did not find repo name: " + repo + ", failed to deploy newTag: " + newTag)
 }

@@ -14,9 +14,12 @@ func main() {
 	internal.MakeCfg()
 	cron := internal.NewCron("dummy-1h", "1h")
 	cron.Load("dummy", internal.Cronjob_dummy)
-	cron.Start()
+
 	turkeyUpdater := *internal.NewTurkeyUpdater("dev")
-	turkeyUpdater.Start("turkey-services")
+	_, err := turkeyUpdater.Start("turkey-services")
+	if err != nil {
+		internal.Logger.Error(err.Error())
+	}
 
 	router := http.NewServeMux()
 	router.Handle("/healthz", internal.Healthz())
