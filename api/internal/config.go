@@ -95,19 +95,10 @@ func MakeCfg() {
 
 	Cfg.K8ss_local = NewK8sSvs_local()
 
-	_, err = Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(Cfg.PodNS).
-		Create(
-			context.Background(),
-			&corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "hubsbuilds",
-					Labels: map[string]string{
-						"foo": "bar"}}},
-			metav1.CreateOptions{},
-		)
-	if err != nil {
-		logger.Info("touching configmap-hubsbuilds: " + err.Error())
-	}
+	touchCfgMap("hubsbuilds-dev")
+	touchCfgMap("hubsbuilds-beta")
+	touchCfgMap("hubsbuilds-stable")
+
 }
 
 func getEnv(key, fallback string) string {
@@ -115,4 +106,18 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func touchCfgMap(name string) error {
+	_, err := Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(Cfg.PodNS).
+		Create(
+			context.Background(),
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+					Labels: map[string]string{
+						"foo": "bar"}}},
+			metav1.CreateOptions{},
+		)
+	return err
 }

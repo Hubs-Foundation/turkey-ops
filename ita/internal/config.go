@@ -18,6 +18,8 @@ type Config struct {
 
 	K8sCfg       *rest.Config
 	K8sClientSet *kubernetes.Clientset
+
+	TurkeyUpdater *TurkeyUpdater
 }
 
 func MakeCfg() {
@@ -36,6 +38,12 @@ func MakeCfg() {
 		Logger.Error("POD_NS not set")
 	}
 	cfg.K8sClientSet, err = kubernetes.NewForConfig(cfg.K8sCfg)
+	if err != nil {
+		Logger.Error(err.Error())
+	}
+
+	cfg.TurkeyUpdater = NewTurkeyUpdater("dev")
+	_, err = cfg.TurkeyUpdater.Start()
 	if err != nil {
 		Logger.Error(err.Error())
 	}

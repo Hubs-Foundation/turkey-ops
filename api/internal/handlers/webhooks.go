@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,6 +30,12 @@ type dockerhubWebhookJson_Repository struct {
 type ghaReport struct {
 	Tag     string `json:"tag"`
 	Channel string `json:"channel"`
+}
+
+var supportedChannels = map[string]bool{
+	"dev":    true,
+	"beta":   true,
+	"stable": true,
 }
 
 var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +66,10 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ghaReport.Channel == "" {
+	_, ok := supportedChannels[ghaReport.Channel]
+	if !ok {
+		internal.GetLogger().Error("bad ghaReport.Channel: " + ghaReport.Channel)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
@@ -69,9 +77,11 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	TagArr := strings.Split(ghaReport.Tag, ":")
 	if len(TagArr) != 2 {
 		internal.GetLogger().Error("bad ghaReport.Tag: " + ghaReport.Tag)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
 	}
 
-	err = publishToConfigmap_label("hubsbuilds", ghaReport.Channel, TagArr[0], TagArr[1])
+	err = publishToConfigmap_label("hubsbuilds-"+ghaReport.Channel, TagArr[0], TagArr[1])
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
@@ -130,76 +140,64 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//publish
-	err = publishToNamespaceTag(channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
+	// err = publishToNamespaceTag(channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	// if err != nil {
+	// 	internal.GetLogger().Error(err.Error())
+	// }
 
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 
 })
 
-func publishToNamespaceTag(channel string, imgRepoName string, imgTag string) error {
-	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), internal.Cfg.PodNS, metav1.GetOptions{})
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-	ns.Labels[channel+"."+imgRepoName] = imgTag
-	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
-
-	return err
-
-}
-
-func publishToConfigmap_label(cfgmapName string, channel string, imgRepoName string, imgTag string) error {
+func publishToConfigmap_label(cfgmapName string, imgRepoName string, imgTag string) error {
 	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), cfgmapName, metav1.GetOptions{})
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
-	cfgmap.Labels[channel+"."+imgRepoName] = imgTag
+	cfgmap.Labels[imgRepoName] = imgTag
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
 	return err
 }
 
-func publishToConfigmap_data(cfgmapName string, channel string, imgRepoName string, imgTag string) error {
-	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), cfgmapName, metav1.GetOptions{})
-	if err != nil {
-		internal.GetLogger().Error(err.Error())
-	}
-	cfgkey := channel + "." + strings.Replace(imgRepoName, "/", "_", -1)
-	cfgmap.Data[cfgkey] = imgTag
-	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
-	return err
-}
+// func publishToConfigmap_data(cfgmapName string, channel string, imgRepoName string, imgTag string) error {
+// 	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), cfgmapName, metav1.GetOptions{})
+// 	if err != nil {
+// 		internal.GetLogger().Error(err.Error())
+// 	}
+// 	cfgkey := channel + "." + strings.Replace(imgRepoName, "/", "_", -1)
+// 	cfgmap.Data[cfgkey] = imgTag
+// 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
+// 	return err
+// }
 
-func processNsList(nsList *corev1.NamespaceList, channel string, repoName string, tag string) {
-	for _, item := range nsList.Items {
-		nsName := item.Name
-		internal.GetLogger().Debug("nsName: " + nsName)
+// func processNsList(nsList *corev1.NamespaceList, channel string, repoName string, tag string) {
+// 	for _, item := range nsList.Items {
+// 		nsName := item.Name
+// 		internal.GetLogger().Debug("nsName: " + nsName)
 
-		dClient := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName)
+// 		dClient := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName)
 
-		if strings.HasPrefix(nsName, "hc-") && item.Labels["channel"] == channel {
-			dList, err := dClient.List(context.Background(), metav1.ListOptions{})
-			if err != nil {
-				internal.GetLogger().Panic(err.Error())
-			}
-			for _, d := range dList.Items {
-				for i, c := range d.Spec.Template.Spec.Containers {
-					internal.GetLogger().Debug("c.Image: " + c.Image + ", repoName: " + repoName)
+// 		if strings.HasPrefix(nsName, "hc-") && item.Labels["channel"] == channel {
+// 			dList, err := dClient.List(context.Background(), metav1.ListOptions{})
+// 			if err != nil {
+// 				internal.GetLogger().Panic(err.Error())
+// 			}
+// 			for _, d := range dList.Items {
+// 				for i, c := range d.Spec.Template.Spec.Containers {
+// 					internal.GetLogger().Debug("c.Image: " + c.Image + ", repoName: " + repoName)
 
-					if strings.Split(c.Image, ":")[0] == repoName {
-						d.Spec.Template.Spec.Containers[i].Image = repoName + ":" + tag
-						_, err := dClient.Update(context.Background(), &d, metav1.UpdateOptions{})
-						if err != nil {
-							internal.GetLogger().Panic(err.Error())
-						}
-					}
-				}
-			}
-		}
-	}
-}
+// 					if strings.Split(c.Image, ":")[0] == repoName {
+// 						d.Spec.Template.Spec.Containers[i].Image = repoName + ":" + tag
+// 						_, err := dClient.Update(context.Background(), &d, metav1.UpdateOptions{})
+// 						if err != nil {
+// 							internal.GetLogger().Panic(err.Error())
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
 func prettyPrintJson(jsonBytes []byte) string {
 	d := json.NewDecoder(bytes.NewBuffer(jsonBytes))
