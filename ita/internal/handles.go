@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync/atomic"
 )
@@ -53,3 +54,36 @@ var Ita_cfg_ret_ps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 // 	fmt.Fprintf(w, "wip")
 // 	return
 // })
+
+var supportedChannels = map[string]bool{
+	"dev":    true,
+	"beta":   true,
+	"stable": true,
+}
+var Tu_channel = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// if r.URL.Path != "/tu_channel" {
+	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	// 	return
+	// }
+	if r.Method != "POST" && r.URL.Path == "/tu_channel" && len(r.URL.Query()["channel"]) == 1 {
+		channel := r.URL.Query()["channel"][0]
+		_, ok := supportedChannels[channel]
+		if !ok {
+			Logger.Error("bad channel: " + channel)
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		cfg.ListeningChannel = channel
+		cfg.TurkeyUpdater = NewTurkeyUpdater()
+		_, err := cfg.TurkeyUpdater.Start()
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+	}
+	if r.Method != "GET" && r.URL.Path == "/tu_channel" {
+		fmt.Fprint(w, cfg.ListeningChannel)
+		return
+	}
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+
+})

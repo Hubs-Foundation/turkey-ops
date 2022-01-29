@@ -25,9 +25,9 @@ type turkeyContainerInfo struct {
 	parentDeploymentName string
 }
 
-func NewTurkeyUpdater(channel string) *TurkeyUpdater {
+func NewTurkeyUpdater() *TurkeyUpdater {
 	return &TurkeyUpdater{
-		Channel:               channel,
+		Channel:               cfg.ListeningChannel,
 		publisherNS:           "turkey-services",
 		publisherCfgMapPrefix: "hubsbuilds-",
 	}

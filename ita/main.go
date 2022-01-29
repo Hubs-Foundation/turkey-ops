@@ -17,11 +17,13 @@ func main() {
 	cron.Load("dummy", internal.Cronjob_dummy)
 
 	router := http.NewServeMux()
-	router.Handle("/healthz", internal.Healthz())
-
+	//legacy ita endpoints
 	router.Handle("/admin-info", internal.Ita_admin_info)
 	router.Handle("/configs/reticulum/ps", internal.Ita_cfg_ret_ps)
-
+	//turkeyUpdater endpoints
+	router.Handle("/tu_channel", internal.Tu_channel)
+	//utility endpoints
+	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 
 	internal.StartServer(router, 9001)

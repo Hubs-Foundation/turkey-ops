@@ -11,10 +11,10 @@ var cfg *Config
 
 // Config holds the runtime application config
 type Config struct {
-	PodNS string
-
-	Env    string `long:"environment" env:"ENV" description:"env config"`
+	PodNS  string
 	Domain string `turkey domain`
+
+	ListeningChannel string
 
 	K8sCfg       *rest.Config
 	K8sClientSet *kubernetes.Clientset
@@ -25,7 +25,7 @@ type Config struct {
 func MakeCfg() {
 	cfg = &Config{}
 	cfg.Domain = os.Getenv("DOMAIN")
-
+	cfg.ListeningChannel = "stable" //listening to stable channel by default
 	var err error
 
 	cfg.K8sCfg, err = rest.InClusterConfig()
@@ -42,7 +42,8 @@ func MakeCfg() {
 		Logger.Error(err.Error())
 	}
 
-	cfg.TurkeyUpdater = NewTurkeyUpdater("dev")
+	//listening to stable channel by default
+	cfg.TurkeyUpdater = NewTurkeyUpdater()
 	_, err = cfg.TurkeyUpdater.Start()
 	if err != nil {
 		Logger.Error(err.Error())
