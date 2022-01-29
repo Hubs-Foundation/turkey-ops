@@ -65,7 +65,7 @@ func (u *TurkeyUpdater) Start() (chan struct{}, error) {
 		close(u.stopCh)
 		Logger.Info("restarting for channel: " + u.Channel)
 	} else {
-		Logger.Info("starting for channel " + u.Channel)
+		Logger.Info("starting for channel: " + u.Channel)
 	}
 
 	err := u.loadContainers()
@@ -118,10 +118,9 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	if !ok {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
 	}
-	Logger.Sugar().Debugf("received on <"+eventType+">, configmap.labels : %v", cfgmap.Labels)
+	Logger.Sugar().Debugf("received on <"+cfgmap.Name+"."+eventType+">, configmap.labels : %v", cfgmap.Labels)
 	for k, v := range u.Containers {
-		label_key := u.Channel + "." + k
-		newtag, ok := cfgmap.Labels[label_key]
+		newtag, ok := cfgmap.Labels[k]
 		if ok {
 			if v.containerTag == newtag {
 				Logger.Sugar().Info("NOT updating ... same tag: " + newtag)
@@ -130,7 +129,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 			if v.containerTag > newtag {
 				Logger.Warn("potential downgrade/rollback: new tag is lexicographically smaller than current")
 			}
-			Logger.Sugar().Info("updating " + label_key + ": " + v.containerTag + " --> " + newtag)
+			Logger.Sugar().Info("updating " + k + ": " + v.containerTag + " --> " + newtag)
 			err := u.deployNewContainer(k, newtag, v)
 			if err != nil {
 				Logger.Error("deployNewContainer failed: " + err.Error())
