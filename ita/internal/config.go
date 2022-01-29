@@ -14,7 +14,8 @@ type Config struct {
 	PodNS  string
 	Domain string `turkey domain`
 
-	ListeningChannel string
+	ListeningChannel  string
+	SupportedChannels map[string]bool
 
 	K8sCfg       *rest.Config
 	K8sClientSet *kubernetes.Clientset
@@ -24,10 +25,21 @@ type Config struct {
 
 func MakeCfg() {
 	cfg = &Config{}
-	cfg.Domain = os.Getenv("DOMAIN")
-	cfg.ListeningChannel = "stable" //listening to stable channel by default
-	var err error
+	cfg.SupportedChannels = map[string]bool{
+		"dev":    true,
+		"beta":   true,
+		"stable": true,
+	}
 
+	cfg.Domain = os.Getenv("DOMAIN")
+	cfg.ListeningChannel = os.Getenv("CHANNEL")
+	_, ok := cfg.SupportedChannels[cfg.ListeningChannel]
+	if !ok {
+		Logger.Warn("bad env var CHANNEL: " + cfg.ListeningChannel + ", so we'll use stable")
+		cfg.ListeningChannel = "stable"
+	}
+
+	var err error
 	cfg.K8sCfg, err = rest.InClusterConfig()
 	if err != nil {
 		Logger.Error(err.Error())

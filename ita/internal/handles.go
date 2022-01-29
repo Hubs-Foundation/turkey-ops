@@ -55,11 +55,11 @@ var Ita_cfg_ret_ps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 // 	return
 // })
 
-var supportedChannels = map[string]bool{
-	"dev":    true,
-	"beta":   true,
-	"stable": true,
-}
+// var supportedChannels = map[string]bool{
+// 	"dev":    true,
+// 	"beta":   true,
+// 	"stable": true,
+// }
 var Tu_channel = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// if r.URL.Path != "/tu_channel" {
 	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -67,13 +67,14 @@ var Tu_channel = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// }
 	if r.Method != "POST" && r.URL.Path == "/tu_channel" && len(r.URL.Query()["channel"]) == 1 {
 		channel := r.URL.Query()["channel"][0]
-		_, ok := supportedChannels[channel]
+		_, ok := cfg.SupportedChannels[channel]
 		if !ok {
 			Logger.Error("bad channel: " + channel)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
 		cfg.ListeningChannel = channel
+		//todo: update ita deployment's container.spec.env.CHANNEL so it persists through pod restart
 		cfg.TurkeyUpdater = NewTurkeyUpdater()
 		_, err := cfg.TurkeyUpdater.Start()
 		if err != nil {
