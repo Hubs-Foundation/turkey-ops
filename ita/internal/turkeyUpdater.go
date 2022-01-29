@@ -140,6 +140,8 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 				parentDeploymentName: u.Containers[k].parentDeploymentName,
 				containerTag:         newtag,
 			}
+		} else {
+			Logger.Debug("not found in cfgmap.Labels: " + k)
 		}
 
 	}
