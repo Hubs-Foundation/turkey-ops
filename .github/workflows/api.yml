@@ -4,7 +4,7 @@ name: api
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ master, staging, dev ]
     paths:
     - 'api/**'
     - '.github/workflows/api.yml'
@@ -13,7 +13,9 @@ on:
 env:
   containerName: turkeyapi
   registryName: mozillareality
-  eksName: turkey-dev
+  eksName_dev: turkey-dev
+  eksName_staging: notyet
+  eksName_prod: notyet
 
 jobs:
   build:
@@ -26,7 +28,7 @@ jobs:
           sed -i "s/##runNum##/${GITHUB_RUN_NUMBER}/g" ./_statics/console.html
           sed -i "s/##commitNum##/${GITHUB_SHA:0:7}/g" ./_statics/console.html
           docker build -q -t mozillareality/$containerName:$GITHUB_RUN_NUMBER .
-          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin
           sudo docker images
           sudo docker push $registryName/$containerName:$GITHUB_RUN_NUMBER
           echo "GITHUB_REF==$GITHUB_REF"
@@ -49,31 +51,33 @@ jobs:
           export AWS_DEFAULT_REGION=us-east-1
           export AWS_ACCESS_KEY_ID=${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
           export AWS_SECRET_ACCESS_KEY=${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
-          aws eks update-kubeconfig --name $eksName
-          kubectl -n turkey-services set image deployment/turkey-api turkey-orc=$registryName/$containerName:$GITHUB_RUN_NUMBER            
+          aws eks update-kubeconfig --name $eksName_dev
+          kubectl -n turkey-services set image deployment/turkey-api turkey-orc=$registryName/$containerName:$GITHUB_RUN_NUMBER
 
-  # push-dev:
-  #   runs-on: ubuntu-latest
-  #   needs: build
-  #   environment:
-  #     name: dev
-  #   steps:
-  #     - name: pull <GITHUB_RUN_NUMBER>, re-tag to dev, push
-  #       run: |
-  #         echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
-  #         docker pull $registryName/$containerName:$GITHUB_RUN_NUMBER
-  #         docker tag $registryName/$containerName:$GITHUB_RUN_NUMBER $registryName/$containerName:dev
-  #         sudo docker push $registryName/$containerName:dev
-  # push-prod:
-  #   if: github.ref == 'refs/heads/master'
-  #   runs-on: ubuntu-latest
-  #   needs: push-dev
-  #   environment:
-  #     name: prod
-  #   steps:
-  #     - name: pull <GITHUB_RUN_NUMBER>, re-tag to prod, push
-  #       run: |
-  #         echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
-  #         docker pull $registryName/$containerName:$GITHUB_RUN_NUMBER
-  #         docker tag $registryName/$containerName:$GITHUB_RUN_NUMBER $registryName/$containerName:prod
-  #         sudo docker push $registryName/$containerName:prod
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: staging
+    steps:
+      - name: deploy container to dev cluster
+        run: |
+          export AWS_DEFAULT_REGION=us-east-1
+          export AWS_ACCESS_KEY_ID=${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          aws eks update-kubeconfig --name $eksName_staging
+          kubectl -n turkey-services set image deployment/turkey-api turkey-orc=$registryName/$containerName:$GITHUB_RUN_NUMBER
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: staging
+    steps:
+      - name: deploy container to dev cluster
+        run: |
+          export AWS_DEFAULT_REGION=us-east-1
+          export AWS_ACCESS_KEY_ID=${{ secrets.DEV_AWS_ACCESS_KEY_ID }}
+          export AWS_SECRET_ACCESS_KEY=${{ secrets.DEV_AWS_SECRET_ACCESS_KEY }}
+          aws eks update-kubeconfig --name $eksName_prod
+          kubectl -n turkey-services set image deployment/turkey-api turkey-orc=$registryName/$containerName:$GITHUB_RUN_NUMBER
