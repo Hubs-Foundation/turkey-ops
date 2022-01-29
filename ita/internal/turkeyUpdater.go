@@ -119,31 +119,29 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
 	}
 	Logger.Sugar().Debugf("received on <"+cfgmap.Name+"."+eventType+">, configmap.labels : %v", cfgmap.Labels)
-	for k, v := range u.Containers {
-		newtag, ok := cfgmap.Labels[k]
+
+	for img, info := range u.Containers {
+		newtag, ok := cfgmap.Labels[img]
 		if ok {
-			if v.containerTag == newtag {
+			if info.containerTag == newtag {
 				Logger.Sugar().Info("NOT updating ... same tag: " + newtag)
-				return
+				continue
 			}
-			if v.containerTag > newtag {
+			if info.containerTag > newtag {
 				Logger.Warn("potential downgrade/rollback: new tag is lexicographically smaller than current")
 			}
-			Logger.Sugar().Info("updating " + k + ": " + v.containerTag + " --> " + newtag)
-			err := u.deployNewContainer(k, newtag, v)
+			Logger.Sugar().Info("updating " + img + ": " + info.containerTag + " --> " + newtag)
+			err := u.deployNewContainer(img, newtag, info)
 			if err != nil {
 				Logger.Error("deployNewContainer failed: " + err.Error())
-				return
+				continue
 			}
 			// u.loadContainers()
-			u.Containers[k] = turkeyContainerInfo{
-				parentDeploymentName: u.Containers[k].parentDeploymentName,
+			u.Containers[img] = turkeyContainerInfo{
+				parentDeploymentName: u.Containers[img].parentDeploymentName,
 				containerTag:         newtag,
 			}
-		} else {
-			Logger.Debug("not found in cfgmap.Labels: " + k)
 		}
-
 	}
 }
 
