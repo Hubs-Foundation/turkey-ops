@@ -13,6 +13,6 @@ jobs:
     with:
       codePath: ita
       registry: mozillareality
-      dockerfile: RetPageOriginDockerfile
+      dockerfile: Dockerfile
     secrets:
       DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
