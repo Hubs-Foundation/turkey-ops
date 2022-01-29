@@ -4,7 +4,7 @@ on:
     branches: [ master ]
     paths:
     - 'api/**'
-    - '.github/workflows/api.yml'
+    - '.github/workflows/turkeyapi.yml'
   workflow_dispatch:
 
 jobs:
