@@ -1,4 +1,4 @@
-name: api
+name: turkeyapi
 on:
   push:
     branches: [ master ]
