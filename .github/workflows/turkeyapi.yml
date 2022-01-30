@@ -9,7 +9,7 @@ on:
 
 jobs:
   turkeyGitops:
-    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
+    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@docker-auth-fix
     with:
       codePath: api
       registry: mozillareality
