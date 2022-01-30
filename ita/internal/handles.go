@@ -1,10 +1,13 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync/atomic"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func dumpHeader(r *http.Request) string {
@@ -74,9 +77,19 @@ var Tu_channel = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		cfg.ListeningChannel = channel
-		//todo: update ita deployment's container.spec.env.CHANNEL so it persists through pod restart
+		ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+		if err != nil {
+			Logger.Error("failed to get local NS: " + cfg.PodNS)
+		}
+		ns.Labels["CHANNEL"] = channel
+		_, err = cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+		if err != nil {
+			Logger.Error("failed to update ns.labels with new channel value: " + channel)
+		}
+
+		//change of container.spec.env.CHANNEL should reboot the pod anyway but just in case?
 		cfg.TurkeyUpdater = NewTurkeyUpdater()
-		_, err := cfg.TurkeyUpdater.Start()
+		_, err = cfg.TurkeyUpdater.Start()
 		if err != nil {
 			Logger.Error(err.Error())
 		}

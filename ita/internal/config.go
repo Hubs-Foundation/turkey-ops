@@ -1,8 +1,10 @@
 package internal
 
 import (
+	"context"
 	"os"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -11,8 +13,9 @@ var cfg *Config
 
 // Config holds the runtime application config
 type Config struct {
-	PodNS  string
-	Domain string `turkey domain`
+	PodNS             string
+	PodDeploymentName string
+	Domain            string `turkey domain`
 
 	ListeningChannel  string
 	SupportedChannels map[string]bool
@@ -30,35 +33,55 @@ func MakeCfg() {
 		"beta":   true,
 		"stable": true,
 	}
-
-	cfg.Domain = os.Getenv("DOMAIN")
-	cfg.ListeningChannel = os.Getenv("CHANNEL")
-	_, ok := cfg.SupportedChannels[cfg.ListeningChannel]
-	if !ok {
-		Logger.Warn("bad env var CHANNEL: " + cfg.ListeningChannel + ", so we'll use stable")
-		cfg.ListeningChannel = "stable"
-	}
-
 	var err error
 	cfg.K8sCfg, err = rest.InClusterConfig()
 	if err != nil {
 		Logger.Error(err.Error())
-	}
-
-	cfg.PodNS = os.Getenv("POD_NS")
-	if cfg.PodNS == "" {
-		Logger.Error("POD_NS not set")
 	}
 	cfg.K8sClientSet, err = kubernetes.NewForConfig(cfg.K8sCfg)
 	if err != nil {
 		Logger.Error(err.Error())
 	}
 
-	//listening to stable channel by default
+	cfg.Domain = os.Getenv("DOMAIN")
+	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
+	cfg.PodNS = os.Getenv("POD_NS")
+	if cfg.PodNS == "" {
+		Logger.Error("POD_NS not set")
+	}
+
+	//do we have channel labled on NS?
+	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		Logger.Error("failed to get local NS: " + cfg.PodNS)
+	}
+	cfg.ListeningChannel = ns.Labels["CHANNEL"]
+	//unexpected(or empty) channel value ==> fallback to stable
+	_, ok := cfg.SupportedChannels[cfg.ListeningChannel]
+	if !ok {
+		Logger.Warn("bad env var CHANNEL: " + cfg.ListeningChannel + ", so we'll use stable")
+		cfg.ListeningChannel = "stable"
+	}
+	//need channel on ns label -- if not already
+	if ns.Labels["CHANNEL"] != cfg.ListeningChannel {
+		ns.Labels["CHANNEL"] = cfg.ListeningChannel
+		_, err := cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+		if err != nil {
+			Logger.Error("failed to update channel to ns.labels")
+		}
+	}
+
 	cfg.TurkeyUpdater = NewTurkeyUpdater()
 	_, err = cfg.TurkeyUpdater.Start()
 	if err != nil {
 		Logger.Error(err.Error())
 	}
 
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
