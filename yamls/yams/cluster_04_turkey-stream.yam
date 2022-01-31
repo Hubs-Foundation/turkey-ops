@@ -188,3 +188,63 @@ spec:
     targetPort: 5349
   selector:
     app: coturn
+---
+########################################################################
+######################   ita   ###################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ita
+  namespace: turkey-stream
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ita
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: ita
+    spec:
+      serviceAccountName: ita-sa
+      containers:
+      - image: mozillareality/ita:0
+        imagePullPolicy: Always
+        name: ita
+        env:
+        - name: POD_NS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_DEPLOYMENT_NAME
+          value: ita
+        - name: CHANNEL
+          value: stable
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 0.05
+          limits:
+            memory: 200Mi
+            cpu: 0.2
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ita-sa
+  namespace: turkey-stream
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ita-sa-rb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit #todo: further tighten this?
+subjects:
+- kind: ServiceAccount
+  name: ita-sa
+  namespace: turkey-stream

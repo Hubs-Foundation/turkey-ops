@@ -571,7 +571,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cluster-admin #todo: tighten this
+  name: edit #todo: further tighten this?
 subjects:
 - kind: ServiceAccount
   name: ita-sa
