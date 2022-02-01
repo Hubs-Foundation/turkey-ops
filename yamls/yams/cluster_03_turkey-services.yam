@@ -638,7 +638,7 @@ spec:
         - name: S3_BUCKET
           value: turkeyfs-use1
         - name: MNT_DIR
-          value: /var/s3
+          value: /var/s3fs
         volumeMounts:
         - name: devfuse
           mountPath: /dev/fuse
