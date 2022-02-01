@@ -1,6 +1,6 @@
 from alpine:3.15
 
-env MNT_DIR "/var/s3fs"
+# env MNT_DIR "/var/s3fs"
 ARG S3FS_VERSION=v1.90
 
 run mkdir -p mntDir

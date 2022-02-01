@@ -599,7 +599,58 @@ subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
     name: system:serviceaccounts
-
+---
+###############################################################################
+### the s3fs broker ###
+###############################################################################
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: s3fs
+  namespace: turkey-services
+spec:
+  selector:
+    matchLabels:
+      app: s3fs
+  template:
+    metadata:
+      labels:
+        app: s3fs
+    spec:
+      containers:
+      - name: s3fs
+        image: mozillareality/s3fs:0
+        imagePullPolicy: Always
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh","-c","umount -f /var/s3"]
+        securityContext:
+          privileged: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+        env:
+        - name: AWS_KEY
+          value: AKIAYEJRSWRAQSAMLSGX
+        - name: AWS_SECRET
+          value: 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
+        - name: S3_BUCKET
+          value: turkeyfs-use1
+        - name: MNT_DIR
+          value: /var/s3
+        volumeMounts:
+        - name: devfuse
+          mountPath: /dev/fuse
+        - name: s3fsdata
+          mountPath: /var/s3fs:shared
+      volumes:
+      - name: devfuse
+        hostPath:
+          path: /dev/fuse
+      - name: s3fsdata
+        hostPath:
+          path: /home/s3fs
 
 
 
