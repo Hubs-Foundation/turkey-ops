@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
 	"crypto/x509"
 	"encoding/json"
@@ -14,7 +13,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +27,10 @@ type hcCfg struct {
 	Subdomain string `json:"subdomain"`
 	Tier      string `json:"tier"`
 	UserEmail string `json:"useremail"`
+
+	//optional inputs
+	Options string `json:"options`
+
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain     string `json:"domain"`
 	DBname     string `json:"dbname"`
@@ -61,15 +63,25 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-	t, err := template.ParseFiles("./_files/ns_hc.yam")
-	if err != nil {
-		sess.Panic(err.Error())
+	// t, err := template.ParseFiles("./_files/ns_hc.yam")
+	// if err != nil {
+	// 	sess.Panic(err.Error())
+	// }
+	// var buf bytes.Buffer
+	// t.Execute(&buf, hcCfg)
+	// k8sChartYaml := buf.String()
+	// // todo -- sanity check k8sChartYaml?
+	yamFileKey := internal.Cfg.Env + "/yams/ns_hc.yam"
+	if strings.HasSuffix(hcCfg.Options, ".s3fs") {
+		yamFileKey = internal.Cfg.Env + "/yams/ns_hc_s3fs.yam"
 	}
-	var buf bytes.Buffer
-	t.Execute(&buf, hcCfg)
-	k8sChartYaml := buf.String()
-	// todo -- sanity check k8sChartYaml?
-
+	yam, err := internal.Cfg.Awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yamFileKey)
+	if err != nil {
+		sess.Error("failed to get yam file because: " + err.Error())
+		return
+	}
+	renderedYamls, _ := internal.K8s_render_yams([]string{yam}, hcCfg)
+	k8sChartYaml := renderedYamls[0]
 	// #2.5 dry run option
 	if hcCfg.Tier == "dryrun" {
 		w.Header().Set("Content-Disposition", "attachment; filename="+hcCfg.Subdomain+".yaml")
@@ -149,31 +161,31 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//<debugging cheatcodes>
-	if cfg.TurkeyId[0:4] == "dev_" {
-		if cfg.Subdomain[0:4] != "dev-" {
-			fmt.Println("dev_ cheatcodes only work with subdomains start with == dev-")
-			return
-		}
-		sess.Log(`turkeyUserId[0:4] == dev_ means dev mode`)
+	// //<debugging cheatcodes>
+	// if cfg.TurkeyId[0:4] == "dev_" {
+	// 	if cfg.Subdomain[0:4] != "dev-" {
+	// 		fmt.Println("dev_ cheatcodes only work with subdomains start with == dev-")
+	// 		return
+	// 	}
+	// 	sess.Log(`turkeyUserId[0:4] == dev_ means dev mode`)
 
-		cfg.UserEmail = "gtan@mozilla.com"
-		t, _ := template.ParseFiles("./_files/ns_hc.yam")
-		var buf bytes.Buffer
-		t.Execute(&buf, cfg)
-		k8sChartYaml := buf.String()
-		if cfg.TurkeyId == "dev_dumpr" {
-			sess.Log(dumpHeader(r))
-			return
-		}
-		if cfg.TurkeyId == "dev_gimmechart" {
-			w.Header().Set("Content-Disposition", "attachment; filename="+cfg.Subdomain+".yaml")
-			w.Header().Set("Content-Type", "text/plain")
-			io.Copy(w, strings.NewReader(k8sChartYaml))
-			return
-		}
-	}
-	//</debugging cheatcodes>
+	// 	cfg.UserEmail = "gtan@mozilla.com"
+	// 	t, _ := template.ParseFiles("./_files/ns_hc.yam")
+	// 	var buf bytes.Buffer
+	// 	t.Execute(&buf, cfg)
+	// 	k8sChartYaml := buf.String()
+	// 	if cfg.TurkeyId == "dev_dumpr" {
+	// 		sess.Log(dumpHeader(r))
+	// 		return
+	// 	}
+	// 	if cfg.TurkeyId == "dev_gimmechart" {
+	// 		w.Header().Set("Content-Disposition", "attachment; filename="+cfg.Subdomain+".yaml")
+	// 		w.Header().Set("Content-Type", "text/plain")
+	// 		io.Copy(w, strings.NewReader(k8sChartYaml))
+	// 		return
+	// 	}
+	// }
+	// //</debugging cheatcodes>
 
 	//getting k8s config
 	sess.Log("&#9989; ... using InClusterConfig")
