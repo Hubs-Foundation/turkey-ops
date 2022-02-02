@@ -73,6 +73,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// // todo -- sanity check k8sChartYaml?
 	yamFileKey := internal.Cfg.Env + "/yams/ns_hc.yam"
 	if strings.HasSuffix(hcCfg.Options, ".s3fs") {
+		sess.Log("s3fs version selected")
 		yamFileKey = internal.Cfg.Env + "/yams/ns_hc_s3fs.yam"
 	}
 	yam, err := internal.Cfg.Awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yamFileKey)
