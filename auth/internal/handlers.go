@@ -58,8 +58,9 @@ func Login() http.Handler {
 		// Valid request
 		logger.Sugar().Debug("allowed. good cookie found for " + email)
 		w.Header().Set("X-Forwarded-UserEmail", email)
-		http.Redirect(w, r, client, http.StatusTemporaryRedirect)
+		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
 
+		http.Redirect(w, r, client, http.StatusTemporaryRedirect)
 	})
 }
 
