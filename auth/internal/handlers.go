@@ -289,6 +289,7 @@ func Authn() http.Handler {
 
 		logger.Sugar().Debug("allowed. good cookie found for " + email)
 		w.Header().Set("X-Forwarded-UserEmail", email)
+		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
 
 		clearCSRFcookies(w, r)
 

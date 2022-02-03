@@ -102,11 +102,12 @@ metadata:
 spec:
   forwardAuth:
     address: http://auth.turkey-services:9001/authn
-    authResponseHeaders:
-      - X-Forwarded-User
-      - X-Forwarded-UserEmail
-      - X-Forwarded-UserPicture
     trustForwardHeader: true        
+    authResponseHeadersRegex: ^X-Forwarded-    
+    # authResponseHeaders:
+    #   - X-Forwarded-User
+    #   - X-Forwarded-UserEmail
+    #   - X-Forwarded-UserPicture
 ---
 apiVersion: apps/v1
 kind: Deployment
