@@ -59,6 +59,33 @@ Resources:
                 - autoscaling:TerminateInstanceInAutoScalingGroup
                 - ec2:DescribeLaunchTemplateVersions
                 Resource: '*'
+  # clusterAutoscalerRole:
+  #   Type: "AWS::IAM::Role"
+  #   Properties:
+  #     RoleName: !Sub ${mainStackName}-node
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         Effect: Allow
+  #         Principal:
+  #           Service:
+  #             - ec2.amazonaws.com
+  #         Action: sts:AssumeRole       
+  #     Policies:
+  #       - PolicyName: cluster-autoscaler-policy
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: Allow
+  #               Action:
+  #               - autoscaling:DescribeAutoScalingGroups
+  #               - autoscaling:DescribeAutoScalingInstances
+  #               - autoscaling:DescribeLaunchConfigurations
+  #               - autoscaling:DescribeTags
+  #               - autoscaling:SetDesiredCapacity
+  #               - autoscaling:TerminateInstanceInAutoScalingGroup
+  #               - ec2:DescribeLaunchTemplateVersions
+  #               Resource: '*'
   Cluster:
     Type: 'AWS::EKS::Cluster'
     Properties:
