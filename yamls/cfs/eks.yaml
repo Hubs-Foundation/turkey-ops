@@ -31,11 +31,6 @@ Resources:
     Type: "AWS::IAM::Role"
     Properties:
       RoleName: !Sub ${mainStackName}-node
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
-        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
-        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -44,6 +39,26 @@ Resources:
             Service:
               - ec2.amazonaws.com
           Action: sts:AssumeRole       
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+      Policies:
+        - PolicyName: cluster-autoscaler-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                - autoscaling:DescribeAutoScalingGroups
+                - autoscaling:DescribeAutoScalingInstances
+                - autoscaling:DescribeLaunchConfigurations
+                - autoscaling:DescribeTags
+                - autoscaling:SetDesiredCapacity
+                - autoscaling:TerminateInstanceInAutoScalingGroup
+                - ec2:DescribeLaunchTemplateVersions
+                Resource: '*'
   Cluster:
     Type: 'AWS::EKS::Cluster'
     Properties:
