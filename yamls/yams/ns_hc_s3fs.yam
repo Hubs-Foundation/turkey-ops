@@ -130,7 +130,7 @@ spec:
       volumes:
       - name: s3fs 
         hostPath:
-          path: /home/s3fs/hc-{{.Subdomain}}
+          path: /home/s3fs/{{.Subdomain}}.{{.Domain}}
       containers:
       - name: reticulum
         volumeMounts:
