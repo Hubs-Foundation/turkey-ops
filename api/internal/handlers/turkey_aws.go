@@ -351,6 +351,7 @@ func collectYams(env string, awss *internal.AwsSvs) ([]string, error) {
 		env + "/yams/cluster_02_tools.yam",
 		env + "/yams/cluster_03_turkey-services.yam",
 		env + "/yams/cluster_04_turkey-stream.yam",
+		env + "/yams/cluster_05_extra-configs.yam",
 	} {
 		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, key)
 		if err != nil {
