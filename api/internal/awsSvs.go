@@ -244,3 +244,21 @@ func newK8sConfigFromEks(cluster *eks.Cluster) (*rest.Config, error) {
 		},
 	}, nil
 }
+
+func (as AwsSvs) ACM_findCertByDomainName(domainName string) (string, error) {
+	acmClient := acm.New(as.Sess)
+
+	findings, err := acmClient.ListCertificates(&acm.ListCertificatesInput{
+		CertificateStatuses: aws.StringSlice([]string{"ISSUED"}),
+		MaxItems:            aws.Int64(5000), //max per region, pagination with NextToken is planB
+	})
+	if err != nil {
+		return "", err
+	}
+	for _, cert := range findings.CertificateSummaryList {
+		if *cert.DomainName == domainName {
+			return *cert.CertificateArn, nil
+		}
+	}
+	return `did-not-find_arn:aws:acm:<region>:<acct>:certificate/<id>`, nil
+}

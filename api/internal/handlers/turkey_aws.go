@@ -41,8 +41,9 @@ type clusterCfg struct {
 	AWS_REGION string `json:"AWS_REGION"` //us-east-1
 
 	//optional inputs
-	CF_DeploymentPrefix string `json:"name"`            //t-
-	CF_deploymentId     string `json:"cf_deploymentId"` //s0meid
+	CF_DeploymentPrefix  string `json:"name"`                 //t-
+	CF_deploymentId      string `json:"cf_deploymentId"`      //s0meid
+	AWS_Ingress_Cert_ARN string `json:"aws_ingress_cert_arn"` //arn:aws:acm:us-east-1:123456605633:certificate/123456ab-f861-470b-a837-123456a76e17
 
 	//generated pre-infra-deploy
 	CF_Stackname  string `json:"stackname"`
@@ -147,6 +148,12 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 	cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 	cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
+
+	cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName(cfg.Domain)
+	if err != nil {
+		sess.Error("ACM_findCertByDomainName err: " + err.Error())
+		cfg.AWS_Ingress_Cert_ARN = `fix-me_arn:aws:acm:<region>:<acct>:certificate/<id>`
+	}
 
 	yams, err := collectYams(cfg.Env, awss)
 	if err != nil {
