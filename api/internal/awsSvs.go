@@ -250,7 +250,7 @@ func (as AwsSvs) ACM_findCertByDomainName(domainName string) (string, error) {
 
 	findings, err := acmClient.ListCertificates(&acm.ListCertificatesInput{
 		CertificateStatuses: aws.StringSlice([]string{"ISSUED"}),
-		MaxItems:            aws.Int64(5000), //max per region, pagination with NextToken is planB
+		MaxItems:            aws.Int64(1000), //max per region, pagination with NextToken is planB
 	})
 	if err != nil {
 		return "", err

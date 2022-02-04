@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -89,7 +88,8 @@ func (sess *CacheBoxSessData) consoleLog(msg string) {
 			attempt = attempt + 1
 		}
 		time.Sleep(delay)
-		sess.SseChan <- fmt.Sprintf(msg)
+		// sess.SseChan <- fmt.Sprintf(msg)
+		sess.SseChan <- msg
 	}()
 	time.Sleep(5e7)
 }
@@ -99,7 +99,7 @@ func (sess *CacheBoxSessData) Panic(msg string) {
 	logger.Panic(msg)
 }
 func (sess *CacheBoxSessData) Error(msg string) {
-	sess.consoleLog(msg)
+	sess.consoleLog("ERROR" + msg)
 	logger.Error(msg)
 }
 func (sess *CacheBoxSessData) Log(msg string) {
