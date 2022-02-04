@@ -257,7 +257,7 @@ func (as AwsSvs) ACM_findCertByDomainName(domainName string) (string, error) {
 	}
 
 	GetLogger().Sugar().Debugf("len(findings.CertificateSummaryList): %v", len(findings.CertificateSummaryList))
-	GetLogger().Sugar().Debugf("len(findings.CertificateSummaryList): %v", *findings.NextToken)
+	GetLogger().Sugar().Debugf("len(findings.CertificateSummaryList): %v", findings.NextToken)
 
 	for _, cert := range findings.CertificateSummaryList {
 		if *cert.DomainName == domainName {
