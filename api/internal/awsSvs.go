@@ -257,12 +257,13 @@ func (as AwsSvs) ACM_findCertByDomainName(domainName string) (string, error) {
 	}
 
 	GetLogger().Sugar().Debugf("len(findings.CertificateSummaryList): %v", len(findings.CertificateSummaryList))
-	GetLogger().Sugar().Debugf("len(findings.CertificateSummaryList): %v", findings.NextToken)
+	GetLogger().Sugar().Debugf("acm.ListCertificatesOutput.NextToken: %v", findings.NextToken)
 
 	for _, cert := range findings.CertificateSummaryList {
+		GetLogger().Sugar().Debugf("cert.domain: " + *cert.DomainName + " (domain: " + domainName + ")")
 		if *cert.DomainName == domainName {
 			return *cert.CertificateArn, nil
 		}
 	}
-	return `did-not-find_arn:aws:acm:<region>:<acct>:certificate/<id>`, nil
+	return "", errors.New("not found")
 }

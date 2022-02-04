@@ -93,6 +93,13 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.Log("good aws creds, account #: " + accountNum)
 
+		cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName(cfg.Domain)
+		if err != nil {
+			cfg.AWS_Ingress_Cert_ARN = `not-found_arn:aws:acm:<region>:<acct>:certificate/<id>`
+		} else {
+			sess.Log("found cert for domain (" + cfg.Domain + "): " + cfg.AWS_Ingress_Cert_ARN)
+		}
+
 		// ######################################### 2. prepare params for cloudformation ##########################
 		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cfs/"
 		cfParams := parseCFparams(map[string]string{
@@ -149,11 +156,11 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 	cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
 
-	cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName(cfg.Domain)
-	if err != nil {
-		sess.Error("ACM_findCertByDomainName err: " + err.Error())
-		cfg.AWS_Ingress_Cert_ARN = `fix-me_arn:aws:acm:<region>:<acct>:certificate/<id>`
-	}
+	// cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName(cfg.Domain)
+	// if err != nil {
+	// 	sess.Error("ACM_findCertByDomainName err: " + err.Error())
+	// 	cfg.AWS_Ingress_Cert_ARN = `fix-me_arn:aws:acm:<region>:<acct>:certificate/<id>`
+	// }
 
 	yams, err := collectYams(cfg.Env, awss)
 	if err != nil {
