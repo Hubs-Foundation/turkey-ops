@@ -92,8 +92,8 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sess.Log("good aws creds, account #: " + accountNum)
-
-		cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName(cfg.Domain)
+		// ################## 1.1 see if we have a *.<domain> cert in aws (acm) ###########
+		cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName("*." + cfg.Domain)
 		if err != nil {
 			cfg.AWS_Ingress_Cert_ARN = `not-found_arn:aws:acm:<region>:<acct>:certificate/<id>`
 		} else {
