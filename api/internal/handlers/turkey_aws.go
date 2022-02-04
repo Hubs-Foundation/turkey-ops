@@ -55,8 +55,14 @@ type clusterCfg struct {
 	PSQL    string `json:"PSQL"`    //postgresql://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
 }
 
-// var turkeycfg_s3_bucket = "turkeycfg/cf/"
-// var defaultRegion = "us-east-1"
+var aws_yams = []string{
+	"cluster_00_deps.yam",
+	"cluster_01_ingress.yam",
+	"cluster_02_tools.yam",
+	"cluster_03_turkey-services.yam",
+	"cluster_04_turkey-stream.yam",
+	"cluster_autoscaler_aws.yam",
+}
 
 var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -345,15 +351,9 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.
 
 func collectYams(env string, awss *internal.AwsSvs) ([]string, error) {
 	var yams []string
-	for _, key := range []string{
-		env + "/yams/cluster_00_deps.yam",
-		env + "/yams/cluster_01_ingress.yam",
-		env + "/yams/cluster_02_tools.yam",
-		env + "/yams/cluster_03_turkey-services.yam",
-		env + "/yams/cluster_04_turkey-stream.yam",
-		env + "/yams/cluster_05_extra-configs.yam",
-	} {
-		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, key)
+	for _, s3Key := range aws_yams {
+		yanS3 := env + "/yams/" + s3Key
+		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yanS3)
 		if err != nil {
 			return yams, err
 		}
