@@ -122,7 +122,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:558986605633:certificate/47d305ab-f861-470b-a837-98ca52a76e17
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443,4443,5349
-    service.beta.kubernetes.io/aws-load-balancer-alpn-policy: HTTP2Preferred      
+    service.beta.kubernetes.io/aws-load-balancer-alpn-policy: HTTP2Preferred
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
