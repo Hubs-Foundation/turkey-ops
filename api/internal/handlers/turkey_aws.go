@@ -77,27 +77,28 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// ######################################### 1. get cfg from r.body ########################################
 		cfg, err := turkey_makeCfg(r, sess)
 		if err != nil {
-			sess.Panic("ERROR @ turkey_makeCfg: " + err.Error())
+			sess.Error("ERROR @ turkey_makeCfg: " + err.Error())
+			return
 		}
 		//aws service
 		awss, err := internal.NewAwsSvs(cfg.AWS_KEY, cfg.AWS_SECRET, cfg.AWS_REGION)
 		if err != nil {
-			sess.Panic("ERROR @ NewAwsSvs: " + err.Error())
+			sess.Error("ERROR @ NewAwsSvs: " + err.Error())
 			return
 		}
 		//test aws creds
 		accountNum, err := awss.GetAccountID()
 		if err != nil {
-			sess.Panic("ERROR @ GetAccountID: " + err.Error())
+			sess.Error("ERROR @ GetAccountID: " + err.Error())
 			return
 		}
 		sess.Log("good aws creds, account #: " + accountNum)
 		// ################## 1.1 see if we have a *.<domain> cert in aws (acm) ###########
-		cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName("*." + cfg.Domain)
+		cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName("*."+cfg.Domain, "ISSUED")
 		if err != nil {
 			cfg.AWS_Ingress_Cert_ARN = `not-found_arn:aws:acm:<region>:<acct>:certificate/<id>`
 		} else {
-			sess.Log("found cert for domain (" + cfg.Domain + "): " + cfg.AWS_Ingress_Cert_ARN)
+			sess.Log("found wildcard cert for <*." + cfg.Domain + "> in aws acm: " + cfg.AWS_Ingress_Cert_ARN)
 		}
 
 		// ######################################### 2. prepare params for cloudformation ##########################
@@ -117,7 +118,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			err = awss.CreateCFstack(cfg.CF_Stackname, cfS3Folder+"main.yaml", cfParams, cfTags)
 			if err != nil {
-				sess.Panic("ERROR @ CreateCFstack for " + cfg.CF_Stackname + ": " + err.Error())
+				sess.Error("ERROR @ CreateCFstack for " + cfg.CF_Stackname + ": " + err.Error())
 				return
 			}
 
@@ -127,7 +128,8 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// ######################################### 4. post deployment configs ###################################
 		report, err := postDeploymentConfigs(cfg, cfg.CF_Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
 		if err != nil {
-			sess.Panic("ERROR @ postDeploymentConfigs for " + cfg.CF_Stackname + ": " + err.Error())
+			sess.Error("ERROR @ postDeploymentConfigs for " + cfg.CF_Stackname + ": " + err.Error())
+			return
 		}
 		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- sknoonerToken: " + report["skoonerToken"])
 		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- you must create this CNAME record manually in your nameserver {" +
@@ -145,12 +147,14 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
 	cfParams, err := getCfOutputParamMap(stackName, awss)
 	if err != nil {
-		sess.Panic("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
+		sess.Error("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
+		return nil, err
 	}
 	cfg.DB_HOST = cfParams["DB_HOST"]
 	k8sCfg, err := awss.GetK8sConfigFromEks(stackName)
 	if err != nil {
-		sess.Panic("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
+		sess.Error("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
+		return nil, err
 	}
 	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 	cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
@@ -164,23 +168,27 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 
 	yams, err := collectYams(cfg.Env, awss)
 	if err != nil {
-		sess.Panic("failed @ collectYams: " + err.Error())
+		sess.Error("failed @ collectYams: " + err.Error())
+		return nil, err
 	}
 	yamls, err := internal.K8s_render_yams(yams, cfg)
 	if err != nil {
-		sess.Panic("post cf deployment: failed @ K8s_render_yams: " + err.Error())
+		sess.Error("post cf deployment: failed @ K8s_render_yams: " + err.Error())
+		return nil, err
 	}
 
 	for _, yaml := range yamls {
 		err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg)
 		if err != nil {
-			sess.Panic("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
+			sess.Error("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
+			return nil, err
 		}
 	}
 	report := make(map[string]string)
 	toolsSecrets, err := internal.K8s_GetAllSecrets(k8sCfg, "tools")
 	if err != nil {
-		sess.Panic("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
+		sess.Error("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
+		return nil, err
 	}
 	for k, v := range toolsSecrets {
 		if strings.HasPrefix(k, "skooner-sa-token-") {
@@ -190,7 +198,8 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	fmt.Println("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
 	lb, err := internal.K8s_GetServiceHostName(k8sCfg, "ingress", "lb")
 	if err != nil {
-		sess.Panic("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
+		sess.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
+		return nil, err
 	}
 	report["lb"] = lb
 	fmt.Println("~~~~~~~~~~lb: " + report["lb"])
@@ -346,7 +355,8 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.
 			continue
 		}
 		if tries < 0 {
-			sess.Panic("failed @ reportCreateCFstackStatus")
+			sess.Error("failed @ reportCreateCFstackStatus: timeout")
+			return errors.New("timeout")
 		}
 		stack := *stacks[0]
 		stackStatus = *stack.StackStatus

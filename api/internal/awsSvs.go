@@ -245,22 +245,22 @@ func newK8sConfigFromEks(cluster *eks.Cluster) (*rest.Config, error) {
 	}, nil
 }
 
-func (as AwsSvs) ACM_findCertByDomainName(domainName string) (string, error) {
+func (as AwsSvs) ACM_findCertByDomainName(domainName string, status string) (string, error) {
 	acmClient := acm.New(as.Sess)
 
 	findings, err := acmClient.ListCertificates(&acm.ListCertificatesInput{
-		CertificateStatuses: aws.StringSlice([]string{"ISSUED"}),
+		CertificateStatuses: aws.StringSlice([]string{status}),
 		// MaxItems:            aws.Int64(1000),
 	})
 	if err != nil {
 		return "", err
 	}
-
 	GetLogger().Sugar().Debugf("len(findings.CertificateSummaryList): %v", len(findings.CertificateSummaryList))
-	GetLogger().Sugar().Debugf("acm.ListCertificatesOutput.NextToken: %v", findings.NextToken)
+	if findings.NextToken != nil {
+		GetLogger().Warn("acmClient.ListCertificates didn't return all certs in a simple call, consider implement pagination")
+	}
 
 	for _, cert := range findings.CertificateSummaryList {
-		GetLogger().Sugar().Debugf("cert.domain: " + *cert.DomainName + " (domain: " + domainName + ")")
 		if *cert.DomainName == domainName {
 			return *cert.CertificateArn, nil
 		}
