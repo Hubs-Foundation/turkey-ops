@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/smtp"
@@ -100,6 +99,13 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		} else {
 			sess.Log("found wildcard cert for <*." + cfg.Domain + "> in aws acm: " + cfg.AWS_Ingress_Cert_ARN)
 		}
+		// ################## 1.2 see if we have a <domain> in aws (route53) ###########
+		err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", "deploying.myhubs.net")
+		if err != nil {
+			sess.Log(err.Error())
+		} else {
+			sess.Log("found " + cfg.Domain + " in route53")
+		}
 
 		// ######################################### 2. prepare params for cloudformation ##########################
 		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cfs/"
@@ -130,6 +136,11 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			sess.Error("ERROR @ postDeploymentConfigs for " + cfg.CF_Stackname + ": " + err.Error())
 			return
+		}
+		// ################# 4.1. update CNAME if domain's managed in route53
+		err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", report["lb"])
+		if err != nil {
+			sess.Log(err.Error())
 		}
 		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- sknoonerToken: " + report["skoonerToken"])
 		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- you must create this CNAME record manually in your nameserver {" +
@@ -195,14 +206,16 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 			report["skoonerToken"] = string(v["token"])
 		}
 	}
-	fmt.Println("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
+	internal.GetLogger().Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
 	lb, err := internal.K8s_GetServiceHostName(k8sCfg, "ingress", "lb")
 	if err != nil {
 		sess.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
 		return nil, err
 	}
 	report["lb"] = lb
-	fmt.Println("~~~~~~~~~~lb: " + report["lb"])
+	internal.GetLogger().Debug("~~~~~~~~~~lb: " + report["lb"])
+
+	//
 
 	//email the final manual steps to authenticated user
 	clusterCfgBytes, _ := json.Marshal(cfg)
@@ -225,7 +238,7 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 			"\r\n"),
 	)
 	if err != nil {
-		fmt.Println(err)
+		internal.GetLogger().Error(err.Error())
 	}
 
 	return report, nil
@@ -237,13 +250,13 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("ERROR @ reading r.body, error = " + err.Error())
+		internal.GetLogger().Warn("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
 	//make cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
-		fmt.Println("bad clusterCfg: " + string(rBodyBytes))
+		internal.GetLogger().Warn("bad clusterCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
 

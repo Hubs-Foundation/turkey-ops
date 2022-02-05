@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/acm"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go/service/route53"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/aws/aws-sdk-go/service/ssm"
@@ -266,4 +267,48 @@ func (as AwsSvs) ACM_findCertByDomainName(domainName string, status string) (str
 		}
 	}
 	return "", errors.New("not found")
+}
+
+func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
+
+	r53Client := route53.New(as.Sess)
+
+	hostedZones, err := r53Client.ListHostedZonesByName(&route53.ListHostedZonesByNameInput{
+		DNSName: aws.String(recName),
+	})
+	if err != nil {
+		return err
+	}
+	if hostedZones.HostedZoneId == nil {
+		return errors.New("not found: hostedZones.HostedZoneId for " + recName)
+	}
+	params := &route53.ChangeResourceRecordSetsInput{
+		ChangeBatch: &route53.ChangeBatch{ // Required
+			Changes: []*route53.Change{ // Required
+				{ // Required
+					Action: aws.String("UPSERT"), // Required
+					ResourceRecordSet: &route53.ResourceRecordSet{ // Required
+						Name: aws.String(recName), // Required
+						Type: aws.String(recType), // Required
+						ResourceRecords: []*route53.ResourceRecord{
+							{ // Required
+								Value: aws.String(value), // Required
+							},
+						},
+						// TTL:           aws.Int64(TTL),
+						// Weight:        aws.Int64(weight),
+						// SetIdentifier: aws.String("Arbitrary Id describing this change set"),
+					},
+				},
+			},
+			// Comment: aws.String("Sample update."),
+		},
+		HostedZoneId: hostedZones.HostedZoneId, // Required
+	}
+	_, err = r53Client.ChangeResourceRecordSets(params)
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
