@@ -99,7 +99,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		} else {
 			sess.Log("found wildcard cert for <*." + cfg.Domain + "> in aws acm: " + cfg.AWS_Ingress_Cert_ARN)
 		}
-		// ################## 1.2 see if we have a <domain> in aws (route53) ###########
+		// ################## 1.2 see if we have a <domain> in aws (route53) ##############
 		err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", "deploying.myhubs.net")
 		if err != nil {
 			sess.Log(err.Error())
