@@ -287,6 +287,15 @@ func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
 		return err
 	}
 	if hostedZones.HostedZoneId == nil {
+		//dump
+		hzs, _ := r53Client.ListHostedZonesByName(&route53.ListHostedZonesByNameInput{
+			DNSName: aws.String(domain),
+		})
+		for _, hz := range hzs.HostedZones {
+			hzname := *hz.Name
+			fmt.Println("hzname" + hzname)
+		}
+		//
 		return errors.New("not found: hostedZones.HostedZoneId for " + recName + " using DNSName: " + domain)
 	}
 	params := &route53.ChangeResourceRecordSetsInput{
