@@ -279,22 +279,21 @@ func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
 	domain := recNameArr[len(recNameArr)-2] + "." + recNameArr[len(recNameArr)-1] + "."
 
 	r53Client := route53.New(as.Sess)
-
 	hostedZones, err := r53Client.ListHostedZonesByName(&route53.ListHostedZonesByNameInput{
 		DNSName: aws.String(domain),
 	})
 	if err != nil {
 		return err
 	}
-	if hostedZones.HostedZoneId == nil {
-		//dump
-		hzs, _ := r53Client.ListHostedZonesByName(&route53.ListHostedZonesByNameInput{
-			DNSName: aws.String(domain),
-		})
-		for _, hz := range hzs.HostedZones {
-			GetLogger().Debug("dumping: " + *hz.Name)
+	HostedZoneId := ""
+	for _, hz := range hostedZones.HostedZones {
+		GetLogger().Debug("dumping: " + *hz.Name)
+		if *hz.Name == domain {
+			HostedZoneId = *hz.Id
+			break
 		}
-		//
+	}
+	if HostedZoneId == "" {
 		return errors.New("not found: hostedZones.HostedZoneId for " + recName + " using DNSName: " + domain)
 	}
 	params := &route53.ChangeResourceRecordSetsInput{
@@ -318,7 +317,7 @@ func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
 			},
 			// Comment: aws.String("Sample update."),
 		},
-		HostedZoneId: hostedZones.HostedZoneId, // Required
+		HostedZoneId: aws.String(HostedZoneId), // Required
 	}
 	_, err = r53Client.ChangeResourceRecordSets(params)
 
