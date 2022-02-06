@@ -309,7 +309,7 @@ func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
 								Value: aws.String(value), // Required
 							},
 						},
-						// TTL:           aws.Int64(TTL),
+						TTL: aws.Int64(300),
 						// Weight:        aws.Int64(weight),
 						// SetIdentifier: aws.String("Arbitrary Id describing this change set"),
 					},
