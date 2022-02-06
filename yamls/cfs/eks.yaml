@@ -119,6 +119,8 @@ Resources:
     Properties:
       LaunchTemplateName: !Sub ${mainStackName}-lt
       LaunchTemplateData:
+        InstanceType: t3.medium
+        ImageId: 1.21.2-20211004
         SecurityGroupIds:
         - !Ref nodeSg
   nodeSg:
