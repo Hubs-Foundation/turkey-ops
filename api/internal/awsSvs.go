@@ -274,9 +274,9 @@ func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
 
 	recNameArr := strings.Split(recName, ".")
 	if len(recNameArr) < 2 {
-		return errors.New("bad recName: " + recName + ".")
+		return errors.New("bad recName: " + recName)
 	}
-	domain := recNameArr[len(recNameArr)-2] + "." + recNameArr[len(recNameArr)-1]
+	domain := recNameArr[len(recNameArr)-2] + "." + recNameArr[len(recNameArr)-1] + "."
 
 	r53Client := route53.New(as.Sess)
 
