@@ -359,17 +359,17 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.
 	stackStatus := "something something IN_PROGRESS"
 	tries := 3
 	for strings.Contains(stackStatus, "IN_PROGRESS") {
-		stacks, err := awss.GetStack(stackName)
-		if err != nil {
-			tries--
-			sess.Error("ERROR @ reportCreateCFstackStatus: " + err.Error())
-			sess.Error("tries left @ reportCreateCFstackStatus: " + strconv.Itoa(tries))
-			time.Sleep(time.Second * 30)
-			continue
-		}
 		if tries < 0 {
 			sess.Error("failed @ reportCreateCFstackStatus: timeout")
 			return errors.New("timeout")
+		}
+		stacks, err := awss.GetStack(stackName)
+		if err != nil {
+			tries--
+			sess.Error("@ reportCreateCFstackStatus -- err: " + err.Error())
+			sess.Error("@ reportCreateCFstackStatus -- tries left" + strconv.Itoa(tries))
+			time.Sleep(time.Second * 30)
+			continue
 		}
 		stack := *stacks[0]
 		stackStatus = *stack.StackStatus

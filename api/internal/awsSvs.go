@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -271,16 +272,22 @@ func (as AwsSvs) ACM_findCertByDomainName(domainName string, status string) (str
 
 func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
 
+	recNameArr := strings.Split(recName, ".")
+	if len(recNameArr) < 2 {
+		return errors.New("bad recName: " + recName)
+	}
+	domain := recNameArr[len(recNameArr)-2] + "." + recNameArr[len(recNameArr)-1]
+
 	r53Client := route53.New(as.Sess)
 
 	hostedZones, err := r53Client.ListHostedZonesByName(&route53.ListHostedZonesByNameInput{
-		DNSName: aws.String(recName),
+		DNSName: aws.String(domain),
 	})
 	if err != nil {
 		return err
 	}
 	if hostedZones.HostedZoneId == nil {
-		return errors.New("not found: hostedZones.HostedZoneId for " + recName)
+		return errors.New("not found: hostedZones.HostedZoneId for " + recName + " using DNSName: " + domain)
 	}
 	params := &route53.ChangeResourceRecordSetsInput{
 		ChangeBatch: &route53.ChangeBatch{ // Required
