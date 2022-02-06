@@ -274,7 +274,7 @@ func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
 
 	recNameArr := strings.Split(recName, ".")
 	if len(recNameArr) < 2 {
-		return errors.New("bad recName: " + recName)
+		return errors.New("bad recName: " + recName + ".")
 	}
 	domain := recNameArr[len(recNameArr)-2] + "." + recNameArr[len(recNameArr)-1]
 
@@ -292,8 +292,7 @@ func (as AwsSvs) Route53_addRecord(recName, recType, value string) error {
 			DNSName: aws.String(domain),
 		})
 		for _, hz := range hzs.HostedZones {
-			hzname := *hz.Name
-			fmt.Println("hzname" + hzname)
+			GetLogger().Debug("dumping: " + *hz.Name)
 		}
 		//
 		return errors.New("not found: hostedZones.HostedZoneId for " + recName + " using DNSName: " + domain)

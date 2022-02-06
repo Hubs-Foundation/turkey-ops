@@ -359,7 +359,7 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.
 	stackStatus := "something something IN_PROGRESS"
 	tries := 3
 	for strings.Contains(stackStatus, "IN_PROGRESS") {
-		if tries < 0 {
+		if tries < 1 {
 			sess.Error("failed @ reportCreateCFstackStatus: timeout")
 			return errors.New("timeout")
 		}
