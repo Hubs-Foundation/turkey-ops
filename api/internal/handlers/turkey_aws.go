@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -18,7 +19,13 @@ import (
 	"main/internal"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/eks"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type clusterCfg struct {
@@ -215,6 +222,11 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	report["lb"] = lb
 	internal.GetLogger().Debug("~~~~~~~~~~lb: " + report["lb"])
 
+	//----------------------------------------
+	err = eksIpLimitationFix(k8sCfg, awss, stackName)
+	if err != nil {
+		sess.Error("@eksIpLimitationFix: " + err.Error())
+	}
 	//
 
 	//email the final manual steps to authenticated user
@@ -428,3 +440,69 @@ func collectYams(env string, awss *internal.AwsSvs) ([]string, error) {
 // 	}
 // 	return nil
 // }
+
+////////////////////////////////// eks pod ip config hack ///////////////////////
+// ref: https://docs.aws.amazon.com/eks/latest/userguide/cni-increase-ip-addresses.html
+// because:
+//	1. (as of 2/7/2022) this statement from above doc is not true -- "When you deploy a 1.21 or later cluster, version 1.10.1 or later of the VPC CNI add-on is deployed with it, and this setting is true by default."
+//	2. (as of 2/7/2022) eks is BAD (also from above doc): "If you have an existing managed node group, the next AMI or launch template update of your node group results in new worker nodes coming up with the new IP address prefix assignment-enabled max-pod value."
+func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName string) error {
+	// 1. set ENABLE_PREFIX_DELEGATION to "true"
+	clientSet, err := kubernetes.NewForConfig(k8sCfg)
+	if err != nil {
+		return err
+	}
+	ds, err := clientSet.AppsV1().DaemonSets("kube-system").Get(context.Background(), "aws-node", v1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	found := false
+	for i := range ds.Spec.Template.Spec.Containers[0].Env {
+		if ds.Spec.Template.Spec.Containers[0].Env[i].Name == "ENABLE_PREFIX_DELEGATION" {
+			ds.Spec.Template.Spec.Containers[0].Env[i].Value = "true"
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errors.New("did not find envVar <ENABLE_PREFIX_DELEGATION>")
+	}
+	clientSet.AppsV1().DaemonSets("kube-system").Update(context.Background(), ds, v1.UpdateOptions{})
+	// 2. make a (fake) new revision for the nodegroup's launchTemplate
+	eksClient := eks.New(as.Sess)
+	ng, err := eksClient.DescribeNodegroup(&eks.DescribeNodegroupInput{
+		ClusterName:   &stackName,
+		NodegroupName: aws.String(stackName + "ng"),
+	})
+	if err != nil {
+		return err
+	}
+	ec2Client := ec2.New(as.Sess)
+	_, err = ec2Client.CreateLaunchTemplateVersion(&ec2.CreateLaunchTemplateVersionInput{
+		LaunchTemplateId:   ng.Nodegroup.LaunchTemplate.Id,
+		LaunchTemplateData: &ec2.RequestLaunchTemplateData{},
+		SourceVersion:      aws.String("2"),
+	})
+	if err != nil {
+		return err
+	}
+	// 3. update the nodegroup with new launchTemplate
+	// ng.SetNodegroup(&eks.Nodegroup{
+	// 	LaunchTemplate: &eks.LaunchTemplateSpecification{
+	// 		Id:      ng.Nodegroup.LaunchTemplate.Id,
+	// 		Version: aws.String("2"),
+	// 	},
+	// })
+	asg := autoscaling.New(as.Sess)
+	asg.UpdateAutoScalingGroup(&autoscaling.UpdateAutoScalingGroupInput{
+		AutoScalingGroupName: ng.Nodegroup.Resources.AutoScalingGroups[0].Name,
+		LaunchTemplate: &autoscaling.LaunchTemplateSpecification{
+			LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
+			Version:          aws.String("2"),
+		},
+	})
+
+	return nil
+}
+
+//////////////////////////////////////////////////////////////////////////////////
