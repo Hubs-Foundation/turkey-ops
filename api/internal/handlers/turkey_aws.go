@@ -481,7 +481,8 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	_, err = ec2Client.CreateLaunchTemplateVersion(&ec2.CreateLaunchTemplateVersionInput{
 		LaunchTemplateId:   ng.Nodegroup.LaunchTemplate.Id,
 		LaunchTemplateData: &ec2.RequestLaunchTemplateData{},
-		SourceVersion:      aws.String("2"),
+		SourceVersion:      aws.String("1"),
+		VersionDescription: aws.String("0"),
 	})
 	if err != nil {
 		return err
