@@ -472,7 +472,7 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	eksClient := eks.New(as.Sess)
 	ng, err := eksClient.DescribeNodegroup(&eks.DescribeNodegroupInput{
 		ClusterName:   &stackName,
-		NodegroupName: aws.String(stackName + "ng"),
+		NodegroupName: aws.String(stackName + "-ng"),
 	})
 	if err != nil {
 		return err
