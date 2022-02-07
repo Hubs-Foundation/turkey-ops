@@ -120,7 +120,7 @@ Resources:
       LaunchTemplateName: !Sub ${mainStackName}-lt
       LaunchTemplateData:
         InstanceType: t3.medium
-        # ImageId: ami-0800826177b25080e
+        # ImageId: ami-0800826177b25080e  #nodegroup creation will timeout with this specified, eks got issues managing dependency with non-latest versions?
         SecurityGroupIds:
         - !Ref nodeSg
   nodeSg:
