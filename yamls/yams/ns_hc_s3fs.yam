@@ -451,7 +451,7 @@ spec:
             value: nearspark.hc-{{.Subdomain}}:5000
           livenessProbe:
             httpGet:
-              path: "http://spoke.{{.Subdomain}}"
+              path: "http://localhost/_healthz"
               port: 1111
             initialDelaySeconds: 20
             timeoutSeconds: 1
