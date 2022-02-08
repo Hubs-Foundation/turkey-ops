@@ -469,6 +469,7 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	}
 	clientSet.AppsV1().DaemonSets("kube-system").Update(context.Background(), ds, v1.UpdateOptions{})
 	// 2. make a (fake) new revision for the nodegroup's launchTemplate
+	//	nodegroup contains launchtemplate id
 	eksClient := eks.New(as.Sess)
 	ng, err := eksClient.DescribeNodegroup(&eks.DescribeNodegroupInput{
 		ClusterName:   &stackName,
@@ -477,24 +478,38 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	if err != nil {
 		return err
 	}
+	//	launchtemplate contains ami-id
 	ec2Client := ec2.New(as.Sess)
+	lt, err := ec2Client.GetLaunchTemplateData(&ec2.GetLaunchTemplateDataInput{
+		InstanceId: ng.Nodegroup.LaunchTemplate.Id,
+	})
+	if err != nil {
+		return err
+	}
+	// create a new fake version #2
 	res, err := ec2Client.CreateLaunchTemplateVersion(&ec2.CreateLaunchTemplateVersionInput{
-		LaunchTemplateId:   ng.Nodegroup.LaunchTemplate.Id,
-		LaunchTemplateData: &ec2.RequestLaunchTemplateData{},
+		LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
+		LaunchTemplateData: &ec2.RequestLaunchTemplateData{
+			ImageId: lt.LaunchTemplateData.ImageId,
+		},
 		SourceVersion:      aws.String("1"),
 		VersionDescription: aws.String("same-as-version-1"),
 	})
-	internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", res)
+	internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", *res)
 	if err != nil {
 		return err
 	}
 	// 3. update the nodegroup with new launchTemplate
+
+	//	this works?
 	// ng.SetNodegroup(&eks.Nodegroup{
 	// 	LaunchTemplate: &eks.LaunchTemplateSpecification{
 	// 		Id:      ng.Nodegroup.LaunchTemplate.Id,
 	// 		Version: aws.String("2"),
 	// 	},
 	// })
+
+	// apply the fake launch template update to the nodegroup's autoscaling group
 	asg := autoscaling.New(as.Sess)
 	res2, err := asg.UpdateAutoScalingGroup(&autoscaling.UpdateAutoScalingGroupInput{
 		AutoScalingGroupName: ng.Nodegroup.Resources.AutoScalingGroups[0].Name,
@@ -503,7 +518,7 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 			Version:          aws.String("2"),
 		},
 	})
-	internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", res2)
+	internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", *res2)
 
 	if err != nil {
 		return err
