@@ -478,12 +478,13 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 		return err
 	}
 	ec2Client := ec2.New(as.Sess)
-	_, err = ec2Client.CreateLaunchTemplateVersion(&ec2.CreateLaunchTemplateVersionInput{
+	res, err := ec2Client.CreateLaunchTemplateVersion(&ec2.CreateLaunchTemplateVersionInput{
 		LaunchTemplateId:   ng.Nodegroup.LaunchTemplate.Id,
 		LaunchTemplateData: &ec2.RequestLaunchTemplateData{},
 		SourceVersion:      aws.String("1"),
-		VersionDescription: aws.String("0"),
+		VersionDescription: aws.String("same-as-version-1"),
 	})
+	internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", res)
 	if err != nil {
 		return err
 	}
@@ -495,13 +496,18 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	// 	},
 	// })
 	asg := autoscaling.New(as.Sess)
-	asg.UpdateAutoScalingGroup(&autoscaling.UpdateAutoScalingGroupInput{
+	res2, err := asg.UpdateAutoScalingGroup(&autoscaling.UpdateAutoScalingGroupInput{
 		AutoScalingGroupName: ng.Nodegroup.Resources.AutoScalingGroups[0].Name,
 		LaunchTemplate: &autoscaling.LaunchTemplateSpecification{
 			LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
 			Version:          aws.String("2"),
 		},
 	})
+	internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", res2)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
