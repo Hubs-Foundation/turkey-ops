@@ -468,7 +468,7 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	}
 	clientSet.AppsV1().DaemonSets("kube-system").Update(context.Background(), ds, v1.UpdateOptions{})
 	// 2. make a (fake) new revision for the nodegroup's launchTemplate
-	//	nodegroup contains launchtemplate id
+	//	2.1 get launchtemplate id from nodegroup
 	eksClient := eks.New(as.Sess)
 	ng, err := eksClient.DescribeNodegroup(&eks.DescribeNodegroupInput{
 		ClusterName:   &stackName,
@@ -477,7 +477,7 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	if err != nil {
 		return err
 	}
-	//	launchtemplateVersion contains ami-id
+	//	2.2 get ami-id from launchtemplateVersion
 	ec2Client := ec2.New(as.Sess)
 	ltvs, err := ec2Client.DescribeLaunchTemplateVersions(&ec2.DescribeLaunchTemplateVersionsInput{
 		LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
@@ -489,8 +489,8 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	if len(ltvs.LaunchTemplateVersions) < 1 {
 		return errors.New("len(ltvs.LaunchTemplateVersions) < 1")
 	}
-	// create a new fake version #2
-	res, err := ec2Client.CreateLaunchTemplateVersion(&ec2.CreateLaunchTemplateVersionInput{
+	// 2.3 this will create a new fake version (version: 2)
+	r2, err := ec2Client.CreateLaunchTemplateVersion(&ec2.CreateLaunchTemplateVersionInput{
 		LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
 		LaunchTemplateData: &ec2.RequestLaunchTemplateData{
 			ImageId: ltvs.LaunchTemplateVersions[0].LaunchTemplateData.ImageId, //required, why is this not copied from SourceVersion???
@@ -498,33 +498,23 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 		SourceVersion:      aws.String("1"),
 		VersionDescription: aws.String("same-as-version-1"),
 	})
-	internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", *res)
+	internal.GetLogger().Sugar().Debugf("ec2Client.CreateLaunchTemplateVersion ==> %v", *r2)
 	if err != nil {
 		return err
 	}
 	// 3. update the nodegroup with new launchTemplate
-
-	// this works?
-	ng.SetNodegroup(&eks.Nodegroup{
+	r3, err := eksClient.UpdateNodegroupVersion(&eks.UpdateNodegroupVersionInput{
+		ClusterName:   &stackName,
+		NodegroupName: ng.Nodegroup.NodegroupName,
 		LaunchTemplate: &eks.LaunchTemplateSpecification{
 			Id:      ng.Nodegroup.LaunchTemplate.Id,
 			Version: aws.String("2"),
 		},
 	})
-
-	// // apply the fake launch template update to the nodegroup's autoscaling group
-	// asg := autoscaling.New(as.Sess)
-	// res2, err := asg.UpdateAutoScalingGroup(&autoscaling.UpdateAutoScalingGroupInput{
-	// 	AutoScalingGroupName: ng.Nodegroup.Resources.AutoScalingGroups[0].Name,
-	// 	LaunchTemplate: &autoscaling.LaunchTemplateSpecification{
-	// 		LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
-	// 		Version:          aws.String("2"),
-	// 	},
-	// })
-	// internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", *res2)
-	// if err != nil {
-	// 	return err
-	// }	//.Error	@eksIpLimitationFix: ValidationError: You must use a valid fully-formed launch template. The request must contain the parameter ImageId
+	internal.GetLogger().Sugar().Debugf("eksClient.UpdateNodegroupVersion ==> %v", *r3)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
