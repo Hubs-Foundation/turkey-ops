@@ -19,7 +19,6 @@ import (
 	"main/internal"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
@@ -505,28 +504,27 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	}
 	// 3. update the nodegroup with new launchTemplate
 
-	//	this works?
-	// ng.SetNodegroup(&eks.Nodegroup{
-	// 	LaunchTemplate: &eks.LaunchTemplateSpecification{
-	// 		Id:      ng.Nodegroup.LaunchTemplate.Id,
-	// 		Version: aws.String("2"),
-	// 	},
-	// })
-
-	// apply the fake launch template update to the nodegroup's autoscaling group
-	asg := autoscaling.New(as.Sess)
-	res2, err := asg.UpdateAutoScalingGroup(&autoscaling.UpdateAutoScalingGroupInput{
-		AutoScalingGroupName: ng.Nodegroup.Resources.AutoScalingGroups[0].Name,
-		LaunchTemplate: &autoscaling.LaunchTemplateSpecification{
-			LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
-			Version:          aws.String("2"),
+	// this works?
+	ng.SetNodegroup(&eks.Nodegroup{
+		LaunchTemplate: &eks.LaunchTemplateSpecification{
+			Id:      ng.Nodegroup.LaunchTemplate.Id,
+			Version: aws.String("2"),
 		},
 	})
-	internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", *res2)
 
-	if err != nil {
-		return err
-	}
+	// // apply the fake launch template update to the nodegroup's autoscaling group
+	// asg := autoscaling.New(as.Sess)
+	// res2, err := asg.UpdateAutoScalingGroup(&autoscaling.UpdateAutoScalingGroupInput{
+	// 	AutoScalingGroupName: ng.Nodegroup.Resources.AutoScalingGroups[0].Name,
+	// 	LaunchTemplate: &autoscaling.LaunchTemplateSpecification{
+	// 		LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
+	// 		Version:          aws.String("2"),
+	// 	},
+	// })
+	// internal.GetLogger().Sugar().Debugf("CreateLaunchTemplateVersion ==> res: %v", *res2)
+	// if err != nil {
+	// 	return err
+	// }	//.Error	@eksIpLimitationFix: ValidationError: You must use a valid fully-formed launch template. The request must contain the parameter ImageId
 
 	return nil
 }
