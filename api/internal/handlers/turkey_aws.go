@@ -478,19 +478,23 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 	if err != nil {
 		return err
 	}
-	//	launchtemplate contains ami-id
+	//	launchtemplateVersion contains ami-id
 	ec2Client := ec2.New(as.Sess)
-	lt, err := ec2Client.GetLaunchTemplateData(&ec2.GetLaunchTemplateDataInput{
-		InstanceId: ng.Nodegroup.LaunchTemplate.Id,
+	ltvs, err := ec2Client.DescribeLaunchTemplateVersions(&ec2.DescribeLaunchTemplateVersionsInput{
+		LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
+		Versions:         []*string{aws.String("1")},
 	})
 	if err != nil {
 		return err
+	}
+	if len(ltvs.LaunchTemplateVersions) < 1 {
+		return errors.New("len(ltvs.LaunchTemplateVersions) < 1")
 	}
 	// create a new fake version #2
 	res, err := ec2Client.CreateLaunchTemplateVersion(&ec2.CreateLaunchTemplateVersionInput{
 		LaunchTemplateId: ng.Nodegroup.LaunchTemplate.Id,
 		LaunchTemplateData: &ec2.RequestLaunchTemplateData{
-			ImageId: lt.LaunchTemplateData.ImageId,
+			ImageId: ltvs.LaunchTemplateVersions[0].LaunchTemplateData.ImageId, //required, why is this not copied from SourceVersion???
 		},
 		SourceVersion:      aws.String("1"),
 		VersionDescription: aws.String("same-as-version-1"),
