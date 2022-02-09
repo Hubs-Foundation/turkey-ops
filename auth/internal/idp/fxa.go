@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -91,12 +92,12 @@ func (f *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 	err = json.NewDecoder(res.Body).Decode(&token)
 
 	if token.AccessToken == "" {
-		return token, errors.New("failed to get token with code <" + code + ">, res.StatusCode: " + strconv.Itoa(res.StatusCode) +
-			", f.ClientID[:4]: " + f.ClientID[:4] +
-			", f.ClientSecret[:4]: " + f.ClientSecret[:4] +
-			", redirect_uri: " + redirectURI)
+		bodyBytes, _ := ioutil.ReadAll(res.Body)
+		return token, errors.New("failed to get token , res.StatusCode: " + strconv.Itoa(res.StatusCode) +
+			", f.ClientID: " + f.ClientID[:4] + "..." + f.ClientID[len(f.ClientID)-4:] +
+			", f.ClientSecret: " + f.ClientSecret[:4] + "..." + f.ClientSecret[len(f.ClientSecret)-4:] +
+			", redirect_uri: " + redirectURI + ", code: " + code + ", res.Body: " + string(bodyBytes))
 	}
-	// bodyBytes, err := ioutil.ReadAll(res.Body)
 
 	return token, err
 }
