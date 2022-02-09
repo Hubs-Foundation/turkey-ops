@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"main/internal"
 	"net/http"
+	"strings"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var Ita_admin_info = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -19,14 +23,14 @@ var Ita_admin_info = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
-	return
+
 })
 
 var Ita_cfg_ret_ps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	resp := map[string]interface{}{}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
-	return
+
 })
 
 var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,25 +49,58 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	todo: <br>
 	need a better looking page here
 	`
-	fmt.Fprintf(w, html)
-	return
+	fmt.Fprint(w, html)
+
 })
 
+// todo: put strict rate limit on this endpoint, add caching to deflect/protect against ddos
 var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/global_404_fallback" || r.Method != "GET" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+	xfh := r.Header.Get("X-Forwarded-Host")
+	r_ns := "hc-" + strings.Split(xfh, ".")[0]
+	//todo: implement some sort of caching mechanism here, best without redis if possible, to avoid calling k8s master every time
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), r_ns, v1.GetOptions{})
+	if err != nil || ns == nil {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	go wakeupHcNs(r_ns)
+
 	internal.GetLogger().Debug(dumpHeader(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	html := `
-	<h1> your hubs infra's starting up, when the code's there, it's not yet </h1>
+	<h1> your hubs infra's starting up </h1>
 	this is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
 	todo: <br>
 	1. check for (free) subdomain <br>
 	2. scale it back up <br>
 	3. need a better looking page here
 	`
-	fmt.Fprintf(w, html)
-	return
+	fmt.Fprint(w, html)
+
 })
+
+func wakeupHcNs(ns string) {
+
+	//todo: get and handle tier configs
+
+	//scale things back up in this namespace
+	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), v1.ListOptions{})
+	if err != nil {
+		internal.GetLogger().Error("wakeupHcNs - failed to list deployments: " + err.Error())
+	}
+
+	one := int32(1)
+	for _, d := range ds.Items {
+		d.Spec.Replicas = &one
+		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
+		if err != nil {
+			internal.GetLogger().Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
+		}
+	}
+
+}

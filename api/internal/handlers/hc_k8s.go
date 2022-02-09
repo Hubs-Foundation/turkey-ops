@@ -29,7 +29,7 @@ type hcCfg struct {
 	UserEmail string `json:"useremail"`
 
 	//optional inputs
-	Options string `json:"options`
+	Options string `json:"options"`
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain     string `json:"domain"`
