@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -8,6 +10,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/smtp"
@@ -49,6 +52,7 @@ type clusterCfg struct {
 	CF_DeploymentPrefix  string `json:"name"`                 //t-
 	CF_deploymentId      string `json:"cf_deploymentId"`      //s0meid
 	AWS_Ingress_Cert_ARN string `json:"aws_ingress_cert_arn"` //arn:aws:acm:us-east-1:123456605633:certificate/123456ab-f861-470b-a837-123456a76e17
+	Options              string `json:"options"`              //additional options, dot(.)prefixed -- ie. ".dryrun"
 
 	//generated pre-infra-deploy
 	CF_Stackname  string `json:"stackname"`
@@ -61,7 +65,7 @@ type clusterCfg struct {
 	PSQL    string `json:"PSQL"`    //postgresql://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
 }
 
-var aws_yams = []string{
+var eks_yams = []string{
 	"cluster_00_deps.yam",
 	"cluster_01_ingress.yam",
 	"cluster_02_tools.yam",
@@ -113,7 +117,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Log("found " + cfg.Domain + " in route53")
 		}
 
-		// ######################################### 2. prepare params for cloudformation ##########################
+		// ######################################### 2. preps: cf params, k8sYamls ##########################
 		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cfs/"
 		cfParams := parseCFparams(map[string]string{
 			"deploymentId": cfg.CF_deploymentId,
@@ -126,6 +130,30 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			{Key: aws.String("turkeyEnv"), Value: aws.String(cfg.Env)},
 			{Key: aws.String("turkeyDomain"), Value: aws.String(cfg.Domain)},
 		}
+
+		k8sYamls, err := collectAndRenderYams(cfg.Env, awss, cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
+		if err != nil {
+			sess.Error("failed @ collectYams: " + err.Error())
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		// ######## dryrun ############
+		if strings.Contains(cfg.Options, ".dryrun") {
+			zbuf := new(bytes.Buffer)
+			zw := zip.NewWriter(zbuf)
+
+			for i, filename := range eks_yams {
+				f, _ := zw.Create(filename)
+				_, _ = f.Write([]byte(k8sYamls[i]))
+			}
+
+			zw.Close()
+			w.Header().Set("Content-Type", "application/zip")
+			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", "dryrun"))
+			w.Write(zbuf.Bytes())
+			return
+		}
+
 		// ######################################### 3. run cloudformation #########################################
 		go func() {
 			err = awss.CreateCFstack(cfg.CF_Stackname, cfS3Folder+"main.yaml", cfParams, cfTags)
@@ -137,8 +165,8 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}()
 		sess.Log("&#128640;CreateCFstack started for stackName=" + cfg.CF_Stackname)
 		reportCreateCFstackStatus(cfg.CF_Stackname, cfg, sess, awss)
-		// ######################################### 4. post deployment configs ###################################
-		report, err := postDeploymentConfigs(cfg, cfg.CF_Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
+		// ######################################### 4. post cloudformation configs ###################################
+		report, err := postCfConfigs(k8sYamls, cfg, cfg.CF_Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
 		if err != nil {
 			sess.Error("ERROR @ postDeploymentConfigs for " + cfg.CF_Stackname + ": " + err.Error())
 			return
@@ -161,7 +189,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
-func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
+func postCfConfigs(k8sYamls []string, cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
 	cfParams, err := getCfOutputParamMap(stackName, awss)
 	if err != nil {
 		sess.Error("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
@@ -183,18 +211,7 @@ func postDeploymentConfigs(cfg clusterCfg, stackName string, awss *internal.AwsS
 	// 	cfg.AWS_Ingress_Cert_ARN = `fix-me_arn:aws:acm:<region>:<acct>:certificate/<id>`
 	// }
 
-	yams, err := collectYams(cfg.Env, awss)
-	if err != nil {
-		sess.Error("failed @ collectYams: " + err.Error())
-		return nil, err
-	}
-	yamls, err := internal.K8s_render_yams(yams, cfg)
-	if err != nil {
-		sess.Error("post cf deployment: failed @ K8s_render_yams: " + err.Error())
-		return nil, err
-	}
-
-	for _, yaml := range yamls {
+	for _, yaml := range k8sYamls {
 		err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg)
 		if err != nil {
 			sess.Error("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
@@ -397,9 +414,9 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.
 	return nil
 }
 
-func collectYams(env string, awss *internal.AwsSvs) ([]string, error) {
+func collectAndRenderYams(env string, awss *internal.AwsSvs, cfg clusterCfg) ([]string, error) {
 	var yams []string
-	for _, s3Key := range aws_yams {
+	for _, s3Key := range eks_yams {
 		yanS3 := env + "/yams/" + s3Key
 		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yanS3)
 		if err != nil {
@@ -407,7 +424,13 @@ func collectYams(env string, awss *internal.AwsSvs) ([]string, error) {
 		}
 		yams = append(yams, yam)
 	}
-	return yams, nil
+
+	yamls, err := internal.K8s_render_yams(yams, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return yamls, nil
 }
 
 // func createSSMparam(stackName string, cfg map[string]string, awss *internal.AwsSvs) error {

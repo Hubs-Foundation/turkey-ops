@@ -29,7 +29,7 @@ type hcCfg struct {
 	UserEmail string `json:"useremail"`
 
 	//optional inputs
-	Options string `json:"options"`
+	Options string `json:"options"` //additional options, dot(.)prefixed -- ie. ".s3fs"
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain     string `json:"domain"`
@@ -83,7 +83,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	renderedYamls, _ := internal.K8s_render_yams([]string{yam}, hcCfg)
 	k8sChartYaml := renderedYamls[0]
-	// #2.5 dry run option
+	// #2.5 dryrun option
 	if hcCfg.Tier == "dryrun" {
 		w.Header().Set("Content-Disposition", "attachment; filename="+hcCfg.Subdomain+".yaml")
 		w.Header().Set("Content-Type", "text/plain")
