@@ -159,13 +159,15 @@ func OauthFxa() http.Handler {
 		http.SetCookie(w, ClearCSRFCookie(r, c))
 
 		// Exchange code for token
-		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_oauth", r.URL.Query().Get("code"))
+		code := r.URL.Query().Get("code")
+		logger.Debug("Exchange code (" + code + ") for token")
+		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_oauth", code)
 		if err != nil {
 			logger.Sugar().Warn("Code exchange failed with provider: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		logger.Sugar().Debug("token", token)
+		logger.Sugar().Debug("token: ", token)
 
 		// Get user
 		user, err := p.GetUser(token.AccessToken)
