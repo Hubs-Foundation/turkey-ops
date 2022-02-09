@@ -67,7 +67,7 @@ func MakeCfg() {
 		ns.Labels["CHANNEL"] = cfg.ListeningChannel
 		_, err := cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
 		if err != nil {
-			Logger.Error("failed to update channel to ns.labels")
+			Logger.Error("failed to update channel to ns.labels: " + err.Error())
 		}
 	}
 
