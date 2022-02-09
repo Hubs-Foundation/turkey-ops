@@ -7,12 +7,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"main/internal/idp"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
-
-	"main/internal/idp"
 )
 
 func GetClient(r *http.Request) string {
@@ -27,14 +26,14 @@ func CheckCookie(r *http.Request) (string, error) {
 	// Get auth cookie
 	c, err := r.Cookie(cfg.CookieName)
 	if err != nil {
-		logger.Sugar().Debug("missing cookie: " + cfg.CookieName)
+		Logger.Sugar().Debug("missing cookie: " + cfg.CookieName)
 		return "", errors.New("missing cookie")
 	}
 	// Validate cookie
 	email, err := ValidateCookie(r, c)
 	if err != nil {
 		if err.Error() != "Cookie has expired" {
-			logger.Sugar().Warn("Bad cookie, err: " + err.Error())
+			Logger.Sugar().Warn("Bad cookie, err: " + err.Error())
 		}
 		return "", err
 	}
@@ -197,7 +196,7 @@ func ClearCookie(r *http.Request) *http.Cookie {
 }
 
 func buildCSRFCookieName(nonce string) string {
-	logger.Debug("nonce: " + nonce)
+	Logger.Debug("nonce: " + nonce)
 	return cfg.CSRFCookieName + "_" + nonce[:6]
 }
 

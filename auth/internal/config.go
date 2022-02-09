@@ -62,7 +62,7 @@ func MakeCfg() {
 	err := cfg.Providers.Google.Setup()
 
 	if err != nil {
-		logger.Error("[ERROR] @ Cfg.Providers.Google.Setup: " + err.Error())
+		Logger.Error("[ERROR] @ Cfg.Providers.Google.Setup: " + err.Error())
 	}
 
 	// FXA
@@ -71,7 +71,7 @@ func MakeCfg() {
 	err = cfg.Providers.Fxa.Setup()
 
 	if err != nil {
-		logger.Error("[ERROR] @ Cfg.Providers.Fxa.Setup: " + err.Error())
+		Logger.Error("[ERROR] @ Cfg.Providers.Fxa.Setup: " + err.Error())
 	}
 }
 
@@ -79,20 +79,20 @@ func MakeCfg() {
 func (c *Config) Validate() {
 	// Check for show stopper errors
 	if len(c.Secret) == 0 {
-		logger.Fatal("\"secret\" option must be set")
+		Logger.Fatal("\"secret\" option must be set")
 	}
 
 	// Setup default provider
 	err := c.setupProvider(c.DefaultProvider)
 	if err != nil {
-		logger.Fatal(err.Error())
+		Logger.Fatal(err.Error())
 	}
 
 	// Check rules (validates the rule and the rule provider)
 	for _, rule := range c.Rules {
 		err = rule.Validate(c)
 		if err != nil {
-			logger.Fatal(err.Error())
+			Logger.Fatal(err.Error())
 		}
 	}
 }
@@ -112,7 +112,7 @@ func (c *Config) GetProvider(name string) (idp.Provider, error) {
 		// case "generic-oauth":
 		// 	return &c.Providers.GenericOAuth, nil
 	case "fxa":
-		logger.Debug(" ### GetProvider: fxa")
+		Logger.Debug(" ### GetProvider: fxa")
 		return &c.Providers.Fxa, nil
 	}
 

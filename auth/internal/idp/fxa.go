@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 // Fxa provider
@@ -88,7 +89,10 @@ func (f *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 
 	defer res.Body.Close()
 	err = json.NewDecoder(res.Body).Decode(&token)
-	// fmt.Sprintln("ExchangeCode.res.StatusCode = ", res.StatusCode)
+
+	if token.AccessToken == "" {
+		return token, errors.New("failed to get token, res.StatusCode: " + strconv.Itoa(res.StatusCode))
+	}
 	// bodyBytes, err := ioutil.ReadAll(res.Body)
 
 	return token, err

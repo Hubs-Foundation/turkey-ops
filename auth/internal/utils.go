@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var logger *zap.Logger
+var Logger *zap.Logger
 var Atom zap.AtomicLevel
 
 func InitLogger() {
@@ -19,9 +19,9 @@ func InitLogger() {
 	encoderCfg.FunctionKey = "f"
 	encoderCfg.MessageKey = "m"
 	// encoderCfg.FunctionKey = "f"
-	logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), Atom), zap.AddCaller())
+	Logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), Atom), zap.AddCaller())
 
-	defer logger.Sync()
+	defer Logger.Sync()
 
 	Atom.SetLevel(zap.InfoLevel)
 }

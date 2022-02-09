@@ -25,7 +25,7 @@ func StartServer(router *http.ServeMux, port int) {
 	flag.StringVar(&listenAddr, "listen-addr", ":"+strconv.Itoa(port), "server listen address")
 	flag.Parse()
 
-	logger.Info("Server is starting...")
+	Logger.Info("Server is starting...")
 
 	nextRequestID := func() string {
 		return fmt.Sprintf("%d", time.Now().UnixNano())
@@ -45,7 +45,7 @@ func StartServer(router *http.ServeMux, port int) {
 
 	go func() {
 		<-quit
-		logger.Info("Server is shutting down...")
+		Logger.Info("Server is shutting down...")
 		atomic.StoreInt32(&Healthy, 0)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -53,17 +53,17 @@ func StartServer(router *http.ServeMux, port int) {
 
 		server.SetKeepAlivesEnabled(false)
 		if err := server.Shutdown(ctx); err != nil {
-			logger.Sugar().Fatalf("Could not gracefully shutdown the server: %v\n", err)
+			Logger.Sugar().Fatalf("Could not gracefully shutdown the server: %v\n", err)
 		}
 		close(done)
 	}()
-	logger.Info("Server is ready to handle requests at" + listenAddr)
+	Logger.Info("Server is ready to handle requests at" + listenAddr)
 	atomic.StoreInt32(&Healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
+		Logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}
 	<-done
-	logger.Info("Server stopped")
+	Logger.Info("Server stopped")
 }
 
 func logging() func(http.Handler) http.Handler {
@@ -75,7 +75,7 @@ func logging() func(http.Handler) http.Handler {
 					requestID = "unknown"
 				}
 				_ = requestID
-				logger.Debug("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
+				Logger.Debug("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
 			}()
 			next.ServeHTTP(w, r)
 		})
@@ -99,14 +99,14 @@ func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 func proxyMods() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// logger.Debug("r.Host in: " + r.Host)
+			// Logger.Debug("r.Host in: " + r.Host)
 			if _, ok := r.Header["X-Forwarded-Host"]; ok {
 				r.Host = r.Header.Get("X-Forwarded-Host")
 			}
 			if _, ok := r.Header["X-Forwarded-Method"]; ok {
 				r.Method = r.Header.Get("X-Forwarded-Method")
 			}
-			// logger.Debug("r.Host out: " + r.Host)
+			// Logger.Debug("r.Host out: " + r.Host)
 			next.ServeHTTP(w, r)
 		})
 	}

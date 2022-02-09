@@ -32,18 +32,18 @@ func Login() http.Handler {
 			return
 		}
 
-		logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		idp := r.URL.Query()["idp"]
 		if len(idp) != 1 {
-			logger.Sugar().Debug(`bad value for ["idp"] in r.URL.Query()`)
+			Logger.Sugar().Debug(`bad value for ["idp"] in r.URL.Query()`)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
 
 		client := GetClient(r)
 		if client == "" {
-			logger.Sugar().Debug(`bad value for ["client"] in r.URL.Query()`)
+			Logger.Sugar().Debug(`bad value for ["client"] in r.URL.Query()`)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
@@ -51,12 +51,12 @@ func Login() http.Handler {
 		email, err := CheckCookie(r)
 		err = errors.New("fake error to force authRedirect, remove me after fxa's done")
 		if err != nil {
-			logger.Debug("valid auth cookie not found >>> authRedirect")
+			Logger.Debug("valid auth cookie not found >>> authRedirect")
 			authRedirect(w, r, idp[0])
 		}
 
 		// Valid request
-		logger.Sugar().Debug("allowed. good cookie found for " + email)
+		Logger.Sugar().Debug("allowed. good cookie found for " + email)
 		w.Header().Set("X-Forwarded-UserEmail", email)
 		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
 
@@ -68,12 +68,12 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 
 	provider, err := cfg.GetProvider(providerName)
 	if err != nil {
-		logger.Panic("internal.Cfg.GetProvider(" + providerName + ") failed: " + err.Error())
+		Logger.Panic("internal.Cfg.GetProvider(" + providerName + ") failed: " + err.Error())
 	}
 	// Error indicates no cookie, generate nonce
 	nonce, err := Nonce()
 	if err != nil {
-		logger.Info("Error generating nonce: " + err.Error())
+		Logger.Info("Error generating nonce: " + err.Error())
 		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 		return
 	}
@@ -83,7 +83,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	http.SetCookie(w, csrf)
 
 	if !cfg.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
-		logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
+		Logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
 	}
 
 	// todo is there a better way to do this in go?
@@ -93,7 +93,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	}
 
 	loginURL := provider.GetLoginURL(redirectURL, MakeState(r, provider, nonce))
-	logger.Debug(" ### loginURL: " + loginURL)
+	Logger.Debug(" ### loginURL: " + loginURL)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 }
 
@@ -103,7 +103,7 @@ func Logout() http.Handler {
 		http.SetCookie(w, ClearCookie(r))
 
 		if cfg.LogoutRedirect != "" {
-			logger.Debug("logout redirect to: " + cfg.LogoutRedirect)
+			Logger.Debug("logout redirect to: " + cfg.LogoutRedirect)
 			http.Redirect(w, r, cfg.LogoutRedirect, http.StatusTemporaryRedirect)
 		} else {
 			http.Error(w, "You have been logged out", http.StatusUnauthorized)
@@ -120,13 +120,13 @@ func OauthFxa() http.Handler {
 			return
 		}
 
-		logger.Info("Handling callback")
-		logger.Info("dumpHeader: " + dumpHeader(r))
+		Logger.Info("Handling callback")
+		Logger.Info("dumpHeader: " + dumpHeader(r))
 
 		// Check state
 		state := r.URL.Query().Get("state")
 		if err := ValidateState(state); err != nil {
-			logger.Sugar().Warn("Error validating state: " + err.Error())
+			Logger.Sugar().Warn("Error validating state: " + err.Error())
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -134,7 +134,7 @@ func OauthFxa() http.Handler {
 		// Check for CSRF cookie
 		c, err := FindCSRFCookie(r, state)
 		if err != nil {
-			logger.Sugar().Warn("Missing csrf cookie")
+			Logger.Sugar().Warn("Missing csrf cookie")
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -142,7 +142,7 @@ func OauthFxa() http.Handler {
 		// Validate CSRF cookie against state
 		valid, providerName, redirect, err := ValidateCSRFCookie(c, state)
 		if !valid {
-			logger.Sugar().Warn("Error validating csrf cookie: " + err.Error())
+			Logger.Sugar().Warn("Error validating csrf cookie: " + err.Error())
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -150,7 +150,7 @@ func OauthFxa() http.Handler {
 		// Get provider
 		p, err := cfg.GetProvider(providerName)
 		if err != nil {
-			logger.Sugar().Warn("Invalid provider in csrf cookie: " + providerName)
+			Logger.Sugar().Warn("Invalid provider in csrf cookie: " + providerName)
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -160,28 +160,28 @@ func OauthFxa() http.Handler {
 
 		// Exchange code for token
 		code := r.URL.Query().Get("code")
-		logger.Debug("Exchange code (" + code + ") for token")
+		Logger.Debug("Exchange code (" + code + ") for token")
 		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_oauth", code)
 		if err != nil {
-			logger.Sugar().Warn("Code exchange failed with provider: " + err.Error())
+			Logger.Sugar().Warn("Code exchange failed with provider: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		logger.Sugar().Debug("token: ", token)
+		Logger.Sugar().Debug("token: ", token)
 
 		// Get user
 		user, err := p.GetUser(token.AccessToken)
 		if err != nil {
-			logger.Sugar().Warn("Error getting user: " + err.Error())
+			Logger.Sugar().Warn("Error getting user: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		logger.Sugar().Debug("user", user)
+		Logger.Sugar().Debug("user", user)
 
 		// Generate cookie
 		http.SetCookie(w, MakeCookie(r, user.Email))
 
-		logger.Sugar().Debug("auth cookie generated: ", user)
+		Logger.Sugar().Debug("auth cookie generated: ", user)
 
 		// Redirect
 		w.Header().Set("X-Forwarded-UserName", user.Name)
@@ -201,13 +201,13 @@ func Oauth() http.Handler {
 			return
 		}
 
-		logger.Debug("Handling callback")
-		// logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Debug("Handling callback")
+		// Logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		// Check state
 		state := r.URL.Query().Get("state")
 		if err := ValidateState(state); err != nil {
-			logger.Sugar().Warn("Error validating state: " + err.Error())
+			Logger.Sugar().Warn("Error validating state: " + err.Error())
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -215,7 +215,7 @@ func Oauth() http.Handler {
 		// Check for CSRF cookie
 		c, err := FindCSRFCookie(r, state)
 		if err != nil {
-			logger.Sugar().Warn("Missing csrf cookie")
+			Logger.Sugar().Warn("Missing csrf cookie")
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -223,7 +223,7 @@ func Oauth() http.Handler {
 		// Validate CSRF cookie against state
 		valid, providerName, redirect, err := ValidateCSRFCookie(c, state)
 		if !valid {
-			logger.Sugar().Warn("Error validating csrf cookie: " + err.Error())
+			Logger.Sugar().Warn("Error validating csrf cookie: " + err.Error())
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -231,7 +231,7 @@ func Oauth() http.Handler {
 		// Get provider
 		p, err := cfg.GetProvider(providerName)
 		if err != nil {
-			logger.Sugar().Warn("Invalid provider in csrf cookie: " + providerName)
+			Logger.Sugar().Warn("Invalid provider in csrf cookie: " + providerName)
 			http.Error(w, "Not authorized", http.StatusUnauthorized)
 			return
 		}
@@ -242,25 +242,25 @@ func Oauth() http.Handler {
 		// Exchange code for token
 		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_oauth", r.URL.Query().Get("code"))
 		if err != nil {
-			logger.Sugar().Warn("Code exchange failed with provider: " + err.Error())
+			Logger.Sugar().Warn("Code exchange failed with provider: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		logger.Sugar().Debug("token", token)
+		Logger.Sugar().Debug("token", token)
 
 		// Get user
 		user, err := p.GetUser(token.AccessToken)
 		if err != nil {
-			logger.Sugar().Warn("Error getting user: " + err.Error())
+			Logger.Sugar().Warn("Error getting user: " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		logger.Sugar().Debug("user", user)
+		Logger.Sugar().Debug("user", user)
 
 		// Generate cookie
 		http.SetCookie(w, MakeCookie(r, user.Email))
 
-		logger.Sugar().Debug("auth cookie generated: ", user)
+		Logger.Sugar().Debug("auth cookie generated: ", user)
 
 		// Redirect
 		w.Header().Set("X-Forwarded-UserName", user.Name)
@@ -282,15 +282,15 @@ func Authn() http.Handler {
 		if _, ok := r.Header["X-Forwarded-Uri"]; ok {
 			r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
 		}
-		// logger.Debug("dumpHeader: " + dumpHeader(r))
+		// Logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		email, err := CheckCookie(r)
 		if err != nil {
-			logger.Debug("valid auth cookie not found >>> authRedirect")
+			Logger.Debug("valid auth cookie not found >>> authRedirect")
 			authRedirect(w, r, cfg.DefaultProvider)
 		}
 
-		logger.Sugar().Debug("allowed. good cookie found for " + email)
+		Logger.Sugar().Debug("allowed. good cookie found for " + email)
 		w.Header().Set("X-Forwarded-UserEmail", email)
 		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
 
@@ -324,7 +324,7 @@ func clearCSRFcookies(w http.ResponseWriter, r *http.Request) {
 // 		if xff != "" && strings.Contains(IPsAllowed, xff) {
 // 			w.WriteHeader(http.StatusNoContent)
 // 		} else {
-// 			logger.Info("not allowed !!! bad ip in xff: " + xff)
+// 			Logger.Info("not allowed !!! bad ip in xff: " + xff)
 // 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 // 		}
 // 	})
