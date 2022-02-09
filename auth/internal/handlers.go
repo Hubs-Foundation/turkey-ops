@@ -163,7 +163,7 @@ func OauthFxa() http.Handler {
 		Logger.Debug("Exchange code (" + code + ") for token")
 		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_oauth", code)
 		if err != nil {
-			Logger.Sugar().Warn("Code exchange failed with provider: " + err.Error())
+			Logger.Sugar().Warn("Code exchange failed with provider (" + providerName + "): " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
