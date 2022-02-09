@@ -50,24 +50,25 @@ func MakeCfg() {
 		Logger.Error("POD_NS not set")
 	}
 
-	//do we have channel labled on NS?
-	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	//do we have channel labled on deployment?
+	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
 	if err != nil {
-		Logger.Error("failed to get local NS: " + cfg.PodNS)
+		Logger.Error("failed to get local deployment: " + cfg.PodDeploymentName)
 	}
-	cfg.ListeningChannel = ns.Labels["CHANNEL"]
+	cfg.ListeningChannel = d.Labels["CHANNEL"]
 	//unexpected(or empty) channel value ==> fallback to stable
 	_, ok := cfg.SupportedChannels[cfg.ListeningChannel]
 	if !ok {
 		Logger.Warn("bad env var CHANNEL: " + cfg.ListeningChannel + ", so we'll use stable")
 		cfg.ListeningChannel = "stable"
 	}
-	//need channel on ns label -- if not already
-	if ns.Labels["CHANNEL"] != cfg.ListeningChannel {
-		ns.Labels["CHANNEL"] = cfg.ListeningChannel
-		_, err := cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+
+	//need channel on ***ita deployment's*** label -- if not already
+	if d.Labels["CHANNEL"] != cfg.ListeningChannel {
+		d.Labels["CHANNEL"] = cfg.ListeningChannel
+		_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
-			Logger.Error("failed to update channel to ns.labels: " + err.Error())
+			Logger.Error("failed to update channel to deployment.labels: " + err.Error())
 		}
 	}
 
