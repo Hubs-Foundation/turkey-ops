@@ -91,7 +91,7 @@ func (f *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 	err = json.NewDecoder(res.Body).Decode(&token)
 
 	if token.AccessToken == "" {
-		return token, errors.New("failed to get token, res.StatusCode: " + strconv.Itoa(res.StatusCode))
+		return token, errors.New("failed to get token with code <" + code + ">, res.StatusCode: " + strconv.Itoa(res.StatusCode))
 	}
 	// bodyBytes, err := ioutil.ReadAll(res.Body)
 
