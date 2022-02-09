@@ -59,6 +59,7 @@ func requireRole(role string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			email := r.Header.Get("X-Forwarded-UserEmail")
+			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
 			if email[len(email)-12:] != "@mozilla.com" {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
