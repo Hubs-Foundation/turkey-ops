@@ -64,7 +64,10 @@ func MakeCfg() {
 	}
 
 	//need channel on ***ita deployment's*** label -- if not already
-	if d.Labels["CHANNEL"] != cfg.ListeningChannel {
+	if d.Labels == nil || d.Labels["CHANNEL"] != cfg.ListeningChannel {
+		if d.Labels == nil {
+			d.Labels = make(map[string]string)
+		}
 		d.Labels["CHANNEL"] = cfg.ListeningChannel
 		_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
