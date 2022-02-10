@@ -41,7 +41,7 @@ func (k8 K8sSvs) StartWatching_NS() (chan struct{}, error) {
 		"namespaces",
 		"",
 		func(options *metav1.ListOptions) {
-			// options.LabelSelector = "metadata.name="
+			options.LabelSelector = "TurkeyId"
 		},
 	)
 	_, controller := cache.NewInformer(
