@@ -15,7 +15,7 @@ func main() {
 
 	//++++++++++++++++++++++++ testing...
 	internal.StartLruCache()
-	internal.Cfg.K8ss_local.StartWatching_NS()
+	internal.Cfg.K8ss_local.StartWatching_HcNs()
 	//-----------------------------------
 
 	router := http.NewServeMux()

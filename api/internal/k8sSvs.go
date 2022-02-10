@@ -32,7 +32,7 @@ type K8sSvs struct {
 	ClientSet *kubernetes.Clientset
 }
 
-func (k8 K8sSvs) StartWatching_NS() (chan struct{}, error) {
+func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 	if k8.ClientSet == nil {
 		return nil, errors.New("k8.ClientSet == nil")
 	}
@@ -51,6 +51,8 @@ func (k8 K8sSvs) StartWatching_NS() (chan struct{}, error) {
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				GetLogger().Sugar().Debugf("added: %v", obj)
+				ns := obj.(*corev1.Namespace)
+				HcNsTable[ns.Name] = HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()}
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				GetLogger().Sugar().Debugf("updated: %v", newObj)

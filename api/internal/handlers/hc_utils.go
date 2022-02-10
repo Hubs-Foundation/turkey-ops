@@ -7,6 +7,7 @@ import (
 	"main/internal"
 	"net/http"
 	"strings"
+	"time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -53,19 +54,17 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 })
 
-// type g404NsFindings struct{
-// 	lastchecked time.Time
-// 	goodNs bool
-// }
-// var g404cache = map[string]g404NsFindings{}
-
-var g404RespMsg = `
+var g404_std_RespMsg = `
 <h1> your hubs infra's starting up </h1>
-this is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
-todo: <br>
-1. check for (free) subdomain <br>
-2. scale it back up <br>
-3. need a better looking page here
+disclaimer: this page is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
+todo(internal only): <br>
+1. a better looking page here <br>
+`
+var g404_err_RespMsg = `
+<h1> your hubs infra's dead ... <br> but don't worry because some poor engineers on our end's getting a pagerduty for it </h1>
+disclaimer: this page is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
+todo(internal only): <br>
+1. a better looking page here <br>
 `
 
 // todo: put strict rate limit on this endpoint and add caching to deflect/protect against ddos
@@ -76,22 +75,31 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	}
 	nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
 
-	///////////////////////////////////
-	// internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces()
-	///////////////////////////////////
-
-	//todo: implement some sort of caching mechanism here to avoid bugging k8s master every time ... best without redis, if possible
-	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, v1.GetOptions{})
-	if err != nil || ns == nil {
+	// not requesting a hubs cloud namespace == bounce
+	if _, ok := internal.HcNsTable[nsName]; !ok {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+	notes := internal.HcNsTable[nsName]
 
+	// high frequency pokes == bounce
+	coolDown := 15 * time.Minute
+	if time.Since(notes.Lastchecked) < coolDown {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, g404_std_RespMsg)
+		return
+	}
+
+	//todo: check if Labeled with status=paused, otherwise it's probably an error/exception because the request should be catched by higher priority ingress rules inside hc-namespace
+	//todo: check tiers for scaling configs
+	//todo: test HPA (horizontal pod autoscaler)'s min settings instead of
+
+	//just scale it back up to 1 for now
 	go wakeupHcNs(nsName)
 
 	internal.GetLogger().Debug(dumpHeader(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, g404RespMsg)
+	fmt.Fprint(w, g404_std_RespMsg)
 
 })
 
