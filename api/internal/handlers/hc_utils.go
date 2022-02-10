@@ -53,34 +53,45 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 })
 
-// todo: put strict rate limit on this endpoint, add caching to deflect/protect against ddos
+// type g404NsFindings struct{
+// 	lastchecked time.Time
+// 	goodNs bool
+// }
+// var g404cache = map[string]g404NsFindings{}
+
+var g404RespMsg = `
+<h1> your hubs infra's starting up </h1>
+this is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
+todo: <br>
+1. check for (free) subdomain <br>
+2. scale it back up <br>
+3. need a better looking page here
+`
+
+// todo: put strict rate limit on this endpoint and add caching to deflect/protect against ddos
 var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/global_404_fallback" || r.Method != "GET" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	xfh := r.Header.Get("X-Forwarded-Host")
-	r_ns := "hc-" + strings.Split(xfh, ".")[0]
-	//todo: implement some sort of caching mechanism here, best without redis if possible, to avoid calling k8s master every time
-	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), r_ns, v1.GetOptions{})
+	nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
+
+	///////////////////////////////////
+	// internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces()
+	///////////////////////////////////
+
+	//todo: implement some sort of caching mechanism here to avoid bugging k8s master every time ... best without redis, if possible
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, v1.GetOptions{})
 	if err != nil || ns == nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
-	go wakeupHcNs(r_ns)
+	go wakeupHcNs(nsName)
 
 	internal.GetLogger().Debug(dumpHeader(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	html := `
-	<h1> your hubs infra's starting up </h1>
-	this is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
-	todo: <br>
-	1. check for (free) subdomain <br>
-	2. scale it back up <br>
-	3. need a better looking page here
-	`
-	fmt.Fprint(w, html)
+	fmt.Fprint(w, g404RespMsg)
 
 })
 
@@ -94,13 +105,18 @@ func wakeupHcNs(ns string) {
 		internal.GetLogger().Error("wakeupHcNs - failed to list deployments: " + err.Error())
 	}
 
-	one := int32(1)
+	scaleUpTo := 1
 	for _, d := range ds.Items {
-		d.Spec.Replicas = &one
+		d.Spec.Replicas = pointerOfInt32(scaleUpTo)
 		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
 		if err != nil {
 			internal.GetLogger().Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
 		}
 	}
 
+}
+
+func pointerOfInt32(i int) *int32 {
+	int32i := int32(i)
+	return &int32i
 }

@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"text/template"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,11 +24,45 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/tools/cache"
 )
 
 type K8sSvs struct {
 	Cfg       *rest.Config
 	ClientSet *kubernetes.Clientset
+}
+
+func (k8 K8sSvs) StartWatching_NS() (chan struct{}, error) {
+	if k8.ClientSet == nil {
+		return nil, errors.New("k8.ClientSet == nil")
+	}
+	watchlist := cache.NewFilteredListWatchFromClient(
+		k8.ClientSet.CoreV1().RESTClient(),
+		"namespaces",
+		"",
+		func(options *metav1.ListOptions) {
+			// options.LabelSelector = "metadata.name="
+		},
+	)
+	_, controller := cache.NewInformer(
+		watchlist,
+		&corev1.ConfigMap{},
+		0,
+		cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				GetLogger().Sugar().Debugf("added: %v", obj)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				GetLogger().Sugar().Debugf("updated: %v", newObj)
+			},
+			DeleteFunc: func(obj interface{}) {
+				GetLogger().Sugar().Debugf("deleted: %v", obj)
+			},
+		},
+	)
+	stop := make(chan struct{})
+	go controller.Run(stop)
+	return stop, nil
 }
 
 func NewK8sSvs_local() *K8sSvs {

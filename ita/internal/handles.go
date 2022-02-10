@@ -77,22 +77,29 @@ var Tu_channel = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		cfg.ListeningChannel = channel
-		ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+		d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
 		if err != nil {
-			Logger.Error("failed to get local NS: " + cfg.PodNS)
+			Logger.Error("failed to get local deployment: " + cfg.PodNS)
+			http.Error(w, "failed to get d", http.StatusInternalServerError)
+			return
 		}
-		ns.Labels["CHANNEL"] = channel
-		_, err = cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+		d.Labels["CHANNEL"] = channel
+		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
-			Logger.Error("failed to update ns.labels with new channel value: " + channel)
+			Logger.Error("failed to update d.labels with new channel value: " + channel)
+			http.Error(w, "failed to update d.label", http.StatusInternalServerError)
+			return
 		}
-
 		//change of container.spec.env.CHANNEL should reboot the pod anyway but just in case?
 		cfg.TurkeyUpdater = NewTurkeyUpdater()
 		_, err = cfg.TurkeyUpdater.Start()
 		if err != nil {
 			Logger.Error(err.Error())
+			http.Error(w, "faile to restart TurkeyUpdater", http.StatusInternalServerError)
+			return
 		}
+		w.WriteHeader(200)
+		return
 	}
 	if r.Method != "GET" && r.URL.Path == "/tu_channel" {
 		fmt.Fprint(w, cfg.ListeningChannel)

@@ -103,7 +103,7 @@ spec:
   forwardAuth:
     address: http://auth.turkey-services:9001/authn
     trustForwardHeader: true        
-    authResponseHeadersRegex: ^X-Forwarded-    
+    authResponseHeadersRegex: ^X-Forwarded-
     # authResponseHeaders:
     #   - X-Forwarded-User
     #   - X-Forwarded-UserEmail
