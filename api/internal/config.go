@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"os"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -124,10 +123,3 @@ func touchCfgMap(name string) error {
 }
 
 //////////////////////////
-
-type HcNsNotes struct {
-	Lastchecked time.Time
-	Labels      map[string]string
-}
-
-var HcNsTable = map[string]HcNsNotes{}

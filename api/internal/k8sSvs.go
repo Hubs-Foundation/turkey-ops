@@ -52,7 +52,7 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 			AddFunc: func(obj interface{}) {
 				GetLogger().Sugar().Debugf("added: %v", obj)
 				ns := obj.(*corev1.Namespace)
-				HcNsTable[ns.Name] = HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()}
+				HC_NS_TABLE.Set(ns.Name, HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				GetLogger().Sugar().Debugf("updated: %v", newObj)
