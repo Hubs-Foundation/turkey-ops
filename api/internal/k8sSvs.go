@@ -46,7 +46,7 @@ func (k8 K8sSvs) StartWatching_NS() (chan struct{}, error) {
 	)
 	_, controller := cache.NewInformer(
 		watchlist,
-		&corev1.ConfigMap{},
+		&corev1.Namespace{},
 		0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
