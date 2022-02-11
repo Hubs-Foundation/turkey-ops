@@ -76,7 +76,7 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
 
 	// not requesting a hubs cloud namespace == bounce
-	if internal.HC_NS_TABLE.Has(nsName) {
+	if !internal.HC_NS_TABLE.Has(nsName) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
