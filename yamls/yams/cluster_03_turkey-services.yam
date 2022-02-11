@@ -39,7 +39,6 @@ metadata:
 spec:
   errors:
     status:
-      - "404"
       - "502"
       - "503"
     query: /hc_launch_fallback
