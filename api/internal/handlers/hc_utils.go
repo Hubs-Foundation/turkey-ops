@@ -77,6 +77,7 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 
 	// not requesting a hubs cloud namespace == bounce
 	if !internal.HC_NS_TABLE.Has(nsName) {
+		internal.GetLogger().Debug("404 bounc / !internal.HC_NS_TABLE.Has for: " + nsName)
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -85,6 +86,7 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	// high frequency pokes == bounce
 	coolDown := 15 * time.Minute
 	if time.Since(notes.Lastchecked) < coolDown {
+		internal.GetLogger().Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, g404_std_RespMsg)
 		return
@@ -95,9 +97,11 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	//todo: test HPA (horizontal pod autoscaler)'s min settings instead of
 
 	//just scale it back up to 1 for now
-	go wakeupHcNs(nsName)
 
-	internal.GetLogger().Debug(dumpHeader(r))
+	go wakeupHcNs(nsName)
+	internal.HC_NS_TABLE.Set(nsName, internal.HcNsNotes{Lastchecked: time.Now()})
+
+	internal.GetLogger().Debug("wakeupHcNs launched for nsName: " + nsName + ", dumpHeader(r): " + dumpHeader(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, g404_std_RespMsg)
 
