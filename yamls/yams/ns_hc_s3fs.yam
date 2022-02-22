@@ -239,7 +239,7 @@ spec:
               name: configs
               key: ADM_EMAIL
         - name: turkeyCfg_ITA_HOST
-          value: http://turkey-api.turkey-services
+          value: http://ita.turkey-services
         - name: turkeyCfg_IMG_PROXY
           value: http://nearspark.hc-{{.Subdomain}}
         - name: turkeyCfg_HEADER_AUTHZ
@@ -247,7 +247,11 @@ spec:
         - name: turkeyCfg_YTDL_HOST
           value: "http://localhost:8080"
         # - name: turkeyCfg_YTDL_HOST
-        #   value: "http://turkey-api.turkey-services:888/ytdl"            
+        #   value: "http://ytdl.turkey-services"
+        - name: turkeyCfg_PHOTOMNEMONIC
+          value: "http://photomnemonic.turkey-services"  
+        - name: turkeyCfg_SPEELYCAPTOR
+          value: "http://speelycaptor.turkey-services"                      
         livenessProbe:
           httpGet:
             path: "http://reticulum.{{.Subdomain}}"

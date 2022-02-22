@@ -29,7 +29,7 @@ type hcCfg struct {
 	UserEmail string `json:"useremail"`
 
 	//optional inputs
-	Options string `json:"options"` //additional options, dot(.)prefixed -- ie. ".s3fs"
+	Options string `json:"options"` //additional options, dot(.)prefixed -- ie. ".ebs"
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain     string `json:"domain"`
@@ -71,10 +71,12 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// t.Execute(&buf, hcCfg)
 	// k8sChartYaml := buf.String()
 	// // todo -- sanity check k8sChartYaml?
-	yamFileKey := internal.Cfg.Env + "/yams/ns_hc.yam"
-	if strings.HasSuffix(hcCfg.Options, ".s3fs") {
-		sess.Log("s3fs version selected")
-		yamFileKey = internal.Cfg.Env + "/yams/ns_hc_s3fs.yam"
+	yamFileKey := internal.Cfg.Env + "/yams/ns_hc_s3fs.yam"
+	if strings.HasSuffix(hcCfg.Options, ".ebs") {
+		sess.Log("ebs version selected")
+		yamFileKey = internal.Cfg.Env + "/yams/ns_hc_ebs.yam"
+	} else {
+		sess.Log("(default) s3fs version selected")
 	}
 	yam, err := internal.Cfg.Awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yamFileKey)
 	if err != nil {

@@ -145,15 +145,28 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: dashboard
+  name: traefik
   namespace: ingress
 spec:
   selector:
     k8s-app: ingress-controller
   ports:
-  - name: dashboard
+  - name: traefik
     port: 1080
     targetPort: 1080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haproxy
+  namespace: ingress
+spec:
+  selector:
+    k8s-app: ingress-controller
+  ports:
+  - name: haproxy
+    port: 1024
+    targetPort: 1024
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -174,7 +187,7 @@ spec:
       namespace: ingress
     services:                       
     - kind: Service
-      name: dashboard
+      name: traefik
       namespace: ingress
       passHostHeader: true
       port: 1080
