@@ -249,9 +249,9 @@ spec:
         # - name: turkeyCfg_YTDL_HOST
         #   value: "http://ytdl.turkey-services"
         - name: turkeyCfg_PHOTOMNEMONIC
-          value: "http://photomnemonic.turkey-services"  
+          value: "http://photomnemonic.turkey-services:5000"  
         - name: turkeyCfg_SPEELYCAPTOR
-          value: "http://speelycaptor.turkey-services"                      
+          value: "http://speelycaptor.turkey-services:5000"
         livenessProbe:
           httpGet:
             path: "http://reticulum.{{.Subdomain}}"

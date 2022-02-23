@@ -736,7 +736,7 @@ spec:
               name: configs
               key: AWS_REGION
         - name: scratchBucketId
-          value: turkey-{{.Domain}}-speelycaptor-scratch
+          value: turkey-speelycaptor-scratch
         - name: scratchBucketRegion
           valueFrom:
             secretKeyRef:
