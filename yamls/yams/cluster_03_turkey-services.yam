@@ -130,7 +130,7 @@ spec:
       # terminationGracePeriodSeconds: 3
       containers:
       - name: turkeyauth
-        image: mozillareality/turkeyauth:86
+        image: mozillareality/turkeyauth:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: trustedClients  # must end with ','
@@ -255,7 +255,7 @@ spec:
       serviceAccountName: api-sa
       containers:
       - name: turkey-orc
-        image: mozillareality/turkeyapi:200
+        image: mozillareality/turkeyapi:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: POD_IP
@@ -410,7 +410,7 @@ spec:
         app: pgbouncer
     spec:
       containers:
-      - image: mozillareality/pgbouncer:6
+      - image: mozillareality/pgbouncer:stable-latest
         imagePullPolicy: IfNotPresent
         name: pgbouncer
         env:
@@ -467,7 +467,7 @@ spec:
         app: pgbouncer-t
     spec:
       containers:
-      - image: mozillareality/pgbouncer:6
+      - image: mozillareality/pgbouncer:stable-latest
         imagePullPolicy: IfNotPresent
         name: pgbouncer-t
         env:
@@ -530,7 +530,7 @@ spec:
     spec:
       serviceAccountName: ita-sa
       containers:
-      - image: mozillareality/ita:0
+      - image: mozillareality/ita:stable-latest
         imagePullPolicy: Always
         name: ita
         env:
@@ -619,7 +619,7 @@ spec:
     spec:
       containers:
       - name: s3fs
-        image: mozillareality/s3fs:0
+        image: mozillareality/s3fs:stable-latest
         imagePullPolicy: Always
         lifecycle:
           preStop:
@@ -672,7 +672,7 @@ spec:
         app: photomnemonic
     spec:
       containers:
-      - image: mozillareality/photomnemonic:latest
+      - image: mozillareality/photomnemonic:stable-latest
         imagePullPolicy: Always
         name: photomnemonic
         resources:
@@ -716,7 +716,7 @@ spec:
         app: speelycaptor
     spec:
       containers:
-      - image: mozillareality/speelycaptor:latest
+      - image: mozillareality/speelycaptor:stable-latest
         imagePullPolicy: Always
         name: speelycaptor
         env:

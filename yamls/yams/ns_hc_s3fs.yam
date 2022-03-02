@@ -141,7 +141,7 @@ spec:
           capabilities:
             add:
             - SYS_ADMIN          
-        image: mozillareality/ret:58
+        image: mozillareality/ret:stable-latest
         ports:
         - containerPort: 9100
         imagePullPolicy: IfNotPresent
@@ -334,7 +334,7 @@ spec:
     spec:
       containers:
         - name: hubs
-          image: mozillareality/hubs:dev
+          image: mozillareality/hubs:stable-latest
           imagePullPolicy: Always
           env:
           - name: SUB_DOMAIN
@@ -422,7 +422,7 @@ spec:
     spec:
       containers:
         - name: spoke
-          image: mozillareality/spoke:2
+          image: mozillareality/spoke:stable-latest
           imagePullPolicy: Always
           env:
           - name: SUB_DOMAIN
@@ -508,7 +508,7 @@ spec:
     spec:
       containers:
       - name: nearspark
-        image: mozillareality/nearspark:dev
+        image: mozillareality/nearspark:stable-latest
         ports:
         - containerPort: 5000
         imagePullPolicy: IfNotPresent
@@ -547,7 +547,7 @@ spec:
     spec:
       serviceAccountName: ita-sa
       containers:
-      - image: mozillareality/ita:0
+      - image: mozillareality/ita:stable-latest
         imagePullPolicy: Always
         name: ita
         env:
