@@ -1,0 +1,19 @@
+
+name: s3fs
+on:
+  push:
+    branches: [ master ]
+    paths:
+    - 'deps/s3fs/**'
+    - '.github/workflows/deps_s3fs.yml'
+  workflow_dispatch:
+
+jobs:
+  turkeyGitops:
+    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
+    with:
+      codePath: deps/s3fs
+      registry: mozillareality
+      dockerfile: Dockerfile
+    secrets:
+      DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}

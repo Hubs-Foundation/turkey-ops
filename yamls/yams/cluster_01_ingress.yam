@@ -26,7 +26,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
       - name: traefik
-        image: traefik:v2.5
+        image: mozillareality/traefik:v2.5
         imagePullPolicy: IfNotPresent        
         args:
         - --serversTransport.insecureSkipVerify=true
@@ -61,7 +61,7 @@ spec:
             memory: 4Gi
             cpu: 2
       - name: haproxy 
-        image: haproxytech/kubernetes-ingress:1.7.0
+        image: mozillareality/haproxy:1.7.0
         args:
         - --https-bind-port=4443
         - --disable-http

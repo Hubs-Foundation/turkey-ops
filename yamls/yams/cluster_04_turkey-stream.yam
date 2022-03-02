@@ -82,7 +82,7 @@ spec:
       hostNetwork: true
       containers:
       - name: dialog
-        image: mozillareality/dialog:60
+        image: mozillareality/dialog:stable-latest
         imagePullPolicy: Always
         ports:        
         - hostPort: 4443
@@ -148,7 +148,7 @@ spec:
       hostNetwork: true
       containers:
       - name: coturn
-        image: mozillareality/coturn:dev
+        image: mozillareality/coturn:stable-latest
         imagePullPolicy: Always
         ports:
         - hostPort: 5349
@@ -210,7 +210,7 @@ spec:
     spec:
       serviceAccountName: ita-sa
       containers:
-      - image: mozillareality/ita:0
+      - image: mozillareality/ita:stable-latest
         imagePullPolicy: Always
         name: ita
         env:

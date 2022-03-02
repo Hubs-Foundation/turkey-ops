@@ -71,6 +71,7 @@ var eks_yams = []string{
 	"cluster_02_tools.yam",
 	"cluster_03_turkey-services.yam",
 	"cluster_04_turkey-stream.yam",
+	"cluster_05_monitoring.yam",
 	"cluster_autoscaler_aws.yam",
 }
 

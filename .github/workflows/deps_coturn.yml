@@ -1,0 +1,19 @@
+
+name: coturn
+on:
+  push:
+    branches: [ master ]
+    paths:
+    - 'deps/coturn/**'
+    - '.github/workflows/deps_coturn.yml'
+  workflow_dispatch:
+
+jobs:
+  turkeyGitops:
+    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
+    with:
+      codePath: deps/coturn
+      registry: mozillareality
+      dockerfile: Dockerfile
+    secrets:
+      DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
