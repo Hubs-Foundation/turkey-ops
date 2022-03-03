@@ -6,6 +6,7 @@ user root:root
 run apk add curl netcat-openbsd
 
 COPY entrypoint.sh /entrypoint.sh
+run chmod +x /entrypoint.sh
 # user nobody:nogroup
 volume ["/var/lib/coturn"]
 cmd /entrypoint.sh
