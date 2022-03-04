@@ -417,14 +417,18 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.
 
 func collectAndRenderYams(env string, awss *internal.AwsSvs, cfg clusterCfg) ([]string, error) {
 	var yams []string
+
+	internal.GetLogger().Debug(fmt.Sprintf("%v", eks_yams))
+
 	for _, s3Key := range eks_yams {
-		yanS3 := env + "/yams/" + s3Key
-		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yanS3)
+		yamS3 := env + "/yams/" + s3Key
+		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yamS3)
 		if err != nil {
 			return yams, err
 		}
 		yams = append(yams, yam)
 	}
+	internal.GetLogger().Debug(fmt.Sprintf("len(yams) = %v", len(yams)))
 
 	yamls, err := internal.K8s_render_yams(yams, cfg)
 	if err != nil {
