@@ -369,26 +369,6 @@ spec:
     - name: http
       protocol: TCP
       port: 9090
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: prometheus
-#   namespace: monitoring
-# spec:
-#   entryPoints:
-#     - https
-#   routes:
-#   - kind: Rule
-#     match: Host(`prometheus.{{.Domain}}`) && PathPrefix(`/`)
-#     middlewares:
-#     - name: turkeyauth
-#       namespace: ingress
-#     services:
-#     - kind: Service
-#       name: prometheus
-#       namespace: monitoring
-#       port: 9090
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -904,7 +884,6 @@ subjects:
 ########################################################################################################################
 ################################################ promtail ##############################################################
 ########################################################################################################################
----
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
