@@ -37,7 +37,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: grafana/grafana:8.5.0-51645pre
+        image: grafana/grafana:8.4.3
         imagePullPolicy: IfNotPresent
         env:
         - name: GF_EXPLORE_ENABLED
