@@ -632,9 +632,15 @@ spec:
             - SYS_ADMIN
         env:
         - name: AWS_KEY
-          value: AKIAYEJRSWRAQSAMLSGX
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_KEY
         - name: AWS_SECRET
-          value: Qsl4r/h7pxoDE1CMaH5mDtPmmcpjkY2+NQMMUWPD
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_SECRET
         - name: S3_BUCKET
           value: turkeyfs-use1
         - name: MNT_DIR
