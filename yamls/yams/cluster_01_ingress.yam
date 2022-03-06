@@ -60,7 +60,12 @@ spec:
           limits:
             memory: 4Gi
             cpu: 2
-      - name: haproxy 
+      ######################################################################################################################
+      ### bundling haproxy container with traefik is not ideal for maximum scaling/scheduling efficiency
+      ### but it is necessary to share a single load balancer ( without messing with CRDs )
+      ### so we'll (slightly) over provision here, feels worth it for the simplicity it offers
+      ######################################################################################################################
+      - name: haproxy
         image: mozillareality/haproxy:1.7.0
         args:
         - --https-bind-port=4443

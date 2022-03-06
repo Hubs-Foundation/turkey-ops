@@ -624,7 +624,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: ["/bin/sh","-c","umount -f /var/s3"]
+              command: ["/bin/sh","-c","umount -f /var/s3fs"]
         securityContext:
           privileged: true
           capabilities:
@@ -645,6 +645,13 @@ spec:
           value: turkeyfs-use1
         - name: MNT_DIR
           value: /var/s3fs
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 0.05
+          limits:
+            memory: 4Gi
+            cpu: 2
         volumeMounts:
         - name: devfuse
           mountPath: /dev/fuse
