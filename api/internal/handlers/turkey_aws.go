@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -132,28 +130,22 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			{Key: aws.String("turkeyDomain"), Value: aws.String(cfg.Domain)},
 		}
 
-		k8sYamls, err := collectAndRenderYams(cfg.Env, awss, cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
-		if err != nil {
-			sess.Error("failed @ collectYams: " + err.Error())
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-		// ######## dryrun ############
-		if strings.Contains(cfg.Options, ".dryrun") {
-			zbuf := new(bytes.Buffer)
-			zw := zip.NewWriter(zbuf)
+		// // ######## dryrun ############
+		// if strings.Contains(cfg.Options, ".dryrun") {
+		// 	zbuf := new(bytes.Buffer)
+		// 	zw := zip.NewWriter(zbuf)
 
-			for i, filename := range eks_yams {
-				f, _ := zw.Create(filename)
-				_, _ = f.Write([]byte(k8sYamls[i]))
-			}
+		// 	for i, filename := range eks_yams {
+		// 		f, _ := zw.Create(filename)
+		// 		_, _ = f.Write([]byte(k8sYamls[i]))
+		// 	}
 
-			zw.Close()
-			w.Header().Set("Content-Type", "application/zip")
-			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", "dryrun"))
-			w.Write(zbuf.Bytes())
-			return
-		}
+		// 	zw.Close()
+		// 	w.Header().Set("Content-Type", "application/zip")
+		// 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", "dryrun"))
+		// 	w.Write(zbuf.Bytes())
+		// 	return
+		// }
 
 		// ######################################### 3. run cloudformation #########################################
 		go func() {
@@ -167,7 +159,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("&#128640;CreateCFstack started for stackName=" + cfg.CF_Stackname)
 		reportCreateCFstackStatus(cfg.CF_Stackname, cfg, sess, awss)
 		// ######################################### 4. post cloudformation configs ###################################
-		report, err := postCfConfigs(k8sYamls, cfg, cfg.CF_Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
+		report, err := postCfConfigs(cfg, cfg.CF_Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
 		if err != nil {
 			sess.Error("ERROR @ postDeploymentConfigs for " + cfg.CF_Stackname + ": " + err.Error())
 			return
@@ -190,7 +182,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
-func postCfConfigs(k8sYamls []string, cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
+func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
 	cfParams, err := getCfOutputParamMap(stackName, awss)
 	if err != nil {
 		sess.Error("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
@@ -211,7 +203,11 @@ func postCfConfigs(k8sYamls []string, cfg clusterCfg, stackName string, awss *in
 	// 	sess.Error("ACM_findCertByDomainName err: " + err.Error())
 	// 	cfg.AWS_Ingress_Cert_ARN = `fix-me_arn:aws:acm:<region>:<acct>:certificate/<id>`
 	// }
-
+	k8sYamls, err := collectAndRenderYams(cfg.Env, awss, cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
+	if err != nil {
+		sess.Error("failed @ collectYams: " + err.Error())
+		return nil, err
+	}
 	for _, yaml := range k8sYamls {
 		err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg)
 		if err != nil {
