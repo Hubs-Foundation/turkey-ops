@@ -77,20 +77,13 @@ func MakeCfg() {
 	Cfg.DockerhubUser = os.Getenv("DOCKERHUB_USER")
 	Cfg.DockerhubPass = os.Getenv("DOCKERHUB_PASS")
 
-	Awss, err := NewAwsSvs(Cfg.AwsKey, Cfg.AwsSecret, Cfg.AwsRegion)
-	if err != nil {
-		GetLogger().Error("ERROR @ NewAwsSvs: " + err.Error())
-	} else {
-		accountNum, _ := Awss.GetAccountID()
-		GetLogger().Info("aws acct#: " + accountNum)
-	}
-	Cfg.Awss = Awss
+	Cfg.Awss = makeAwss()
 
 	Cfg.TurkeyCfg_s3_bkt = "turkeycfg"
 
 	_ = os.Mkdir("./_files", os.ModePerm)
 	f, _ := os.Create("./_files/ns_hc.yam")
-	Awss.S3Download_file(Cfg.TurkeyCfg_s3_bkt, Cfg.Env+"/yams/ns_hc.yam", f)
+	Cfg.Awss.S3Download_file(Cfg.TurkeyCfg_s3_bkt, Cfg.Env+"/yams/ns_hc.yam", f)
 	f.Close()
 
 	Cfg.K8ss_local = NewK8sSvs_local()
@@ -120,6 +113,25 @@ func touchCfgMap(name string) error {
 			metav1.CreateOptions{},
 		)
 	return err
+}
+
+func makeAwss() *AwsSvs {
+	Awss, err := NewAwsSvs(Cfg.AwsKey, Cfg.AwsSecret, Cfg.AwsRegion)
+	if err != nil {
+		GetLogger().Error("ERROR @ NewAwsSvs: " + err.Error())
+	} else {
+		accountNum, _ := Awss.GetAccountID()
+		GetLogger().Info("aws acct#: " + accountNum)
+	}
+	return Awss
+}
+
+func setGcpCred() {
+	keyStr := os.Getenv("GCP_SA_KEY")
+	f, _ := os.Create("gcpkey.json")
+	defer f.Close()
+	f.WriteString(keyStr)
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", f.Name())
 }
 
 //////////////////////////

@@ -44,6 +44,7 @@ func main() {
 	router.Handle("/ytdl/api/info", handlers.Ytdl)
 
 	router.Handle("/tco_aws", handlers.TurkeyAws)
+	router.Handle("/tco_gcp", handlers.TurkeyGcp)
 
 	router.Handle("/Dummy", handlers.Dummy)
 

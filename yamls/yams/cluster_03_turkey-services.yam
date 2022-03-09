@@ -30,6 +30,7 @@ stringData:
   SMTP_PORT: "{{.SMTP_PORT}}"
   SMTP_USER: {{.SMTP_USER}}
   SMTP_PASS: {{.SMTP_PASS}}
+  GCP_SA_KEY: {{.GCP_SA_KEY}}
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
@@ -340,7 +341,12 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: OAUTH_CLIENT_SECRET_FXA                    
+              key: OAUTH_CLIENT_SECRET_FXA      
+        - name: GCP_SA_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_KEY
         livenessProbe:
           httpGet:
             path: "http://turkey-api.turkey-services/Healthz"
