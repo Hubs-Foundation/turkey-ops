@@ -22,7 +22,8 @@ provider "google" {
 terraform {  
     backend "gcs" {    
         bucket  = "turkeycfg"
-        prefix  = "tf-backend/${var.stack_id}"
+        prefix  = "tf-backend"
+        # prefix  = "tf-backend/${var.stack_id}"
     }
 }
 
