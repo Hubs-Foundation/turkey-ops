@@ -38,6 +38,7 @@ type Config struct {
 	DefaultRegion_aws string
 
 	Awss       *AwsSvs
+	Gcps       *GcpSvs
 	K8ss_local *K8sSvs
 }
 
@@ -78,6 +79,7 @@ func MakeCfg() {
 	Cfg.DockerhubPass = os.Getenv("DOCKERHUB_PASS")
 
 	Cfg.Awss = makeAwss()
+	Cfg.Gcps = makeGcpSvs()
 
 	Cfg.TurkeyCfg_s3_bkt = "turkeycfg"
 
@@ -126,12 +128,19 @@ func makeAwss() *AwsSvs {
 	return Awss
 }
 
-func setGcpCred() {
+func makeGcpSvs() *GcpSvs {
 	keyStr := os.Getenv("GCP_SA_KEY")
 	f, _ := os.Create("gcpkey.json")
 	defer f.Close()
 	f.WriteString(keyStr)
 	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", f.Name())
+	Gcps, err := NewGcpSvs()
+	if err != nil {
+		GetLogger().Error("ERROR @ NewAwsSvs: " + err.Error())
+	} else {
+		GetLogger().Info("gcp project id: " + Gcps.ProjectId)
+	}
+	return Gcps
 }
 
 //////////////////////////

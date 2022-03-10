@@ -3,6 +3,7 @@ module main
 go 1.17
 
 require (
+	cloud.google.com/go v0.54.0
 	github.com/aws/aws-sdk-go v1.37.1
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/go-cmp v0.5.6 // indirect

@@ -34,14 +34,10 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// ######################################### 2. run tf #########################################
 		tf_bin := "/app/_files/tf/terraform"
-		err = runCmd(tf_bin, "-chdir=/app/_files/tf/", "init")
-		if err != nil {
-			panic(err)
-		}
-		err = runCmd(tf_bin, "apply", "-chdir=/app/_files/tf/", "-var stack_id="+cfg.CF_deploymentId, "-var region="+cfg.Region)
-		if err != nil {
-			panic(err)
-		}
+		runCmd(tf_bin, "-chdir=/app/_files/tf/", "init")
+		runCmd(tf_bin, "plan", "-chdir=/app/_files/tf/", "-var stack_id="+cfg.CF_deploymentId, "-var region="+cfg.Region, "-out="+cfg.CF_deploymentId+".tfplan")
+		runCmd(tf_bin, "apply", cfg.CF_deploymentId+".tfplan")
+
 		// //aws service
 		// awss, err := internal.NewAwsSvs(cfg.AWS_KEY, cfg.AWS_SECRET, cfg.AWS_REGION)
 		// if err != nil {
