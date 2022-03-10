@@ -41,7 +41,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// err = runCmd(tf_bin, "-chdir=/app/_files/tf/", "plan",
 		// 	"--var project_id="+internal.Cfg.Gcps.ProjectId, "--var stack_id="+cfg.CF_deploymentId, "--var region="+cfg.Region,
 		// 	"--out="+cfg.CF_deploymentId+".tfplan")
-		err = runCmd(tf_bin, "-chdir=/app/_files/tf/", "plan", "--out="+cfg.CF_deploymentId+".tfplan", "--var stack_id="+cfg.CF_deploymentId)
+		err = runCmd(tf_bin, "-chdir=/app/_files/tf/", "plan", "--out="+cfg.CF_deploymentId+".tfplan", "\"--var stack_id="+cfg.CF_deploymentId+"\"")
 		if err != nil {
 			sess.Error("ERROR @ terraform plan: " + err.Error())
 		}
