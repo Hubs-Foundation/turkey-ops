@@ -155,9 +155,10 @@ func runCmd(name string, arg ...string) error {
 	if err != nil {
 		return err
 	}
+	stderr, _ := cmd.StderrPipe()
 
 	err = cmd.Start()
-	internal.GetLogger().Debug("running: " + cmd.String())
+	internal.GetLogger().Debug("started: " + cmd.String())
 	if err != nil {
 		return err
 	}
@@ -168,7 +169,17 @@ func runCmd(name string, arg ...string) error {
 		m := scanner.Text()
 		internal.GetLogger().Debug(m)
 	}
-	cmd.Wait()
+
+	scanner_err := bufio.NewScanner(stderr)
+	for scanner_err.Scan() {
+		m := scanner_err.Text()
+		internal.GetLogger().Debug(m)
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
