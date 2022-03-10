@@ -1,4 +1,9 @@
 
+variable "project_id"{
+  description = "gcp project id"
+  default = "missing"  
+}
+
 variable "stack_id" {
   description = "deployment id"
   default = "default-project-id"
@@ -10,7 +15,7 @@ variable "region" {
 }
 
 provider "google" {
-  project = var.stack_id
+  project = var.project_id
   region  = var.region
 }
 
