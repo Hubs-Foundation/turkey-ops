@@ -19,7 +19,7 @@ var gke_yams = []string{
 var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
-		if r.URL.Path != "/tco_aws" {
+		if r.URL.Path != "/tco_gcp" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
