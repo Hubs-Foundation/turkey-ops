@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"bufio"
-	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -151,16 +150,6 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 func runCmd(name string, arg ...string) error {
 
 	cmd := exec.Command(name, arg...)
-
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	// err := cmd.Run()
-	// if err != nil {
-	// 	return errors.New("[ERR] cmd failed -- " + fmt.Sprint(err) + ": " + stderr.String())
-	// }
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
