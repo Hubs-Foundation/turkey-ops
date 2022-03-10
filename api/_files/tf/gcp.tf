@@ -6,7 +6,7 @@ variable "project_id"{
 
 variable "stack_id" {
   description = "deployment id"
-  default = "default-project-id"
+  default = "missing"
 }
 
 variable "region" {

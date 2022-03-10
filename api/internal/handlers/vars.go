@@ -173,7 +173,7 @@ func runCmd(name string, arg ...string) error {
 	scanner_err := bufio.NewScanner(stderr)
 	for scanner_err.Scan() {
 		m := scanner_err.Text()
-		internal.GetLogger().Debug(m)
+		internal.GetLogger().Error(m)
 	}
 
 	err = cmd.Wait()
