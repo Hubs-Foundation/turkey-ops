@@ -148,7 +148,10 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 	return cfg, nil
 }
 
-func reportCmd(cmd *exec.Cmd) error {
+func runCmd(name string, arg ...string) error {
+
+	cmd := exec.Command(name, arg...)
+
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out

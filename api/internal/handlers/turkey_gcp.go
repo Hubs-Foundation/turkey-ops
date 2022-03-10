@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"os/exec"
 
 	"main/internal"
 )
@@ -35,13 +34,11 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// ######################################### 2. run tf #########################################
 		tf_bin := "/app/_files/tf/terraform"
-		cmd := exec.Command(tf_bin, "init")
-		err = reportCmd(cmd)
+		err = runCmd(tf_bin, "init")
 		if err != nil {
 			panic(err)
 		}
-		cmd = exec.Command(tf_bin, "apply", "-var stack_id="+cfg.CF_deploymentId, "-var region="+cfg.Region)
-		err = reportCmd(cmd)
+		err = runCmd(tf_bin, "apply", "-var stack_id="+cfg.CF_deploymentId, "-var region="+cfg.Region)
 		if err != nil {
 			panic(err)
 		}
