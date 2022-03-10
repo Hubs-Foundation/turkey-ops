@@ -136,7 +136,7 @@ func makeGcpSvs() *GcpSvs {
 	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", f.Name())
 	Gcps, err := NewGcpSvs()
 	if err != nil {
-		GetLogger().Error("ERROR @ NewAwsSvs: " + err.Error())
+		GetLogger().Error("ERROR @ NewGcpSvs: " + err.Error())
 	} else {
 		GetLogger().Info("gcp project id: " + Gcps.ProjectId)
 	}

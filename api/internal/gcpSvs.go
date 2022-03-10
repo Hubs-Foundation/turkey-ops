@@ -1,9 +1,9 @@
 package internal
 
 import (
-	"net/http"
+	"context"
 
-	"cloud.google.com/go/compute/metadata"
+	"golang.org/x/oauth2/google"
 )
 
 type GcpSvs struct {
@@ -11,12 +11,12 @@ type GcpSvs struct {
 }
 
 func NewGcpSvs() (*GcpSvs, error) {
-	c := metadata.NewClient(&http.Client{})
-	pid, err := c.ProjectID()
+
+	creds, err := google.FindDefaultCredentials(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	return &GcpSvs{
-		ProjectId: pid,
+		ProjectId: creds.ProjectID,
 	}, nil
 }
