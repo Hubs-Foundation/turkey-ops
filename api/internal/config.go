@@ -129,11 +129,12 @@ func makeAwss() *AwsSvs {
 }
 
 func makeGcpSvs() *GcpSvs {
+
 	keyStr := os.Getenv("GCP_SA_KEY")
-	f, _ := os.Create("gcpkey.json")
+	f, _ := os.Create("/app/gcpkey.json")
 	defer f.Close()
 	f.WriteString(keyStr)
-	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", f.Name())
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/app/gcpkey.json")
 	Gcps, err := NewGcpSvs()
 	if err != nil {
 		GetLogger().Error("ERROR @ NewGcpSvs: " + err.Error())
