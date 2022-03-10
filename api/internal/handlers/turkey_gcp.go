@@ -35,7 +35,9 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// ######################################### 2. run tf #########################################
 		tf_bin := "/app/_files/tf/terraform"
 		runCmd(tf_bin, "-chdir=/app/_files/tf/", "init")
-		runCmd(tf_bin, "plan", "-chdir=/app/_files/tf/", "-var stack_id="+cfg.CF_deploymentId, "-var region="+cfg.Region, "-out="+cfg.CF_deploymentId+".tfplan")
+		runCmd(tf_bin, "plan", "-chdir=/app/_files/tf/",
+			"-var project_id="+internal.Cfg.Gcps.ProjectId, "-var stack_id="+cfg.CF_deploymentId, "-var region="+cfg.Region,
+			"-out="+cfg.CF_deploymentId+".tfplan")
 		runCmd(tf_bin, "apply", cfg.CF_deploymentId+".tfplan")
 
 		// //aws service
