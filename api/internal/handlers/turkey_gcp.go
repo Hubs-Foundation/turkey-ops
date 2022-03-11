@@ -118,13 +118,15 @@ func runTf(cfg clusterCfg, verb string) error {
 	if err != nil {
 		return err
 	}
-	err = runCmd(tf_bin, "-chdir="+tfdir, "plan",
+	// err = runCmd(tf_bin, "-chdir="+tfdir, "plan",
+	// 	"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_id="+cfg.Stackname, "-var", "region="+cfg.Region,
+	// 	"-out="+cfg.Stackname+".tfplan")
+	// if err != nil {
+	// 	return err
+	// }
+	err = runCmd(tf_bin, "-chdir="+tfdir, verb, "-auto-approve",
 		"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_id="+cfg.Stackname, "-var", "region="+cfg.Region,
-		"-out="+cfg.Stackname+".tfplan")
-	if err != nil {
-		return err
-	}
-	err = runCmd(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
+	)
 	if err != nil {
 		return err
 	}

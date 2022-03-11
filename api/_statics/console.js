@@ -87,8 +87,8 @@ function delNsClicked() {
 //   xhttp.send(cfg);
 // }
 //-----------
-document.getElementById("turkeyAws").addEventListener("click", getBtnClicked);
-function getBtnClicked() {
+document.getElementById("turkeyAws").addEventListener("click", turkeyAwsBtnClicked);
+function turkeyAwsBtnClicked() {
   cfg=document.getElementById("cluster_cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -97,8 +97,8 @@ function getBtnClicked() {
   xhttp.send(cfg);
 }
 //-----------
-document.getElementById("turkeyGcp").addEventListener("click", getBtnClicked);
-function getBtnClicked() {
+document.getElementById("turkeyGcp").addEventListener("click", turkeyGcpBtnClicked);
+function turkeyGcpBtnClicked() {
   cfg=document.getElementById("cluster_cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
