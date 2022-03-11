@@ -44,12 +44,17 @@ func MakeCfg() {
 	}
 
 	cfg.Domain = os.Getenv("DOMAIN")
-	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
 	cfg.PodNS = os.Getenv("POD_NS")
 	if cfg.PodNS == "" {
 		Logger.Error("POD_NS not set")
 	}
+	val, retMode := os.LookupEnv("RET_MODE")
+	if retMode {
+		Logger.Info("RET_MODE: " + val)
+		return
+	}
 
+	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
 	//do we have channel labled on deployment?
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
 	if err != nil {
