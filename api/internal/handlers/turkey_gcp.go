@@ -3,6 +3,8 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"text/template"
 
 	"main/internal"
 )
@@ -34,6 +36,20 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// ######################################### 2. run tf #########################################
 		tf_bin := "/app/_files/tf/terraform"
+		tfdir := "/app/_files/tf/gcp_" + cfg.CF_deploymentId
+		os.Mkdir(tfdir, os.ModePerm)
+		tfTemplateFile := "/app/_files/tf/gcp.tf"
+		tfFile := tfdir + "gcp.tf"
+		t, err := template.ParseFiles(tfTemplateFile)
+		if err != nil {
+			sess.Panic(err.Error())
+		}
+		f, _ := os.Create(tfFile)
+		defer f.Close()
+		t.Execute(f, struct{ StackId string }{
+			StackId: cfg.CF_deploymentId,
+		})
+
 		err = runCmd(tf_bin, "-chdir=/app/_files/tf/", "init")
 		if err != nil {
 			sess.Error("ERROR @ terraform init: " + err.Error())
@@ -41,7 +57,6 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err = runCmd(tf_bin, "-chdir=/app/_files/tf/", "plan",
 			"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_id="+cfg.CF_deploymentId, "-var", "region="+cfg.Region,
 			"-out="+cfg.CF_deploymentId+".tfplan")
-		// err = runCmd(tf_bin, "-chdir=/app/_files/tf/", "plan", "--out="+cfg.CF_deploymentId+".tfplan", "-var", "stack_id="+cfg.CF_deploymentId)
 		if err != nil {
 			sess.Error("ERROR @ terraform plan: " + err.Error())
 		}
