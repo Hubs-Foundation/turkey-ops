@@ -67,8 +67,8 @@ function getBtnClicked() {
   xhttp.send(cfg);
 }
 
-document.getElementById("delBtn").addEventListener("click", delNsClicked);
-function delNsClicked() {
+document.getElementById("delBtn").addEventListener("click", delClicked);
+function delClicked() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
