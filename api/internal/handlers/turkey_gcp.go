@@ -38,8 +38,8 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tf_bin := "/app/_files/tf/terraform"
 		tfdir := "/app/_files/tf/gcp_" + cfg.CF_deploymentId
 		os.Mkdir(tfdir, os.ModePerm)
-		tfTemplateFile := "/app/_files/tf/gcp.tf"
-		tfFile := tfdir + "gcp.tf"
+		tfTemplateFile := "/app/_files/tf/gcp.template.tf"
+		tfFile := tfdir + "/gcp.tf"
 		t, err := template.ParseFiles(tfTemplateFile)
 		if err != nil {
 			sess.Panic(err.Error())
