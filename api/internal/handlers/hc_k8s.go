@@ -131,24 +131,14 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	sess.Log("&#128024; --- db created: " + hcCfg.DBname)
 
-	// // #6 load schema to new db .................. doing it on reticulum boot-up for now
-	// retSchemaBytes, err := ioutil.ReadFile("./_files/pgSchema.sql")
-	// if err != nil {
-	// 	sess.Panic(err.Error())
-	// }
-	// dbconn, err := pgx.Connect(context.Background(), internal.Cfg.DBconn+"/"+cfg.DBname)
-	// if err != nil {
-	// 	sess.Panic(err.Error())
-	// }
-	// defer dbconn.Close(context.Background())
-	// _, err = dbconn.Exec(context.Background(), string(retSchemaBytes))
-	// if err != nil {
-	// 	sess.Panic(err.Error())
-	// }
-	// sess.Log("&#128024; --- schema loaded to db: " + cfg.DBname)
-
-	// #7 done, (todo) return a json report for portal to consume
-
+	// #7 done, return a json report for portal to consume
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"subdomain": hcCfg.Subdomain,
+		"admin":     hcCfg.UserEmail,
+		"tier":      hcCfg.Tier,
+		"turkeyId":  hcCfg.TurkeyId,
+	})
+	return
 })
 
 var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -303,7 +293,7 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 }
 
 var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hc_delDB" || r.Method != "POST" {
+	if r.URL.Path != "/hc_del" || r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -361,6 +351,14 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.Log("&#127754 deleted ns: " + nsName)
 	}()
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"subdomain": cfg.Subdomain,
+		"admin":     cfg.UserEmail,
+		"tier":      cfg.Tier,
+		"turkeyId":  cfg.TurkeyId,
+	})
+	return
 })
 
 func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
