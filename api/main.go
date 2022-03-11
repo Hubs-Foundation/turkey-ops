@@ -30,8 +30,7 @@ func main() {
 	router.Handle("/hc_get", handlers.Hc_get)
 	router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
 
-	router.Handle("/hc_delNS", handlers.Hc_delNS)
-	router.Handle("/hc_delDB", handlers.Hc_delDB)
+	router.Handle("/hc_del", handlers.Hc_del)
 
 	// router.Handle("/admin-info", handlers.Ita_admin_info)
 	// router.Handle("/configs/reticulum/ps", handlers.Ita_cfg_ret_ps)

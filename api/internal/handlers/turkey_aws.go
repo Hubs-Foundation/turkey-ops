@@ -74,65 +74,53 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		} else {
 			sess.Log("found " + cfg.Domain + " in route53")
 		}
-
-		// ######################################### 2. preps: cf params, k8sYamls ##########################
-		cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cfs/"
-		cfParams := parseCFparams(map[string]string{
-			"deploymentId": cfg.CF_deploymentId,
-			"cfS3Folder":   cfS3Folder,
-			"turkeyDomain": cfg.Domain,
-			"PGpwd":        cfg.DB_PASS,
-		})
-		cfTags := []*cloudformation.Tag{
-			{Key: aws.String("customer-id"), Value: aws.String(r.Header.Get("X-Forwarded-UserEmail"))},
-			{Key: aws.String("turkeyEnv"), Value: aws.String(cfg.Env)},
-			{Key: aws.String("turkeyDomain"), Value: aws.String(cfg.Domain)},
-		}
-
-		// // ######## dryrun ############
-		// if strings.Contains(cfg.Options, ".dryrun") {
-		// 	zbuf := new(bytes.Buffer)
-		// 	zw := zip.NewWriter(zbuf)
-
-		// 	for i, filename := range eks_yams {
-		// 		f, _ := zw.Create(filename)
-		// 		_, _ = f.Write([]byte(k8sYamls[i]))
-		// 	}
-
-		// 	zw.Close()
-		// 	w.Header().Set("Content-Type", "application/zip")
-		// 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", "dryrun"))
-		// 	w.Write(zbuf.Bytes())
-		// 	return
-		// }
-
-		// ######################################### 3. run cloudformation #########################################
 		go func() {
-			err = awss.CreateCFstack(cfg.CF_Stackname, cfS3Folder+"main.yaml", cfParams, cfTags)
+			// ######################################### 2. run cloudformation #########################################
+			// ########################## 2.1 preps: cf params ##########################
+			cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cfs/"
+			cfParams := parseCFparams(map[string]string{
+				"deploymentId": cfg.deploymentId,
+				"cfS3Folder":   cfS3Folder,
+				"turkeyDomain": cfg.Domain,
+				"PGpwd":        cfg.DB_PASS,
+			})
+			cfTags := []*cloudformation.Tag{
+				{Key: aws.String("customer-id"), Value: aws.String(r.Header.Get("X-Forwarded-UserEmail"))},
+				{Key: aws.String("turkeyEnv"), Value: aws.String(cfg.Env)},
+				{Key: aws.String("turkeyDomain"), Value: aws.String(cfg.Domain)},
+			}
+			// ########################## 2.2 run cloudformation ##########################
+			go func() {
+				err = awss.CreateCFstack(cfg.Stackname, cfS3Folder+"main.yaml", cfParams, cfTags)
+				if err != nil {
+					sess.Error("ERROR @ CreateCFstack for " + cfg.Stackname + ": " + err.Error())
+					return
+				}
+
+			}()
+			sess.Log("&#128640;CreateCFstack started for stackName=" + cfg.Stackname)
+			reportCreateCFstackStatus(cfg.Stackname, cfg, sess, awss)
+			// ######################################### 3. post cloudformation configs ###################################
+			report, err := postCfConfigs(cfg, cfg.Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
 			if err != nil {
-				sess.Error("ERROR @ CreateCFstack for " + cfg.CF_Stackname + ": " + err.Error())
+				sess.Error("ERROR @ postDeploymentConfigs for " + cfg.Stackname + ": " + err.Error())
 				return
 			}
-
+			// ################# 3.1. update CNAME if domain's managed in route53
+			err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", report["lb"])
+			if err != nil {
+				sess.Log(err.Error())
+			}
+			sess.Log(" --- report for (" + cfg.deploymentId + ") --- sknoonerToken: " + report["skoonerToken"])
+			sess.Log(" --- report for (" + cfg.deploymentId + ") --- you must create this CNAME record manually in your nameserver {" +
+				cfg.Domain + ":" + report["lb"] + "}, and then go to dash." + cfg.Domain + " to view and configure cluster access")
+			sess.Log("done: " + cfg.deploymentId)
 		}()
-		sess.Log("&#128640;CreateCFstack started for stackName=" + cfg.CF_Stackname)
-		reportCreateCFstackStatus(cfg.CF_Stackname, cfg, sess, awss)
-		// ######################################### 4. post cloudformation configs ###################################
-		report, err := postCfConfigs(cfg, cfg.CF_Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
-		if err != nil {
-			sess.Error("ERROR @ postDeploymentConfigs for " + cfg.CF_Stackname + ": " + err.Error())
-			return
-		}
-		// ################# 4.1. update CNAME if domain's managed in route53
-		err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", report["lb"])
-		if err != nil {
-			sess.Log(err.Error())
-		}
-		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- sknoonerToken: " + report["skoonerToken"])
-		sess.Log(" --- report for (" + cfg.CF_deploymentId + ") --- you must create this CNAME record manually in your nameserver {" +
-			cfg.Domain + ":" + report["lb"] + "}, and then go to dash." + cfg.Domain + " to view and configure cluster access")
-		sess.Log("done: " + cfg.CF_deploymentId)
 
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"stackName":    cfg.Stackname,
+			"statusUpdate": "GET@/tco_aws_status",
+		})
 		return
 
 	default:

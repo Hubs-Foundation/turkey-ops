@@ -302,7 +302,7 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 	return cfg, nil
 }
 
-var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/hc_delDB" || r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -314,24 +314,53 @@ var Hc_delDB = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sess.Log("&#128024 deleting db: " + cfg.DBname)
+	go func() {
+		sess.Log("&#128024 deleting db: " + cfg.DBname)
 
-	//delete db -- force
-	force := true
-	_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
-	if err != nil {
-		if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
-			err = pg_kick_all(cfg, sess)
+		//delete db -- force
+		force := true
+		_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
+		if err != nil {
+			if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
+				err = pg_kick_all(cfg, sess)
+				if err != nil {
+					sess.Panic(err.Error())
+				}
+				_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
+			}
 			if err != nil {
 				sess.Panic(err.Error())
 			}
-			_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
 		}
-		if err != nil {
+		sess.Log("&#128024 deleted db: " + cfg.DBname)
+	}()
+
+	go func() {
+		nsName := "hc-" + cfg.Subdomain
+		sess.Log("&#128024 deleting ns: " + nsName)
+
+		//getting k8s config
+		sess.Log("&#9989; ... using InClusterConfig")
+		k8sCfg, err := rest.InClusterConfig()
+		// }
+		if k8sCfg == nil {
 			sess.Panic(err.Error())
 		}
-	}
-	sess.Log("&#128024 deleted db: " + cfg.DBname)
+		sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+		clientset, err := kubernetes.NewForConfig(k8sCfg)
+		if err != nil {
+			sess.Panic("failed to get kubecfg" + err.Error())
+		}
+
+		//delete ns
+		err = clientset.CoreV1().Namespaces().Delete(context.TODO(),
+			nsName,
+			metav1.DeleteOptions{})
+		if err != nil {
+			sess.Panic("delete ns failed: " + err.Error())
+		}
+		sess.Log("&#127754 deleted ns: " + nsName)
+	}()
 })
 
 func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
@@ -353,40 +382,3 @@ func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
 	}
 	return nil
 }
-
-var Hc_delNS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hc_delNS" || r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-	sess := internal.GetSession(r.Cookie)
-	cfg, err := makehcCfg(r)
-	if err != nil {
-		sess.Log("bad hcCfg: " + err.Error())
-		return
-	}
-
-	//getting k8s config
-	sess.Log("&#9989; ... using InClusterConfig")
-	k8sCfg, err := rest.InClusterConfig()
-	// }
-	if k8sCfg == nil {
-		sess.Panic(err.Error())
-	}
-	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-	clientset, err := kubernetes.NewForConfig(k8sCfg)
-	if err != nil {
-		sess.Panic("failed to get kubecfg" + err.Error())
-	}
-
-	//delete ns
-	nsName := "hc-" + cfg.Subdomain
-	err = clientset.CoreV1().Namespaces().Delete(context.TODO(),
-		nsName,
-		metav1.DeleteOptions{})
-	if err != nil {
-		sess.Panic("delete ns failed: " + err.Error())
-	}
-	sess.Log("&#127754 deleted ns: " + nsName)
-
-})
