@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
@@ -24,12 +25,14 @@ func NewGcpSvs() (*GcpSvs, error) {
 }
 
 func (g *GcpSvs) DeleteObjects(bucketName, prefix string) error {
+	GetLogger().Debug("deleting from bucket: " + bucketName + ", with prefix: " + prefix)
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
 		return err
 	}
 	bucket := client.Bucket(bucketName)
 	itr := bucket.Objects(context.Background(), &storage.Query{Prefix: prefix})
+	cnt := 0
 	for {
 		objAttrs, err := itr.Next()
 		if err != nil && err != iterator.Done {
@@ -41,6 +44,8 @@ func (g *GcpSvs) DeleteObjects(bucketName, prefix string) error {
 		if err := bucket.Object(objAttrs.Name).Delete(context.Background()); err != nil {
 			return err
 		}
+		cnt++
 	}
+	GetLogger().Debug(fmt.Sprintf("deleted <%v> objs", cnt))
 	return nil
 }
