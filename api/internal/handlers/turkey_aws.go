@@ -79,7 +79,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// ########################## 2.1 preps: cf params ##########################
 			cfS3Folder := "https://s3.amazonaws.com/" + internal.Cfg.TurkeyCfg_s3_bkt + "/" + cfg.Env + "/cfs/"
 			cfParams := parseCFparams(map[string]string{
-				"deploymentId": cfg.deploymentId,
+				// "deploymentId": cfg.deploymentId,
 				"cfS3Folder":   cfS3Folder,
 				"turkeyDomain": cfg.Domain,
 				"PGpwd":        cfg.DB_PASS,
@@ -111,10 +111,10 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				sess.Log(err.Error())
 			}
-			sess.Log(" --- report for (" + cfg.deploymentId + ") --- sknoonerToken: " + report["skoonerToken"])
-			sess.Log(" --- report for (" + cfg.deploymentId + ") --- you must create this CNAME record manually in your nameserver {" +
+			sess.Log(" --- report for (" + cfg.Stackname + ") --- sknoonerToken: " + report["skoonerToken"])
+			sess.Log(" --- report for (" + cfg.Stackname + ") --- you must create this CNAME record manually in your nameserver {" +
 				cfg.Domain + ":" + report["lb"] + "}, and then go to dash." + cfg.Domain + " to view and configure cluster access")
-			sess.Log("done: " + cfg.deploymentId)
+			sess.Log("done: " + cfg.Stackname)
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{

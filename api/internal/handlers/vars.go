@@ -130,7 +130,9 @@ func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCf
 		cfg.deploymentId = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
 		internal.GetLogger().Info("deploymentId: " + cfg.deploymentId)
 	}
-	cfg.Stackname = cfg.DeploymentPrefix + cfg.deploymentId
+	if cfg.Stackname == "" {
+		cfg.Stackname = cfg.DeploymentPrefix + cfg.deploymentId
+	}
 
 	//generate the rest
 	cfg.DB_PASS = internal.PwdGen(15)

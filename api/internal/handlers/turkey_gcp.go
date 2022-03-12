@@ -40,7 +40,8 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// ######################################### 2. run tf #########################################
 			err = runTf(cfg, "apply")
 			if err != nil {
-				sess.Panic("failed @runTf: " + err.Error())
+				sess.Error("failed @runTf: " + err.Error())
+				return
 			}
 		}()
 
@@ -60,7 +61,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
-		if r.URL.Path != "/tco_gcp" {
+		if r.URL.Path != "/tco_gcp_del" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
@@ -79,7 +80,8 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 			// ######################################### 2. run tf #########################################
 			err = runTf(cfg, "destroy")
 			if err != nil {
-				sess.Panic("failed @runTf: " + err.Error())
+				sess.Error("failed @runTf: " + err.Error())
+				return
 			}
 		}()
 

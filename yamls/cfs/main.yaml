@@ -2,9 +2,9 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: words
 
 Parameters:
-  deploymentId:
-    Type: String
-    Default: asdf123
+  # deploymentId:
+  #   Type: String
+  #   Default: asdf123
   cfS3Folder:
     Type: String
     Default: https://s3.amazonaws.com/turkeycfg/<env>/cf/

@@ -44,6 +44,7 @@ func main() {
 
 	router.Handle("/tco_aws", handlers.TurkeyAws)
 	router.Handle("/tco_gcp", handlers.TurkeyGcp)
+	router.Handle("/tco_gcp_del", handlers.TurkeyGcp_del)
 
 	router.Handle("/Dummy", handlers.Dummy)
 
