@@ -28,7 +28,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess := internal.GetSession(r.Cookie)
 
 		// ######################################### 1. get cfg from r.body ########################################
-		cfg, err := turkey_makeCfg(r, sess)
+		cfg, err := turkey_makeCfg(r)
 		if err != nil {
 			sess.Error("ERROR @ turkey_makeCfg: " + err.Error())
 			return
@@ -68,7 +68,7 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 		sess := internal.GetSession(r.Cookie)
 
 		// ######################################### 1. get cfg from r.body ########################################
-		cfg, err := turkey_makeCfg(r, sess)
+		cfg, err := turkey_makeCfg(r)
 		if err != nil {
 			sess.Error("ERROR @ turkey_makeCfg: " + err.Error())
 			return
@@ -82,6 +82,11 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 			if err != nil {
 				sess.Error("failed @runTf: " + err.Error())
 				return
+			}
+			// ################# 3. delete the folder in GCS bucet for this stack
+			err = internal.Cfg.Gcps.DeleteObjects("turkeycfg", "tf-backend"+cfg.Stackname)
+			if err != nil {
+				sess.Error("failed @ delete tf-backend for " + cfg.Stackname + ": " + err.Error())
 			}
 		}()
 

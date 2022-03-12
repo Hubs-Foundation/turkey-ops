@@ -42,7 +42,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess := internal.GetSession(r.Cookie)
 
 		// ######################################### 1. get cfg from r.body ########################################
-		cfg, err := turkey_makeCfg(r, sess)
+		cfg, err := turkey_makeCfg(r)
 		if err != nil {
 			sess.Error("ERROR @ turkey_makeCfg: " + err.Error())
 			return

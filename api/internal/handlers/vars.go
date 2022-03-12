@@ -58,7 +58,7 @@ type clusterCfg struct {
 	PSQL    string `json:"PSQL"`    //postgresql://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
 }
 
-func turkey_makeCfg(r *http.Request, sess *internal.CacheBoxSessData) (clusterCfg, error) {
+func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	var cfg clusterCfg
 
 	//get r.body
