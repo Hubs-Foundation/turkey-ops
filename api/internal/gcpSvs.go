@@ -24,11 +24,11 @@ func NewGcpSvs() (*GcpSvs, error) {
 	}, nil
 }
 
-func (g *GcpSvs) DeleteObjects(bucketName, prefix string) error {
+func (g *GcpSvs) DeleteObjects(bucketName, prefix string) (error, int) {
 	GetLogger().Debug("deleting from bucket: " + bucketName + ", with prefix: " + prefix)
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
-		return err
+		return err, 0
 	}
 	bucket := client.Bucket(bucketName)
 	itr := bucket.Objects(context.Background(), &storage.Query{Prefix: prefix})
@@ -36,16 +36,16 @@ func (g *GcpSvs) DeleteObjects(bucketName, prefix string) error {
 	for {
 		objAttrs, err := itr.Next()
 		if err != nil && err != iterator.Done {
-			return err
+			return err, 0
 		}
 		if err == iterator.Done {
 			break
 		}
 		if err := bucket.Object(objAttrs.Name).Delete(context.Background()); err != nil {
-			return err
+			return err, 0
 		}
 		cnt++
 	}
 	GetLogger().Debug(fmt.Sprintf("deleted <%v> objs", cnt))
-	return nil
+	return nil, cnt
 }

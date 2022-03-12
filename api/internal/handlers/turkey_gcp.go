@@ -84,10 +84,11 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 				return
 			}
 			// ################# 3. delete the folder in GCS bucket for this stack
-			err = internal.Cfg.Gcps.DeleteObjects("turkeycfg", "tf-backend/"+cfg.Stackname)
+			err, _ := internal.Cfg.Gcps.DeleteObjects("turkeycfg", "tf-backend/"+cfg.Stackname)
 			if err != nil {
 				sess.Error("failed @ delete tf-backend for " + cfg.Stackname + ": " + err.Error())
 			}
+			sess.Log("[deletion] completed for: " + cfg.Stackname)
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
