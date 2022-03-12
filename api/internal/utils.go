@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bufio"
 	crand "crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
@@ -11,6 +12,7 @@ import (
 	mrand "math/rand"
 	"net/http"
 	"os"
+	"os/exec"
 	"time"
 
 	"go.uber.org/zap"
@@ -189,6 +191,43 @@ func Copy(src, dst string) error {
 		return err
 	}
 	return out.Close()
+}
+
+func RunCmd(name string, arg ...string) error {
+
+	cmd := exec.Command(name, arg...)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, _ := cmd.StderrPipe()
+
+	err = cmd.Start()
+	GetLogger().Debug("started: " + cmd.String())
+	if err != nil {
+		return err
+	}
+
+	// print the output of the subprocess
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		m := scanner.Text()
+		GetLogger().Debug(m)
+	}
+
+	scanner_err := bufio.NewScanner(stderr)
+	for scanner_err.Scan() {
+		m := scanner_err.Text()
+		GetLogger().Error(m)
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /////////////////////////////////////////////////

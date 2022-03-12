@@ -34,7 +34,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		internal.GetLogger().Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-		sess.Log("[creation] started for: " + cfg.Stackname)
+		sess.Log("[creation] started for: " + cfg.Stackname + " ... this will take a while")
 
 		go func() {
 			// ######################################### 2. run tf #########################################
@@ -122,7 +122,7 @@ func runTf(cfg clusterCfg, verb string) error {
 	t.Execute(f, struct{ StackId string }{
 		StackId: cfg.Stackname,
 	})
-	err = runCmd(tf_bin, "-chdir="+tfdir, "init")
+	err = internal.RunCmd(tf_bin, "-chdir="+tfdir, "init")
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func runTf(cfg clusterCfg, verb string) error {
 	// if err != nil {
 	// 	return err
 	// }
-	err = runCmd(tf_bin, "-chdir="+tfdir, verb, "-auto-approve",
+	err = internal.RunCmd(tf_bin, "-chdir="+tfdir, verb, "-auto-approve",
 		"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_id="+cfg.Stackname, "-var", "region="+cfg.Region,
 	)
 	if err != nil {
