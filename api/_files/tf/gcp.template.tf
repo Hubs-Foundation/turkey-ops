@@ -83,6 +83,18 @@ resource "google_container_node_pool" "gke_nodes" {
   }
 }
 
+#k8s rbac for gke
+data "google_client_config" "default" {}
+
+provider "kubernetes" {
+  host     = "${google_container_cluster.gke.endpoint}"
+
+  token = "${data.google_client_config.default.access_token}"
+  cluster_ca_certificate = "${base64decode(google_container_cluster.gke.master_auth.0.cluster_ca_certificate)}"
+
+  load_config_file = false
+}
+
 # pgsql
 # resource "google_compute_global_address" "private_ip_block" {
 #   name         = "private-ip-block"
