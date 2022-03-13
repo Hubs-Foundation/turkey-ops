@@ -60,7 +60,7 @@ resource "google_container_node_pool" "gke_nodes" {
   name       = "${google_container_cluster.gke.name}-node-pool"
   location   = "{{.Region}}"
   cluster    = google_container_cluster.gke.name
-  node_count = 2
+  node_count = 1
 
   node_config {
     oauth_scopes = [
@@ -69,7 +69,8 @@ resource "google_container_node_pool" "gke_nodes" {
     ]
 
     labels = {
-      env = var.stack_name
+      app = "turkey"
+      env = "{{.Stackname}}"
     }
 
     # preemptible  = true
