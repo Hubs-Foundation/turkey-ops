@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"cloud.google.com/go/storage"
@@ -59,12 +60,21 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	gke, err := cService.Projects.Locations.Clusters.Get(gkeName).Context(context.Background()).Do()
+	// gke, err := cService.Projects.Locations.Clusters.Get(gkeName).Context(context.Background()).Do()
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	gkes, err := cService.Projects.Zones.Clusters.List(g.ProjectId, "-").Context(context.Background()).Do()
 	if err != nil {
 		return nil, err
 	}
-
-	return CreateK8sClientFromCluster(gke)
+	for _, gke := range gkes.Clusters {
+		if gke.Name == gkeName {
+			return CreateK8sClientFromCluster(gke)
+		}
+	}
+	return nil, errors.New("not found")
 	// gkeList, err:=cService.Projects.Zones.Clusters.List(g.ProjectId, "-").Context(context.Background()).Do()
 	// if err!=nil{return nil,err}
 	// for _, gke := range gkeList.Clusters{

@@ -47,7 +47,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			//get k8s config
 			k8sCfg, err := internal.Cfg.Gcps.GetK8sConfigFromGke(cfg.Stackname)
 			if err != nil {
-				sess.Error("post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + "err: " + err.Error())
+				sess.Error("post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + ". err: " + err.Error())
 				return
 			}
 			sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
