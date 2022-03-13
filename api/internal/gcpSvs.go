@@ -54,12 +54,12 @@ func (g *GcpSvs) DeleteObjects(bucketName, prefix string) (error, int) {
 	return nil, cnt
 }
 
-func (g *GcpSvs) GetK8sConfigFromGke(clusterId string) (*rest.Config, error) {
+func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 	cService, err := gkev1.NewService(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	gke, err := cService.Projects.Zones.Clusters.Get(g.ProjectId, "-", clusterId).Context(context.Background()).Do()
+	gke, err := cService.Projects.Locations.Clusters.Get(gkeName).Context(context.Background()).Do()
 	if err != nil {
 		return nil, err
 	}
