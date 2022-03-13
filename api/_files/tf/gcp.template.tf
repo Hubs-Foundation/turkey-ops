@@ -83,19 +83,19 @@ resource "google_container_node_pool" "gke_nodes" {
 }
 
 # pgsql
-resource "google_compute_global_address" "private_ip_block" {
-  name         = "private-ip-block"
-  purpose       = "VPC_PEERING"
-  address_type  = "INTERNAL"
-  ip_version   = "IPV4"
-  prefix_length = 16
-  network       = google_compute_network.vpc.id
-}
-resource "google_service_networking_connection" "private_vpc_connection" {
-  network                 = google_compute_network.vpc.id
-  service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.private_ip_block.name]
-}
+# resource "google_compute_global_address" "private_ip_block" {
+#   name         = "private-ip-block"
+#   purpose       = "VPC_PEERING"
+#   address_type  = "INTERNAL"
+#   ip_version   = "IPV4"
+#   prefix_length = 16
+#   network       = google_compute_network.vpc.id
+# }
+# resource "google_service_networking_connection" "private_vpc_connection" {
+#   network                 = google_compute_network.vpc.id
+#   service                 = "servicenetworking.googleapis.com"
+#   reserved_peering_ranges = [google_compute_global_address.private_ip_block.name]
+# }
 resource "google_sql_database_instance" "pgsql" {
   name             = "{{.Stackname}}"
   database_version = "POSTGRES_13"
@@ -105,10 +105,10 @@ resource "google_sql_database_instance" "pgsql" {
 
   settings {
     tier = "db-f1-micro"
-    ip_configuration {
-      ipv4_enabled    = false
-      private_network = google_compute_network.vpc.id
-    }    
+    # ip_configuration {
+    #   ipv4_enabled    = false
+    #   private_network = google_compute_network.vpc.id
+    # }    
   }
 }
 resource "google_sql_user" "db_user" {
