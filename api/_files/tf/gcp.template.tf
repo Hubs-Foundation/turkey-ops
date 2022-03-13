@@ -4,7 +4,7 @@ variable "project_id"{
   default = "missing"  
 }
 
-variable "stack_id" {
+variable "stack_name" {
   description = "deployment id"
   default = "missing"
 }
@@ -23,19 +23,19 @@ terraform {
     backend "gcs" {    
         bucket  = "turkeycfg"
         prefix  = "tf-backend/{{.StackId}}"
-        # prefix  = "tf-backend/${var.stack_id}"
+        # prefix  = "tf-backend/${var.stack_name}"
     }
 }
 
 # VPC
 resource "google_compute_network" "vpc" {
-  name                    = "${var.stack_id}-vpc"
+  name                    = "${var.stack_name}-vpc"
   auto_create_subnetworks = "false"
 }
 
 # Subnet
 resource "google_compute_subnetwork" "subnet" {
-  name          = "${var.stack_id}-subnet"
+  name          = "${var.stack_name}-subnet"
   region        = var.region
   network       = google_compute_network.vpc.name
   ip_cidr_range = "10.10.0.0/24"
@@ -43,7 +43,7 @@ resource "google_compute_subnetwork" "subnet" {
 
 # GKE cluster
 resource "google_container_cluster" "primary" {
-  name     = "${var.stack_id}-gke"
+  name     = "${var.stack_name}"
   location = var.region
   
   # We can't create a cluster with no node pool defined, but we want to only use
@@ -70,12 +70,12 @@ resource "google_container_node_pool" "primary_nodes" {
     ]
 
     labels = {
-      env = var.stack_id
+      env = var.stack_name
     }
 
     # preemptible  = true
     machine_type = "n1-standard-1"
-    tags         = ["gke-node", "${var.stack_id}-gke"]
+    tags         = ["gke-node", "${var.stack_name}-gke"]
     metadata = {
       disable-legacy-endpoints = "true"
     }

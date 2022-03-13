@@ -43,6 +43,21 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Error("failed @runTf: " + err.Error())
 				return
 			}
+			// ########## 3. get into gke, render the yamls from yams and "kubectl apply -f" them  #########
+			//get k8s config
+			k8sCfg, err := internal.Cfg.Gcps.GetK8sConfigFromGke(cfg.Stackname)
+			if err != nil {
+				sess.Error("post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + "err: " + err.Error())
+				return
+			}
+			sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+			nsList, err := internal.K8s_getNs(k8sCfg)
+			if err != nil {
+				sess.Error("failed @K8s_getNs: " + err.Error())
+				return
+			}
+			sess.Log(fmt.Sprintf("good k8sCfg: %v", nsList.Items))
+
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -133,7 +148,7 @@ func runTf(cfg clusterCfg, verb string) error {
 	// 	return err
 	// }
 	err = internal.RunCmd(tf_bin, "-chdir="+tfdir, verb, "-auto-approve",
-		"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_id="+cfg.Stackname, "-var", "region="+cfg.Region,
+		"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_name="+cfg.Stackname, "-var", "region="+cfg.Region,
 	)
 	if err != nil {
 		return err

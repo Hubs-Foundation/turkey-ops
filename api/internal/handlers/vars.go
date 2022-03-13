@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bufio"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -12,7 +11,6 @@ import (
 	"main/internal"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -147,41 +145,4 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	cfg.PERMS_KEY = strings.ReplaceAll(pemString, "\n", `\\n`)
 
 	return cfg, nil
-}
-
-func runCmd(name string, arg ...string) error {
-
-	cmd := exec.Command(name, arg...)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	stderr, _ := cmd.StderrPipe()
-
-	err = cmd.Start()
-	internal.GetLogger().Debug("started: " + cmd.String())
-	if err != nil {
-		return err
-	}
-
-	// print the output of the subprocess
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		m := scanner.Text()
-		internal.GetLogger().Debug(m)
-	}
-
-	scanner_err := bufio.NewScanner(stderr)
-	for scanner_err.Scan() {
-		m := scanner_err.Text()
-		internal.GetLogger().Error(m)
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

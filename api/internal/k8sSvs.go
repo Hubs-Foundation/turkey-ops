@@ -210,3 +210,16 @@ func K8s_GetServiceHostName(cfg *rest.Config, namespace string, serviceName stri
 
 	return svc.Status.LoadBalancer.Ingress[0].Hostname, nil
 }
+
+func K8s_getNs(cfg *rest.Config) (*corev1.NamespaceList, error) {
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	nsList, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return nsList, nil
+
+}
