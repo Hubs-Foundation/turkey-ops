@@ -102,7 +102,7 @@ resource "google_sql_database_instance" "pgsql" {
   database_version = "POSTGRES_13"
   region           = "{{.Region}}"
 
-  depends_on = [google_service_networking_connection.private_vpc_connection]
+  # depends_on = [google_service_networking_connection.private_vpc_connection]
 
   settings {
     tier = "db-f1-micro"
