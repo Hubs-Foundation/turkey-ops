@@ -134,8 +134,12 @@ func runTf(cfg clusterCfg, verb string) error {
 	}
 	f, _ := os.Create(tfFile)
 	defer f.Close()
-	t.Execute(f, struct{ StackId string }{
-		StackId: cfg.Stackname,
+	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass string }{
+		ProjectId: internal.Cfg.Gcps.ProjectId,
+		Stackname: cfg.Stackname,
+		Region:    cfg.Region,
+		DbUser:    "postgres",
+		DbPass:    cfg.DB_PASS,
 	})
 	err = internal.RunCmd(tf_bin, "-chdir="+tfdir, "init")
 	if err != nil {
@@ -147,9 +151,7 @@ func runTf(cfg clusterCfg, verb string) error {
 	// if err != nil {
 	// 	return err
 	// }
-	err = internal.RunCmd(tf_bin, "-chdir="+tfdir, verb, "-auto-approve",
-		"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_name="+cfg.Stackname, "-var", "region="+cfg.Region,
-	)
+	err = internal.RunCmd(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
 	if err != nil {
 		return err
 	}

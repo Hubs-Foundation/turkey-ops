@@ -1,50 +1,49 @@
 
-variable "project_id"{
-  description = "gcp project id"
-  default = "missing"  
-}
+# variable "project_id"{
+#   description = "gcp project id"
+#   default = "missing"  
+# }
 
-variable "stack_name" {
-  description = "deployment id"
-  default = "missing"
-}
+# variable "stack_name" {
+#   description = "deployment id"
+#   default = "missing"
+# }
 
-variable "region" {
-  description = "region"
-  default = "us-east1"
-}
+# variable "region" {
+#   description = "region"
+#   default = "us-east1"
+# }
 
 provider "google" {
-  project = var.project_id
-  region  = var.region
+  project = "{{.ProjectId}}"
+  region  = "{{.Region}}"
 }
 
 terraform {  
     backend "gcs" {    
         bucket  = "turkeycfg"
-        prefix  = "tf-backend/{{.StackId}}"
-        # prefix  = "tf-backend/${var.stack_name}"
+        prefix  = "tf-backend/{{.Stackname}}"
     }
 }
 
 # VPC
 resource "google_compute_network" "vpc" {
-  name                    = "${var.stack_name}-vpc"
+  name                    = "{{.Stackname}}-vpc"
   auto_create_subnetworks = "false"
 }
 
 # Subnet
 resource "google_compute_subnetwork" "subnet" {
-  name          = "${var.stack_name}-subnet"
-  region        = var.region
+  name          = "{{.Stackname}}-subnet"
+  region        = "{{.Region}}"
   network       = google_compute_network.vpc.name
   ip_cidr_range = "10.10.0.0/24"
 }
 
 # GKE cluster
-resource "google_container_cluster" "primary" {
-  name     = "${var.stack_name}"
-  location = var.region
+resource "google_container_cluster" "gke" {
+  name     = "{{.Stackname}}"
+  location = "{{.Region}}"
   
   # We can't create a cluster with no node pool defined, but we want to only use
   # separately managed node pools. So we create the smallest possible default
@@ -57,10 +56,10 @@ resource "google_container_cluster" "primary" {
 }
 
 # Separately Managed Node Pool
-resource "google_container_node_pool" "primary_nodes" {
-  name       = "${google_container_cluster.primary.name}-node-pool"
-  location   = var.region
-  cluster    = google_container_cluster.primary.name
+resource "google_container_node_pool" "gke_nodes" {
+  name       = "${google_container_cluster.gke.name}-node-pool"
+  location   = "{{.Region}}"
+  cluster    = google_container_cluster.gke.name
   node_count = 2
 
   node_config {
@@ -75,7 +74,7 @@ resource "google_container_node_pool" "primary_nodes" {
 
     # preemptible  = true
     machine_type = "n1-standard-1"
-    tags         = ["gke-node", "${var.stack_name}-gke"]
+    tags         = ["gke-node", "{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
     }
@@ -83,10 +82,25 @@ resource "google_container_node_pool" "primary_nodes" {
 }
 
 # pgsql
-resource "google_sql_database_instance" "master" {
-  name             = "master-instance"
+resource "google_compute_global_address" "private_ip_block" {
+  name         = "private-ip-block"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  ip_version   = "IPV4"
+  prefix_length = 16
+  network       = google_compute_network.vpc.id
+}
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = google_compute_network.vpc.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_block.name]
+}
+resource "google_sql_database_instance" "pgsql" {
+  name             = "{{.Stackname}}"
   database_version = "POSTGRES_13"
-  region           = var.region
+  region           = "{{.Region}}"
+
+  depends_on = [google_service_networking_connection.private_vpc_connection]
 
   settings {
     tier = "db-f1-micro"
@@ -95,4 +109,9 @@ resource "google_sql_database_instance" "master" {
       private_network = google_compute_network.vpc.id
     }    
   }
+}
+resource "google_sql_user" "db_user" {
+  name     = "{{.DbUser}}"
+  instance = google_sql_database_instance.pgsql.name
+  password = "{{.DbPass}}"
 }
