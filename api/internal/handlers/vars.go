@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"hash/fnv"
 	"io/ioutil"
 	"main/internal"
 	"net/http"
@@ -133,8 +134,9 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	}
 
 	//generate the rest
-	cfg.DB_PASS = internal.PwdGen(15)
-	cfg.COOKIE_SECRET = internal.PwdGen(15)
+	pwdSeed := int64(hash(cfg.Stackname))
+	cfg.DB_PASS = internal.PwdGen(15, pwdSeed)
+	cfg.COOKIE_SECRET = internal.PwdGen(15, pwdSeed)
 	cfg.DB_HOST = "to-be-determined-after-infra-deployment"
 	cfg.DB_CONN = "to-be-determined-after-infra-deployment"
 	cfg.PSQL = "to-be-determined-after-infra-deployment"
@@ -145,4 +147,10 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	cfg.PERMS_KEY = strings.ReplaceAll(pemString, "\n", `\\n`)
 
 	return cfg, nil
+}
+
+func hash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
 }

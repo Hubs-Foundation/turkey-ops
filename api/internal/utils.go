@@ -91,7 +91,7 @@ func AddCacheData(c *http.Cookie) *CacheBoxSessData {
 
 // PwDGen -- will use all printable chars except space and delete (why is delete a printable char?)
 // aka. ascii code 33 - 126
-func PwdGen(length int) string {
+func PwdGen(length int, seed int64) string {
 	// var seed int64
 	// binary.Read(crand.Reader, binary.BigEndian, &seed)
 	// mr := mrand.New(mrand.NewSource(seed))
@@ -105,6 +105,7 @@ func PwdGen(length int) string {
 	// 	replace := string(byte(mr.Intn(26) + 65)) //ascii 65~90 aka. A~Z
 	// 	pwd = strings.Replace(pwd, c, replace, -1)
 	// }
+	rand.Seed(seed)
 
 	pwd := make([]rune, length)
 	var dict = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")

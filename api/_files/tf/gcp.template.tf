@@ -84,15 +84,13 @@ resource "google_container_node_pool" "gke_nodes" {
 }
 
 #k8s rbac for gke
-data "google_client_config" "gke" {}
+# data "google_client_config" "gke" {}
 
 provider "kubernetes" {
-  host     = "${google_container_cluster.gke.endpoint}"
-
-  token = "${data.google_client_config.gke.access_token}"
-  cluster_ca_certificate = "${base64decode(google_container_cluster.gke.master_auth.0.cluster_ca_certificate)}"
-
   load_config_file = false
+  host = "https://${google_container_cluster.cluster.endpoint}"
+  token = data.google_client_config.current.access_token
+  cluster_ca_certificate = base64decode(google_container_cluster.cluster.master_auth.0.cluster_ca_certificate)
 }
 
 # pgsql
@@ -113,6 +111,7 @@ resource "google_sql_database_instance" "pgsql" {
   name             = "{{.Stackname}}"
   database_version = "POSTGRES_13"
   region           = "{{.Region}}"
+  deletion_protection = false
 
   # depends_on = [google_service_networking_connection.private_vpc_connection]
 
