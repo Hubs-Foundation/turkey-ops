@@ -84,13 +84,22 @@ resource "google_container_node_pool" "gke_nodes" {
 }
 
 #k8s rbac for gke
-# data "google_client_config" "gke" {}
-
 provider "kubernetes" {
   load_config_file = false
-  host = "https://${google_container_cluster.cluster.endpoint}"
+  host = "https://${google_container_cluster.gke.endpoint}"
   token = data.google_client_config.current.access_token
-  cluster_ca_certificate = base64decode(google_container_cluster.cluster.master_auth.0.cluster_ca_certificate)
+  cluster_ca_certificate = base64decode(google_container_cluster.gke.master_auth.0.cluster_ca_certificate)
+}
+
+resource "kubernetes_secret" "dummy-test" {
+  metadata {
+    name = "dummy-test"
+  }
+  data = {
+    username = "dummy"
+    password = "test"
+  }
+  type = "kubernetes.io/basic-auth"
 }
 
 # pgsql

@@ -71,7 +71,7 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 	}
 	for _, gke := range gkes.Clusters {
 		if gke.Name == gkeName {
-			return CreateK8sClientFromCluster(gke)
+			return createK8sClientFromGkeCluster(gke)
 		}
 	}
 	return nil, errors.New("not found")
@@ -84,7 +84,7 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 
 }
 
-func CreateK8sClientFromCluster(cluster *gkev1.Cluster) (*rest.Config, error) {
+func createK8sClientFromGkeCluster(cluster *gkev1.Cluster) (*rest.Config, error) {
 	decodedClientCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
 	if err != nil {
 		return nil, err
