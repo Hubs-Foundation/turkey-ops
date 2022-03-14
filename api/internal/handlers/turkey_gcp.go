@@ -147,13 +147,12 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 
 func runTf(cfg clusterCfg, verb string) error {
 	wd, _ := os.Getwd()
-	internal.GetLogger().Debug("~~~~~~os.Getwd()~~~~~~~" + wd)
 	// render the template.tf with cfg.Stackname into a Stackname named folder so that
 	// 1. we can run terraform from that folder
 	// 2. terraform will use a Stackname named folder in it's remote backend
-	tfTemplateFile := "/app/_files/tf/gcp.template.tf"
-	tf_bin := "/app/_files/tf/terraform"
-	tfdir := "/app/_files/tf/" + cfg.Stackname
+	tfTemplateFile := wd + "/_files/tf/gcp.template.tf"
+	tf_bin := wd + "/_files/tf/terraform"
+	tfdir := wd + "/_files/tf/" + cfg.Stackname
 	os.Mkdir(tfdir, os.ModePerm)
 
 	tfFile := tfdir + "/rendered.tf"
