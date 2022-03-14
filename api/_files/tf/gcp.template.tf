@@ -83,44 +83,8 @@ resource "google_container_node_pool" "gke_nodes" {
   }
 }
 
-#k8s rbac for gke
-provider "kubernetes" {
-  host     = google_container_cluster.gke.endpoint
-  username = google_container_cluster.gke.master_auth.0.username
-  password = google_container_cluster.gke.master_auth.0.password
-  client_certificate     = base64decode(google_container_cluster.gke.master_auth.0.client_certificate)
-  client_key             = base64decode(google_container_cluster.gke.master_auth.0.client_key)
-  cluster_ca_certificate = base64decode(google_container_cluster.gke.master_auth.0.cluster_ca_certificate)
-// This is a deal breaker, if is set to false I get same error.
-//  load_config_file = "false"
-}
-
-
-resource "kubernetes_secret" "dummy-test" {
-  metadata {
-    name = "dummy-test"
-  }
-  data = {
-    username = "dummy"
-    password = "test"
-  }
-  type = "kubernetes.io/basic-auth"
-}
-
 # pgsql
-# resource "google_compute_global_address" "private_ip_block" {
-#   name         = "private-ip-block"
-#   purpose       = "VPC_PEERING"
-#   address_type  = "INTERNAL"
-#   ip_version   = "IPV4"
-#   prefix_length = 16
-#   network       = google_compute_network.vpc.self_link
-# }
-# resource "google_service_networking_connection" "private_vpc_connection" {
-#   network                 = google_compute_network.vpc.self_link
-#   service                 = "servicenetworking.googleapis.com"
-#   reserved_peering_ranges = [google_compute_global_address.private_ip_block.name]
-# }
+
 resource "google_sql_database_instance" "pgsql" {
   name             = "{{.Stackname}}"
   database_version = "POSTGRES_13"
@@ -142,3 +106,17 @@ resource "google_sql_user" "db_user" {
   instance = google_sql_database_instance.pgsql.name
   password = "{{.DbPass}}"
 }
+
+# resource "google_compute_global_address" "private_ip_block" {
+#   name         = "private-ip-block"
+#   purpose       = "VPC_PEERING"
+#   address_type  = "INTERNAL"
+#   ip_version   = "IPV4"
+#   prefix_length = 16
+#   network       = google_compute_network.vpc.self_link
+# }
+# resource "google_service_networking_connection" "private_vpc_connection" {
+#   network                 = google_compute_network.vpc.self_link
+#   service                 = "servicenetworking.googleapis.com"
+#   reserved_peering_ranges = [google_compute_global_address.private_ip_block.name]
+# }
