@@ -14,6 +14,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 
 	gkev1 "google.golang.org/api/container/v1"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 type GcpSvs struct {
@@ -150,7 +152,11 @@ func getK8sClientFromGkeCluster(c *gkev1.Cluster) (*rest.Config, error) {
 	}
 
 	// Construct a "direct client" using the auth above to contact the API server.
-	defClient := clientcmd.NewDefaultClientConfig(apiCfg, &clientcmd.ConfigOverrides{})
+	defClient := clientcmd.NewDefaultClientConfig(
+		apiCfg,
+		&clientcmd.ConfigOverrides{
+			ClusterInfo: api.Cluster{Server: ""},
+		})
 	restConfig, err := defClient.ClientConfig()
 	if err != nil {
 		return nil, err
