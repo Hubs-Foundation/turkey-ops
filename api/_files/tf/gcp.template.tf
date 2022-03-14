@@ -84,13 +84,17 @@ resource "google_container_node_pool" "gke_nodes" {
 }
 
 #k8s rbac for gke
-data "google_client_config" "gke" {}
 provider "kubernetes" {
-  load_config_file = false
-  host = "https://${google_container_cluster.gke.endpoint}"
-  token = data.google_client_config.current.access_token
+  host     = google_container_cluster.gke.endpoint
+  username = google_container_cluster.gke.master_auth.0.username
+  password = google_container_cluster.gke.master_auth.0.password
+  client_certificate     = base64decode(google_container_cluster.gke.master_auth.0.client_certificate)
+  client_key             = base64decode(google_container_cluster.gke.master_auth.0.client_key)
   cluster_ca_certificate = base64decode(google_container_cluster.gke.master_auth.0.cluster_ca_certificate)
+// This is a deal breaker, if is set to false I get same error.
+//  load_config_file = "false"
 }
+
 
 resource "kubernetes_secret" "dummy-test" {
   metadata {
