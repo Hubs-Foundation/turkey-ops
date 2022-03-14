@@ -11,13 +11,16 @@ import (
 	"main/internal"
 )
 
-var gke_yams = []string{
-	"cluster_00_deps.yam",
-	"cluster_01_ingress.yam",
-	"cluster_02_tools.yam",
-	"cluster_03_turkey-services.yam",
-	"cluster_04_turkey-stream.yam",
-}
+var (
+	gke_yams = []string{
+		"cluster_00_deps.yam",
+		"cluster_01_ingress.yam",
+		"cluster_02_tools.yam",
+		"cluster_03_turkey-services.yam",
+		"cluster_04_turkey-stream.yam",
+	}
+	gcp_yams_dir = "./_files/yams/gcp/"
+)
 
 var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -87,10 +90,10 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 })
 
 func collectAndRenderYams_localGcp(cfg clusterCfg) ([]string, error) {
-	yamFiles, _ := ioutil.ReadDir("./_files/yams/gcp/")
+	yamFiles, _ := ioutil.ReadDir(gcp_yams_dir)
 	var yams []string
 	for _, f := range yamFiles {
-		yam, _ := ioutil.ReadFile("./_files/yams/gcp/" + f.Name())
+		yam, _ := ioutil.ReadFile(gcp_yams_dir + f.Name())
 		internal.GetLogger().Debug("~~~~~~ f.Name(): " + f.Name())
 		internal.GetLogger().Debug(fmt.Sprintf("~~~~~ len(yam) file dump !!! %v", len(yam)))
 		yams = append(yams, string(yam))
