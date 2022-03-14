@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"text/template"
@@ -44,20 +45,32 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// ########## 3. get into gke, render the yamls from yams and "kubectl apply -f" them  #########
-			//get k8s config
+			// ###### 3.1 get k8s config
 			k8sCfg, err := internal.Cfg.Gcps.GetK8sConfigFromGke(cfg.Stackname)
 			if err != nil {
 				sess.Error("post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + ". err: " + err.Error())
 				return
 			}
 			sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-			nsList, err := internal.K8s_getNs(k8sCfg)
+			// nsList, err := internal.K8s_getNs(k8sCfg)
+			// if err != nil {
+			// 	sess.Error("failed @K8s_getNs: " + err.Error())
+			// 	return
+			// }
+			// sess.Log(fmt.Sprintf("good k8sCfg: %v", nsList.Items))
+			// ###### 3.2 render + deploy yamls
+			k8sYamls, err := collectAndRenderYams_localGcp(cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 			if err != nil {
-				sess.Error("failed @K8s_getNs: " + err.Error())
+				sess.Error("failed @ collectYams: " + err.Error())
 				return
 			}
-			sess.Log(fmt.Sprintf("good k8sCfg: %v", nsList.Items))
-
+			for _, yaml := range k8sYamls {
+				err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg) // ServerSideApply version of kubectl apply -f
+				if err != nil {
+					sess.Error("post tf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
+					return
+				}
+			}
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -72,6 +85,20 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// fmt.Fprintf(w, "unexpected method: "+r.Method)
 	}
 })
+
+func collectAndRenderYams_localGcp(cfg clusterCfg) ([]string, error) {
+	yamFiles, _ := ioutil.ReadDir("./yamls/gcp/")
+	var yams []string
+	for _, f := range yamFiles {
+		yam, _ := ioutil.ReadFile("./yamls/gcp/" + f.Name())
+		yams = append(yams, string(yam))
+	}
+	yamls, err := internal.K8s_render_yams(yams, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return yamls, nil
+}
 
 var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -99,7 +126,7 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 				return
 			}
 			// ################# 3. delete the folder in GCS bucket for this stack
-			err, _ := internal.Cfg.Gcps.DeleteObjects("turkeycfg", "tf-backend/"+cfg.Stackname)
+			err := internal.Cfg.Gcps.DeleteObjects("turkeycfg", "tf-backend/"+cfg.Stackname)
 			if err != nil {
 				sess.Error("failed @ delete tf-backend for " + cfg.Stackname + ": " + err.Error())
 			}
@@ -119,6 +146,8 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 })
 
 func runTf(cfg clusterCfg, verb string) error {
+	wd, _ := os.Getwd()
+	internal.GetLogger().Debug("~~~~~~os.Getwd()~~~~~~~" + wd)
 	// render the template.tf with cfg.Stackname into a Stackname named folder so that
 	// 1. we can run terraform from that folder
 	// 2. terraform will use a Stackname named folder in it's remote backend

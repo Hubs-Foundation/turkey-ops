@@ -33,11 +33,11 @@ func NewGcpSvs() (*GcpSvs, error) {
 	}, nil
 }
 
-func (g *GcpSvs) DeleteObjects(bucketName, prefix string) (error, int) {
+func (g *GcpSvs) DeleteObjects(bucketName, prefix string) error {
 	GetLogger().Debug("deleting from bucket: " + bucketName + ", with prefix: " + prefix)
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
-		return err, 0
+		return err
 	}
 	bucket := client.Bucket(bucketName)
 	itr := bucket.Objects(context.Background(), &storage.Query{Prefix: prefix})
@@ -45,18 +45,18 @@ func (g *GcpSvs) DeleteObjects(bucketName, prefix string) (error, int) {
 	for {
 		objAttrs, err := itr.Next()
 		if err != nil && err != iterator.Done {
-			return err, 0
+			return err
 		}
 		if err == iterator.Done {
 			break
 		}
 		if err := bucket.Object(objAttrs.Name).Delete(context.Background()); err != nil {
-			return err, 0
+			return err
 		}
 		cnt++
 	}
 	GetLogger().Debug(fmt.Sprintf("deleted <%v> objs", cnt))
-	return nil, cnt
+	return nil
 }
 
 func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
@@ -79,7 +79,7 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 
 		}
 	}
-	return nil, errors.New("not found")
+	return nil, errors.New("not found (gkeName: " + gkeName + " )")
 	// gkeList, err:=cService.Projects.Zones.Clusters.List(g.ProjectId, "-").Context(context.Background()).Do()
 	// if err!=nil{return nil,err}
 	// for _, gke := range gkeList.Clusters{
