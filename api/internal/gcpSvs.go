@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
 
 	gkev1 "google.golang.org/api/container/v1"
 )
@@ -85,28 +86,41 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 }
 
 func createK8sClientFromGkeCluster(cluster *gkev1.Cluster) (*rest.Config, error) {
-	decodedClientCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
-	if err != nil {
-		return nil, err
-	}
-	decodedClientKey, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientKey)
-	if err != nil {
-		return nil, err
-	}
+	// decodedClientCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// decodedClientKey, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientKey)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	decodedClusterCaCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClusterCaCertificate)
 	if err != nil {
 		return nil, err
 	}
 
+	gen, err := token.NewGenerator(true, false)
+	if err != nil {
+		return nil, err
+	}
+	opts := &token.GetTokenOptions{
+		ClusterID: cluster.Name,
+	}
+	tok, err := gen.GetWithOptions(opts)
+	if err != nil {
+		return nil, err
+	}
+
 	config := &rest.Config{
-		Username: cluster.MasterAuth.Username,
-		Password: cluster.MasterAuth.Password,
-		Host:     "https://" + cluster.Endpoint,
+		// Username: cluster.MasterAuth.Username,
+		// Password: cluster.MasterAuth.Password,
+		Host:        "https://" + cluster.Endpoint,
+		BearerToken: tok.Token,
 		TLSClientConfig: rest.TLSClientConfig{
-			Insecure: false,
-			CertData: decodedClientCertificate,
-			KeyData:  decodedClientKey,
-			CAData:   decodedClusterCaCertificate,
+			// Insecure: false,
+			// CertData: decodedClientCertificate,
+			// KeyData:  decodedClientKey,
+			CAData: decodedClusterCaCertificate,
 		},
 	}
 
