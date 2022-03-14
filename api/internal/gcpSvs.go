@@ -116,54 +116,41 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 // 	return config, nil
 // }
 func getK8sClientFromGkeCluster(c *gkev1.Cluster) (*rest.Config, error) {
-	// The cluster CA certificate is base64 encoded from the GKE API.
-	rawCaCert, err := base64.URLEncoding.DecodeString(c.MasterAuth.ClusterCaCertificate)
-	if err != nil {
-		return nil, err
+	apiCfg := api.Config{
+		APIVersion: "v1",
+		Kind:       "Config",
+		Clusters:   map[string]*api.Cluster{},  // Clusters is a map of referencable names to cluster configs
+		AuthInfos:  map[string]*api.AuthInfo{}, // AuthInfos is a map of referencable names to user configs
+		Contexts:   map[string]*api.Context{},  // Contexts is a map of referencable names to context configs
 	}
-
-	// This is a low-level structure normally created from parsing a kubeconfig
-	// file.  Since we know all values we can create the client object directly.
-	//
-	// The cluster and user names serve only to define a context that
-	// associates login credentials with a specific cluster.
-	clusterClient := api.Config{
-		Clusters: map[string]*api.Cluster{
-			// Define the cluster address and CA Certificate.
-			"cluster": {
-				Server:                   fmt.Sprintf("https://%s", c.Endpoint),
-				InsecureSkipTLSVerify:    false, // Require a valid CA Certificate.
-				CertificateAuthorityData: rawCaCert,
+	// name := fmt.Sprintf("gke_%s_%s_%s", projectId, f.Zone, f.Name)
+	name := c.Name
+	cert, err := base64.StdEncoding.DecodeString(c.MasterAuth.ClusterCaCertificate)
+	if err != nil {
+		return nil, fmt.Errorf("invalid certificate cluster=%s cert=%s: %w", name, c.MasterAuth.ClusterCaCertificate, err)
+	}
+	// example: gke_my-project_us-central1-b_cluster-1 => https://XX.XX.XX.XX
+	apiCfg.Clusters[name] = &api.Cluster{
+		CertificateAuthorityData: cert,
+		Server:                   "https://" + c.Endpoint,
+	}
+	// Just reuse the context name as an auth name.
+	apiCfg.Contexts[name] = &api.Context{
+		Cluster:  name,
+		AuthInfo: name,
+	}
+	// GCP specific configation; use cloud platform scope.
+	apiCfg.AuthInfos[name] = &api.AuthInfo{
+		AuthProvider: &api.AuthProviderConfig{
+			Name: "gcp",
+			Config: map[string]string{
+				"scopes": "https://www.googleapis.com/auth/cloud-platform",
 			},
 		},
-		AuthInfos: map[string]*api.AuthInfo{
-			// Define the user credentials for access to the API.
-			"user": {
-				AuthProvider: &api.AuthProviderConfig{
-					Name: "gcp",
-					Config: map[string]string{
-						"scopes": "https://www.googleapis.com/auth/cloud-platform",
-					},
-				},
-			},
-		},
-		Contexts: map[string]*api.Context{
-			// Define a context that refers to the above cluster and user.
-			"cluster-user": {
-				Cluster:  "cluster",
-				AuthInfo: "user",
-			},
-		},
-		// Use the above context.
-		CurrentContext: "cluster-user",
 	}
 
 	// Construct a "direct client" using the auth above to contact the API server.
-	defClient := clientcmd.NewDefaultClientConfig(
-		clusterClient,
-		&clientcmd.ConfigOverrides{
-			ClusterInfo: api.Cluster{Server: ""},
-		})
+	defClient := clientcmd.NewDefaultClientConfig(apiCfg, &clientcmd.ConfigOverrides{})
 	restConfig, err := defClient.ClientConfig()
 	if err != nil {
 		return nil, err
