@@ -87,7 +87,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 })
 
 func collectAndRenderYams_localGcp(cfg clusterCfg) ([]string, error) {
-	yamFiles, _ := ioutil.ReadDir("./_files/yamls/gcp/")
+	yamFiles, _ := ioutil.ReadDir("./_files/yams/gcp/")
 	var yams []string
 	for _, f := range yamFiles {
 		yam, _ := ioutil.ReadFile("./_files/yamls/gcp/" + f.Name())
