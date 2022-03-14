@@ -84,6 +84,7 @@ resource "google_container_node_pool" "gke_nodes" {
 }
 
 #k8s rbac for gke
+data "google_client_config" "gke" {}
 provider "kubernetes" {
   load_config_file = false
   host = "https://${google_container_cluster.gke.endpoint}"
