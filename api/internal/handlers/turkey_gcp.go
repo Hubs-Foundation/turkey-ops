@@ -12,13 +12,6 @@ import (
 )
 
 var (
-	gke_yams = []string{
-		"cluster_00_deps.yam",
-		"cluster_01_ingress.yam",
-		"cluster_02_tools.yam",
-		"cluster_03_turkey-services.yam",
-		"cluster_04_turkey-stream.yam",
-	}
 	gcp_yams_dir = "./_files/yams/gcp/"
 )
 
