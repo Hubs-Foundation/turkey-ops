@@ -90,7 +90,7 @@ func collectAndRenderYams_localGcp(cfg clusterCfg) ([]string, error) {
 	yamFiles, _ := ioutil.ReadDir("./_files/yams/gcp/")
 	var yams []string
 	for _, f := range yamFiles {
-		yam, _ := ioutil.ReadFile("./_files/yamls/gcp/" + f.Name())
+		yam, _ := ioutil.ReadFile("./_files/yams/gcp/" + f.Name())
 		internal.GetLogger().Debug("~~~~~~ f.Name(): " + f.Name())
 		internal.GetLogger().Debug(fmt.Sprintf("~~~~~ len(yam) file dump !!! %v", len(yam)))
 		yams = append(yams, string(yam))
