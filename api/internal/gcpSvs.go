@@ -10,7 +10,8 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/aws-iam-authenticator/pkg/token"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 
 	gkev1 "google.golang.org/api/container/v1"
 )
@@ -72,7 +73,8 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 	}
 	for _, gke := range gkes.Clusters {
 		if gke.Name == gkeName {
-			return createK8sClientFromGkeCluster(gke)
+			return getK8sClientFromGkeCluster(gke)
+
 		}
 	}
 	return nil, errors.New("not found")
@@ -85,44 +87,86 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 
 }
 
-func createK8sClientFromGkeCluster(cluster *gkev1.Cluster) (*rest.Config, error) {
-	// decodedClientCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// decodedClientKey, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientKey)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	decodedClusterCaCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClusterCaCertificate)
+// func createK8sClientFromGkeCluster(cluster *gkev1.Cluster) (*rest.Config, error) {
+// 	decodedClientCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	decodedClientKey, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientKey)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	decodedClusterCaCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClusterCaCertificate)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	config := &rest.Config{
+// 		Username: cluster.MasterAuth.Username,
+// 		Password: cluster.MasterAuth.Password,
+// 		Host:     "https://" + cluster.Endpoint,
+// 		TLSClientConfig: rest.TLSClientConfig{
+// 			Insecure: false,
+// 			CertData: decodedClientCertificate,
+// 			KeyData:  decodedClientKey,
+// 			CAData:   decodedClusterCaCertificate,
+// 		},
+// 	}
+
+// 	return config, nil
+// }
+func getK8sClientFromGkeCluster(c *gkev1.Cluster) (*rest.Config, error) {
+	// The cluster CA certificate is base64 encoded from the GKE API.
+	rawCaCert, err := base64.URLEncoding.DecodeString(c.MasterAuth.ClusterCaCertificate)
 	if err != nil {
 		return nil, err
 	}
 
-	gen, err := token.NewGenerator(true, false)
-	if err != nil {
-		return nil, err
-	}
-	opts := &token.GetTokenOptions{
-		ClusterID: cluster.Name,
-	}
-	tok, err := gen.GetWithOptions(opts)
-	if err != nil {
-		return nil, err
-	}
-
-	config := &rest.Config{
-		// Username: cluster.MasterAuth.Username,
-		// Password: cluster.MasterAuth.Password,
-		Host:        "https://" + cluster.Endpoint,
-		BearerToken: tok.Token,
-		TLSClientConfig: rest.TLSClientConfig{
-			// Insecure: false,
-			// CertData: decodedClientCertificate,
-			// KeyData:  decodedClientKey,
-			CAData: decodedClusterCaCertificate,
+	// This is a low-level structure normally created from parsing a kubeconfig
+	// file.  Since we know all values we can create the client object directly.
+	//
+	// The cluster and user names serve only to define a context that
+	// associates login credentials with a specific cluster.
+	clusterClient := api.Config{
+		Clusters: map[string]*api.Cluster{
+			// Define the cluster address and CA Certificate.
+			"cluster": {
+				Server:                   fmt.Sprintf("https://%s", c.Endpoint),
+				InsecureSkipTLSVerify:    false, // Require a valid CA Certificate.
+				CertificateAuthorityData: rawCaCert,
+			},
 		},
+		AuthInfos: map[string]*api.AuthInfo{
+			// Define the user credentials for access to the API.
+			"user": {
+				AuthProvider: &api.AuthProviderConfig{
+					Name: "gcp",
+					Config: map[string]string{
+						"scopes": "https://www.googleapis.com/auth/cloud-platform",
+					},
+				},
+			},
+		},
+		Contexts: map[string]*api.Context{
+			// Define a context that refers to the above cluster and user.
+			"cluster-user": {
+				Cluster:  "cluster",
+				AuthInfo: "user",
+			},
+		},
+		// Use the above context.
+		CurrentContext: "cluster-user",
 	}
 
-	return config, nil
+	// Construct a "direct client" using the auth above to contact the API server.
+	defClient := clientcmd.NewDefaultClientConfig(
+		clusterClient,
+		&clientcmd.ConfigOverrides{
+			ClusterInfo: api.Cluster{Server: ""},
+		})
+	restConfig, err := defClient.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	return restConfig, nil
 }
