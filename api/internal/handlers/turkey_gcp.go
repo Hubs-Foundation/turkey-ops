@@ -87,8 +87,6 @@ func collectAndRenderYams_localGcp(cfg clusterCfg) ([]string, error) {
 	var yams []string
 	for _, f := range yamFiles {
 		yam, _ := ioutil.ReadFile(gcp_yams_dir + f.Name())
-		internal.GetLogger().Debug("~~~~~~ f.Name(): " + f.Name())
-		internal.GetLogger().Debug(fmt.Sprintf("~~~~~ len(yam) file dump !!! %v", len(yam)))
 		yams = append(yams, string(yam))
 	}
 	yamls, err := internal.K8s_render_yams(yams, cfg)
