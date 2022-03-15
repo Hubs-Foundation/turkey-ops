@@ -35,13 +35,14 @@ type clusterCfg struct {
 	SMTP_PORT               string `json:"SMTP_PORT"`               //25
 	SMTP_USER               string `json:"SMTP_USER"`               //AKIAYEJRSWRAQUI7U3J4
 	SMTP_PASS               string `json:"SMTP_PASS"`               //BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
+	GCP_SA_KEY              string `json:"GCP_SA_KEY"`              // cat $(the gcp-iam-service-account-key-json file)
 	AWS_KEY                 string `json:"AWS_KEY"`                 //AKIAYEJRSWRAQSAM8888
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
 	// this will just be Region ...
 	AWS_REGION string `json:"AWS_REGION"` //us-east-1
 
 	//optional inputs
-	DeploymentPrefix     string `json:"name"`                 //t-
+	deploymentPrefix     string `json:"name"`                 //t-
 	deploymentId         string `json:"deploymentId"`         //s0meid
 	AWS_Ingress_Cert_ARN string `json:"aws_ingress_cert_arn"` //arn:aws:acm:us-east-1:123456605633:certificate/123456ab-f861-470b-a837-123456a76e17
 	Options              string `json:"options"`              //additional options, dot(.)prefixed -- ie. ".dryrun"
@@ -50,7 +51,7 @@ type clusterCfg struct {
 	Stackname     string `json:"stackname"`
 	DB_PASS       string `json:"DB_PASS"`       //itjfHE8888
 	COOKIE_SECRET string `json:"COOKIE_SECRET"` //a-random-string-to-sign-auth-cookies
-	PERMS_KEY     string `json:"PERMS_KEY"`     //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBAAKCAQEA3RY0qLmdthY6Q0RZ4oyNQSL035BmYLNdleX1qVpG1zfQeLWf\\n/otgc8Ho2w8y5wW2W5vpI4a0aexNV2evgfsZKtx0q5WWwjsr2xy0Ak1zhWTgZD+F\\noHVGJ0xeFse2PnEhrtWalLacTza5RKEJskbNiTTu4fD+UfOCMctlwudNSs+AkmiP\\nSxc8nWrZ5BuvdnEXcJOuw0h4oyyUlkmj+Oa/ZQVH44lmPI9Ih0OakXWpIfOob3X0\\nXqcdywlMVI2hzBR3JNodRjyEz33p6E//lY4Iodw9NdcRpohGcxcgQ5vf4r4epLIa\\ncr0y5w1ZiRyf6BwyqJ6IBpA7yYpws3r9qxmAqwIDAQABAoIBAQCgwy/hbK9wo3MU\\nTNRrdzaTob6b/l1jfanUgRYEYl/WyYAu9ir0JhcptVwERmYGNVIoBRQfQClaSHjo\\n0L1/b74aO5oe1rR8Yhh+yL1gWz9gRT0hyEr7paswkkhsmiY7+3m5rxsrfinlM+6+\\nJ7dsSi3U0ofOBbZ4kvAeEz/Y3OaIOUbQraP312hQnTVQ3kp7HNi9GcLK9rq2mASu\\nO0DxDHXdZMsRN1K4tOKRZDsKGAEfL2jKN7+ndvsDhb4mAQaVKM8iw+g5O4HDA8uB\\nmwycaWhjilZWEyUyqvXE8tOMLS59sq6i1qrf8zIMWDOizebF/wnrQ42kzt5kQ0ZJ\\nwCPOC3sxAoGBAO6KfWr6WsXD6phnjVXXi+1j3azRKJGQorwQ6K3bXmISdlahngas\\nmBGBmI7jYTrPPeXAHUbARo/zLcbuGCf1sPipkAHYVC8f9aUbA205BREB15jNyXr3\\nXzhR/ronbn0VeR9iRua2FZjVChz22fdz9MvRJiinP8agYIQ4LovDk3lzAoGBAO1E\\nrZpOuv3TMQffPaPemWuvMYfZLgx2/AklgYqSoi683vid9HEEAdVzNWMRrOg0w5EH\\nWMEMPwJTYvy3xIgcFmezk5RMHTX2J32JzDJ8Y/uGf1wMrdkt3LkPRfuGepEDDtBa\\nrUSO/MeGXLu5p8QByUZkvTLJ4rJwF2HZBUehrm3pAoGBANg1+tveNCyRGbAuG/M0\\nvgXbwO+FXWojWP1xrhT3gyMNbOm079FI20Ty3F6XRmfRtF7stRyN5udPGaz33jlJ\\n/rBEsNybQiK8qyCNzZtQVYFG1C4SSI8GbO5Vk7cTSphhwDlsEKvJWuX+I36BWKts\\nFPQwjI/ImIvmjdUKP1Y7XQ51AoGBALWa5Y3ASRvStCqkUlfFH4TuuWiTcM2VnN+b\\nV4WrKnu/kKKWs+x09rpbzjcf5kptaGrvRp2sM+Yh0RhByCmt5fBF4OWXRJxy5lMO\\nT78supJgpcbc5YvfsJvs9tHIYrPvtT0AyrI5B33od74wIhrCiz5YCQCAygVuCleY\\ndpQXSp1RAoGBAKjasot7y/ErVxq7LIpGgoH+XTxjvMsj1JwlMeK0g3sjnun4g4oI\\nPBtpER9QaSFi2OeYPklJ2g2yvFcVzj/pFk/n1Zd9pWnbU+JIXBYaHTjmktLeZHsb\\nrTEKATo+Y1Alrhpr/z7gXXDfuKKXHkVRiper1YRAxELoLJB8r7LWeuIb\\n-----END RSA PRIVATE KEY-----
+	PERMS_KEY     string `json:"PERMS_KEY"`     //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
 	//generated post-infra-deploy
 	DB_HOST string `json:"DB_HOST"` //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
 	DB_CONN string `json:"DB_CONN"` //postgres://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
@@ -121,16 +122,16 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	}
 
 	//optional inputs
-	if cfg.DeploymentPrefix == "" {
-		cfg.DeploymentPrefix = "t-"
-		internal.GetLogger().Warn("DeploymentPrefix unspecified -- using (default)" + cfg.DeploymentPrefix)
+	if cfg.deploymentPrefix == "" {
+		cfg.deploymentPrefix = "t-"
+		internal.GetLogger().Warn("deploymentPrefix unspecified -- using (default)" + cfg.deploymentPrefix)
 	}
 	if cfg.deploymentId == "" {
 		cfg.deploymentId = strconv.FormatInt(time.Now().Unix()-1626102245, 36)
 		internal.GetLogger().Info("deploymentId: " + cfg.deploymentId)
 	}
 	if cfg.Stackname == "" {
-		cfg.Stackname = cfg.DeploymentPrefix + cfg.deploymentId
+		cfg.Stackname = cfg.deploymentPrefix + cfg.deploymentId
 	}
 
 	//generate the rest
@@ -145,6 +146,11 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: pvtKeyBytes})
 	pemString := string(pemBytes)
 	cfg.PERMS_KEY = strings.ReplaceAll(pemString, "\n", `\\n`)
+
+	if cfg.GCP_SA_KEY == "" {
+		cfg.GCP_SA_KEY = os.Getenv("GCP_SA_KEY")
+		internal.GetLogger().Warn("Env unspecified -- using dev")
+	}
 
 	return cfg, nil
 }
