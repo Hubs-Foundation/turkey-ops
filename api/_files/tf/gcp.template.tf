@@ -34,13 +34,19 @@ resource "google_compute_network" "vpc" {
 }
 
 # Subnet
-resource "google_compute_subnetwork" "subnet1" {
-  name          = "{{.Stackname}}-subnet1"
+resource "google_compute_subnetwork" "public" {
+  name          = "{{.Stackname}}-public"
   region        = "{{.Region}}"
   network       = google_compute_network.vpc.name
-  ip_cidr_range = "10.10.0.0/16"
+  ip_cidr_range = "10.100.0.0/16"
 }
-
+resource "google_compute_subnetwork" "private" {
+  name          = "{{.Stackname}}-private"
+  region        = "{{.Region}}"
+  network       = google_compute_network.vpc.name
+  ip_cidr_range = "10.101.0.0/16"
+  private_ip_google_access = "true"
+}
 # GKE cluster
 resource "google_container_cluster" "gke" {
   name     = "{{.Stackname}}"
@@ -53,7 +59,7 @@ resource "google_container_cluster" "gke" {
   initial_node_count       = 1
 
   network    = google_compute_network.vpc.name
-  subnetwork = google_compute_subnetwork.subnet1.name
+  subnetwork = google_compute_subnetwork.public.name
 }
 
 # Separately Managed Node Pool
