@@ -31,7 +31,8 @@ stringData:
   SMTP_PORT: "{{.SMTP_PORT}}"
   SMTP_USER: {{.SMTP_USER}}
   SMTP_PASS: {{.SMTP_PASS}}
-  GCP_SA_KEY: {{.GCP_SA_KEY}}
+data:
+  GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware

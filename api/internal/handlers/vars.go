@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -35,7 +36,7 @@ type clusterCfg struct {
 	SMTP_PORT               string `json:"SMTP_PORT"`               //25
 	SMTP_USER               string `json:"SMTP_USER"`               //AKIAYEJRSWRAQUI7U3J4
 	SMTP_PASS               string `json:"SMTP_PASS"`               //BL+rv9q1noXMNWB4D8re8DUGQ7dPXlL6aq5cqod18UFC
-	GCP_SA_KEY              string `json:"GCP_SA_KEY"`              // cat $(the gcp-iam-service-account-key-json file)
+	GCP_SA_KEY_b64          string `json:"GCP_SA_KEY"`              // cat $(the gcp-iam-service-account-key-json file)
 	AWS_KEY                 string `json:"AWS_KEY"`                 //AKIAYEJRSWRAQSAM8888
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
 	// this will just be Region ...
@@ -147,8 +148,8 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	pemString := string(pemBytes)
 	cfg.PERMS_KEY = strings.ReplaceAll(pemString, "\n", `\\n`)
 
-	if cfg.GCP_SA_KEY == "" {
-		cfg.GCP_SA_KEY = os.Getenv("GCP_SA_KEY")
+	if cfg.GCP_SA_KEY_b64 == "" {
+		cfg.GCP_SA_KEY_b64 = base64.RawURLEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
 		internal.GetLogger().Warn("Env unspecified -- using dev")
 	}
 
