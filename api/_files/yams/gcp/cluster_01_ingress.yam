@@ -65,7 +65,7 @@ spec:
       ######################################################################################################################
       ### bundling haproxy container with traefik is not ideal for maximum scaling/scheduling efficiency
       ### but it is necessary to share a single load balancer ( without messing with CRDs )
-      ### so we'll (slightly) over provision here, feels worth it for the simplicity it offers
+      ### so we'll (slightly) over provision here, worth it for the simplicity it offers imo
       ######################################################################################################################
       - name: haproxy
         image: mozillareality/haproxy:1.7.0
