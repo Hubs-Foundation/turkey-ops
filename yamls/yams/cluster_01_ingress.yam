@@ -388,7 +388,7 @@ subjects:
   namespace: ingress 
 ---
 ########################################################################
-###################### configs #########################################
+###################### certbotbot #########################################
 ########################################################################
 apiVersion: v1
 kind: Secret
@@ -415,6 +415,7 @@ spec:
     spec:
       template:
         spec:
+          serviceAccountName: certbotbot
           containers:
           - name: certbotbot
             image: mozillareality/certbotbot_route53:stable-latest
@@ -433,3 +434,23 @@ spec:
                   name: configs
                   key: AWS_SECRET                            
           restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: certbotbot
+  namespace: ingress
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: certbotbot
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+- kind: ServiceAccount
+  name: certbotbot
+  namespace: ingress 
+
