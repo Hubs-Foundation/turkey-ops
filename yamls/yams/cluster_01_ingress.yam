@@ -409,6 +409,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: hello
+  namespace: ingress
 spec:
   schedule: "0 * * * *" #hourly
   jobTemplate:
