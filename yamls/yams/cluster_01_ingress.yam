@@ -424,6 +424,8 @@ spec:
             env:
             - name: DOMAIN
               value: {{.Domain}}
+            - name: CERTBOT_EMAI
+              value: gtan@mozilla.com
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
