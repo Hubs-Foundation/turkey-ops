@@ -89,34 +89,6 @@ func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 
 }
 
-// func createK8sClientFromGkeCluster(cluster *gkev1.Cluster) (*rest.Config, error) {
-// 	decodedClientCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientCertificate)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	decodedClientKey, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClientKey)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	decodedClusterCaCertificate, err := base64.StdEncoding.DecodeString(cluster.MasterAuth.ClusterCaCertificate)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	config := &rest.Config{
-// 		Username: cluster.MasterAuth.Username,
-// 		Password: cluster.MasterAuth.Password,
-// 		Host:     "https://" + cluster.Endpoint,
-// 		TLSClientConfig: rest.TLSClientConfig{
-// 			Insecure: false,
-// 			CertData: decodedClientCertificate,
-// 			KeyData:  decodedClientKey,
-// 			CAData:   decodedClusterCaCertificate,
-// 		},
-// 	}
-
-// 	return config, nil
-// }
 func getK8sClientFromGkeCluster(c *gkev1.Cluster) (*rest.Config, error) {
 	// The cluster CA certificate is base64 encoded from the GKE API.
 	rawCaCert, err := base64.URLEncoding.DecodeString(c.MasterAuth.ClusterCaCertificate)
