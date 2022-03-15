@@ -386,3 +386,50 @@ subjects:
 - kind: ServiceAccount
   name: ingress-controller
   namespace: ingress 
+---
+########################################################################
+###################### configs #########################################
+########################################################################
+apiVersion: v1
+kind: Secret
+metadata:
+  name: configs
+  namespace: ingress
+stringData:
+  AWS_KEY: {{.AWS_KEY}}
+  AWS_SECRET: {{.AWS_SECRET}}
+  AWS_REGION: {{.AWS_REGION}}
+  SMTP_SERVER: {{.SMTP_SERVER}}
+  SMTP_PORT: "{{.SMTP_PORT}}"
+  SMTP_USER: {{.SMTP_USER}}
+  SMTP_PASS: {{.SMTP_PASS}}
+  GCP_SA_KEY: {{.GCP_SA_KEY}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "0 * * * *" #hourly
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: certbotbot
+            image: mozillareality/certbotbot_route53:stable-latest
+            imagePullPolicy: Always
+            env:
+            - name: DOMAIN
+              value: {{.Domain}}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: configs
+                  key: AWS_KEY      
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: configs
+                  key: AWS_SECRET                            
+          restartPolicy: OnFailure

@@ -6,7 +6,7 @@ function need_new_cert(){
 }
 
 function get_new_cert(){
-    echo "get_new_cert with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
+    echo "get_new_cert with DOMAIN=${DOMAIN}"
     certbot certonly --non-interactive --agree-tos -m $EMAIL \
         --dns-route53 --dns-route53-propagation-seconds 30 \
         --debug-challenges -d \*.$DOMAIN -d $DOMAIN
