@@ -24,7 +24,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		sess := internal.GetSession(r.Cookie)
 
-		// ######################################### 1. get cfg from r.body ########################################
+		// ########## 1. get cfg from r.body ########################################
 		cfg, err := turkey_makeCfg(r)
 		if err != nil {
 			sess.Error("ERROR @ turkey_makeCfg: " + err.Error())
@@ -34,7 +34,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("[creation] started for: " + cfg.Stackname + " ... this will take a while")
 
 		go func() {
-			// ######################################### 2. run tf #########################################
+			// ########## 2. run tf #########################################
 			err = runTf(cfg, "apply")
 			if err != nil {
 				sess.Error("failed @runTf: " + err.Error())
@@ -67,6 +67,8 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			}
+			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
+			sess.Log("[creation] completed for (not really...still wip): " + cfg.Stackname)
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
