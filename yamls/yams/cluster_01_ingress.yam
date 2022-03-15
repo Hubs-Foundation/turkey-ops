@@ -3,6 +3,18 @@ kind: Namespace
 metadata:
   name: ingress
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-dynamic-config
+  namespace: ingress
+data:
+  traefik.yml: |
+    tls:
+      certificates:
+        - certFile: /letsencrypt/tls.crt
+          keyFile: /letsencrypt/tls.key
+---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -24,11 +36,24 @@ spec:
       # hostNetwork: true
       serviceAccountName: ingress-controller
       terminationGracePeriodSeconds: 60
+      volumes:
+      - name: letsencrypt
+        secret:
+          secretName: letsencrypt
+      - name: config
+        configMap:
+          name: traefik-dynamic-config
       containers:
       - name: traefik
         image: mozillareality/traefik:v2.5
         imagePullPolicy: IfNotPresent        
+        volumeMounts:
+        - mountPath: /letsencrypt
+          name: letsencrypt
+        - mountPath: /config
+          name: config         
         args:
+        - --providers.file.filename=/config/traefik.yml
         - --serversTransport.insecureSkipVerify=true
         - --providers.kubernetesingress=true
         - --providers.kubernetescrd
@@ -72,7 +97,7 @@ spec:
         - --disable-http
         - --ingress.class=haproxy
         - --log=trace #error warning info debug trace
-        - --default-ssl-certificate=ingress/dummy-haproxy-cert
+        - --default-ssl-certificate=ingress/letsencrypt
         securityContext:
           runAsUser:  1000
           runAsGroup: 1000
@@ -411,7 +436,7 @@ metadata:
   name: hello
   namespace: ingress
 spec:
-  schedule: "0 * * * *" #hourly
+  schedule: "0 0 */3 * *" # run at 00:00 (midnight), every 3rd day
   jobTemplate:
     spec:
       template:
@@ -456,4 +481,33 @@ subjects:
 - kind: ServiceAccount
   name: certbotbot
   namespace: ingress 
-
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      serviceAccountName: certbotbot
+      containers:
+      - name: certbotbot
+        image: mozillareality/certbotbot_route53:stable-latest
+        imagePullPolicy: Always
+        env:
+        - name: DOMAIN
+          value: {{.Domain}}
+        - name: CERTBOT_EMAI
+          value: gtan@mozilla.com
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_KEY      
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_SECRET                            
+      restartPolicy: OnFailure
+  backoffLimit: 3
