@@ -150,7 +150,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 
 	if cfg.GCP_SA_KEY_b64 == "" {
 		cfg.GCP_SA_KEY_b64 = base64.RawURLEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
-		internal.GetLogger().Warn("Env unspecified -- using dev")
+		internal.GetLogger().Warn("Env unspecified -- using: " + cfg.GCP_SA_KEY_b64)
 	}
 
 	return cfg, nil

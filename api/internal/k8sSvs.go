@@ -153,11 +153,11 @@ func K8s_render_yams(yams []string, params interface{}) ([]string, error) {
 		t.Execute(&buf, params)
 		yaml := buf.String()
 		yamls = append(yamls, yaml)
-		// if yaml == yam {
-		// 	GetLogger().Debug("@@@@@@K8s_render_yams @@@@@@: no change for yam string <" + yam[:32] + "......>")
-		// } else {
-		// 	GetLogger().Debug("@@@@@@K8s_render_yams @@@@@@ : " + yaml)
-		// }
+		if yaml == yam {
+			GetLogger().Debug("@@@@@@K8s_render_yams @@@@@@: no change for yam string <" + yam[:32] + "......>")
+		} else {
+			GetLogger().Debug("@@@@@@K8s_render_yams @@@@@@ : " + yaml)
+		}
 		GetLogger().Debug(fmt.Sprintf("size before: %v, size after: %v ", len(yam), len(yaml)))
 	}
 
