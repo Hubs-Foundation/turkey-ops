@@ -35,7 +35,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		internal.GetLogger().Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-		sess.Log("[creation] started for: " + cfg.Stackname + " ... this will take a while")
+		sess.Log("[creation] started for: " + cfg.Stackname + " ... this can take a while")
 
 		go func() {
 			// ########## 2. run tf #########################################
@@ -44,6 +44,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Error("failed @runTf: " + err.Error())
 				return
 			}
+			sess.Log("tf deployment completed")
 			// ########## 3. prepare for post Deployment setups:
 			// ###### get db info and complete clusterCfg (cfg)
 			dbIp, err := internal.Cfg.Gcps.GetSqlPublicIp(cfg.Stackname)
@@ -55,7 +56,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 			cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
 
-			internal.GetLogger().Debug("cfg.DB_HOST:" + cfg.DB_HOST + ",,, cfg.DB_CONN:" + cfg.DB_CONN + ",,, cfg.PSQL:" + cfg.PSQL)
+			sess.Log("&#129311; GetSqlPublicIp found cfg.DB_HOST == " + cfg.DB_HOST)
 
 			// ###### get k8s config
 			k8sCfg, err := internal.Cfg.Gcps.GetK8sConfigFromGke(cfg.Stackname)
@@ -63,7 +64,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Error("post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + ". err: " + err.Error())
 				return
 			}
-			sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+			sess.Log("&#129311; GetK8sConfigFromGke: found kubeconfig for Host == " + k8sCfg.Host)
 			// ###### 3 produce k8s yamls
 			k8sYamls, err := collectAndRenderYams_localGcp(cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 			if err != nil {
@@ -77,6 +78,8 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Error("failed @ k8sSetups: " + err.Error())
 				return
 			}
+			sess.Log("k8sSetups completed")
+
 			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
 			//email the final manual steps to authenticated user
 			clusterCfgBytes, _ := json.Marshal(cfg)
@@ -99,7 +102,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				sess.Error("failed @ email report: " + err.Error())
 			}
-			sess.Log("[creation] completed for (not really...still wip): " + cfg.Stackname)
+			sess.Log("[creation] completed for <" + cfg.Stackname + ">, full details emailed to " + authnUser)
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{

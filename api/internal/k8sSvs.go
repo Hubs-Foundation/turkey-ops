@@ -191,13 +191,12 @@ func K8s_GetServiceIngress0(cfg *rest.Config, namespace string, serviceName stri
 	if err != nil {
 		return corev1.LoadBalancerIngress{}, err
 	}
-	GetLogger().Debug(fmt.Sprintf("svc.ObjectMeta: %v", svc.ObjectMeta))
-	GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer: %v", svc.Status.LoadBalancer))
-	GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer.Ingress: %v", svc.Status.LoadBalancer.Ingress))
-	GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer.Ingress[0]: %v", svc.Status.LoadBalancer.Ingress[0]))
+	// GetLogger().Debug(fmt.Sprintf("svc.ObjectMeta: %v", svc.ObjectMeta))
+	// GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer: %v", svc.Status.LoadBalancer))
+	// GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer.Ingress: %v", svc.Status.LoadBalancer.Ingress))
+	// GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer.Ingress[0]: %v", svc.Status.LoadBalancer.Ingress[0]))
 
 	tries := 1
-
 	for len(svc.Status.LoadBalancer.Ingress) < 1 {
 		if tries > 10 {
 			GetLogger().Warn("got nothing and max retry(10) reached")
