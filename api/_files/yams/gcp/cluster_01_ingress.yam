@@ -434,7 +434,7 @@ data:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: certbotbot_daily
+  name: certbotbot-daily
   namespace: ingress
 spec:
   schedule: "0 0 * * *"
@@ -486,7 +486,7 @@ subjects:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: certbotbot_init
+  name: certbotbot-init
   namespace: ingress
 spec:
   template:
