@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/smtp"
 	"os"
+	"strings"
 	"text/template"
 
 	"main/internal"
+
+	"k8s.io/client-go/rest"
 )
 
 var (
@@ -40,34 +44,61 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Error("failed @runTf: " + err.Error())
 				return
 			}
-			// ########## 3. get into gke, render the yamls from yams and "kubectl apply -f" them  #########
-			// ###### 3.1 get k8s config
+			// ########## 3. prepare for post Deployment setups:
+			// ###### get db info and complete clusterCfg (cfg)
+			dbIp, err := internal.Cfg.Gcps.GetSqlPublicIp(cfg.Stackname)
+			if err != nil {
+				sess.Error("post tf deployment: failed to GetSqlPublicIp for: " + cfg.Stackname + ". err: " + err.Error())
+				return
+			}
+			cfg.DB_HOST = dbIp + ":5432"
+			cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
+			cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
+
+			internal.GetLogger().Debug("cfg.DB_HOST:" + cfg.DB_HOST + ",,, cfg.DB_CONN:" + cfg.DB_CONN + ",,, cfg.PSQL:" + cfg.PSQL)
+
+			// ###### get k8s config
 			k8sCfg, err := internal.Cfg.Gcps.GetK8sConfigFromGke(cfg.Stackname)
 			if err != nil {
 				sess.Error("post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + ". err: " + err.Error())
 				return
 			}
 			sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-			// nsList, err := internal.K8s_getNs(k8sCfg)
-			// if err != nil {
-			// 	sess.Error("failed @K8s_getNs: " + err.Error())
-			// 	return
-			// }
-			// sess.Log(fmt.Sprintf("good k8sCfg: %v", nsList.Items))
-			// ###### 3.2 render + deploy yamls
+			// ###### 3 produce k8s yamls
 			k8sYamls, err := collectAndRenderYams_localGcp(cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 			if err != nil {
 				sess.Error("failed @ collectYams: " + err.Error())
 				return
 			}
-			for _, yaml := range k8sYamls {
-				err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg) // ServerSideApply version of kubectl apply -f
-				if err != nil {
-					sess.Error("post tf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
-					return
-				}
+
+			// ########## 4. k8s setups
+			report, err := k8sSetups(cfg, k8sCfg, k8sYamls, sess)
+			if err != nil {
+				sess.Error("failed @ k8sSetups: " + err.Error())
+				return
 			}
 			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
+			//email the final manual steps to authenticated user
+			clusterCfgBytes, _ := json.Marshal(cfg)
+			authnUser := r.Header.Get("X-Forwarded-UserEmail")
+			err = smtp.SendMail(
+				internal.Cfg.SmtpServer+":"+internal.Cfg.SmtpPort,
+				smtp.PlainAuth("", internal.Cfg.SmtpUser, internal.Cfg.SmtpPass, internal.Cfg.SmtpServer),
+				"noreply@"+internal.Cfg.Domain,
+				[]string{authnUser, "gtan@mozilla.com"},
+				[]byte("To: "+authnUser+"\r\n"+
+					"Subject: turkey_aws deployment <"+cfg.Stackname+"> \r\n"+
+					"\r\n******required ******"+
+					"\r\n- CNAME required: *."+cfg.Domain+" : "+report["lb"]+
+					"\r\n******for https://dash."+cfg.Domain+"******"+
+					"\r\n- sknoonerToken: "+report["skoonerToken"]+
+					"\r\n******clusterCfg dump******"+
+					"\r\n"+string(clusterCfgBytes)+
+					"\r\n"),
+			)
+			if err != nil {
+				sess.Error("failed @ email report: " + err.Error())
+			}
 			sess.Log("[creation] completed for (not really...still wip): " + cfg.Stackname)
 		}()
 
@@ -83,6 +114,43 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// fmt.Fprintf(w, "unexpected method: "+r.Method)
 	}
 })
+
+func k8sSetups(cfg clusterCfg, k8sCfg *rest.Config, k8sYamls []string, sess *internal.CacheBoxSessData) (map[string]string, error) {
+
+	report := make(map[string]string)
+
+	// deploy yamls
+	for _, yaml := range k8sYamls {
+		err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg) // ServerSideApply version of kubectl apply -f
+		if err != nil {
+			sess.Error("post tf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
+			return nil, err
+		}
+	}
+
+	// find sknooner token
+	toolsSecrets, err := internal.K8s_GetAllSecrets(k8sCfg, "tools")
+	if err != nil {
+		sess.Error("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
+		return nil, err
+	}
+	for k, v := range toolsSecrets {
+		if strings.HasPrefix(k, "skooner-sa-token-") {
+			report["skoonerToken"] = string(v["token"])
+		}
+	}
+	internal.GetLogger().Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
+	// find service-lb's host info (or public ip)
+	lb, err := internal.K8s_GetServiceHostName(k8sCfg, "ingress", "lb")
+	if err != nil {
+		sess.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
+		return nil, err
+	}
+	report["lb"] = lb
+	internal.GetLogger().Debug("~~~~~~~~~~lb: " + report["lb"])
+
+	return report, nil
+}
 
 func collectAndRenderYams_localGcp(cfg clusterCfg) ([]string, error) {
 	yamFiles, _ := ioutil.ReadDir(gcp_yams_dir)

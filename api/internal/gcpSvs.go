@@ -9,6 +9,7 @@ import (
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
+	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -143,4 +144,20 @@ func getK8sClientFromGkeCluster(c *gkev1.Cluster) (*rest.Config, error) {
 		return nil, err
 	}
 	return restConfig, nil
+}
+
+func (g *GcpSvs) GetSqlPublicIp(InstanceId string) (string, error) {
+	ctx := context.Background()
+	sqladminService, err := sqladmin.NewService(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	instance, err := sqladminService.Instances.Get(g.ProjectId, InstanceId).Context(ctx).Do()
+	if err != nil {
+		return "", err
+	}
+	ip := instance.IpAddresses[0].IpAddress
+
+	return ip, nil
 }
