@@ -434,10 +434,10 @@ data:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: hello
+  name: certbotbot_daily
   namespace: ingress
 spec:
-  schedule: "0 0 */3 * *" # run at 00:00 (midnight), every 3rd day
+  schedule: "0 0 * * *"
   jobTemplate:
     spec:
       template:
@@ -486,7 +486,8 @@ subjects:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: pi
+  name: certbotbot_init
+  namespace: ingress
 spec:
   template:
     spec:
@@ -498,7 +499,7 @@ spec:
         env:
         - name: DOMAIN
           value: {{.Domain}}
-        - name: CERTBOT_EMAI
+        - name: CERTBOT_EMAIL
           value: gtan@mozilla.com
         - name: AWS_ACCESS_KEY_ID
           valueFrom:

@@ -1,13 +1,14 @@
 
-function need_new_cert(){
+function need_new_cert(){    
     if kubectl -n ingress get secret letsencrypt -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
     ls -lha tls*
-    if openssl x509 -checkend 2592000 -noout -in tls.crt; then return 1; else return 0; fi
+    if grep -q "$DOMAIN" <<< "$(openssl x509 -noout -subject -in tls.crt)"; then echo "bad cert CN -- need new cert"; return 0; fi
+    if openssl x509 -checkend 2592000 -noout -in tls.crt; then echo "expiring -- need new cert";return 0; else return 1; fi
 }
 
 function get_new_cert(){
-    echo "get_new_cert with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAI"
-    certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAI \
+    echo "get_new_cert with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
+    certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
         --dns-route53 --dns-route53-propagation-seconds 30 \
         --debug-challenges -d \*.$DOMAIN -d $DOMAIN
 }
@@ -36,7 +37,7 @@ get_kubectl
 if ! need_new_cert; then echo "good cert, exit in 15 min"; sleep 900; exit 0; fi
 echo "getting new cert"
 if ! get_new_cert; then echo "ERROR failed to get new cert, exit in 15 min"; sleep 900; exit 1; fi
-if ! save_cert; then echo "ERROR failed to save cert"; sleep 900; fi
+if ! save_cert; then echo "ERROR failed to save cert"; sleep 300; fi
 
 
 
