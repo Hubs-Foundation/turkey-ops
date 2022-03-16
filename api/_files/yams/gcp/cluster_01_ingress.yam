@@ -1,9 +1,19 @@
-###ingress
-
 apiVersion: v1
 kind: Namespace
 metadata:
   name: ingress
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-dynamic-config
+  namespace: ingress
+data:
+  traefik.yml: |
+    tls:
+      certificates:
+        - certFile: /letsencrypt/tls.crt
+          keyFile: /letsencrypt/tls.key
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -26,11 +36,24 @@ spec:
       # hostNetwork: true
       serviceAccountName: ingress-controller
       terminationGracePeriodSeconds: 60
+      volumes:
+      - name: letsencrypt
+        secret:
+          secretName: letsencrypt
+      - name: config
+        configMap:
+          name: traefik-dynamic-config
       containers:
       - name: traefik
         image: mozillareality/traefik:v2.5
         imagePullPolicy: IfNotPresent        
+        volumeMounts:
+        - mountPath: /letsencrypt
+          name: letsencrypt
+        - mountPath: /config
+          name: config         
         args:
+        - --providers.file.filename=/config/traefik.yml
         - --serversTransport.insecureSkipVerify=true
         - --providers.kubernetesingress=true
         - --providers.kubernetescrd
@@ -65,7 +88,7 @@ spec:
       ######################################################################################################################
       ### bundling haproxy container with traefik is not ideal for maximum scaling/scheduling efficiency
       ### but it is necessary to share a single load balancer ( without messing with CRDs )
-      ### so we'll (slightly) over provision here, worth it for the simplicity it offers imo
+      ### so we'll (slightly) over provision here, feels worth it for the simplicity it offers
       ######################################################################################################################
       - name: haproxy
         image: mozillareality/haproxy:1.7.0
@@ -74,7 +97,7 @@ spec:
         - --disable-http
         - --ingress.class=haproxy
         - --log=trace #error warning info debug trace
-        - --default-ssl-certificate=ingress/dummy-haproxy-cert
+        - --default-ssl-certificate=ingress/letsencrypt
         securityContext:
           runAsUser:  1000
           runAsGroup: 1000
@@ -388,3 +411,103 @@ subjects:
 - kind: ServiceAccount
   name: ingress-controller
   namespace: ingress 
+---
+########################################################################
+###################### certbotbot #########################################
+########################################################################
+apiVersion: v1
+kind: Secret
+metadata:
+  name: configs
+  namespace: ingress
+stringData:
+  AWS_KEY: {{.AWS_KEY}}
+  AWS_SECRET: {{.AWS_SECRET}}
+  AWS_REGION: {{.AWS_REGION}}
+  SMTP_SERVER: {{.SMTP_SERVER}}
+  SMTP_PORT: "{{.SMTP_PORT}}"
+  SMTP_USER: {{.SMTP_USER}}
+  SMTP_PASS: {{.SMTP_PASS}}
+  GCP_SA_KEY: {{.GCP_SA_KEY}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+  namespace: ingress
+spec:
+  schedule: "0 0 */3 * *" # run at 00:00 (midnight), every 3rd day
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: certbotbot
+          containers:
+          - name: certbotbot
+            image: mozillareality/certbotbot_route53:stable-latest
+            imagePullPolicy: Always
+            env:
+            - name: DOMAIN
+              value: {{.Domain}}
+            - name: CERTBOT_EMAI
+              value: gtan@mozilla.com
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: configs
+                  key: AWS_KEY      
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: configs
+                  key: AWS_SECRET                            
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: certbotbot
+  namespace: ingress
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: certbotbot
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+- kind: ServiceAccount
+  name: certbotbot
+  namespace: ingress 
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    spec:
+      serviceAccountName: certbotbot
+      containers:
+      - name: certbotbot
+        image: mozillareality/certbotbot_route53:stable-latest
+        imagePullPolicy: Always
+        env:
+        - name: DOMAIN
+          value: {{.Domain}}
+        - name: CERTBOT_EMAI
+          value: gtan@mozilla.com
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_KEY      
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_SECRET                            
+      restartPolicy: OnFailure
+  backoffLimit: 3
