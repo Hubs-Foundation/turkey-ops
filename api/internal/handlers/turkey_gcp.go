@@ -87,7 +87,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				"noreply@"+internal.Cfg.Domain,
 				[]string{authnUser, "gtan@mozilla.com"},
 				[]byte("To: "+authnUser+"\r\n"+
-					"Subject: turkey_aws deployment <"+cfg.Stackname+"> \r\n"+
+					"Subject: turkey_gcp just deployed <"+cfg.Stackname+"> \r\n"+
 					"\r\n******required ******"+
 					"\r\n- CNAME required: *."+cfg.Domain+" : "+report["lb"]+
 					"\r\n******for https://dash."+cfg.Domain+"******"+
@@ -141,12 +141,12 @@ func k8sSetups(cfg clusterCfg, k8sCfg *rest.Config, k8sYamls []string, sess *int
 	}
 	internal.GetLogger().Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
 	// find service-lb's host info (or public ip)
-	lb, err := internal.K8s_GetServiceHostName(k8sCfg, "ingress", "lb")
+	lb, err := internal.K8s_GetServiceIngress0(k8sCfg, "ingress", "lb")
 	if err != nil {
 		sess.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
 		return nil, err
 	}
-	report["lb"] = lb
+	report["lb"] = lb.IP
 	internal.GetLogger().Debug("~~~~~~~~~~lb: " + report["lb"])
 
 	return report, nil

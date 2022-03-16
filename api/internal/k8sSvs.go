@@ -181,15 +181,15 @@ func K8s_GetAllSecrets(cfg *rest.Config, namespace string) (map[string]map[strin
 	return secretMap, nil
 }
 
-func K8s_GetServiceHostName(cfg *rest.Config, namespace string, serviceName string) (string, error) {
+func K8s_GetServiceIngress0(cfg *rest.Config, namespace string, serviceName string) (corev1.LoadBalancerIngress, error) {
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return "", err
+		return corev1.LoadBalancerIngress{}, err
 	}
 	svcsClient := clientset.CoreV1().Services(namespace)
 	svc, err := svcsClient.Get(context.Background(), serviceName, metav1.GetOptions{})
 	if err != nil {
-		return "", err
+		return corev1.LoadBalancerIngress{}, err
 	}
 	GetLogger().Debug(fmt.Sprintf("svc.ObjectMeta: %v", svc.ObjectMeta))
 	GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer: %v", svc.Status.LoadBalancer))
@@ -210,10 +210,10 @@ func K8s_GetServiceHostName(cfg *rest.Config, namespace string, serviceName stri
 		fmt.Printf("svc: %v\n", svc)
 	}
 	if len(svc.Status.LoadBalancer.Ingress) < 1 {
-		return "", nil
+		return corev1.LoadBalancerIngress{}, errors.New("retry timeout")
 	}
 
-	return svc.Status.LoadBalancer.Ingress[0].Hostname, nil
+	return svc.Status.LoadBalancer.Ingress[0], nil
 }
 
 func K8s_getNs(cfg *rest.Config) (*corev1.NamespaceList, error) {

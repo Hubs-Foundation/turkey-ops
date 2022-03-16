@@ -174,12 +174,12 @@ func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, auth
 		}
 	}
 	internal.GetLogger().Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
-	lb, err := internal.K8s_GetServiceHostName(k8sCfg, "ingress", "lb")
+	lb, err := internal.K8s_GetServiceIngress0(k8sCfg, "ingress", "lb")
 	if err != nil {
 		sess.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
 		return nil, err
 	}
-	report["lb"] = lb
+	report["lb"] = lb.Hostname
 	internal.GetLogger().Debug("~~~~~~~~~~lb: " + report["lb"])
 
 	//----------------------------------------
@@ -197,15 +197,15 @@ func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, auth
 		"noreply@"+internal.Cfg.Domain,
 		[]string{authnUser, "gtan@mozilla.com"},
 		[]byte("To: "+authnUser+"\r\n"+
-			"Subject: turkey_aws deployment <"+stackName+"> \r\n"+
-			"\r\n******required manual steps******"+
+			"Subject: turkey_aws just deployed <"+stackName+"> \r\n"+
+			"\r\n******required******"+
 			"\r\n- CNAME required: *."+cfg.Domain+" : "+report["lb"]+
-			"\r\n******optional manual steps******"+
+			"\r\n******optionals******"+
 			"\r\n- update https cert at: https://dash."+cfg.Domain+"/#!service/ingress/lb"+
 			"\r\n- for aws-eks, update role mappings at: https://dash."+cfg.Domain+"/#!configmap/kube-system/aws-auth"+
-			"\r\n******things you need******"+
+			"\r\n******for https://dash."+cfg.Domain+"******"+
 			"\r\n- sknoonerToken: "+report["skoonerToken"]+
-			"\r\n******clusterCfg******"+
+			"\r\n******clusterCfg dump******"+
 			"\r\n"+string(clusterCfgBytes)+
 			"\r\n"),
 	)
