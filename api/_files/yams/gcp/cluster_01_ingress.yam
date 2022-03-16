@@ -132,7 +132,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: dummy-haproxy-cert
+  name: letsencrypt
   namespace: ingress
 type: kubernetes.io/tls
 data:
