@@ -450,7 +450,7 @@ spec:
             env:
             - name: DOMAIN
               value: {{.Domain}}
-            - name: CERTBOT_EMAI
+            - name: CERTBOT_EMAIL
               value: gtan@mozilla.com
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
