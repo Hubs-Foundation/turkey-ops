@@ -28,7 +28,7 @@ function get_kubectl(){
 function save_cert(){
     kubectl -n ingress create secret tls letsencrypt \
         --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
-        --key=/etc/letsencrypt/live/gcp.myhubs.net/privkey.pem
+        --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem
     echo "new cert: "
     kubectl -n ingress describe secret letsencrypt
 }
