@@ -19,6 +19,11 @@ provider "google" {
   region  = "{{.Region}}"
 }
 
+provider "google-beta" {
+  project = "{{.ProjectId}}"
+  region  = "{{.Region}}"
+}
+
 terraform {  
     backend "gcs" {    
         bucket  = "turkeycfg"
@@ -90,21 +95,33 @@ resource "google_container_node_pool" "gke_nodes" {
 }
 
 # pgsql
-
+resource "google_compute_global_address" "private_ip_address" {
+  provider = google-beta
+  name          = "{{.Stackname}}-pvt-ip"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = google_compute_network.private.id
+}
+resource "google_service_networking_connection" "private_vpc_connection" {
+  provider = google-beta
+  network                 = google_compute_network.private.id
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+}
 resource "google_sql_database_instance" "pgsql" {
+  provider = google-beta
+  depends_on = [google_service_networking_connection.private_vpc_connection]
   name             = "{{.Stackname}}"
   database_version = "POSTGRES_13"
   region           = "{{.Region}}"
   deletion_protection = false
-
-  # depends_on = [google_service_networking_connection.private_vpc_connection]
-
   settings {
     tier = "db-f1-micro"
-    # ip_configuration {
-    #   ipv4_enabled    = false
-    #   private_network = google_compute_network.vpc.id
-    # }    
+    ip_configuration {
+      ipv4_enabled    = true
+      private_network = google_compute_network.private.id
+    }    
   }
 }
 resource "google_sql_user" "db_user" {
