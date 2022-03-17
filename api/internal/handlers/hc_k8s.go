@@ -63,27 +63,13 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-	// t, err := template.ParseFiles("./_files/ns_hc.yam")
-	// if err != nil {
-	// 	sess.Panic(err.Error())
-	// }
-	// var buf bytes.Buffer
-	// t.Execute(&buf, hcCfg)
-	// k8sChartYaml := buf.String()
-	// // todo -- sanity check k8sChartYaml?
-	yamFileKey := internal.Cfg.Env + "/yams/ns_hc_s3fs.yam"
-	if strings.HasSuffix(hcCfg.Options, ".ebs") {
-		sess.Log("ebs version selected")
-		yamFileKey = internal.Cfg.Env + "/yams/ns_hc_ebs.yam"
-	} else {
-		sess.Log("(default) s3fs version selected")
-	}
-	yam, err := internal.Cfg.Awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yamFileKey)
+	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc_s3fs.yam")
 	if err != nil {
-		sess.Error("failed to get yam file because: " + err.Error())
+		sess.Error("failed to get ns_hc yam file because: " + err.Error())
 		return
 	}
-	renderedYamls, _ := internal.K8s_render_yams([]string{yam}, hcCfg)
+
+	renderedYamls, _ := internal.K8s_render_yams([]string{string(yamBytes)}, hcCfg)
 	k8sChartYaml := renderedYamls[0]
 	// #2.5 dryrun option
 	if hcCfg.Tier == "dryrun" {

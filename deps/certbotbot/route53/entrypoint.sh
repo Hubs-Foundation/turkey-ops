@@ -42,3 +42,4 @@ if ! save_cert; then echo "ERROR failed to save cert"; sleep 300; fi
 
 
 
+kubectl -n ingress rollout restart deployment ingress-controller
