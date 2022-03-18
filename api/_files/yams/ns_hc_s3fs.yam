@@ -379,7 +379,7 @@ spec:
           - name: turkeyCfg_ga_tracking_id
             value: 
           - name: turkeyCfg_shortlink_domain
-            value: notyet
+            value: {{.Subdomain}}.{{.Domain}}
           - name: turkeyCfg_ita_server
             value: 
           - name: turkeyCfg_sentry_dsn
