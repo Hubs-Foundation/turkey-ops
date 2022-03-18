@@ -15,7 +15,8 @@ var cfg *Config
 
 // Config holds the runtime application config
 type Config struct {
-	Domain         string `turkey domain`
+	TurkeyDomain   string `turkey domain`
+	Domain         string `root domain`
 	TrustedClients string `ie. https://portal.myhubs.net`
 
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
@@ -45,15 +46,22 @@ type Config struct {
 
 func MakeCfg() {
 	cfg = &Config{}
-	cfg.Domain = "myhubs.net"
-	cfg.AuthHost = "myhubs.net"
+	cfg.TurkeyDomain = os.Getenv("turkeyDomain")
+	rootDomain := rootDomain(cfg.TurkeyDomain)
+	if rootDomain == "" {
+		Logger.Error("bad turkeyDomain env var: " + cfg.TurkeyDomain + "falling back to <myhubs.net>")
+		rootDomain = "myhubs.net"
+	}
+	cfg.Domain = rootDomain
+	cfg.AuthHost = rootDomain
 	cfg.TrustedClients = os.Getenv("trustedClients")
 	cfg.Secret = []byte("dummy-SecretString-replace-me-with-env-var-later")
 	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
 	cfg.CookieName = "_turkeyauthcookie"
 	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
-	cfg.CookieDomains = []CookieDomain{*NewCookieDomain("myhubs.net")}
-	cfg.LogoutRedirect = "https://api.myhubs.net/console"
+	cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)}
+	// cfg.LogoutRedirect = "https://api." + cfg.TurkeyDomain + "/console"
+	cfg.LogoutRedirect = "https://hubs.mozilla.com"
 
 	cfg.DefaultProvider = "fxa"
 	// GOOGLE
@@ -73,6 +81,15 @@ func MakeCfg() {
 	if err != nil {
 		Logger.Error("[ERROR] @ Cfg.Providers.Fxa.Setup: " + err.Error())
 	}
+}
+
+func rootDomain(fullDomain string) string {
+	fdArr := strings.Split(fullDomain, ".")
+	len := len(fdArr)
+	if len < 2 {
+		return ""
+	}
+	return fdArr[len-2] + "." + fdArr[len-1]
 }
 
 // Validate validates a config object

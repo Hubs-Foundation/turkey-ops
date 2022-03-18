@@ -36,22 +36,22 @@ spec:
       # hostNetwork: true
       serviceAccountName: ingress-controller
       terminationGracePeriodSeconds: 60
-      volumes:
-      - name: letsencrypt
-        secret:
-          secretName: letsencrypt
-      - name: config
-        configMap:
-          name: traefik-dynamic-config
+      # volumes:
+      # - name: letsencrypt
+      #   secret:
+      #     secretName: letsencrypt
+      # - name: config
+      #   configMap:
+      #     name: traefik-dynamic-config
       containers:
       - name: traefik
         image: mozillareality/traefik:v2.5
         imagePullPolicy: IfNotPresent        
-        volumeMounts:
-        - mountPath: /letsencrypt
-          name: letsencrypt
-        - mountPath: /config
-          name: config         
+        # volumeMounts:
+        # - mountPath: /letsencrypt
+        #   name: letsencrypt
+        # - mountPath: /config
+        #   name: config         
         args:
         - --providers.file.filename=/config/traefik.yml
         - --serversTransport.insecureSkipVerify=true
@@ -97,7 +97,7 @@ spec:
         - --disable-http
         - --ingress.class=haproxy
         - --log=trace #error warning info debug trace
-        - --default-ssl-certificate=ingress/letsencrypt
+        - --default-ssl-certificate=ingress/dummy-haproxy-cert
         securityContext:
           runAsUser:  1000
           runAsGroup: 1000
