@@ -121,6 +121,14 @@ resource "google_sql_database_instance" "pgsql" {
     ip_configuration {
       ipv4_enabled    = true
       private_network = google_compute_network.vpc.id
+      authorized_networks {
+        name = "vpc-public"
+        value = "10.100.0.0/16"
+      }
+      authorized_networks {
+        name = "vpc-private"
+        value = "10.101.0.0/16"
+      }      
     }    
   }
 }

@@ -146,18 +146,23 @@ func getK8sClientFromGkeCluster(c *gkev1.Cluster) (*rest.Config, error) {
 	return restConfig, nil
 }
 
-func (g *GcpSvs) GetSqlPublicIp(InstanceId string) (string, error) {
+func (g *GcpSvs) GetSqlIps(InstanceId string) (map[string]string, error) {
 	ctx := context.Background()
 	sqladminService, err := sqladmin.NewService(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	instance, err := sqladminService.Instances.Get(g.ProjectId, InstanceId).Context(ctx).Do()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	ip := instance.IpAddresses[0].IpAddress
+	IpMap := make(map[string]string)
+	for _, Ip := range instance.IpAddresses {
 
-	return ip, nil
+		IpMap[Ip.Type] = Ip.IpAddress
+
+	}
+
+	return IpMap, nil
 }
