@@ -163,6 +163,6 @@ func (g *GcpSvs) GetSqlIps(InstanceId string) (map[string]string, error) {
 		IpMap[Ip.Type] = Ip.IpAddress
 
 	}
-
+	GetLogger().Sugar().Debugf("IpMap: %v", IpMap)
 	return IpMap, nil
 }

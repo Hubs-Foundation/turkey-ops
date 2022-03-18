@@ -53,7 +53,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			cfg.DB_HOST = dbIps["Private"] + ":5432"
+			cfg.DB_HOST = dbIps["PRIVATE"] + ":5432"
 			cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 			cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
 
