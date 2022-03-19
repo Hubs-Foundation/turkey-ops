@@ -1,3 +1,9 @@
+terraform {  
+    backend "gcs" {    
+        bucket  = "turkeycfg"
+        prefix  = "tf-backend/{{.Stackname}}"
+    }
+}
 
 # variable "project_id"{
 #   description = "gcp project id"
@@ -14,25 +20,19 @@
 #   default = "us-east1"
 # }
 
-provider "google" {
-  project = "{{.ProjectId}}"
-  region  = "{{.Region}}"
-}
+# provider "google" {
+#   project = "{{.ProjectId}}"
+#   region  = "{{.Region}}"
+# }
 
 provider "google-beta" {
   project = "{{.ProjectId}}"
   region  = "{{.Region}}"
 }
 
-terraform {  
-    backend "gcs" {    
-        bucket  = "turkeycfg"
-        prefix  = "tf-backend/{{.Stackname}}"
-    }
-}
-
 # VPC
 resource "google_compute_network" "vpc" {
+  provider = google-beta
   name                    = "{{.Stackname}}"
   routing_mode            = "GLOBAL"
   auto_create_subnetworks = "true"
@@ -40,12 +40,14 @@ resource "google_compute_network" "vpc" {
 
 # Subnet
 resource "google_compute_subnetwork" "public" {
+  provider = google-beta
   name          = "{{.Stackname}}-public"
   region        = "{{.Region}}"
   network       = google_compute_network.vpc.name
   ip_cidr_range = "10.100.0.0/16"
 }
 resource "google_compute_subnetwork" "private" {
+  provider = google-beta
   name          = "{{.Stackname}}-private"
   region        = "{{.Region}}"
   network       = google_compute_network.vpc.name
@@ -54,6 +56,7 @@ resource "google_compute_subnetwork" "private" {
 }
 # GKE cluster
 resource "google_container_cluster" "gke" {
+  provider = google-beta
   name     = "{{.Stackname}}"
   location = "{{.Region}}"
   
@@ -66,9 +69,9 @@ resource "google_container_cluster" "gke" {
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
 }
-
 # Separately Managed Node Pool
 resource "google_container_node_pool" "gke_nodes" {
+  provider = google-beta
   name       = "${google_container_cluster.gke.name}-node-pool"
   location   = "{{.Region}}"
   cluster    = google_container_cluster.gke.name
@@ -125,6 +128,7 @@ resource "google_sql_database_instance" "pgsql" {
   }
 }
 resource "google_sql_user" "db_user" {
+  provider = google-beta
   name     = "{{.DbUser}}"
   instance = google_sql_database_instance.pgsql.name
   password = "{{.DbPass}}"

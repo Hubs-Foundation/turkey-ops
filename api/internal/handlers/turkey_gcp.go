@@ -44,42 +44,42 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Error("failed @runTf: " + err.Error())
 				return
 			}
-			sess.Log("tf deployment completed")
+			sess.Log("[creation] [" + cfg.Stackname + "]" + "tf deployment completed")
 			// ########## 3. prepare for post Deployment setups:
 			// ###### get db info and complete clusterCfg (cfg)
 			dbIps, err := internal.Cfg.Gcps.GetSqlIps(cfg.Stackname)
 			if err != nil {
-				sess.Error("post tf deployment: failed to GetSqlPublicIp for: " + cfg.Stackname + ". err: " + err.Error())
+				sess.Error("[creation] [" + cfg.Stackname + "] " + "post tf deployment: failed to GetSqlPublicIp . err: " + err.Error())
 				return
 			}
 
-			cfg.DB_HOST = dbIps["PRIMARY"] + ":5432"
+			cfg.DB_HOST = dbIps["PRIMARY"] //+ ":5432"
 			cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 			cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
 
-			sess.Log("&#129311; GetSqlPublicIp found cfg.DB_HOST == " + cfg.DB_HOST)
+			sess.Log("[creation] [" + cfg.Stackname + "] " + "&#129311; GetSqlPublicIp found cfg.DB_HOST == " + cfg.DB_HOST)
 
 			// ###### get k8s config
 			k8sCfg, err := internal.Cfg.Gcps.GetK8sConfigFromGke(cfg.Stackname)
 			if err != nil {
-				sess.Error("post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + ". err: " + err.Error())
+				sess.Error("[creation] [" + cfg.Stackname + "] " + "post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + ". err: " + err.Error())
 				return
 			}
-			sess.Log("&#129311; GetK8sConfigFromGke: found kubeconfig for Host == " + k8sCfg.Host)
+			sess.Log("[creation] [" + cfg.Stackname + "]" + "&#129311; GetK8sConfigFromGke: found kubeconfig for Host == " + k8sCfg.Host)
 			// ###### 3 produce k8s yamls
 			k8sYamls, err := collectAndRenderYams_localGcp(cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 			if err != nil {
-				sess.Error("failed @ collectYams: " + err.Error())
+				sess.Error("[creation] [" + cfg.Stackname + "] " + "failed @ collectYams: " + err.Error())
 				return
 			}
 
 			// ########## 4. k8s setups
 			report, err := k8sSetups(cfg, k8sCfg, k8sYamls, sess)
 			if err != nil {
-				sess.Error("failed @ k8sSetups: " + err.Error())
+				sess.Error("[creation] [" + cfg.Stackname + "] " + "failed @ k8sSetups: " + err.Error())
 				return
 			}
-			sess.Log("k8sSetups completed")
+			sess.Log("[creation] [" + cfg.Stackname + "] " + "k8sSetups completed")
 
 			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
 			rootDomain := internal.RootDomain(cfg.Domain)
@@ -88,7 +88,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 			dnsMsg := "(already done)"
 			if err != nil {
-				sess.Log("Dns_createRecordSet failed: " + err.Error())
+				sess.Log("[creation] [" + cfg.Stackname + "] " + "Dns_createRecordSet failed: " + err.Error())
 				dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"
 			}
 
@@ -115,9 +115,9 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					"\r\n"),
 			)
 			if err != nil {
-				sess.Error("failed @ email report: " + err.Error())
+				sess.Error("[creation] [" + cfg.Stackname + "] " + "failed @ email report: " + err.Error())
 			}
-			sess.Log("[creation] completed for " + cfg.Stackname + ", full details emailed to " + authnUser)
+			sess.Log("[creation] [" + cfg.Stackname + "] " + "completed for " + cfg.Stackname + ", full details emailed to " + authnUser)
 
 		}()
 
