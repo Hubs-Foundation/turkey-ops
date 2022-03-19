@@ -35,6 +35,9 @@ function save_cert(){
 }
 
 export DNS_PROVIDER=$1
+echo $GCP_SA_KEY > GCP_SA_KEY.json
+chmod 600 GCP_SA_KEY.json
+export GOOGLE_APPLICATION_CREDENTIALS="GCP_SA_KEY.json"
 
 get_kubectl
 if ! need_new_cert; then echo "good cert, exit in 15 min"; sleep 900; exit 0; fi

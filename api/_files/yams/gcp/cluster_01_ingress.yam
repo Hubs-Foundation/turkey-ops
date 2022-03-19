@@ -445,7 +445,7 @@ spec:
           serviceAccountName: certbotbot
           containers:
           - name: certbotbot
-            image: mozillareality/certbotbot_route53:stable-latest
+            image: mozillareality/certbotbot_google:stable-latest
             imagePullPolicy: Always
             env:
             - name: DOMAIN
@@ -461,7 +461,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: configs
-                  key: AWS_SECRET                            
+                  key: AWS_SECRET   
+            - name: GCP_SA_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: configs
+                  key: GCP_SA_KEY                                           
           restartPolicy: OnFailure
 ---
 apiVersion: v1
@@ -494,7 +499,7 @@ spec:
       serviceAccountName: certbotbot
       containers:
       - name: certbotbot
-        image: mozillareality/certbotbot_route53:stable-latest
+        image: mozillareality/certbotbot_google:stable-latest
         imagePullPolicy: Always
         env:
         - name: DOMAIN
@@ -510,6 +515,11 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: AWS_SECRET                            
+              key: AWS_SECRET    
+        - name: GCP_SA_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_KEY                                      
       restartPolicy: OnFailure
   backoffLimit: 3
