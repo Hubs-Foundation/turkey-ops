@@ -8,6 +8,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/dns/v1"
 	"google.golang.org/api/iterator"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	"k8s.io/client-go/rest"
@@ -165,4 +166,27 @@ func (g *GcpSvs) GetSqlIps(InstanceId string) (map[string]string, error) {
 	}
 	GetLogger().Sugar().Debugf("IpMap: %v", IpMap)
 	return IpMap, nil
+}
+
+//warning -- untested
+func (g *GcpSvs) Dns_createRecordSet(zoneName, recSetName string, recSetData []string) error {
+	ctx := context.Background()
+	dnsService, err := dns.NewService(ctx)
+	if err != nil {
+		return err
+	}
+	rec := &dns.ResourceRecordSet{
+		Name:    recSetName,
+		Rrdatas: recSetData,
+		Ttl:     int64(60),
+		Type:    "TXT",
+	}
+	change := &dns.Change{
+		Additions: []*dns.ResourceRecordSet{rec},
+	}
+	_, err = dnsService.Changes.Create(g.ProjectId, zoneName, change).Context(ctx).Do()
+	if err != nil {
+		return err
+	}
+	return nil
 }

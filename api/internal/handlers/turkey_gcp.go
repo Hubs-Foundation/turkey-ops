@@ -82,6 +82,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Log("k8sSetups completed")
 
 			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
+
 			//email the final manual steps to authenticated user
 			clusterCfgBytes, _ := json.Marshal(cfg)
 			authnUser := r.Header.Get("X-Forwarded-UserEmail")
@@ -92,7 +93,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				[]string{authnUser, "gtan@mozilla.com"},
 				[]byte("To: "+authnUser+"\r\n"+
 					"Subject: turkey_gcp just deployed <"+cfg.Stackname+"> \r\n"+
-					"\r\n******required ******"+
+					"\r\n******required (probably already done)******"+
 					"\r\n- CNAME required: *."+cfg.Domain+" : "+report["lb"]+
 					"\r\n******for https://dash."+cfg.Domain+"******"+
 					"\r\n- sknoonerToken: "+report["skoonerToken"]+
