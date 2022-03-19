@@ -33,9 +33,10 @@ provider "google-beta" {
 # VPC
 resource "google_compute_network" "vpc" {
   provider = google-beta
+  auto_create_subnetworks         = false
+  delete_default_routes_on_create = false  
   name                    = "{{.Stackname}}"
   routing_mode            = "GLOBAL"
-  auto_create_subnetworks = "true"
 }
 
 # Subnet
@@ -59,15 +60,11 @@ resource "google_container_cluster" "gke" {
   provider = google-beta
   name     = "{{.Stackname}}"
   location = "{{.Region}}"
-  
-  # We can't create a cluster with no node pool defined, but we want to only use
-  # separately managed node pools. So we create the smallest possible default
-  # node pool and immediately delete it.
   remove_default_node_pool = true
   initial_node_count       = 1
-
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
+  ip_allocation_policy {}  
 }
 # Separately Managed Node Pool
 resource "google_container_node_pool" "gke_nodes" {
