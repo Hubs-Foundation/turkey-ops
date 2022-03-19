@@ -30,7 +30,7 @@ provider "google-beta" {
   region  = "{{.Region}}"
 }
 
-# VPC
+################## network
 resource "google_compute_network" "vpc" {
   provider = google-beta
   auto_create_subnetworks         = false
@@ -38,24 +38,23 @@ resource "google_compute_network" "vpc" {
   name                    = "{{.Stackname}}"
   routing_mode            = "GLOBAL"
 }
-
-# Subnet
-resource "google_compute_subnetwork" "public" {
-  provider = google-beta
-  name          = "{{.Stackname}}-public"
-  region        = "{{.Region}}"
-  network       = google_compute_network.vpc.name
-  ip_cidr_range = "10.100.0.0/16"
-}
 resource "google_compute_subnetwork" "private" {
   provider = google-beta
   name          = "{{.Stackname}}-private"
   region        = "{{.Region}}"
   network       = google_compute_network.vpc.name
-  ip_cidr_range = "10.101.0.0/16"
+  ip_cidr_range = "10.0.0.0/16"
   private_ip_google_access = "true"
 }
-# GKE cluster
+resource "google_compute_subnetwork" "public" {
+  provider = google-beta
+  name          = "{{.Stackname}}-public"
+  region        = "{{.Region}}"
+  network       = google_compute_network.vpc.name
+  ip_cidr_range = "10.1.0.0/16"
+}
+
+################## GKE cluster
 resource "google_container_cluster" "gke" {
   provider = google-beta
   name     = "{{.Stackname}}"
@@ -64,27 +63,26 @@ resource "google_container_cluster" "gke" {
   initial_node_count       = 1
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
-  ip_allocation_policy {}  
+  ip_allocation_policy {
+    cluster_ipv4_cidr_block = "10.200.0.0/14" #for pods
+    services_ipv4_cidr_block = "10.250.0.0/16"
+  }  
 }
-# Separately Managed Node Pool
 resource "google_container_node_pool" "gke_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-node-pool"
   location   = "{{.Region}}"
   cluster    = google_container_cluster.gke.name
   node_count = 1
-
   node_config {
     oauth_scopes = [
       "https://www.googleapis.com/auth/logging.write",
       "https://www.googleapis.com/auth/monitoring",
     ]
-
     labels = {
       app = "turkey"
       env = "{{.Stackname}}"
     }
-
     # preemptible  = true
     machine_type = "n1-standard-1"
     tags         = ["gke-node", "{{.Stackname}}"]
@@ -94,7 +92,7 @@ resource "google_container_node_pool" "gke_nodes" {
   }
 }
 
-# pgsql
+################## pgsql
 resource "google_compute_global_address" "private_ip_address" {
   provider = google-beta
   name          = "{{.Stackname}}-pvt-ip"
@@ -130,17 +128,3 @@ resource "google_sql_user" "db_user" {
   instance = google_sql_database_instance.pgsql.name
   password = "{{.DbPass}}"
 }
-
-# resource "google_compute_global_address" "private_ip_block" {
-#   name         = "private-ip-block"
-#   purpose       = "VPC_PEERING"
-#   address_type  = "INTERNAL"
-#   ip_version   = "IPV4"
-#   prefix_length = 16
-#   network       = google_compute_network.vpc.self_link
-# }
-# resource "google_service_networking_connection" "private_vpc_connection" {
-#   network                 = google_compute_network.vpc.self_link
-#   service                 = "servicenetworking.googleapis.com"
-#   reserved_peering_ranges = [google_compute_global_address.private_ip_block.name]
-# }
