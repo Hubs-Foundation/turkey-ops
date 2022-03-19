@@ -35,7 +35,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		internal.GetLogger().Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-		sess.Log("[creation] started for: " + cfg.Stackname + " ... this can take a while")
+		sess.Log("[creation] [" + cfg.Stackname + "] " + "started ... this can take a while")
 
 		go func() {
 			// ########## 2. run tf #########################################
@@ -44,7 +44,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Error("failed @runTf: " + err.Error())
 				return
 			}
-			sess.Log("[creation] [" + cfg.Stackname + "]" + "tf deployment completed")
+			sess.Log("[creation] [" + cfg.Stackname + "] " + "tf deployment completed")
 			// ########## 3. prepare for post Deployment setups:
 			// ###### get db info and complete clusterCfg (cfg)
 			dbIps, err := internal.Cfg.Gcps.GetSqlIps(cfg.Stackname)
@@ -254,7 +254,7 @@ func runTf(cfg clusterCfg, verb string) error {
 		DbUser:    "postgres",
 		DbPass:    cfg.DB_PASS,
 	})
-	err = internal.RunCmd(tf_bin, "-chdir="+tfdir, "init")
+	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func runTf(cfg clusterCfg, verb string) error {
 	// if err != nil {
 	// 	return err
 	// }
-	err = internal.RunCmd(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
+	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
 	if err != nil {
 		return err
 	}

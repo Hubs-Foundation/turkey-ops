@@ -195,7 +195,7 @@ func Copy(src, dst string) error {
 	return out.Close()
 }
 
-func RunCmd(name string, arg ...string) error {
+func RunCmd_sync(name string, arg ...string) error {
 
 	cmd := exec.Command(name, arg...)
 
@@ -230,6 +230,50 @@ func RunCmd(name string, arg ...string) error {
 	}
 
 	return nil
+}
+
+func RunCmd_async(name string, arg ...string) (chan string, error) {
+
+	updates := make(chan string)
+
+	cmd := exec.Command(name, arg...)
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	stderr, _ := cmd.StderrPipe()
+
+	err = cmd.Start()
+	GetLogger().Debug("started: " + cmd.String())
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			m := scanner.Text()
+			GetLogger().Debug(m)
+			updates <- m
+		}
+
+		scanner_err := bufio.NewScanner(stderr)
+		for scanner_err.Scan() {
+			m := scanner_err.Text()
+			GetLogger().Error(m)
+			updates <- m
+		}
+
+		close(updates)
+	}()
+
+	err = cmd.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	return updates, nil
 }
 
 func RootDomain(fullDomain string) string {
