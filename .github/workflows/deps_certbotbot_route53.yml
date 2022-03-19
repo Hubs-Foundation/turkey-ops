@@ -4,7 +4,8 @@ on:
   push:
     branches: [ master ]
     paths:
-    - 'deps/certbotbot/route53/**'
+    - 'deps/certbotbot/Dockerfile_route53'
+    - 'deps/certbotbot/entrypoint.sh'
     - '.github/workflows/deps_certbotbot_route53.yml'
   workflow_dispatch:
 
@@ -12,8 +13,8 @@ jobs:
   turkeyGitops:
     uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
     with:
-      codePath: deps/certbotbot/route53
+      codePath: deps/certbotbot
       registry: mozillareality
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile_route53
     secrets:
       DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
