@@ -82,7 +82,12 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Log("k8sSetups completed")
 
 			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
-			err = internal.Cfg.Gcps.Dns_createRecordSet(internal.RootDomain(cfg.Domain), cfg.Domain, []string{report["lb"]})
+
+			err = internal.Cfg.Gcps.Dns_createRecordSet(
+				strings.Replace(internal.RootDomain(cfg.Domain), ".", "-", 1),
+				cfg.Domain,
+				[]string{report["lb"]})
+
 			dnsMsg := "(already done)"
 			if err != nil {
 				sess.Log("Dns_createRecordSet failed: " + err.Error())
