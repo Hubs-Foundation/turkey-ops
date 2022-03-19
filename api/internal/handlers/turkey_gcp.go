@@ -82,16 +82,13 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Log("k8sSetups completed")
 
 			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
-
-			err = internal.Cfg.Gcps.Dns_createRecordSet(
-				strings.Replace(internal.RootDomain(cfg.Domain), ".", "-", 1),
-				cfg.Domain,
-				[]string{report["lb"]})
+			rootDomain := internal.RootDomain(cfg.Domain)
+			err = internal.Cfg.Gcps.Dns_createRecordSet(strings.Replace(rootDomain, ".", "-", 1),
+				strings.Replace("*."+cfg.Domain, rootDomain, "", 1), "A", []string{report["lb"]})
 
 			dnsMsg := "(already done)"
 			if err != nil {
 				sess.Log("Dns_createRecordSet failed: " + err.Error())
-			} else {
 				dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"
 			}
 
@@ -109,6 +106,10 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					"\r\n- dns record required: *."+cfg.Domain+" : "+report["lb"]+
 					"\r\n******for https://dash."+cfg.Domain+"******"+
 					"\r\n- sknoonerToken: "+report["skoonerToken"]+
+					"\r\n******get: kubeconfig******"+
+					"\r\n - gcloud container clusters get-credentials --region us-east1 "+cfg.Stackname+
+					"\r\n******get: cluster https cert******"+
+					"\r\n - kubectl -n ingress get secret letsencrypt -o yaml"+
 					"\r\n******clusterCfg dump******"+
 					"\r\n"+string(clusterCfgBytes)+
 					"\r\n"),

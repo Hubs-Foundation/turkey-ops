@@ -169,7 +169,10 @@ func (g *GcpSvs) GetSqlIps(InstanceId string) (map[string]string, error) {
 }
 
 //warning -- untested
-func (g *GcpSvs) Dns_createRecordSet(zoneName, recSetName string, recSetData []string) error {
+func (g *GcpSvs) Dns_createRecordSet(zoneName, recSetName, recType string, recSetData []string) error {
+
+	GetLogger().Sugar().Debugf("adding %v:%v:%v to %v", recSetName, recType, recSetData, zoneName)
+
 	ctx := context.Background()
 	dnsService, err := dns.NewService(ctx)
 	if err != nil {
@@ -179,7 +182,7 @@ func (g *GcpSvs) Dns_createRecordSet(zoneName, recSetName string, recSetData []s
 		Name:    recSetName,
 		Rrdatas: recSetData,
 		Ttl:     int64(60),
-		Type:    "TXT",
+		Type:    recType,
 	}
 	change := &dns.Change{
 		Additions: []*dns.ResourceRecordSet{rec},
