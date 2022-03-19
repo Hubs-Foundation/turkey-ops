@@ -117,7 +117,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				sess.Error("failed @ email report: " + err.Error())
 			}
-			sess.Log("[creation] completed for <" + cfg.Stackname + ">, full details emailed to " + authnUser)
+			sess.Log("[creation] completed for " + cfg.Stackname + ", full details emailed to " + authnUser)
 
 		}()
 
