@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -229,6 +230,15 @@ func RunCmd(name string, arg ...string) error {
 	}
 
 	return nil
+}
+
+func RootDomain(fullDomain string) string {
+	fdArr := strings.Split(fullDomain, ".")
+	len := len(fdArr)
+	if len < 2 {
+		return ""
+	}
+	return fdArr[len-2] + "." + fdArr[len-1]
 }
 
 /////////////////////////////////////////////////

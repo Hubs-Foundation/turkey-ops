@@ -82,6 +82,13 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Log("k8sSetups completed")
 
 			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
+			err = internal.Cfg.Gcps.Dns_createRecordSet(internal.RootDomain(cfg.Domain), cfg.Domain, []string{report["lb"]})
+			dnsMsg := "(already done)"
+			if err != nil {
+				sess.Log("Dns_createRecordSet failed: " + err.Error())
+			} else {
+				dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"
+			}
 
 			//email the final manual steps to authenticated user
 			clusterCfgBytes, _ := json.Marshal(cfg)
@@ -93,8 +100,8 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				[]string{authnUser, "gtan@mozilla.com"},
 				[]byte("To: "+authnUser+"\r\n"+
 					"Subject: turkey_gcp just deployed <"+cfg.Stackname+"> \r\n"+
-					"\r\n******required (probably already done)******"+
-					"\r\n- CNAME required: *."+cfg.Domain+" : "+report["lb"]+
+					"\r\n******required ("+dnsMsg+")******"+
+					"\r\n- dns record required: *."+cfg.Domain+" : "+report["lb"]+
 					"\r\n******for https://dash."+cfg.Domain+"******"+
 					"\r\n- sknoonerToken: "+report["skoonerToken"]+
 					"\r\n******clusterCfg dump******"+
@@ -105,6 +112,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				sess.Error("failed @ email report: " + err.Error())
 			}
 			sess.Log("[creation] completed for <" + cfg.Stackname + ">, full details emailed to " + authnUser)
+
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
