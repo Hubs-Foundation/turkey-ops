@@ -1,0 +1,5 @@
+from certbot/dns-google
+run apk add curl bash
+
+copy entrypoint.sh entrypoint.sh
+entrypoint bash entrypoint.sh google
