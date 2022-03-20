@@ -53,6 +53,19 @@ resource "google_compute_subnetwork" "public" {
   network       = google_compute_network.vpc.name
   ip_cidr_range = "10.1.0.0/16"
 }
+resource "google_compute_firewall" "stream" {
+  name    = "test-firewall"
+  network = google_compute_network.default.name
+  allow {
+    protocol = "tcp"
+    ports    = ["4443", "5349", "1000-2000"]
+  }
+  allow {
+    protocol = "udp"
+    ports    = ["35000-65000"]
+  }  
+  source_ranges = ["0.0.0.0/0"]
+}
 
 ################## GKE cluster
 resource "google_container_cluster" "gke" {
