@@ -40,7 +40,8 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		go func() {
 			// ########## 2. run tf #########################################
-			updates, err := runTf(cfg, "apply")
+			updates := make(chan string)
+			err := runTf(cfg, "apply", updates)
 			if err != nil {
 				sess.Error("failed @runTf: " + err.Error())
 				return
@@ -211,7 +212,8 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 
 		go func() {
 			// ######################################### 2. run tf #########################################
-			updates, err := runTf(cfg, "destroy")
+			updates := make(chan string)
+			err := runTf(cfg, "destroy", updates)
 			if err != nil {
 				sess.Error("failed @runTf: " + err.Error())
 				return
@@ -241,7 +243,7 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 	}
 })
 
-func runTf(cfg clusterCfg, verb string) (chan string, error) {
+func runTf(cfg clusterCfg, verb string, updates chan string) error {
 	wd, _ := os.Getwd()
 	// render the template.tf with cfg.Stackname into a Stackname named folder so that
 	// 1. we can run terraform from that folder
@@ -254,7 +256,7 @@ func runTf(cfg clusterCfg, verb string) (chan string, error) {
 	tfFile := tfdir + "/rendered.tf"
 	t, err := template.ParseFiles(tfTemplateFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	f, _ := os.Create(tfFile)
 	defer f.Close()
@@ -267,7 +269,7 @@ func runTf(cfg clusterCfg, verb string) (chan string, error) {
 	})
 	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// err = runCmd(tf_bin, "-chdir="+tfdir, "plan",
 	// 	"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_id="+cfg.Stackname, "-var", "region="+cfg.Region,
@@ -275,9 +277,13 @@ func runTf(cfg clusterCfg, verb string) (chan string, error) {
 	// if err != nil {
 	// 	return err
 	// }
-	updates, err := internal.RunCmd_async(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
-	if err != nil {
-		return nil, err
+	if updates != nil {
+		err = internal.RunCmd_async(tf_bin, updates, "-chdir="+tfdir, verb, "-auto-approve")
+	} else {
+		err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
 	}
-	return updates, nil
+	if err != nil {
+		return err
+	}
+	return nil
 }

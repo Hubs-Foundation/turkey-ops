@@ -232,22 +232,20 @@ func RunCmd_sync(name string, arg ...string) error {
 	return nil
 }
 
-func RunCmd_async(name string, arg ...string) (chan string, error) {
-
-	updates := make(chan string)
+func RunCmd_async(name string, updates chan string, arg ...string) error {
 
 	cmd := exec.Command(name, arg...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	stderr, _ := cmd.StderrPipe()
 
 	err = cmd.Start()
 	GetLogger().Debug("started: " + cmd.String())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	go func() {
@@ -270,10 +268,10 @@ func RunCmd_async(name string, arg ...string) (chan string, error) {
 
 	err = cmd.Wait()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return updates, nil
+	return nil
 }
 
 func RootDomain(fullDomain string) string {
