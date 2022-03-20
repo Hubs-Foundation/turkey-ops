@@ -638,7 +638,7 @@ spec:
           capabilities:
             add:
             - SYS_ADMIN
-      - env:
+        env:
         - name: GCP_SA_KEY
           valueFrom:
             secretKeyRef:
