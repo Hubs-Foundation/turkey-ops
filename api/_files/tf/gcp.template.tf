@@ -55,7 +55,7 @@ resource "google_compute_subnetwork" "public" {
 }
 resource "google_compute_firewall" "stream" {
   name    = "test-firewall"
-  network = google_compute_network.default.name
+  network = google_compute_network.vpc.name
   allow {
     protocol = "tcp"
     ports    = ["4443", "5349", "1000-2000"]
