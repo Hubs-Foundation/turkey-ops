@@ -53,13 +53,20 @@ resource "google_compute_subnetwork" "public" {
   network       = google_compute_network.vpc.name
   ip_cidr_range = "10.1.0.0/16"
 }
-resource "google_compute_firewall" "stream" {
-  name    = "test-firewall"
+resource "google_compute_firewall" "stream-tcp" {
+  provider = google-beta
+  name    = "{{.Stackname}}-stream-tcp"
   network = google_compute_network.vpc.name
   allow {
     protocol = "tcp"
-    ports    = ["4443", "5349", "1000-2000"]
+    ports    = ["4443", "5349"]
   }
+  source_ranges = ["0.0.0.0/0"]
+}
+resource "google_compute_firewall" "stream-udp" {
+  provider = google-beta
+  name    = "{{.Stackname}}-stream-udp"
+  network = google_compute_network.vpc.name
   allow {
     protocol = "udp"
     ports    = ["35000-65000"]
