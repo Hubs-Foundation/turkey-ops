@@ -33,6 +33,8 @@ stringData:
   ADM_EMAIL: {{.UserEmail}}
   PGRST_DB_URI: postgres://postgres:{{.DBpass}}@pgbouncer.turkey-services/{{.DBname}}
   PGRST_JWT_SECRET: "{{.JWK}}"
+data:
+  GCP_SA_KEY: {{.GCP_SA_KEY_b64}}  
 ---
 ######################################################################################
 ###################################### ingress #######################################

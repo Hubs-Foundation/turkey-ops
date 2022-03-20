@@ -3,12 +3,14 @@ package handlers
 import (
 	"context"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 
 	"net/http"
 	"strconv"
@@ -32,14 +34,15 @@ type hcCfg struct {
 	Options string `json:"options"` //additional options, dot(.)prefixed -- ie. ".ebs"
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
-	Domain     string `json:"domain"`
-	DBname     string `json:"dbname"`
-	DBpass     string `json:"dbpass"`
-	PermsKey   string `json:"permskey"`
-	SmtpServer string `json:"smtpserver"`
-	SmtpPort   string `json:"smtpport"`
-	SmtpUser   string `json:"smtpuser"`
-	SmtpPass   string `json:"smtppass"`
+	Domain         string `json:"domain"`
+	DBname         string `json:"dbname"`
+	DBpass         string `json:"dbpass"`
+	PermsKey       string `json:"permskey"`
+	SmtpServer     string `json:"smtpserver"`
+	SmtpPort       string `json:"smtpport"`
+	SmtpUser       string `json:"smtpuser"`
+	SmtpPass       string `json:"smtppass"`
+	GCP_SA_KEY_b64 string
 
 	//produced here
 	TurkeyId    string `json:"turkeyid"` // retrieved from db for UserEmail  fallback to calculated
@@ -66,6 +69,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	fileOption := "_fuse"
 	if strings.Contains(hcCfg.Options, "_gcsfuse_sidecar") {
 		fileOption = "_gcsfuse_sidecar"
+		sess.Log("selected option: " + fileOption)
 	}
 	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")
 	if err != nil {
@@ -274,6 +278,7 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 	cfg.SmtpPort = internal.Cfg.SmtpPort
 	cfg.SmtpUser = internal.Cfg.SmtpUser
 	cfg.SmtpPass = internal.Cfg.SmtpPass
+	cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
 
 	//produc the rest
 	cfg.GuardianKey = "strongSecret#1"
