@@ -669,7 +669,7 @@ spec:
           path: /dev/fuse
       - name: s3fsdata
         hostPath:
-          path: /home/s3fs
+          path: /home/fuse
 ---
 ########################################################################
 ######################   photomnemonic   ###############################
