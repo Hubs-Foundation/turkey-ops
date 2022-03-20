@@ -263,13 +263,14 @@ func RunCmd_async(name string, updates chan string, arg ...string) error {
 			updates <- m
 		}
 
+		err = cmd.Wait()
+		if err != nil {
+			GetLogger().Error(err.Error())
+			updates <- err.Error()
+		}
 		close(updates)
-	}()
 
-	err = cmd.Wait()
-	if err != nil {
-		return err
-	}
+	}()
 
 	return nil
 }
