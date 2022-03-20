@@ -83,11 +83,11 @@ resource "google_container_cluster" "gke" {
   }  # let gcp pick to avoid "cidr range not available" errors
   cluster_autoscaling {
     enabled = true
-    # resource_limits{
-    #   resource_type = "memory"
-    #   minimum = 24
-    #   maximum = 156
-    # }
+    resource_limits{
+      resource_type = "memory"
+      minimum = 24
+      maximum = 156
+    }
     resource_limits{
       resource_type = "cpu"
       minimum = 4
