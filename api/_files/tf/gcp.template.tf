@@ -81,6 +81,14 @@ resource "google_container_cluster" "gke" {
     cluster_ipv4_cidr_block = "10.200.0.0/14" #for pods
     services_ipv4_cidr_block = "10.250.0.0/16"
   }  
+  cluster_autoscaling {
+    enabled = true
+    resource_limits{
+      resource_type = "memory"
+      minimum = 8
+      maximum = 24
+    }
+  }
 }
 resource "google_container_node_pool" "gke_nodes" {
   provider = google-beta
