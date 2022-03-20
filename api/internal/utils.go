@@ -232,49 +232,6 @@ func RunCmd_sync(name string, arg ...string) error {
 	return nil
 }
 
-func RunCmd_async(name string, updates chan string, arg ...string) error {
-
-	cmd := exec.Command(name, arg...)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	stderr, _ := cmd.StderrPipe()
-
-	err = cmd.Start()
-	GetLogger().Debug("started: " + cmd.String())
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			m := scanner.Text()
-			GetLogger().Debug(m)
-			updates <- m
-		}
-
-		scanner_err := bufio.NewScanner(stderr)
-		for scanner_err.Scan() {
-			m := scanner_err.Text()
-			GetLogger().Error(m)
-			updates <- m
-		}
-
-		err = cmd.Wait()
-		if err != nil {
-			GetLogger().Error(err.Error())
-			updates <- err.Error()
-		}
-		close(updates)
-
-	}()
-
-	return nil
-}
-
 func RootDomain(fullDomain string) string {
 	fdArr := strings.Split(fullDomain, ".")
 	len := len(fdArr)

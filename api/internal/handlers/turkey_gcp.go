@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 	"text/template"
-	"time"
 
 	"main/internal"
 
@@ -40,16 +39,10 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		go func() {
 			// ########## 2. run tf #########################################
-			updates := make(chan string)
-			err := runTf(cfg, "apply", updates)
+			err := runTf(cfg, "apply")
 			if err != nil {
 				sess.Error("failed @runTf: " + err.Error())
 				return
-			}
-			for updates != nil {
-				time.Sleep(time.Second * 20)
-				msg := <-updates
-				sess.Log("[creation] [" + cfg.Stackname + "] ~~~ " + msg)
 			}
 			sess.Log("[creation] [" + cfg.Stackname + "] " + "tf deployment completed")
 			// ########## 3. prepare for post Deployment setups:
@@ -212,16 +205,10 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 
 		go func() {
 			// ######################################### 2. run tf #########################################
-			updates := make(chan string)
-			err := runTf(cfg, "destroy", updates)
+			err := runTf(cfg, "destroy")
 			if err != nil {
 				sess.Error("failed @runTf: " + err.Error())
 				return
-			}
-			for updates != nil {
-				time.Sleep(time.Second * 20)
-				msg := <-updates
-				sess.Log("[deletion] [" + cfg.Stackname + "] ~~~ " + msg)
 			}
 			// ################# 3. delete the folder in GCS bucket for this stack
 			err = internal.Cfg.Gcps.DeleteObjects("turkeycfg", "tf-backend/"+cfg.Stackname)
@@ -243,7 +230,7 @@ var TurkeyGcp_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request
 	}
 })
 
-func runTf(cfg clusterCfg, verb string, updates chan string) error {
+func runTf(cfg clusterCfg, verb string) error {
 	wd, _ := os.Getwd()
 	// render the template.tf with cfg.Stackname into a Stackname named folder so that
 	// 1. we can run terraform from that folder
@@ -277,11 +264,8 @@ func runTf(cfg clusterCfg, verb string, updates chan string) error {
 	// if err != nil {
 	// 	return err
 	// }
-	if updates != nil {
-		err = internal.RunCmd_async(tf_bin, updates, "-chdir="+tfdir, verb, "-auto-approve")
-	} else {
-		err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
-	}
+	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
+
 	if err != nil {
 		return err
 	}
