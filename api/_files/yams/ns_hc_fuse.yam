@@ -128,13 +128,13 @@ spec:
         app: reticulum
     spec:
       volumes:
-      - name: s3fs 
+      - name: fuse 
         hostPath:
-          path: /home/s3fs/{{.Subdomain}}.{{.Domain}}
+          path: /home/fuse/{{.Subdomain}}.{{.Domain}}
       containers:
       - name: reticulum
         volumeMounts:
-        - name: s3fs
+        - name: fuse
           mountPath: /storage:shared
         securityContext:
           privileged: true

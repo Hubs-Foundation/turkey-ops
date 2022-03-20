@@ -609,50 +609,45 @@ subjects:
     name: system:serviceaccounts
 ---
 ###############################################################################
-### s3fs ###
+### gcsfuse ###
 ###############################################################################
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: s3fs
+  name: gcsfuse
   namespace: turkey-services
 spec:
   selector:
     matchLabels:
-      app: s3fs
+      app: gcsfuse
   template:
     metadata:
       labels:
-        app: s3fs
+        app: gcsfuse
     spec:
       containers:
-      - name: s3fs
-        image: mozillareality/s3fs:stable-latest
+      - name: gcsfuse
+        image: mozillareality/gcsfuse:stable-latest
         imagePullPolicy: Always
         lifecycle:
           preStop:
             exec:
-              command: ["/bin/sh","-c","umount -f /var/s3fs"]
+              command: ["/bin/sh","-c","umount -f /var/gcsfuse"]
         securityContext:
           privileged: true
           capabilities:
             add:
             - SYS_ADMIN
-        env:
-        - name: AWS_KEY
+      - env:
+        - name: GCP_SA_KEY
           valueFrom:
             secretKeyRef:
               name: configs
-              key: AWS_KEY
-        - name: AWS_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: AWS_SECRET
-        - name: S3_BUCKET
-          value: turkeyfs-use1
+              key: GCP_SA_KEY
+        - name: GCS_BUCKET
+          value: turkeyfs
         - name: MNT_DIR
-          value: /var/s3fs
+          value: /var/gcsfuse
         resources:
           requests:
             memory: 50Mi
@@ -663,15 +658,15 @@ spec:
         volumeMounts:
         - name: devfuse
           mountPath: /dev/fuse
-        - name: s3fsdata
-          mountPath: /var/s3fs:shared
+        - name: gcsfusedata
+          mountPath: /var/gcsfuse:shared
       volumes:
       - name: devfuse
         hostPath:
           path: /dev/fuse
-      - name: s3fsdata
+      - name: gcsfusedata
         hostPath:
-          path: /home/s3fs
+          path: /home/fuse
 ---
 ########################################################################
 ######################   photomnemonic   ###############################
