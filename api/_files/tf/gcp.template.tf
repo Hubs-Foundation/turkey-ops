@@ -85,13 +85,13 @@ resource "google_container_cluster" "gke" {
     enabled = true
     resource_limits{
       resource_type = "memory"
-      minimum = 8
-      maximum = 24
+      minimum = 26
+      maximum = 120
     }
     resource_limits{
       resource_type = "cpu"
-      minimum = 3
-      maximum = 9
+      minimum = 4
+      maximum = 20
     }    
   }
 }
