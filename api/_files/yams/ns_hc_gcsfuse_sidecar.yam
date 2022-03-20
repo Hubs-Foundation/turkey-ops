@@ -311,6 +311,9 @@ spec:
         ports:
         - containerPort: 8080
         imagePullPolicy: IfNotPresent
+      ###############################################
+      ########## gcsfuse ############################
+      ###############################################
       - name: gcsfuse
         image: mozillareality/gcsfuse:stable-latest
         imagePullPolicy: Always
@@ -344,7 +347,7 @@ spec:
             cpu: 2
         volumeMounts:
         - name: fuse
-          mountPath: /var/gcsfuse        
+          mountPath: /var/gcsfuse:shared
 ---
 apiVersion: v1
 kind: Service
