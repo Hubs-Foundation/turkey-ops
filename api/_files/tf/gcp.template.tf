@@ -77,10 +77,10 @@ resource "google_container_cluster" "gke" {
   initial_node_count       = 1
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
-  ip_allocation_policy {
-    cluster_ipv4_cidr_block = "10.200.0.0/14" #for pods
-    services_ipv4_cidr_block = "10.250.0.0/16"
-  }  
+  ip_allocation_policy {  
+    # cluster_ipv4_cidr_block = "10.200.0.0/14" #for pods
+    # services_ipv4_cidr_block = "10.250.0.0/16"    
+  }  # let gcp pick to avoid "cidr range not available" errors
   cluster_autoscaling {
     enabled = true
     resource_limits{
