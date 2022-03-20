@@ -63,7 +63,11 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc_fuse.yam")
+	fileOption := "_fuse"
+	if strings.Contains(hcCfg.Options, "_gcsfuse_sidecar") {
+		fileOption = "_gcsfuse_sidecar"
+	}
+	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")
 	if err != nil {
 		sess.Error("failed to get ns_hc yam file because: " + err.Error())
 		return

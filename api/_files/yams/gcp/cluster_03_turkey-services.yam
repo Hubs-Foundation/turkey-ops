@@ -607,66 +607,66 @@ subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: Group
     name: system:serviceaccounts
----
-###############################################################################
-### gcsfuse ###
-###############################################################################
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: gcsfuse
-  namespace: turkey-services
-spec:
-  selector:
-    matchLabels:
-      app: gcsfuse
-  template:
-    metadata:
-      labels:
-        app: gcsfuse
-    spec:
-      containers:
-      - name: gcsfuse
-        image: mozillareality/gcsfuse:stable-latest
-        imagePullPolicy: Always
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/bin/sh","-c","umount -f /var/gcsfuse"]
-        securityContext:
-          privileged: true
-          capabilities:
-            add:
-            - SYS_ADMIN
-        env:
-        - name: GCP_SA_KEY
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: GCP_SA_KEY
-        - name: GCS_BUCKET
-          value: turkeyfs
-        - name: MNT_DIR
-          value: /var/gcsfuse
-        resources:
-          requests:
-            memory: 50Mi
-            cpu: 0.05
-          limits:
-            memory: 4Gi
-            cpu: 2
-        volumeMounts:
-        - name: devfuse
-          mountPath: /dev/fuse
-        - name: hostfuse
-          mountPath: /var/gcsfuse:shared
-      volumes:
-      - name: devfuse
-        hostPath:
-          path: /dev/fuse
-      - name: hostfuse
-        hostPath:
-          path: /home/fuse
+# ---
+# ###############################################################################
+# ### gcsfuse ###
+# ###############################################################################
+# apiVersion: apps/v1
+# kind: DaemonSet
+# metadata:
+#   name: gcsfuse
+#   namespace: turkey-services
+# spec:
+#   selector:
+#     matchLabels:
+#       app: gcsfuse
+#   template:
+#     metadata:
+#       labels:
+#         app: gcsfuse
+#     spec:
+#       containers:
+#       - name: gcsfuse
+#         image: mozillareality/gcsfuse:stable-latest
+#         imagePullPolicy: Always
+#         lifecycle:
+#           preStop:
+#             exec:
+#               command: ["/bin/sh","-c","umount -f /var/gcsfuse"]
+#         securityContext:
+#           privileged: true
+#           capabilities:
+#             add:
+#             - SYS_ADMIN
+#         env:
+#         - name: GCP_SA_KEY
+#           valueFrom:
+#             secretKeyRef:
+#               name: configs
+#               key: GCP_SA_KEY
+#         - name: GCS_BUCKET
+#           value: turkeyfs
+#         - name: MNT_DIR
+#           value: /var/gcsfuse
+#         resources:
+#           requests:
+#             memory: 50Mi
+#             cpu: 0.05
+#           limits:
+#             memory: 4Gi
+#             cpu: 2
+#         volumeMounts:
+#         - name: devfuse
+#           mountPath: /dev/fuse
+#         - name: hostfuse
+#           mountPath: /var/gcsfuse:shared
+#       volumes:
+#       - name: devfuse
+#         hostPath:
+#           path: /dev/fuse
+#       - name: hostfuse
+#         hostPath:
+#           path: /home/fuse
 ---
 ########################################################################
 ######################   photomnemonic   ###############################
