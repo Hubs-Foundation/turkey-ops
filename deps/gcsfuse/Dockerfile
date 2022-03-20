@@ -7,6 +7,7 @@ RUN go install github.com/googlecloudplatform/gcsfuse/tools/build_gcsfuse
 RUN build_gcsfuse ${GOPATH}/src/github.com/googlecloudplatform/gcsfuse /tmp ${GCSFUSE_VERSION}
 
 FROM alpine
+run apk add bash
 COPY --from=builder /tmp/bin/gcsfuse /usr/bin
 COPY --from=builder /tmp/sbin/mount.gcsfuse /usr/sbin
 RUN ln -s /usr/sbin/mount.gcsfuse /usr/sbin/mount.fuse.gcsfuse
