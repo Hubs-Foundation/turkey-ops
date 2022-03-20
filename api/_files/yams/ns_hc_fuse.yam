@@ -128,13 +128,13 @@ spec:
         app: reticulum
     spec:
       volumes:
-      - name: fuse 
+      - name: hostfuse 
         hostPath:
           path: /home/fuse/{{.Subdomain}}.{{.Domain}}
       containers:
       - name: reticulum
         volumeMounts:
-        - name: fuse
+        - name: hostfuse
           mountPath: /storage:shared
         securityContext:
           privileged: true

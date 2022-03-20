@@ -658,13 +658,13 @@ spec:
         volumeMounts:
         - name: devfuse
           mountPath: /dev/fuse
-        - name: gcsfusedata
+        - name: hostfuse
           mountPath: /var/gcsfuse:shared
       volumes:
       - name: devfuse
         hostPath:
           path: /dev/fuse
-      - name: gcsfusedata
+      - name: hostfuse
         hostPath:
           path: /home/fuse
 ---
