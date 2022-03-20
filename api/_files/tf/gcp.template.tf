@@ -88,6 +88,11 @@ resource "google_container_cluster" "gke" {
       minimum = 8
       maximum = 24
     }
+    resource_limits{
+      resource_type = "cpu"
+      minimum = 3
+      maximum = 9
+    }    
   }
 }
 resource "google_container_node_pool" "gke_nodes" {
