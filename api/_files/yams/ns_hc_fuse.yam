@@ -130,7 +130,7 @@ spec:
       volumes:
       - name: fuse 
         hostPath:
-          path: /var/fuse/{{.Subdomain}}.{{.Domain}}
+          path: /home/fuse/{{.Subdomain}}.{{.Domain}}
       containers:
       - name: reticulum
         volumeMounts:
