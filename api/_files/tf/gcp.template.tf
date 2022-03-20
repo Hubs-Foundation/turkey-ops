@@ -110,7 +110,7 @@ resource "google_container_node_pool" "gke_nodes" {
       app = "turkey"
       env = "{{.Stackname}}"
     }
-    # preemptible  = true
+    preemptible  = true
     machine_type = "n1-highmem-2"
     tags         = ["gke-node", "{{.Stackname}}"]
     metadata = {
