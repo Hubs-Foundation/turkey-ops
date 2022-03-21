@@ -137,6 +137,7 @@ spec:
         volumeMounts:
         - name: fuse
           mountPath: /storage:shared
+          mountPropagation: Bidirectional
         securityContext:
           privileged: true
           capabilities:
@@ -348,6 +349,7 @@ spec:
         volumeMounts:
         - name: fuse
           mountPath: /var/gcsfuse:shared
+          mountPropagation: Bidirectional
 ---
 apiVersion: v1
 kind: Service

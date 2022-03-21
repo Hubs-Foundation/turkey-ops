@@ -317,6 +317,7 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				err = pg_kick_all(cfg, sess)
 				if err != nil {
 					sess.Error(err.Error())
+					return
 				}
 				_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
 			}
@@ -338,6 +339,7 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// }
 		if k8sCfg == nil {
 			sess.Error(err.Error())
+			return
 		}
 		sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 		clientset, err := kubernetes.NewForConfig(k8sCfg)
