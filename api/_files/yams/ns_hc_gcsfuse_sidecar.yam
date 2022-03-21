@@ -136,7 +136,7 @@ spec:
       - name: reticulum
         volumeMounts:
         - name: fuse
-          mountPath: /storage:shared
+          mountPath: /storage
           mountPropagation: Bidirectional
         securityContext:
           privileged: true
@@ -348,7 +348,7 @@ spec:
             cpu: 2
         volumeMounts:
         - name: fuse
-          mountPath: /var/gcsfuse:shared
+          mountPath: /var/gcsfuse
           mountPropagation: Bidirectional
 ---
 apiVersion: v1
