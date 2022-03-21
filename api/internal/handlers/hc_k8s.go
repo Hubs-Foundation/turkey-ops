@@ -66,7 +66,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-	fileOption := "_fuse"
+	fileOption := "_s3fs"
 	if strings.Contains(hcCfg.Options, "_gcsfuse_sidecar") {
 		fileOption = "_gcsfuse_sidecar"
 		sess.Log("selected option: " + fileOption)
