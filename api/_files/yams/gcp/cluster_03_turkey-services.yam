@@ -650,6 +650,8 @@ spec:
           value: turkeyfs
         - name: MNT_DIR
           value: /var/gcsfuse
+        - name: GCS_DIR
+          value: fuse
         resources:
           requests:
             memory: 50Mi

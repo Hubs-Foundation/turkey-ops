@@ -113,6 +113,9 @@ resource "google_container_node_pool" "gke_nodes" {
     preemptible  = true
     machine_type = "n1-highmem-2"
     # local_ssd_count = 1
+    ephemeral_storage_config {
+      local_ssd_count = 2
+    }    
     tags         = ["gke-node", "{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
