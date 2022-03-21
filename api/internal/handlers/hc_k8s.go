@@ -62,7 +62,8 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// #1 prepare configs
 	hcCfg, err := makehcCfg(r)
 	if err != nil {
-		sess.Panic("bad hcCfg: " + err.Error())
+		sess.Error("bad hcCfg: " + err.Error())
+		return
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
@@ -93,7 +94,8 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// }
 	if k8sCfg == nil {
 		sess.Log("ERROR" + err.Error())
-		sess.Panic(err.Error())
+		sess.Error(err.Error())
+		return
 	}
 	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 
@@ -102,7 +104,8 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	err = internal.Ssa_k8sChartYaml(hcCfg.TurkeyId, k8sChartYaml, k8sCfg)
 	if err != nil {
 		sess.Log("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
-		sess.Panic(err.Error())
+		sess.Error(err.Error())
+		return
 	}
 
 	// quality of life improvement for /console people
@@ -120,7 +123,8 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			sess.Log("ERROR --- DB.conn.Exec FAILED !!! because" + fmt.Sprint(err))
-			sess.Panic(err.Error())
+			sess.Error(err.Error())
+			return
 		}
 	}
 	sess.Log("&#128024; --- db created: " + hcCfg.DBname)
@@ -180,12 +184,14 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// }
 	if k8sCfg == nil {
 		sess.Log("ERROR" + err.Error())
-		sess.Panic(err.Error())
+		sess.Error(err.Error())
+		return
 	}
 	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 	clientset, err := kubernetes.NewForConfig(k8sCfg)
 	if err != nil {
-		sess.Panic(err.Error())
+		sess.Error(err.Error())
+		return
 	}
 	//list ns
 	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
@@ -193,7 +199,8 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			LabelSelector: "TurkeyId=" + cfg.TurkeyId,
 		})
 	if err != nil {
-		sess.Panic(err.Error())
+		sess.Error(err.Error())
+		return
 	}
 	sess.Log("GET --- user <" + cfg.TurkeyId + "> owns: ")
 	for _, ns := range nsList.Items {
@@ -295,7 +302,7 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 	cfg, err := makehcCfg(r)
 	if err != nil {
-		sess.Panic("bad hcCfg: " + err.Error())
+		sess.Error("bad hcCfg: " + err.Error())
 		return
 	}
 
@@ -309,12 +316,13 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
 				err = pg_kick_all(cfg, sess)
 				if err != nil {
-					sess.Panic(err.Error())
+					sess.Error(err.Error())
 				}
 				_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
 			}
 			if err != nil {
-				sess.Panic(err.Error())
+				sess.Error(err.Error())
+				return
 			}
 		}
 		sess.Log("&#128024 deleted db: " + cfg.DBname)
@@ -329,12 +337,13 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		k8sCfg, err := rest.InClusterConfig()
 		// }
 		if k8sCfg == nil {
-			sess.Panic(err.Error())
+			sess.Error(err.Error())
 		}
 		sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 		clientset, err := kubernetes.NewForConfig(k8sCfg)
 		if err != nil {
-			sess.Panic("failed to get kubecfg" + err.Error())
+			sess.Error("failed to get kubecfg" + err.Error())
+			return
 		}
 
 		//delete ns
@@ -342,7 +351,8 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			nsName,
 			metav1.DeleteOptions{})
 		if err != nil {
-			sess.Panic("delete ns failed: " + err.Error())
+			sess.Error("delete ns failed: " + err.Error())
+			return
 		}
 		sess.Log("&#127754 deleted ns: " + nsName)
 	}()
@@ -353,7 +363,6 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		"tier":      cfg.Tier,
 		"turkeyId":  cfg.TurkeyId,
 	})
-	return
 })
 
 func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
