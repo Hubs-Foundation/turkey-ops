@@ -132,7 +132,6 @@ spec:
       volumes:
       - name: fuse 
         emptyDir: {}
-        medium: Memory
       containers:
       - name: reticulum
         volumeMounts:
