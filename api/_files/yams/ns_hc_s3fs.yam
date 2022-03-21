@@ -33,8 +33,6 @@ stringData:
   ADM_EMAIL: {{.UserEmail}}
   PGRST_DB_URI: postgres://postgres:{{.DBpass}}@pgbouncer.turkey-services/{{.DBname}}
   PGRST_JWT_SECRET: "{{.JWK}}"
-data:
-  GCP_SA_KEY: {{.GCP_SA_KEY_b64}}  
 ---
 ######################################################################################
 ###################################### ingress #######################################
@@ -130,13 +128,13 @@ spec:
         app: reticulum
     spec:
       volumes:
-      - name: fuse 
-        emptyDir: {}
-        medium: Memory
+      - name: hostfuse 
+        hostPath:
+          path: /home/s3fs/{{.Subdomain}}.{{.Domain}}
       containers:
       - name: reticulum
         volumeMounts:
-        - name: fuse
+        - name: hostfuse
           mountPath: /storage:shared
         securityContext:
           privileged: true
@@ -311,44 +309,7 @@ spec:
         image: mozillareality/ytdl:6_2021.6.6
         ports:
         - containerPort: 8080
-        imagePullPolicy: IfNotPresent
-      ###############################################
-      ########## gcsfuse ############################
-      ###############################################
-      - name: gcsfuse
-        image: mozillareality/gcsfuse:stable-latest
-        imagePullPolicy: Always
-        lifecycle:
-          preStop:
-            exec:
-              command: ["/bin/sh","-c","umount -f /var/gcsfuse"]
-        securityContext:
-          privileged: true
-          capabilities:
-            add:
-            - SYS_ADMIN
-        env:
-        - name: GCP_SA_KEY
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: GCP_SA_KEY
-        - name: GCS_BUCKET
-          value: turkeyfs
-        - name: MNT_DIR
-          value: /var/gcsfuse
-        - name: GCS_DIR
-          value: {{.Subdomain}}.{{.Domain}}
-        resources:
-          requests:
-            memory: 50Mi
-            cpu: 0.05
-          limits:
-            memory: 4Gi
-            cpu: 2
-        volumeMounts:
-        - name: fuse
-          mountPath: /var/gcsfuse:shared
+        imagePullPolicy: IfNotPresent              
 ---
 apiVersion: v1
 kind: Service
