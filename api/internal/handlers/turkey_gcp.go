@@ -34,6 +34,7 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Error("ERROR @ turkey_makeCfg: " + err.Error())
 			return
 		}
+		cfg.CLOUD = "gcp"
 		internal.GetLogger().Debug(fmt.Sprintf("turkeycfg: %v", cfg))
 		sess.Log("[creation] [" + cfg.Stackname + "] " + "started ... this can take a while")
 
@@ -84,9 +85,11 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
 			rootDomain := internal.RootDomain(cfg.Domain)
 			err = internal.Cfg.Gcps.Dns_createRecordSet(strings.Replace(rootDomain, ".", "-", 1),
-				strings.Replace("*."+cfg.Domain, rootDomain, "", 1), "A", []string{report["lb"]})
+				// strings.Replace("*."+cfg.Domain, rootDomain, "", 1),
+				"*."+cfg.Domain+".",
+				"A", []string{report["lb"]})
 
-			dnsMsg := "(already done)"
+			dnsMsg := "(already done in gcp/cloudDns)"
 			if err != nil {
 				sess.Log("[creation] [" + cfg.Stackname + "] " + "Dns_createRecordSet failed: " + err.Error())
 				dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"

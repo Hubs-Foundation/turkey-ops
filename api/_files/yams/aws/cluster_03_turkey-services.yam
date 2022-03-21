@@ -30,7 +30,8 @@ stringData:
   SMTP_PORT: "{{.SMTP_PORT}}"
   SMTP_USER: {{.SMTP_USER}}
   SMTP_PASS: {{.SMTP_PASS}}
-  GCP_SA_KEY: {{.GCP_SA_KEY}}
+data:
+  GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
@@ -347,6 +348,8 @@ spec:
             secretKeyRef:
               name: configs
               key: GCP_SA_KEY
+        - name: CLOUD
+          value: {{.CLOUD}}
         livenessProbe:
           httpGet:
             path: "http://turkey-api.turkey-services/Healthz"

@@ -47,6 +47,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sess.Error("ERROR @ turkey_makeCfg: " + err.Error())
 			return
 		}
+		cfg.CLOUD = "aws"
 		//aws service
 		awss, err := internal.NewAwsSvs(cfg.AWS_KEY, cfg.AWS_SECRET, cfg.AWS_REGION)
 		if err != nil {

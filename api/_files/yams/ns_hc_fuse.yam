@@ -130,12 +130,13 @@ spec:
       volumes:
       - name: hostfuse 
         hostPath:
-          path: /home/fuse/{{.Subdomain}}.{{.Domain}}
+          path: /home/hostfuse/{{.Subdomain}}.{{.Domain}}
       containers:
       - name: reticulum
         volumeMounts:
         - name: hostfuse
           mountPath: /storage:shared
+          mountPropagation: Bidirectional
         securityContext:
           privileged: true
           capabilities:
