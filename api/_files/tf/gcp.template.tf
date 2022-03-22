@@ -94,6 +94,11 @@ resource "google_container_cluster" "gke" {
       maximum = 24
     }
   }
+  # addons_config{
+  #   gcp_filestore_csi_driver_config{
+  #     enabled = true
+  #   }
+  # }
 }
 resource "google_container_node_pool" "gke_nodes" {
   provider = google-beta
@@ -112,7 +117,7 @@ resource "google_container_node_pool" "gke_nodes" {
     }
     preemptible  = true
     machine_type = "n1-highmem-2"
-    local_ssd_count = 1
+    # local_ssd_count = 1
     tags         = ["gke-node", "{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"

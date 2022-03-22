@@ -34,6 +34,21 @@ stringData:
   PGRST_DB_URI: postgres://postgres:{{.DBpass}}@pgbouncer.turkey-services/{{.DBname}}
   PGRST_JWT_SECRET: "{{.JWK}}"
 ---
+########################################################################
+###### expensive pvc for ret storage until we overhaul it ##############
+########################################################################  
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: ret-nas
+  namespace: hc-{{.Subdomain}}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 0.5Gi
+---
 ######################################################################################
 ###################################### ingress #######################################
 ######################################################################################
@@ -94,18 +109,6 @@ spec:
 ########################################################################
 ###################### reticulum #######################################
 ########################################################################
-# apiVersion: v1
-# kind: PersistentVolumeClaim # no plan to polluting the cluster with custom k8s operator managed storageClass so aws' gp2/ebs will be used
-# metadata:
-#   name: {{.Subdomain}}-pvc
-#   namespace: hc-{{.Subdomain}}
-# spec:
-#   accessModes:
-#     - ReadWriteOnce # only mode supported by the cheap and clean gp2 / ebs on aws. effectively preventing deployment/pod scaling -- not needed after we made ret stateless with storage redesign
-#   resources:
-#     requests:
-#       storage: 12Gi  # will use the default gp2 storageClass, minimum request size is 1Gi
-# ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -127,21 +130,24 @@ spec:
       labels:
         app: reticulum
     spec:
+      # volumes:
+      # - name: hostfuse 
+      #   hostPath:
+      #     path: /home/hostfuse/{{.Subdomain}}.{{.Domain}}
       volumes:
-      - name: hostfuse 
-        hostPath:
-          path: /home/hostfuse/{{.Subdomain}}.{{.Domain}}
+      - name: ret-nas
+        persistentVolumeClaim:
+          claimName: ret-nas
       containers:
       - name: reticulum
         volumeMounts:
-        - name: hostfuse
+        - name: ret-nas
           mountPath: /storage:shared
-          mountPropagation: Bidirectional
-        securityContext:
-          privileged: true
-          capabilities:
-            add:
-            - SYS_ADMIN          
+        # securityContext:
+        #   privileged: true
+        #   capabilities:
+        #     add:
+        #     - SYS_ADMIN          
         image: mozillareality/ret:stable-latest
         ports:
         - containerPort: 9100
