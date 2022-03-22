@@ -1,5 +1,5 @@
 FROM alpine
-run apk add curl
+run apk add curl bash
 workdir gcsfuse
 run curl https://github.com/kahing/goofys/releases/latest/download/goofys -L --output goofys
 run chmod +x goofys
