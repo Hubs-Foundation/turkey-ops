@@ -116,24 +116,22 @@ metadata:
   namespace: hc-{{.Subdomain}}
 spec:
   replicas: 1
+  serviceName: ret
   selector:
     matchLabels:
       app: reticulum
-  minReadySeconds: 15
-  strategy:
-    type: RollingUpdate
-    rollingUpdate: 
-      maxUnavailable: 1
-      maxSurge: 1
+  # minReadySeconds: 15
+  # strategy:
+  #   type: RollingUpdate
+  #   rollingUpdate: 
+  #     maxUnavailable: 1
+  #     maxSurge: 1
+
   template:
     metadata:
       labels:
         app: reticulum
     spec:
-      # volumes:
-      # - name: hostfuse 
-      #   hostPath:
-      #     path: /home/hostfuse/{{.Subdomain}}.{{.Domain}}
       volumes:
       - name: ret-nas
         persistentVolumeClaim:
@@ -142,12 +140,7 @@ spec:
       - name: reticulum
         volumeMounts:
         - name: ret-nas
-          mountPath: /storage:shared
-        # securityContext:
-        #   privileged: true
-        #   capabilities:
-        #     add:
-        #     - SYS_ADMIN          
+          mountPath: /storage:shared       
         image: mozillareality/ret:stable-latest
         ports:
         - containerPort: 9100
