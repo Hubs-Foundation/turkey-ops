@@ -1,7 +1,7 @@
 
 mkdir -p $MNT_DIR
 export cacheDir="/home/goofys-cache"
-mkdir -p 
+mkdir -p $cacheDir
 ./goofys --version
 keyfile="/gcsfuse/gcp_sa_key.json"
 echo "$GCP_SA_KEY" > $keyfile && chmod 600 $keyfile
