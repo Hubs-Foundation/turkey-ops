@@ -73,7 +73,7 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fileOption = "_s3fs"
 	}
 	if strings.Contains(hcCfg.Options, "_gcsfuse_sidecar") {
-		fileOption = "_fuse"
+		fileOption = "_gcsfuse_sidecar"
 	}
 	sess.Log(" >>>>>> selected option: " + fileOption)
 
