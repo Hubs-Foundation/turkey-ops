@@ -94,11 +94,11 @@ resource "google_container_cluster" "gke" {
       maximum = 24
     }
   }
-  addons_config{
-    http_load_balancing{
-      disabled = true
-    }
-  }
+  # addons_config{
+  #   http_load_balancing{
+  #     disabled = true
+  #   }
+  # }
 }
 resource "google_container_node_pool" "gke_nodes" {
   provider = google-beta
