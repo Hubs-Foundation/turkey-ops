@@ -69,8 +69,8 @@ spec:
         - --entryPoints.turn.forwardedHeaders.insecure=true        
         - --api
         - --api.insecure
-        - --accesslog
-        - --log.level=INFO
+        # - --accesslog
+        - --log.level=WARNING
         - --pilot.dashboard=false
         - --entryPoints.http.address=:80
         - --entrypoints.http.http.redirections.entryPoint.to=https
