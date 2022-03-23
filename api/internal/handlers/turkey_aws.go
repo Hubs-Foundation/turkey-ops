@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/smtp"
 	"strconv"
@@ -22,16 +23,18 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-var eks_yams = []string{
-	"cluster_00_deps.yam",
-	"cluster_01_ingress.yam",
-	"cluster_02_tools.yam",
-	"cluster_03_turkey-services.yam",
-	"cluster_04_turkey-stream.yam",
-	"cluster_05_monitoring.yam",
-	"cluster_autoscaler_aws.yam",
-}
-
+var (
+	eks_yams = []string{
+		"cluster_00_deps.yam",
+		"cluster_01_ingress.yam",
+		"cluster_02_tools.yam",
+		"cluster_03_turkey-services.yam",
+		"cluster_04_turkey-stream.yam",
+		"cluster_05_monitoring.yam",
+		"cluster_autoscaler_aws.yam",
+	}
+	aws_yams_dir = "./_files/yams/aws/"
+)
 var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
@@ -151,7 +154,9 @@ func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, auth
 	// 	sess.Error("ACM_findCertByDomainName err: " + err.Error())
 	// 	cfg.AWS_Ingress_Cert_ARN = `fix-me_arn:aws:acm:<region>:<acct>:certificate/<id>`
 	// }
-	k8sYamls, err := collectAndRenderYams(cfg.Env, awss, cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
+	// k8sYamls, err := collectAndRenderYams(cfg.Env, awss, cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
+	k8sYamls, err := collectAndRenderYams_localAws(cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
+
 	if err != nil {
 		sess.Error("failed @ collectYams: " + err.Error())
 		return nil, err
@@ -290,6 +295,20 @@ func collectAndRenderYams(env string, awss *internal.AwsSvs, cfg clusterCfg) ([]
 		return nil, err
 	}
 
+	return yamls, nil
+}
+
+func collectAndRenderYams_localAws(cfg clusterCfg) ([]string, error) {
+	yamFiles, _ := ioutil.ReadDir(aws_yams_dir)
+	var yams []string
+	for _, f := range yamFiles {
+		yam, _ := ioutil.ReadFile(aws_yams_dir + f.Name())
+		yams = append(yams, string(yam))
+	}
+	yamls, err := internal.K8s_render_yams(yams, cfg)
+	if err != nil {
+		return nil, err
+	}
 	return yamls, nil
 }
 
