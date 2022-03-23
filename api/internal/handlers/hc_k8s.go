@@ -68,12 +68,12 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
 
-	fileOption := "_pvc"
+	fileOption := "_gcsfuse_sidecar"
 	if os.Getenv("CLOUD") == "aws" {
 		fileOption = "_s3fs"
 	}
-	if strings.Contains(hcCfg.Options, "_gcsfuse_sidecar") {
-		fileOption = "_gcsfuse_sidecar"
+	if strings.Contains(hcCfg.Options, "_pvc") {
+		fileOption = "_pvc"
 	}
 	sess.Log(" >>>>>> selected option: " + fileOption)
 
