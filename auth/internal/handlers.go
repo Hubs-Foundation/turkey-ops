@@ -341,8 +341,9 @@ func AuthnProxy() http.Handler {
 
 		proxy := httputil.NewSingleHostReverseProxy(url)
 
+		original := proxy.Director
 		proxy.Director = func(r *http.Request) {
-			proxy.Director(r)
+			original(r)
 			modifyRequest(r, map[string]string{
 				"X-Forwarded-UserEmail": email,
 				"X-Forwarded-Idp":       cfg.DefaultProvider,
