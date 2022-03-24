@@ -315,7 +315,7 @@ func clearCSRFcookies(w http.ResponseWriter, r *http.Request) {
 func AuthnProxy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		Logger.Sugar().Debugf("r.Header, %v", r.Header)
-		Logger.Sugar().Debugf("r.URL: %v, r.Host: %v", r.URL, r.Host)
+		Logger.Sugar().Debugf("r.URL: %v, r.Host: %v, r.URL.Path: %v", r.URL, r.Host, r.URL.Path)
 
 		if r.URL.Path == "/" { //no direct calls
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -334,7 +334,12 @@ func AuthnProxy() http.Handler {
 		w.Header().Set("X-Forwarded-UserEmail", email)
 		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
 
-		proxy := httputil.NewSingleHostReverseProxy(r.URL)
+		urlStr := "https://" + r.Host + r.URL.Path
+		url, err := url.Parse(urlStr)
+		if err != nil {
+			Logger.Sugar().Errorf("bad urlStr, (%v) because %v", urlStr, err.Error())
+		}
+		proxy := httputil.NewSingleHostReverseProxy(url)
 		proxy.ServeHTTP(w, r)
 
 	})
