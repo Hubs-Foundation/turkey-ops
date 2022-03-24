@@ -278,11 +278,12 @@ func Authn() http.Handler {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
+		// Logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Sugar().Debugf("r.Header, %v", r.Header)
 		// Read URI from header if we're acting as forward auth middleware
 		if _, ok := r.Header["X-Forwarded-Uri"]; ok {
 			r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
 		}
-		// Logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		email, err := CheckCookie(r)
 		if err != nil {
