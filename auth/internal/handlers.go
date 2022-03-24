@@ -334,7 +334,8 @@ func AuthnProxy() http.Handler {
 		w.Header().Set("X-Forwarded-UserEmail", email)
 		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
 
-		urlStr := "https://" + r.Host + r.URL.Path
+		// urlStr := "https://" + r.Host + r.URL.Path
+		urlStr := r.Header.Get("backend")
 		url, err := url.Parse(urlStr)
 		if err != nil {
 			Logger.Sugar().Errorf("bad urlStr, (%v) because %v", urlStr, err.Error())

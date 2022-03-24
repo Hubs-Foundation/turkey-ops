@@ -28,7 +28,7 @@ func main() {
 
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	//curl localhost:9001/zaplvl
-	//curl -X PUT -d 'level=debug' localhost:9001/zaplvl
+	//apk add curl; curl -X PUT -d 'level=debug' localhost:9001/zaplvl
 
 	internal.StartServer(router, 9001)
 }
