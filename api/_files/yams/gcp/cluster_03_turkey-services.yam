@@ -78,12 +78,12 @@ spec:
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
-      - name: turkeyDomain
-        value: {{.Domain}}
       - name: turkeyauth
         image: mozillareality/turkeyauth:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
+        - name: turkeyDomain
+          value: {{.Domain}}        
         - name: trustedClients  # must end with ','
           value: https://api.{{.Domain}}/console,http://localhost:3030,
         - name: COOKIE_SECRET
