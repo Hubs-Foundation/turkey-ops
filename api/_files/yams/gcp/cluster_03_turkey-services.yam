@@ -298,6 +298,8 @@ spec:
         image: mozillareality/turkeyapi:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
+        - name: AUTH_PROXY_URL
+          value: http://auth:9001/authn          
         - name: POD_IP
           valueFrom:
             fieldRef:

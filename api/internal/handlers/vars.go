@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-func dumpHeader(r *http.Request) string {
+func Dumpheader(r *http.Request) string {
 	headerBytes, _ := json.Marshal(r.Header)
 	return string(headerBytes)
 }

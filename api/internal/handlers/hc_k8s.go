@@ -171,7 +171,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	t.Execute(&buf, cfg)
 	// 	k8sChartYaml := buf.String()
 	// 	if cfg.TurkeyId == "dev_dumpr" {
-	// 		sess.Log(dumpHeader(r))
+	// 		sess.Log(Dumpheader(r))
 	// 		return
 	// 	}
 	// 	if cfg.TurkeyId == "dev_gimmechart" {

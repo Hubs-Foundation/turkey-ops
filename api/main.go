@@ -72,7 +72,7 @@ func auth(role string) func(http.Handler) http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-
+			internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
 			email := authResp.Header.Get("X-Forwarded-UserEmail")
 			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
 			r.Header.Set("X-Forwarded-UserEmail", email)

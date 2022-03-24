@@ -17,7 +17,7 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	internal.GetLogger().Info("console accessed --- r.dump: " + dumpHeader(r))
+	internal.GetLogger().Info("console accessed --- r.dump: " + Dumpheader(r))
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	t, err := template.ParseFiles("./_statics/console.html")

@@ -45,7 +45,7 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	//check api key for ddos protection?
 
-	internal.GetLogger().Debug(dumpHeader(r))
+	internal.GetLogger().Debug(Dumpheader(r))
 
 	//++++++++++++++++++++++++
 
@@ -102,7 +102,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	internal.GetLogger().Debug(dumpHeader(r))
+	internal.GetLogger().Debug(Dumpheader(r))
 	//++++++++++++++++++++++++
 	//get bytes for debug print + decode
 	rBodyBytes, _ := ioutil.ReadAll(r.Body)
@@ -213,7 +213,7 @@ var TurkeyGitops = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	internal.GetLogger().Debug(dumpHeader(r))
+	internal.GetLogger().Debug(Dumpheader(r))
 	rBodyBytes, _ := ioutil.ReadAll(r.Body)
 	internal.GetLogger().Debug(prettyPrintJson(rBodyBytes))
 

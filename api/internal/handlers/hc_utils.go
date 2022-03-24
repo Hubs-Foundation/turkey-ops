@@ -39,7 +39,7 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	internal.GetLogger().Debug(dumpHeader(r))
+	internal.GetLogger().Debug(Dumpheader(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	html := `
 	<h1> your hubs services are warming up, <br>
@@ -101,7 +101,7 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	go wakeupHcNs(nsName)
 	internal.HC_NS_TABLE.Set(nsName, internal.HcNsNotes{Lastchecked: time.Now()})
 
-	internal.GetLogger().Debug("wakeupHcNs launched for nsName: " + nsName + ", dumpHeader(r): " + dumpHeader(r))
+	internal.GetLogger().Debug("wakeupHcNs launched for nsName: " + nsName + ", Dumpheader(r): " + Dumpheader(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, g404_std_RespMsg)
 
