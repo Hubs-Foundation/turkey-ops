@@ -72,9 +72,10 @@ func auth(role string) func(http.Handler) http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			r.Header.Set("X-Forwarded-UserEmail", authResp.Header.Get("X-Forwarded-UserEmail"))
-			email := r.Header.Get("X-Forwarded-UserEmail")
+
+			email := authResp.Header.Get("X-Forwarded-UserEmail")
 			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
+			r.Header.Set("X-Forwarded-UserEmail", email)
 			if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return

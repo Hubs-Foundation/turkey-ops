@@ -148,6 +148,8 @@ spec:
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
+      - name: turkeyDomain
+        value: {{.Domain}}
       - name: turkeyauth
         image: mozillareality/turkeyauth:stable-latest
         imagePullPolicy: IfNotPresent        
