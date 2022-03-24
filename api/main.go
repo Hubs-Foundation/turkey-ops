@@ -25,13 +25,15 @@ func main() {
 
 	router.Handle("/Healthz", handlers.Healthz())
 
-	router.Handle("/console", auth("foobar")(handlers.Console))
+	// router.Handle("/console", auth("foobar")(handlers.Console))
+	router.Handle("/console", handlers.Console)
 
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
 
 	router.Handle("/hc_get", handlers.Hc_get)
-	router.Handle("/hc_deploy", auth("foobar")(handlers.Hc_deploy))
+	// router.Handle("/hc_deploy", auth("foobar")(handlers.Hc_deploy))
+	router.Handle("/hc_deploy", handlers.Hc_deploy)
 
 	router.Handle("/hc_del", handlers.Hc_del)
 
@@ -45,9 +47,9 @@ func main() {
 
 	router.Handle("/ytdl/api/info", handlers.Ytdl)
 
-	router.Handle("/tco_aws", handlers.TurkeyAws)
-	router.Handle("/tco_gcp", handlers.TurkeyGcp)
-	router.Handle("/tco_gcp_del", handlers.TurkeyGcp_del)
+	router.Handle("/tco_aws", auth("foobar")(handlers.TurkeyAws))
+	router.Handle("/tco_gcp", auth("foobar")(handlers.TurkeyGcp))
+	router.Handle("/tco_gcp_del", auth("foobar")(handlers.TurkeyGcp_del))
 
 	router.Handle("/Dummy", handlers.Dummy)
 
