@@ -331,22 +331,33 @@ func AuthnProxy() http.Handler {
 		}
 
 		Logger.Sugar().Debug("allowed. good cookie found for " + email)
-		w.Header().Set("X-Forwarded-UserEmail", email)
-		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
 
-		// urlStr := "https://" + r.Host + r.URL.Path
 		urlStr := r.Header.Get("backend")
 		url, err := url.Parse(urlStr)
 		if err != nil {
 			Logger.Sugar().Errorf("bad urlStr, (%v) because %v", urlStr, err.Error())
 		}
 		Logger.Sugar().Debugf("remote url: %v", url)
-		// r.URL.Path = url.Path
-		// r.URL.Host = url.Host
+
 		proxy := httputil.NewSingleHostReverseProxy(url)
+
+		proxy.Director = func(r *http.Request) {
+			proxy.Director(r)
+			modifyRequest(r, map[string]string{
+				"X-Forwarded-UserEmail": email,
+				"X-Forwarded-Idp":       cfg.DefaultProvider,
+			})
+		}
+
 		proxy.ServeHTTP(w, r)
 
 	})
+}
+
+func modifyRequest(req *http.Request, headers map[string]string) {
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
 }
 
 // func TraefikIp() http.Handler {
