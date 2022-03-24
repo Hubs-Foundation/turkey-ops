@@ -315,7 +315,7 @@ func clearCSRFcookies(w http.ResponseWriter, r *http.Request) {
 func AuthnProxy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		Logger.Sugar().Debugf("r.Header, %v", r.Header)
-		Logger.Sugar().Debugf("r.URL, %v", r.URL)
+		Logger.Sugar().Debugf("r.URL: %v, r.Host: %v", r.URL, r.Host)
 
 		if r.URL.Path == "/" { //no direct calls
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
