@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -82,26 +84,48 @@ func auth(role string) func(http.Handler) http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
+			body, readError := io.ReadAll(authResp.Body)
+			if readError != nil {
+				internal.GetLogger().Sugar().Debugf("Error reading body %s. Cause: %s", internal.Cfg.AuthProxyUrl, readError)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 			defer authResp.Body.Close()
+
+			// Pass the forward response's body and selected headers if it
+			// didn't return a response within the range of [200, 300).
 			if authResp.StatusCode < http.StatusOK || authResp.StatusCode >= http.StatusMultipleChoices {
 				internal.GetLogger().Sugar().Debugf("auth fail -- got code: %v", authResp.StatusCode)
+				CopyHeaders(w.Header(), authResp.Header)
+
+				// Grab the location header, if any.
+				redirectURL, err := authResp.Location()
+
+				if err != nil {
+					if !errors.Is(err, http.ErrNoLocation) {
+						internal.GetLogger().Sugar().Debugf("Error reading response location header %s. Cause: %s", internal.Cfg.AuthProxyUrl, err)
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
+				} else if redirectURL.String() != "" {
+					w.Header().Set("Location", redirectURL.String())
+				}
+				w.WriteHeader(authResp.StatusCode)
+				if _, err = w.Write(body); err != nil {
+					internal.GetLogger().Error(err.Error())
+				}
+				return
+			}
+			internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
+			email := authResp.Header.Get("X-Forwarded-UserEmail")
+			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
+			r.Header.Set("X-Forwarded-UserEmail", email)
+			if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			if authResp.StatusCode == http.StatusOK {
-				internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
-				email := authResp.Header.Get("X-Forwarded-UserEmail")
-				internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
-				r.Header.Set("X-Forwarded-UserEmail", email)
-				if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {
-					http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-					return
-				}
-				next.ServeHTTP(w, r)
-			} else {
-				r.RequestURI = r.URL.RequestURI()
-				next.ServeHTTP(w, r)
-			}
+			r.RequestURI = r.URL.RequestURI()
+			next.ServeHTTP(w, r)
 		})
 	}
 }
