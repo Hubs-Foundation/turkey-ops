@@ -1,11 +1,8 @@
 package main
 
 import (
-	"errors"
-	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	"main/internal"
 	"main/internal/handlers"
@@ -76,83 +73,83 @@ func requireRole(role string) func(http.Handler) http.Handler {
 	}
 }
 
-func tfa(role string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authReq, err := http.NewRequest(http.MethodGet, internal.Cfg.AuthProxyUrl, nil)
-			if err != nil {
-				internal.GetLogger().Warn("forward auth failed to make NewRequest: " + err.Error())
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-				return
-			}
-			authHttpClient := http.Client{
-				CheckRedirect: func(r *http.Request, via []*http.Request) error {
-					return http.ErrUseLastResponse
-				},
-				Timeout: 30 * time.Second,
-			}
-			CopyHeaders(authReq.Header, r.Header)
-			authResp, err := authHttpClient.Do(authReq)
-			if err != nil {
-				internal.GetLogger().Warn("forward auth failed to send: " + err.Error())
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-				return
-			}
-			body, readError := io.ReadAll(authResp.Body)
-			if readError != nil {
-				internal.GetLogger().Sugar().Debugf("Error reading body %s. Cause: %s", internal.Cfg.AuthProxyUrl, readError)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			defer authResp.Body.Close()
+// func tfa(role string) func(http.Handler) http.Handler {
+// 	return func(next http.Handler) http.Handler {
+// 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 			authReq, err := http.NewRequest(http.MethodGet, internal.Cfg.AuthProxyUrl, nil)
+// 			if err != nil {
+// 				internal.GetLogger().Warn("forward auth failed to make NewRequest: " + err.Error())
+// 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 				return
+// 			}
+// 			authHttpClient := http.Client{
+// 				CheckRedirect: func(r *http.Request, via []*http.Request) error {
+// 					return http.ErrUseLastResponse
+// 				},
+// 				Timeout: 30 * time.Second,
+// 			}
+// 			CopyHeaders(authReq.Header, r.Header)
+// 			authResp, err := authHttpClient.Do(authReq)
+// 			if err != nil {
+// 				internal.GetLogger().Warn("forward auth failed to send: " + err.Error())
+// 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 				return
+// 			}
+// 			body, readError := io.ReadAll(authResp.Body)
+// 			if readError != nil {
+// 				internal.GetLogger().Sugar().Debugf("Error reading body %s. Cause: %s", internal.Cfg.AuthProxyUrl, readError)
+// 				w.WriteHeader(http.StatusInternalServerError)
+// 				return
+// 			}
+// 			defer authResp.Body.Close()
 
-			internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
-			// Pass the forward response's body and selected headers if it
-			// didn't return a response within the range of [200, 300).
-			if authResp.StatusCode < http.StatusOK || authResp.StatusCode >= http.StatusMultipleChoices {
-				internal.GetLogger().Sugar().Debugf("auth fail -- got code: %v", authResp.StatusCode)
-				CopyHeaders(w.Header(), authResp.Header)
+// 			internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
+// 			// Pass the forward response's body and selected headers if it
+// 			// didn't return a response within the range of [200, 300).
+// 			if authResp.StatusCode < http.StatusOK || authResp.StatusCode >= http.StatusMultipleChoices {
+// 				internal.GetLogger().Sugar().Debugf("auth fail -- got code: %v", authResp.StatusCode)
+// 				CopyHeaders(w.Header(), authResp.Header)
 
-				// Grab the location header, if any.
-				redirectURL, err := authResp.Location()
+// 				// Grab the location header, if any.
+// 				redirectURL, err := authResp.Location()
 
-				if err != nil {
-					if !errors.Is(err, http.ErrNoLocation) {
-						internal.GetLogger().Sugar().Debugf("Error reading response location header %s. Cause: %s", internal.Cfg.AuthProxyUrl, err)
-						w.WriteHeader(http.StatusInternalServerError)
-						return
-					}
-				} else if redirectURL.String() != "" {
-					w.Header().Set("Location", redirectURL.String())
-				}
-				internal.GetLogger().Debug("redirectURL: " + redirectURL.String())
-				w.WriteHeader(authResp.StatusCode)
-				if _, err = w.Write(body); err != nil {
-					internal.GetLogger().Error(err.Error())
-				}
-				return
-			}
-			internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
-			email := authResp.Header.Get("X-Forwarded-UserEmail")
-			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
-			r.Header.Set("X-Forwarded-UserEmail", email)
-			if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-				return
-			}
-			r.RequestURI = r.URL.RequestURI()
-			next.ServeHTTP(w, r)
-		})
-	}
-}
+// 				if err != nil {
+// 					if !errors.Is(err, http.ErrNoLocation) {
+// 						internal.GetLogger().Sugar().Debugf("Error reading response location header %s. Cause: %s", internal.Cfg.AuthProxyUrl, err)
+// 						w.WriteHeader(http.StatusInternalServerError)
+// 						return
+// 					}
+// 				} else if redirectURL.String() != "" {
+// 					w.Header().Set("Location", redirectURL.String())
+// 				}
+// 				internal.GetLogger().Debug("redirectURL: " + redirectURL.String())
+// 				w.WriteHeader(authResp.StatusCode)
+// 				if _, err = w.Write(body); err != nil {
+// 					internal.GetLogger().Error(err.Error())
+// 				}
+// 				return
+// 			}
+// 			internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
+// 			email := authResp.Header.Get("X-Forwarded-UserEmail")
+// 			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
+// 			r.Header.Set("X-Forwarded-UserEmail", email)
+// 			if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {
+// 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 				return
+// 			}
+// 			r.RequestURI = r.URL.RequestURI()
+// 			next.ServeHTTP(w, r)
+// 		})
+// 	}
+// }
 
-// CopyHeaders copies http headers from source to destination, it
-// does not overide, but adds multiple headers
-func CopyHeaders(dst http.Header, src http.Header) {
-	for k, vv := range src {
-		dst[k] = append(dst[k], vv...)
-	}
-}
+// // CopyHeaders copies http headers from source to destination, it
+// // does not overide, but adds multiple headers
+// func CopyHeaders(dst http.Header, src http.Header) {
+// 	for k, vv := range src {
+// 		dst[k] = append(dst[k], vv...)
+// 	}
+// }
 
 // //probably better to just keep k8s ingress rules explicit
 // func localOnly(role string) func(http.Handler) http.Handler {

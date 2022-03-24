@@ -83,9 +83,9 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	csrf := MakeCSRFCookie(r, nonce)
 	http.SetCookie(w, csrf)
 
-	if !cfg.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
-		Logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
-	}
+	// if !cfg.InsecureCookie && r.Header.Get("X-Forwarded-Proto") != "https" {
+	// 	Logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
+	// }
 
 	// todo is there a better way to do this in go?
 	redirectURL := "auth." + cfg.Domain
@@ -317,29 +317,36 @@ func AuthnProxy() http.Handler {
 		Logger.Sugar().Debugf("r.Header, %v", r.Header)
 		Logger.Sugar().Debugf("r.URL: %v, r.Host: %v, r.URL.Path: %v", r.URL, r.Host, r.URL.Path)
 
-		if r.URL.Path == "/" { //no direct calls
+		if r.URL.Path == "/" { //no direct calls, i can't tell host but i can tell path
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		// Logger.Debug("dumpHeader: " + dumpHeader(r))
+
+		if r.Header.Get("AuthnProxied") != "" {
+			Logger.Error("omg authn proxy's looping")
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		urlStr := r.Header.Get("backend")
+		backendUrl, err := url.Parse(urlStr)
+		if err != nil {
+			Logger.Sugar().Errorf("bad r.Headers[backend], (%v) because %v", urlStr, err.Error())
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		Logger.Sugar().Debugf("backend url: %v", backendUrl)
 
 		email, err := CheckCookie(r)
 		if err != nil {
 			Logger.Debug("valid auth cookie not found >>> authRedirect")
+			r.URL = backendUrl
 			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
 
 		Logger.Sugar().Debug("allowed. good cookie found for " + email)
 
-		urlStr := r.Header.Get("backend")
-		url, err := url.Parse(urlStr)
-		if err != nil {
-			Logger.Sugar().Errorf("bad urlStr, (%v) because %v", urlStr, err.Error())
-		}
-		Logger.Sugar().Debugf("remote url: %v", url)
-
-		proxy := httputil.NewSingleHostReverseProxy(url)
+		proxy := httputil.NewSingleHostReverseProxy(backendUrl)
 
 		original := proxy.Director
 		proxy.Director = func(r *http.Request) {
@@ -347,11 +354,10 @@ func AuthnProxy() http.Handler {
 			modifyRequest(r, map[string]string{
 				"X-Forwarded-UserEmail": email,
 				"X-Forwarded-Idp":       cfg.DefaultProvider,
+				"AuthnProxied":          "1",
 			})
 		}
-
 		proxy.ServeHTTP(w, r)
-
 	})
 }
 
