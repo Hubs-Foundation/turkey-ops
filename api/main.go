@@ -94,6 +94,7 @@ func auth(role string) func(http.Handler) http.Handler {
 			}
 			defer authResp.Body.Close()
 
+			internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
 			// Pass the forward response's body and selected headers if it
 			// didn't return a response within the range of [200, 300).
 			if authResp.StatusCode < http.StatusOK || authResp.StatusCode >= http.StatusMultipleChoices {
@@ -112,6 +113,7 @@ func auth(role string) func(http.Handler) http.Handler {
 				} else if redirectURL.String() != "" {
 					w.Header().Set("Location", redirectURL.String())
 				}
+				internal.GetLogger().Debug("redirectURL: " + redirectURL.String())
 				w.WriteHeader(authResp.StatusCode)
 				if _, err = w.Write(body); err != nil {
 					internal.GetLogger().Error(err.Error())
