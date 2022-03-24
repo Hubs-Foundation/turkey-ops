@@ -340,7 +340,9 @@ func AuthnProxy() http.Handler {
 		if err != nil {
 			Logger.Sugar().Errorf("bad urlStr, (%v) because %v", urlStr, err.Error())
 		}
-		r.URL = url
+		Logger.Sugar().Debugf("remote url: %v", url)
+		// r.URL.Path = url.Path
+		// r.URL.Host = url.Host
 		proxy := httputil.NewSingleHostReverseProxy(url)
 		proxy.ServeHTTP(w, r)
 
