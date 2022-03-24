@@ -92,7 +92,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: auth
+            name: turkeyauth
             port: 
               number: 9001
 ---
