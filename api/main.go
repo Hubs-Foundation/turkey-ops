@@ -80,20 +80,25 @@ func auth(role string) func(http.Handler) http.Handler {
 				return
 			}
 			defer authResp.Body.Close()
-			if authResp.StatusCode != http.StatusOK {
+			if authResp.StatusCode < http.StatusOK || authResp.StatusCode >= http.StatusMultipleChoices {
 				internal.GetLogger().Sugar().Debugf("auth fail -- got code: %v", authResp.StatusCode)
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
-			email := authResp.Header.Get("X-Forwarded-UserEmail")
-			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
-			r.Header.Set("X-Forwarded-UserEmail", email)
-			if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-				return
+			if authResp.StatusCode == http.StatusOK {
+				internal.GetLogger().Sugar().Debugf("authResp.Header: ", authResp.Header)
+				email := authResp.Header.Get("X-Forwarded-UserEmail")
+				internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
+				r.Header.Set("X-Forwarded-UserEmail", email)
+				if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {
+					http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+					return
+				}
+				next.ServeHTTP(w, r)
+			} else {
+				r.RequestURI = r.URL.RequestURI()
+				next.ServeHTTP(w, r)
 			}
-			next.ServeHTTP(w, r)
 		})
 	}
 }
