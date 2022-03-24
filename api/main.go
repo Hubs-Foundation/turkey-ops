@@ -57,6 +57,8 @@ func main() {
 
 }
 
+// scratchpad
+
 //todo: make a real rbac -- this just checks if the user's email got an @mozilla.com at the end
 func auth(role string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -73,6 +75,7 @@ func auth(role string) func(http.Handler) http.Handler {
 				},
 				Timeout: 30 * time.Second,
 			}
+			CopyHeaders(authReq.Header, r.Header)
 			authResp, err := authHttpClient.Do(authReq)
 			if err != nil {
 				internal.GetLogger().Warn("forward auth failed to send: " + err.Error())
@@ -100,6 +103,14 @@ func auth(role string) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 			}
 		})
+	}
+}
+
+// CopyHeaders copies http headers from source to destination, it
+// does not overide, but adds multiple headers
+func CopyHeaders(dst http.Header, src http.Header) {
+	for k, vv := range src {
+		dst[k] = append(dst[k], vv...)
 	}
 }
 
