@@ -76,41 +76,25 @@ spec:
 ####################################################################################
 ####################################### auth #######################################
 ####################################################################################  
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
-  name: turkeyauth
+  name: turkey-auth
   namespace: turkey-services
-  annotations:
-    kubernetes.io/ingress.class: haproxy
 spec:
-  rules:
-  - host: auth.{{.Domain}}
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: auth
-            port: 
-              number: 9001
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: turkey-auth
-#   namespace: turkey-services
-# spec:
-#   entryPoints:
-#     - https
-#   routes:
-#   - kind: Rule
-#     match: Host(`auth.{{.Domain}}`) && PathPrefix(`/`)
-#     services:
-#     - kind: Service
-#       name: auth
-#       passHostHeader: true
-#       port: 9001
+  entryPoints:
+    - https
+  routes:
+  - kind: Rule
+    match: Host(`auth.{{.Domain}}`) && PathPrefix(`/`)
+    # middlewares:
+    # - name: turkeyauth
+    #   namespace: turkey-services
+    services:
+    - kind: Service
+      name: auth
+      passHostHeader: true
+      port: 9001
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
@@ -209,51 +193,32 @@ spec:
 ####################################################################################
 ######################################### api ######################################
 ####################################################################################
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
 metadata:
-  name: turkeyapi
+  name: turkey-api
   namespace: turkey-services
-  annotations:
-    kubernetes.io/ingress.class: haproxy
 spec:
-  rules:
-  - host: api.{{.Domain}}
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: turkey-api
-            port: 
-              number: 888
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: turkey-api
-#   namespace: turkey-services
-# spec:
-#   entryPoints:
-#     - https
-#   routes:  
-#   - kind: Rule
-#     match: Host(`api.{{.Domain}}`) && PathPrefix(`/`)
-#     middlewares:
-#     - name: turkeyauth
-#       namespace: turkey-services
-#     services:
-#     - kind: Service
-#       name: turkey-api
-#       passHostHeader: true
-#       port: 888
-#   - kind: Rule
-#     match: Host(`api.{{.Domain}}`) && PathPrefix(`/webhooks/`)
-#     services:
-#     - kind: Service
-#       name: turkey-api
-#       passHostHeader: true
-#       port: 888
+  entryPoints:
+    - https
+  routes:  
+  - kind: Rule
+    match: Host(`api.{{.Domain}}`) && PathPrefix(`/`)
+    middlewares:
+    - name: turkeyauth
+      namespace: turkey-services
+    services:
+    - kind: Service
+      name: turkey-api
+      passHostHeader: true
+      port: 888
+  - kind: Rule
+    match: Host(`api.{{.Domain}}`) && PathPrefix(`/webhooks/`)
+    services:
+    - kind: Service
+      name: turkey-api
+      passHostHeader: true
+      port: 888
 ---
 apiVersion: v1
 kind: Secret

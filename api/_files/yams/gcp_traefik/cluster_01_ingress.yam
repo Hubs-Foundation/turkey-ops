@@ -164,7 +164,7 @@ spec:
     targetPort: 80
   - name: https
     port: 443
-    targetPort: 4443   
+    targetPort: 443   
   - name: dialog
     port: 4443
     targetPort: 4443
@@ -197,52 +197,51 @@ spec:
   - name: haproxy
     port: 1024
     targetPort: 1024
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: traefik
-#   namespace: ingress
-#   # annotations:
-#   #   ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
-# spec:
-#   entryPoints:
-#     - https
-#     # - web
-#   routes:
-#   - kind: Rule
-#     match: Host(`traefik.{{.Domain}}`) && PathPrefix(`/`)
-#     middlewares:                    
-#     - name: turkeyauth         
-#       namespace: ingress
-#     services:                       
-#     - kind: Service
-#       name: traefik
-#       namespace: ingress
-#       passHostHeader: true
-#       port: 1080
-
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: global-404-fallback
-#   namespace: ingress
-# spec:
-#   entryPoints:
-#     - https
-#   routes:
-#   - kind: Rule
-#     match: HostRegexp(`{subdomain:.*}.{{.Domain}}`) && PathPrefix(`/`)
-#     priority: 1
-#     middlewares:
-#     - name: global-404-fallback
-#       namespace: turkey-services
-#     services:                       
-#     - kind: Service
-#       namespace: turkey-services
-#       name: turkey-api      
-#       port: 888
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik
+  namespace: ingress
+  # annotations:
+  #   ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
+spec:
+  entryPoints:
+    - https
+    # - web
+  routes:
+  - kind: Rule
+    match: Host(`traefik.{{.Domain}}`) && PathPrefix(`/`)
+    middlewares:                    
+    - name: turkeyauth         
+      namespace: ingress
+    services:                       
+    - kind: Service
+      name: traefik
+      namespace: ingress
+      passHostHeader: true
+      port: 1080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: global-404-fallback
+  namespace: ingress
+spec:
+  entryPoints:
+    - https
+  routes:
+  - kind: Rule
+    match: HostRegexp(`{subdomain:.*}.{{.Domain}}`) && PathPrefix(`/`)
+    priority: 1
+    middlewares:
+    - name: global-404-fallback
+      namespace: turkey-services
+    services:                       
+    - kind: Service
+      namespace: turkey-services
+      name: turkey-api      
+      port: 888
 ---
 ################### middlewares ##########################
 apiVersion: traefik.containo.us/v1alpha1

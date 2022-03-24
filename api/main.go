@@ -22,13 +22,13 @@ func main() {
 
 	router.Handle("/Healthz", handlers.Healthz())
 
-	router.Handle("/console", requireRole("foobar")(handlers.Console))
+	router.Handle("/console", auth("foobar")(handlers.Console))
 
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
 
 	router.Handle("/hc_get", handlers.Hc_get)
-	router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
+	router.Handle("/hc_deploy", auth("foobar")(handlers.Hc_deploy))
 
 	router.Handle("/hc_del", handlers.Hc_del)
 
@@ -57,9 +57,22 @@ func main() {
 }
 
 //todo: make a real rbac -- this just checks if the user's email got an @mozilla.com at the end
-func requireRole(role string) func(http.Handler) http.Handler {
+func auth(role string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authResp, err := http.Get(internal.Cfg.AuthProxyUrl)
+			if err != nil {
+				internal.GetLogger().Warn("forward auth failed: " + err.Error())
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			defer authResp.Body.Close()
+			if authResp.StatusCode != http.StatusOK {
+				internal.GetLogger().Sugar().Debugf("auth fail -- got code: %v", authResp.StatusCode)
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			r.Header.Set("X-Forwarded-UserEmail", authResp.Header.Get("X-Forwarded-UserEmail"))
 			email := r.Header.Get("X-Forwarded-UserEmail")
 			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
 			if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {

@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	Port        string
-	PodIp       string
-	PodNS       string
-	PodLabelApp string
+	Port         string
+	PodIp        string
+	PodNS        string
+	PodLabelApp  string
+	AuthProxyUrl string `auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)`
 
 	Env      string `long:"environment" env:"ENV" description:"env config"`
 	Domain   string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
@@ -46,6 +47,8 @@ var Cfg *Config
 
 func MakeCfg() {
 	Cfg = &Config{}
+
+	Cfg.AuthProxyUrl = os.Getenv("AUTH_PROXY_URL")
 
 	Cfg.Port = getEnv("POD_PORT", "888")
 	Cfg.PodIp = os.Getenv("POD_IP")
