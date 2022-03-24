@@ -3,8 +3,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: turkey-stream
-  
+  name: turkey-stream  
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -14,9 +13,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: haproxy
     haproxy.org/server-ssl: "true"
-    haproxy.org/load-balance: "url_param roomId"  #http://cbonte.github.io/haproxy-dconv/configuration-1.4.html#4.2-balance%20url_param
-    # traefik.ingress.kubernetes.io/router.entrypoints: dialog
-
+    haproxy.org/load-balance: "url_param roomId"
 spec:
   rules:
   - host: stream.{{.Domain}}
