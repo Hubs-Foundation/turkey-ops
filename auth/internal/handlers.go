@@ -288,6 +288,7 @@ func Authn() http.Handler {
 		if err != nil {
 			Logger.Debug("valid auth cookie not found >>> authRedirect")
 			authRedirect(w, r, cfg.DefaultProvider)
+			return
 		}
 
 		Logger.Sugar().Debug("allowed. good cookie found for " + email)

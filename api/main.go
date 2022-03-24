@@ -25,20 +25,18 @@ func main() {
 
 	router.Handle("/Healthz", handlers.Healthz())
 
-	// router.Handle("/console", auth("foobar")(handlers.Console))
-	router.Handle("/console", handlers.Console)
+	// router.Handle("/console", handlers.Console)
+	router.Handle("/console", requireRole("foobar")(handlers.Console))
 
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
 
 	router.Handle("/hc_get", handlers.Hc_get)
-	// router.Handle("/hc_deploy", auth("foobar")(handlers.Hc_deploy))
-	router.Handle("/hc_deploy", handlers.Hc_deploy)
+	// router.Handle("/hc_deploy", handlers.Hc_deploy)
+	router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
 
 	router.Handle("/hc_del", handlers.Hc_del)
 
-	// router.Handle("/admin-info", handlers.Ita_admin_info)
-	// router.Handle("/configs/reticulum/ps", handlers.Ita_cfg_ret_ps)
 	router.Handle("/hc_launch_fallback", handlers.HC_launch_fallback)
 	router.Handle("/global_404_fallback", handlers.Global_404_launch_fallback)
 
@@ -47,9 +45,9 @@ func main() {
 
 	router.Handle("/ytdl/api/info", handlers.Ytdl)
 
-	router.Handle("/tco_aws", auth("foobar")(handlers.TurkeyAws))
-	router.Handle("/tco_gcp", auth("foobar")(handlers.TurkeyGcp))
-	router.Handle("/tco_gcp_del", auth("foobar")(handlers.TurkeyGcp_del))
+	router.Handle("/tco_aws", requireRole("foobar")(handlers.TurkeyAws))
+	router.Handle("/tco_gcp", requireRole("foobar")(handlers.TurkeyGcp))
+	router.Handle("/tco_gcp_del", requireRole("foobar")(handlers.TurkeyGcp_del))
 
 	router.Handle("/Dummy", handlers.Dummy)
 
@@ -64,7 +62,21 @@ func main() {
 // scratchpad
 
 //todo: make a real rbac -- this just checks if the user's email got an @mozilla.com at the end
-func auth(role string) func(http.Handler) http.Handler {
+func requireRole(role string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			email := r.Header.Get("X-Forwarded-UserEmail")
+			internal.GetLogger().Debug("X-Forwarded-UserEmail: " + email)
+			if len(email) < 13 || email[len(email)-12:] != "@mozilla.com" {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func tfa(role string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authReq, err := http.NewRequest(http.MethodGet, internal.Cfg.AuthProxyUrl, nil)
