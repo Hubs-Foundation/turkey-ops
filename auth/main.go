@@ -24,6 +24,7 @@ func main() {
 	router.Handle("/logout", internal.Logout())
 	// router.Handle("/traefik-ip", internal.TraefikIp())
 	router.Handle("/authn", internal.Authn())
+	router.Handle("/", internal.AuthnProxy())
 
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	//curl localhost:9001/zaplvl

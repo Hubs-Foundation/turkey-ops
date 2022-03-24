@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strings"
 	"sync/atomic"
@@ -120,8 +121,8 @@ func OauthFxa() http.Handler {
 			return
 		}
 
-		Logger.Info("Handling callback")
-		Logger.Info("dumpHeader: " + dumpHeader(r))
+		Logger.Debug("Handling callback")
+		Logger.Debug("dumpHeader: " + dumpHeader(r))
 
 		// Check state
 		state := r.URL.Query().Get("state")
@@ -281,6 +282,7 @@ func Authn() http.Handler {
 		// Logger.Debug("dumpHeader: " + dumpHeader(r))
 		Logger.Sugar().Debugf("r.Header, %v", r.Header)
 		// Read URI from header if we're acting as forward auth middleware
+		// because traefik would add X-Forwarded-Uri for original requestor
 		if _, ok := r.Header["X-Forwarded-Uri"]; ok {
 			r.URL, _ = url.Parse(r.Header.Get("X-Forwarded-Uri"))
 		}
@@ -308,6 +310,32 @@ func clearCSRFcookies(w http.ResponseWriter, r *http.Request) {
 			http.SetCookie(w, &http.Cookie{Name: c.Name, Value: "", Path: "/", Expires: time.Unix(0, 0)})
 		}
 	}
+}
+
+func AuthnProxy() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		// Logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Sugar().Debugf("r.Header, %v", r.Header)
+
+		email, err := CheckCookie(r)
+		if err != nil {
+			Logger.Debug("valid auth cookie not found >>> authRedirect")
+			authRedirect(w, r, cfg.DefaultProvider)
+			return
+		}
+
+		Logger.Sugar().Debug("allowed. good cookie found for " + email)
+		w.Header().Set("X-Forwarded-UserEmail", email)
+		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
+
+		proxy := httputil.NewSingleHostReverseProxy(r.URL)
+		proxy.ServeHTTP(w, r)
+
+	})
 }
 
 // func TraefikIp() http.Handler {

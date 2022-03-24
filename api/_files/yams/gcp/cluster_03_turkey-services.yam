@@ -218,6 +218,8 @@ metadata:
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
+    haproxy.org/path-rewrite: "/authn_proxy"
+    haproxy.org/request-set-header: X-Forwarded-Uri https://api.dev1.myhubs.net/[path]
 spec:
   rules:
   - host: api.{{.Domain}}
@@ -227,9 +229,9 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: turkey-api
+            name: auth
             port: 
-              number: 888
+              number: 9001
 # apiVersion: traefik.containo.us/v1alpha1
 # kind: IngressRoute
 # metadata:
