@@ -6,14 +6,19 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: traefik-dynamic-config
+  name: haproxy-tcp-config
   namespace: ingress
 data:
-  traefik.yml: |
-    tls:
-      certificates:
-        - certFile: /letsencrypt/tls.crt
-          keyFile: /letsencrypt/tls.key
+  5349:
+    turkey-stream/coturn:5349
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-config
+  namespace: ingress
+data:
+  ssl-redirect: "true"
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -36,65 +41,14 @@ spec:
       # hostNetwork: true
       serviceAccountName: ingress-controller
       terminationGracePeriodSeconds: 60
-      volumes:
-      - name: letsencrypt
-        secret:
-          secretName: letsencrypt
-      - name: config
-        configMap:
-          name: traefik-dynamic-config
       containers:
-      - name: traefik
-        image: mozillareality/traefik:v2.5
-        imagePullPolicy: IfNotPresent        
-        volumeMounts:
-        - mountPath: /letsencrypt
-          name: letsencrypt
-        - mountPath: /config
-          name: config         
-        args:
-        - --providers.file.filename=/config/traefik.yml
-        - --serversTransport.insecureSkipVerify=true
-        - --providers.kubernetesingress=true
-        - --providers.kubernetescrd
-        - --entryPoints.traefik.address=:1080
-        - --entryPoints.https.address=:443
-        - --entrypoints.https.http.tls=true
-        - --entryPoints.https.forwardedHeaders.insecure=true
-        # - --entryPoints.dialog.address=:4443
-        # - --entrypoints.dialog.http.tls=true
-        # - --entryPoints.dialog.forwardedHeaders.insecure=true
-        - --entryPoints.turn.address=:5349
-        - --entrypoints.turn.http.tls=true
-        - --entryPoints.turn.forwardedHeaders.insecure=true        
-        - --api
-        - --api.insecure
-        # - --accesslog
-        - --log.level=WARNING
-        - --pilot.dashboard=false
-        - --entryPoints.http.address=:80
-        - --entrypoints.http.http.redirections.entryPoint.to=https
-        - --entrypoints.http.http.redirections.entryPoint.scheme=https
-        - --entrypoints.http.http.redirections.entrypoint.permanent=true
-        - --metrics.prometheus=true
-        - --providers.kubernetescrd.allowcrossnamespace
-        resources:
-          requests:
-            memory: 200Mi
-            cpu: 0.1
-          limits:
-            memory: 4Gi
-            cpu: 2
-      ######################################################################################################################
-      ### bundling haproxy container with traefik is not ideal for maximum scaling/scheduling efficiency
-      ### but it is necessary to share a single load balancer ( without messing with CRDs )
-      ### so we'll (slightly) over provision here, feels worth it for the simplicity it offers
-      ######################################################################################################################
       - name: haproxy
         image: mozillareality/haproxy:1.7.0
         args:
+        - --configmap=ingress/haproxy-config
         - --https-bind-port=4443
-        - --disable-http
+        - --http-bind-port=80
+        - --configmap-tcp-services=ingress/haproxy-tcp-config
         - --ingress.class=haproxy
         - --log=trace #error warning info debug trace
         - --default-ssl-certificate=ingress/letsencrypt
@@ -152,7 +106,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: ssl
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: {{.AWS_Ingress_Cert_ARN}}
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: 443,4443,5349
-    service.beta.kubernetes.io/aws-load-balancer-alpn-policy: HTTP2Preferred
+    service.beta.kubernetes.io/aws-load-balancer-alpn-policy: HTTP2Optional
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -197,88 +151,6 @@ spec:
   - name: haproxy
     port: 1024
     targetPort: 1024
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: traefik
-#   namespace: ingress
-#   # annotations:
-#   #   ingress.kubernetes.io/whitelist-x-forwarded-for: "true"
-# spec:
-#   entryPoints:
-#     - https
-#     # - web
-#   routes:
-#   - kind: Rule
-#     match: Host(`traefik.{{.Domain}}`) && PathPrefix(`/`)
-#     middlewares:                    
-#     - name: turkeyauth         
-#       namespace: ingress
-#     services:                       
-#     - kind: Service
-#       name: traefik
-#       namespace: ingress
-#       passHostHeader: true
-#       port: 1080
-
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: IngressRoute
-# metadata:
-#   name: global-404-fallback
-#   namespace: ingress
-# spec:
-#   entryPoints:
-#     - https
-#   routes:
-#   - kind: Rule
-#     match: HostRegexp(`{subdomain:.*}.{{.Domain}}`) && PathPrefix(`/`)
-#     priority: 1
-#     middlewares:
-#     - name: global-404-fallback
-#       namespace: turkey-services
-#     services:                       
-#     - kind: Service
-#       namespace: turkey-services
-#       name: turkey-api      
-#       port: 888
----
-################### middlewares ##########################
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: turkeyauth
-  namespace: ingress
-spec:
-  forwardAuth:
-    address: http://auth.turkey-services:9001/authn
-    authResponseHeaders:
-      - X-Forwarded-User
-    trustForwardHeader: true
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: Middleware
-# metadata:
-#   name: rewrite4cdn
-#   namespace: ingress
-# spec:
-#   stripPrefix:
-#     prefixes: 
-#       - /_cdn    
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: Middleware
-# metadata:
-#   name: internal-ip-whitelist
-#   namespace: ingress
-# spec:
-#   ipWhiteList:
-#     sourceRange:
-#       # - 10.0.0.0/16
-#       - 73.53.171.231/32  # gtan@mozilla.com
-#     # ipStrategy:
-#     #   depth: 2
 ####################################################################################
 ################################### RBAC ###########################################
 ####################################################################################
@@ -294,50 +166,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: ingress-controller
 rules:
-#traefik
-  - apiGroups:
-      - ""
-    resources:
-      - services
-      - endpoints
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - extensions
-      - networking.k8s.io
-    resources:
-      - ingresses
-      - ingressclasses
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - extensions
-    resources:
-      - ingresses/status
-    verbs:
-      - update
-  - apiGroups:
-      - traefik.containo.us
-    resources:
-      - middlewares
-      - middlewaretcps
-      - ingressroutes
-      - traefikservices
-      - ingressroutetcps
-      - ingressrouteudps
-      - tlsoptions
-      - tlsstores
-      - serverstransports
-    verbs:
-      - get
-      - list
-      - watch
-#haproxy
   - apiGroups:
     - ""
     resources:

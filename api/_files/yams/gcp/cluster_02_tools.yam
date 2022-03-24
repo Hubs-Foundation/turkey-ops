@@ -96,15 +96,3 @@ subjects:
 - kind: ServiceAccount
   name: skooner-sa
   namespace: tools 
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: turkeyauth
-  namespace: tools
-spec:
-  forwardAuth:
-    address: http://auth.turkey-services:9001/authn
-    authResponseHeaders:
-      - X-Forwarded-User
-    trustForwardHeader: true
