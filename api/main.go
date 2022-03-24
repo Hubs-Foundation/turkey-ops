@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"main/internal"
 	"main/internal/handlers"
@@ -60,9 +61,21 @@ func main() {
 func auth(role string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authResp, err := http.Get(internal.Cfg.AuthProxyUrl)
+			authReq, err := http.NewRequest(http.MethodGet, internal.Cfg.AuthProxyUrl, nil)
 			if err != nil {
-				internal.GetLogger().Warn("forward auth failed: " + err.Error())
+				internal.GetLogger().Warn("forward auth failed to make NewRequest: " + err.Error())
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			authHttpClient := http.Client{
+				CheckRedirect: func(r *http.Request, via []*http.Request) error {
+					return http.ErrUseLastResponse
+				},
+				Timeout: 30 * time.Second,
+			}
+			authResp, err := authHttpClient.Do(authReq)
+			if err != nil {
+				internal.GetLogger().Warn("forward auth failed to send: " + err.Error())
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
