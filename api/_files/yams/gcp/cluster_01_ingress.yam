@@ -19,6 +19,7 @@ metadata:
   namespace: ingress
 data:
   ssl-redirect: "true"
+  syslog-server: 'address:stdout, format: raw, facility:daemon'
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -50,7 +51,7 @@ spec:
         - --http-bind-port=8080
         - --configmap-tcp-services=ingress/haproxy-tcp-config
         - --ingress.class=haproxy
-        - --log=trace #error warning info debug trace
+        - --log=info #error warning info debug trace
         - --default-ssl-certificate=ingress/letsencrypt
         securityContext:
           runAsUser:  1000
@@ -108,7 +109,7 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 80
+    targetPort: 8080
   - name: https
     port: 443
     targetPort: 4443   
@@ -122,7 +123,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: haproxy
+  name: haproxy-stats
   namespace: ingress
 spec:
   selector:
@@ -245,10 +246,10 @@ data:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: certbotbot-daily
+  name: certbotbot
   namespace: ingress
 spec:
-  schedule: "0 0 * * *"
+  schedule: "*/10 * * * *" # every 10 minutes initially, certbotbot will update this to a much longer interval after a successful run
   jobTemplate:
     spec:
       template:
@@ -279,6 +280,8 @@ spec:
                   name: configs
                   key: GCP_SA_KEY                                           
           restartPolicy: OnFailure
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -298,39 +301,5 @@ subjects:
 - kind: ServiceAccount
   name: certbotbot
   namespace: ingress 
----
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: certbotbot-init
-  namespace: ingress
-spec:
-  template:
-    spec:
-      serviceAccountName: certbotbot
-      containers:
-      - name: certbotbot
-        image: mozillareality/certbotbot_route53:stable-latest
-        imagePullPolicy: Always
-        env:
-        - name: DOMAIN
-          value: {{.Domain}}
-        - name: CERTBOT_EMAIL
-          value: gtan@mozilla.com
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: AWS_KEY      
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: AWS_SECRET    
-        - name: GCP_SA_KEY
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: GCP_SA_KEY                                      
-      restartPolicy: OnFailure
-  backoffLimit: 3
+
+

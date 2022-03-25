@@ -47,7 +47,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: haproxy
     haproxy.org/server-ssl: "true"
-    haproxy.org/cors-allow-origin: "*"
+    haproxy.org/response-set-header: |
+      access-control-allow-origin "https://{{.Subdomain}}.{{.Domain}}"
 spec:
   rules:
   - host: {{.Subdomain}}.{{.Domain}}
