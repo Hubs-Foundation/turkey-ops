@@ -39,59 +39,87 @@ data:
 ######################################################################################
 ###################################### ingress #######################################
 ######################################################################################
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: turkey-https
   namespace: hc-{{.Subdomain}}
+  annotations:
+    kubernetes.io/ingress.class: haproxy
 spec:
-  entryPoints:
-    - https
-  routes:
-  - kind: Rule
-    match: Host(`{{.Subdomain}}.{{.Domain}}`) && PathPrefix(`/`)
-    middlewares:
-    - name: hc-launch-fallback
-      namespace: turkey-services    
-    services:
-    - kind: Service
-      name: ret
-      passHostHeader: true
-      port: 4000
-  - kind: Rule
-    match: (Host(`{{.Subdomain}}-assets.{{.Domain}}`) || Host(`{{.Subdomain}}-cors.{{.Domain}}`)) && (PathPrefix(`/files/`) || PathPrefix(`/http`))
-    services:
-    - kind: Service
-      name: ret
-      passHostHeader: true
-      port: 4000
-    middlewares:
-    - name: ret-cors
-      namespace: turkey-services
-  - kind: Rule
-    match: (Host(`{{.Subdomain}}-assets.{{.Domain}}`) || Host(`{{.Subdomain}}-cors.{{.Domain}}`)) && PathPrefix(`/hubs`)
-    services:
-    - kind: Service
-      name: hubs
-      passHostHeader: true
-      port: 8080
-  - kind: Rule
-    match: (Host(`{{.Subdomain}}-assets.{{.Domain}}`) || Host(`{{.Subdomain}}-cors.{{.Domain}}`)) && PathPrefix(`/spoke`)
-    services:
-    - kind: Service
-      name: spoke
-      passHostHeader: true
-      port: 8080      
-# ---
-# apiVersion: traefik.containo.us/v1alpha1
-# kind: Middleware
-# metadata:
-#   name: ret-cors
-#   namespace: hc-{{.Subdomain}}
-# spec:
-#   headers:
-#     customResponseHeaders:
-#       Access-Control-Allow-Origin: "*"
+  rules:
+  - host: {{.Subdomain}}.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000
+  - host: {{.Subdomain}}-assets.{{.Domain}}
+    http:
+      paths:
+      - path: /files/
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000
+      - path: /http
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000                  
+      - path: /hubs
+        pathType: Prefix
+        backend:
+          service:
+            name: hubs
+            port: 
+              number: 8080
+      - path: /spoke
+        pathType: Prefix
+        backend:
+          service:
+            name: spoke
+            port: 
+              number: 8080                          
+  - host: {{.Subdomain}}-cors.{{.Domain}}
+    http:
+      paths:
+      - path: /files/
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000
+      - path: /http
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000                  
+      - path: /hubs
+        pathType: Prefix
+        backend:
+          service:
+            name: hubs
+            port: 
+              number: 8080
+      - path: /spoke
+        pathType: Prefix
+        backend:
+          service:
+            name: spoke
+            port: 
+              number: 8080                          
 ---
 ########################################################################
 ###################### reticulum #######################################
