@@ -46,6 +46,8 @@ metadata:
   namespace: hc-{{.Subdomain}}
   annotations:
     kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
+    haproxy.org/cors-allow-origin: "*"
 spec:
   rules:
   - host: {{.Subdomain}}.{{.Domain}}
@@ -69,7 +71,7 @@ spec:
             port: 
               number: 4000
       - path: /http
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: ret
@@ -100,7 +102,7 @@ spec:
             port: 
               number: 4000
       - path: /http
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: ret
