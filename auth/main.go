@@ -14,6 +14,7 @@ func main() {
 
 	internal.InitLogger()
 	internal.MakeCfg()
+	internal.Proxyman.Init()
 
 	router := http.NewServeMux()
 	router.Handle("/healthz", internal.Healthz())
