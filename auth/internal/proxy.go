@@ -30,6 +30,7 @@ func (p *proxyman) Get(target string) (*httputil.ReverseProxy, error) {
 		Logger.Sugar().Errorf("failed to create new proxy: %v", err)
 		return nil, err
 	}
+	p.Pool[target] = newProxy
 	return newProxy, nil
 }
 
