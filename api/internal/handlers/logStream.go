@@ -46,9 +46,9 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	sess.SseChan = make(chan string)
 	if sess.DeadLetterQueue == nil {
 		sess.DeadLetterQueue = make(chan string)
-		sess.Log("&#127383; (logStream) new connection for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+		sess.Log("&#127383; (logStream) <b>new</b> connection for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
 	} else {
-		sess.Log("&#127383; (logStream) reconnected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+		sess.Log("&#127383; (logStream) <b>re</b>connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
 		if len(sess.DeadLetterQueue) > 0 {
 			sess.Log(fmt.Sprintf(" ###### poping %v messages in DeadLetterQueue ######", len(sess.DeadLetterQueue)))
 			for len(sess.DeadLetterQueue) > 0 {
