@@ -45,7 +45,7 @@ func (p *proxyman) new(target string) (*httputil.ReverseProxy, error) {
 		return nil, err
 	}
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
-	proxy.Transport = &http.Transport{ResponseHeaderTimeout: 1 * time.Minute}
+	proxy.Transport = &http.Transport{ResponseHeaderTimeout: 15 * time.Minute}
 
 	// original := proxy.Director
 	// proxy.Director = func(r *http.Request) {

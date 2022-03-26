@@ -18,6 +18,7 @@ import (
 func GetClient(r *http.Request) string {
 	client := r.URL.Query()["client"]
 	if len(client) != 1 || !strings.Contains(cfg.TrustedClients, client[0]+",") {
+		Logger.Sugar().Debugf("bad client: %v", client)
 		return ""
 	}
 	return client[0]
@@ -243,7 +244,7 @@ func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider stri
 	if len(c.Value) != 32 {
 		return false, "", "", errors.New("invalid CSRF cookie value")
 	}
-
+	Logger.Sugar().Debugf("c.Value: %v, state: %v", c.Value, state)
 	// Check nonce match
 	if c.Value != state[:32] {
 		return false, "", "", errors.New("CSRF cookie does not match state")
@@ -271,7 +272,7 @@ func returnUrl(r *http.Request) string {
 	if len(r.URL.Query()["client"]) == 1 {
 		client = r.URL.Query()["client"][0]
 	}
-
+	Logger.Debug("returnUrl: " + client)
 	return client
 }
 
