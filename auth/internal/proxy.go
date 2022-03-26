@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"sync"
 	"time"
 )
 
@@ -12,6 +13,7 @@ type proxyman struct {
 }
 
 var Proxyman *proxyman
+var mu sync.Mutex
 
 func InitProxyman() {
 	Proxyman = &proxyman{
@@ -21,6 +23,9 @@ func InitProxyman() {
 }
 
 func (p *proxyman) Get(target string) (*httputil.ReverseProxy, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
 	if proxy, ok := p.Pool[target]; ok {
 		return proxy, nil
 	}
