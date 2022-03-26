@@ -323,7 +323,7 @@ func AuthnProxy() http.Handler {
 		}
 
 		if r.Header.Get("AuthnProxied") != "" {
-			Logger.Error("omg authn proxy's looping")
+			Logger.Error("omg authn proxy's looping, why???")
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
@@ -347,16 +347,17 @@ func AuthnProxy() http.Handler {
 		Logger.Sugar().Debug("allowed. good cookie found for " + email)
 
 		proxy := httputil.NewSingleHostReverseProxy(backendUrl)
+		proxy.Transport = &http.Transport{ResponseHeaderTimeout: 1 * time.Minute}
 
-		original := proxy.Director
-		proxy.Director = func(r *http.Request) {
-			original(r)
-			modifyRequest(r, map[string]string{
-				"X-Forwarded-UserEmail": email,
-				"X-Forwarded-Idp":       cfg.DefaultProvider,
-				"AuthnProxied":          "1",
-			})
-		}
+		// original := proxy.Director
+		// proxy.Director = func(r *http.Request) {
+		// 	original(r)
+		// 	modifyRequest(r, map[string]string{
+		// 		"X-Forwarded-UserEmail": email,
+		// 		"AuthnProxied":          "1",
+		// 	})
+		// }
+		r.Header.Set("X-Forwarded-UserEmail", email)
 		proxy.ServeHTTP(w, r)
 	})
 }
