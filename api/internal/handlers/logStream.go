@@ -43,8 +43,8 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "??? where's your cacheData ???")
 		sess = internal.AddCacheData(cookie)
 	}
+	sess.SseChan = make(chan string)
 	if sess.DeadLetterQueue == nil {
-		sess.SseChan = make(chan string)
 		sess.DeadLetterQueue = make(chan string)
 		sess.Log("&#127383; (logStream) new connection for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
 	} else {
