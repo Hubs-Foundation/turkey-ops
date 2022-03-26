@@ -13,8 +13,11 @@ type proxyman struct {
 
 var Proxyman *proxyman
 
-func (p *proxyman) Init() {
-	p.Pool = make(map[string]*httputil.ReverseProxy)
+func InitProxyman() {
+	Proxyman = &proxyman{
+		Pool: make(map[string]*httputil.ReverseProxy),
+	}
+
 }
 
 func (p *proxyman) Get(target string) (*httputil.ReverseProxy, error) {

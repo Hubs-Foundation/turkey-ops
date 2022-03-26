@@ -11,10 +11,10 @@ var (
 )
 
 func main() {
-
 	internal.InitLogger()
+
 	internal.MakeCfg()
-	internal.Proxyman.Init()
+	internal.InitProxyman()
 
 	router := http.NewServeMux()
 	router.Handle("/healthz", internal.Healthz())
