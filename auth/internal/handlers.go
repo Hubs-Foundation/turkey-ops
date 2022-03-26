@@ -358,6 +358,8 @@ func AuthnProxy() http.Handler {
 		// 	})
 		// }
 		r.Header.Set("X-Forwarded-UserEmail", email)
+		r.Header.Set("rhstest", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+
 		proxy.ServeHTTP(w, r)
 	})
 }
