@@ -337,7 +337,7 @@ func AuthnProxy() http.Handler {
 		email, err := CheckCookie(r)
 		if err != nil {
 			Logger.Debug("valid auth cookie not found >>> authRedirect")
-			r.URL = backendUrl
+			r.URL.Host = backendUrl.Host
 			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
