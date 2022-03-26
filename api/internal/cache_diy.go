@@ -11,16 +11,19 @@ type CacheBox struct {
 }
 type SessBox struct {
 	sync.RWMutex
-	internal map[string]*CacheBoxSessData
+	internal map[string]*CacheBoxSessData // map[cookie.session_token]*CacheBoxSessData
 }
 type CacheBoxSessData struct {
 	// UserData *UserData
-	UserData map[string]string
-	SseChan  chan string
+	UserData        map[string]string
+	SseChan         chan string
+	DeadLetterQueue chan string
 }
 
 func NewSessBox() *SessBox {
-	return &SessBox{internal: make(map[string]*CacheBoxSessData)}
+	return &SessBox{
+		internal: make(map[string]*CacheBoxSessData),
+	}
 }
 func (sb *SessBox) Load(key string) *CacheBoxSessData {
 	sb.RLock()
@@ -71,9 +74,10 @@ func (mb *MetaBox) Delete(key string) {
 func (sess *CacheBoxSessData) consoleLog(msg string) {
 	go func() {
 		if sess == nil {
-			logger.Debug("no session")
+			logger.Debug("no session, ")
 			return
 		}
+
 		attempt := 0
 		delay := time.Millisecond * 1
 		delayStep := 500 * time.Millisecond
@@ -88,7 +92,6 @@ func (sess *CacheBoxSessData) consoleLog(msg string) {
 			attempt = attempt + 1
 		}
 		time.Sleep(delay)
-		// sess.SseChan <- fmt.Sprintf(msg)
 		sess.SseChan <- msg
 	}()
 	time.Sleep(5e7)

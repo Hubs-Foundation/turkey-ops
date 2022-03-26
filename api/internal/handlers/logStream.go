@@ -43,9 +43,18 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "??? where's your cacheData ???")
 		sess = internal.AddCacheData(cookie)
 	}
-
-	sess.SseChan = make(chan string)
-	sess.Log("&#127383; LogStream connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+	if sess.DeadLetterQueue == nil {
+		sess.SseChan = make(chan string)
+		sess.DeadLetterQueue = make(chan string)
+		sess.Log("&#127383; (logStream) new connection for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+	} else {
+		sess.Log("&#127383; (logStream) reconnected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+		sess.Log(fmt.Sprintf(" ###### poping %v messages in DeadLetterQueue ######", len(sess.DeadLetterQueue)))
+		for len(sess.DeadLetterQueue) > 0 {
+			msg := <-sess.DeadLetterQueue
+			sess.Log(fmt.Sprintf("msg #%v: %v", len(sess.DeadLetterQueue), msg))
+		}
+	}
 
 	notify := w.(http.CloseNotifier).CloseNotify()
 	go func() {
