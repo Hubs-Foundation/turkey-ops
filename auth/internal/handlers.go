@@ -365,6 +365,35 @@ func modifyRequest(req *http.Request, headers map[string]string) {
 	}
 }
 
+func ChkCookie() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/chk_cookie" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		Logger.Sugar().Debugf("r.Header, %v", r.Header)
+
+		email, err := CheckCookie(r)
+		if err != nil {
+			Logger.Debug("bad cookie" + err.Error())
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		Logger.Sugar().Debug("good cookie found for " + email)
+
+		// accessing := r.URL.Query()["req"]
+
+		clearCSRFcookies(w, r)
+		r.Header.Set("verified-UserEmail", email)
+		// json.NewEncoder(w).Encode(map[string]interface{}{
+		// 	"user_email": email,
+		// 	// "user_role":  "notyet",
+		// })
+		w.WriteHeader(http.StatusOK)
+	})
+}
+
 // func TraefikIp() http.Handler {
 // 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 // 		if r.URL.Path != "/traefik-ip" {
