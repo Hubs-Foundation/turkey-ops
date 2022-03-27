@@ -78,13 +78,13 @@ spec:
         #   initialDelaySeconds: 20
         #   timeoutSeconds: 1
         #   periodSeconds: 120
-        # resources:
-        #   requests:
-        #     memory: 200Mi
-        #     cpu: 0.1
-        #   limits:
-        #     memory: 4Gi
-        #     cpu: 2
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: 0.25
+          limits:
+            memory: 4Gi
+            cpu: 2
 ---
 apiVersion: v1
 kind: Service
@@ -139,20 +139,20 @@ spec:
             secretKeyRef:
               name: configs
               key: PSQL             
-        livenessProbe:
-          httpGet:
-            path: "http://localhost"
-            port: 1111
-          initialDelaySeconds: 20
-          timeoutSeconds: 1
-          periodSeconds: 120
-        # resources:
-        #   requests:
-        #     memory: 200Mi
-        #     cpu: 0.1
-        #   limits:
-        #     memory: 4Gi
-        #     cpu: 2
+        # livenessProbe:
+        #   httpGet:
+        #     path: "http://localhost"
+        #     port: 1111
+        #   initialDelaySeconds: 20
+        #   timeoutSeconds: 1
+        #   periodSeconds: 120
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1
+          limits:
+            memory: 4Gi
+            cpu: 2
 ---
 apiVersion: v1
 kind: Service
