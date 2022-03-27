@@ -24,68 +24,57 @@ function logout() {
   window.location.assign("https://auth."+getDomain()+"/logout");
 }
 
-// document.getElementById("cfgEx_get").addEventListener("click", cfgEx_getClicked);
-// function cfgEx_getClicked(){
-//   document.getElementById("cfg").value = `{
-//   "turkeyid": "someString"
-// }`
-// }
 
-// document.getElementById("cfgEx_del").addEventListener("click", cfgEx_delClicked);
-// function cfgEx_delClicked(){
-//   document.getElementById("cfg").value = `{
-//   "turkeyid": "someString",
-//   "subdomain": "changeMe"
-// }`
-// }
 
-// document.getElementById("cfgEx_deploy").addEventListener("click", cfgEx_deployClicked);
-// function cfgEx_deployClicked(){
-//   document.getElementById("cfg").value = `{
-//   "turkeyid": "someString",
-//   "subdomain": "changeMe"
-// }`
-// }
 
-document.getElementById("deployBtn").addEventListener("click", deployBtnClicked);
+document.getElementById("hc_deploy").addEventListener("click", deployBtnClicked);
 function deployBtnClicked() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("POST", "/hc_deploy", true);
+  xhttp.open("POST", "/hc_instance", true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }
 
-document.getElementById("getBtn").addEventListener("click", getBtnClicked);
+document.getElementById("hc_get").addEventListener("click", getBtnClicked);
 function getBtnClicked() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("POST", "/hc_get", true);
+  xhttp.open("GET", "/hc_instance", true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }
 
-document.getElementById("delBtn").addEventListener("click", delClicked);
+document.getElementById("hc_del").addEventListener("click", delClicked);
 function delClicked() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("POST", "/hc_del", true);
+  xhttp.open("DELETE", "/hc_instance", true);
+  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xhttp.send(cfg);
+}
+document.getElementById("hc_pause").addEventListener("click", delClicked);
+function delClicked() {
+  cfg=document.getElementById("cfg").value
+  var xhttp = new XMLHttpRequest(); res=""
+  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
+  xhttp.open("DELETE", "/hc_instance?status=down", true);
+  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xhttp.send(cfg);
+}
+document.getElementById("hc_resume").addEventListener("click", delClicked);
+function delClicked() {
+  cfg=document.getElementById("cfg").value
+  var xhttp = new XMLHttpRequest(); res=""
+  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
+  xhttp.open("DELETE", "/hc_instance?status=up", true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }
 
-// document.getElementById("delDbBtn").addEventListener("click", delDbClicked);
-// function delDbClicked() {
-//   cfg=document.getElementById("cfg").value
-//   var xhttp = new XMLHttpRequest(); res=""
-//   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-//   xhttp.open("POST", "/hc_delDB", true);
-//   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-//   xhttp.send(cfg);
-// }
 //-----------
 document.getElementById("turkeyAws").addEventListener("click", turkeyAwsBtnClicked);
 function turkeyAwsBtnClicked() {

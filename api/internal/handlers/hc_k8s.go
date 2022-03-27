@@ -18,6 +18,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -51,12 +52,33 @@ type hcCfg struct {
 	PhxKey      string `json:"phxkey"`
 }
 
-var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	if r.URL.Path != "/hc_deploy" || r.Method != "POST" {
+	if r.URL.Path != "/hc_instance" || r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+	switch r.Method {
+	case "POST":
+		hc_create(w, r)
+	case "GET":
+		hc_get(w, r)
+	case "DELETE":
+		hc_delete(w, r)
+	case "PATCH":
+		status := r.URL.Query().Get("status")
+		if status == "down" || status == "up" {
+			hc_switch(w, r)
+			return
+		}
+
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+})
+
+func hc_create(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 
 	// #1 prepare configs
@@ -141,14 +163,9 @@ var Hc_deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		"tier":      hcCfg.Tier,
 		"turkeyId":  hcCfg.TurkeyId,
 	})
-	return
-})
+}
 
-var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hc_get" || r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
+func hc_get(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 
 	cfg, err := makehcCfg(r)
@@ -156,32 +173,6 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("bad hcCfg: " + err.Error())
 		return
 	}
-
-	// //<debugging cheatcodes>
-	// if cfg.TurkeyId[0:4] == "dev_" {
-	// 	if cfg.Subdomain[0:4] != "dev-" {
-	// 		fmt.Println("dev_ cheatcodes only work with subdomains start with == dev-")
-	// 		return
-	// 	}
-	// 	sess.Log(`turkeyUserId[0:4] == dev_ means dev mode`)
-
-	// 	cfg.UserEmail = "gtan@mozilla.com"
-	// 	t, _ := template.ParseFiles("./_files/ns_hc.yam")
-	// 	var buf bytes.Buffer
-	// 	t.Execute(&buf, cfg)
-	// 	k8sChartYaml := buf.String()
-	// 	if cfg.TurkeyId == "dev_dumpr" {
-	// 		sess.Log(Dumpheader(r))
-	// 		return
-	// 	}
-	// 	if cfg.TurkeyId == "dev_gimmechart" {
-	// 		w.Header().Set("Content-Disposition", "attachment; filename="+cfg.Subdomain+".yaml")
-	// 		w.Header().Set("Content-Type", "text/plain")
-	// 		io.Copy(w, strings.NewReader(k8sChartYaml))
-	// 		return
-	// 	}
-	// }
-	// //</debugging cheatcodes>
 
 	//getting k8s config
 	sess.Log("&#9989; ... using InClusterConfig")
@@ -212,7 +203,7 @@ var Hc_get = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sess.Log("......ObjectMeta.GetName: " + ns.ObjectMeta.GetName())
 		sess.Log("......ObjectMeta.Labels.dump: " + fmt.Sprint(ns.ObjectMeta.Labels))
 	}
-})
+}
 
 func makehcCfg(r *http.Request) (hcCfg, error) {
 	var cfg hcCfg
@@ -299,11 +290,7 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 	return cfg, nil
 }
 
-var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/hc_del" || r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
+func hc_delete(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 	cfg, err := makehcCfg(r)
 	if err != nil {
@@ -370,7 +357,7 @@ var Hc_del = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		"tier":      cfg.Tier,
 		"turkeyId":  cfg.TurkeyId,
 	})
-})
+}
 
 func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
 	sqatterCount := -1
@@ -390,4 +377,36 @@ func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
 		return errors.New("ERROR: pg_kick_all: failed to kick <" + fmt.Sprint(sqatterCount) + "> squatter(s): ")
 	}
 	return nil
+}
+
+func hc_switch(w http.ResponseWriter, r *http.Request) {
+	sess := internal.GetSession(r.Cookie)
+	cfg, err := makehcCfg(r)
+	if err != nil {
+		sess.Log("bad hcCfg: " + err.Error())
+		return
+	}
+	ns := "hc-" + cfg.Subdomain
+
+	Replicas := 0
+	status := r.URL.Query().Get("status")
+	if status == "up" {
+		// todo -- read tier, find out desired replica counts for each deployments (hubs, ret, spoke, ita, nearspark ... probably just ret)
+		//			or, just set them to 1 and let hpa taken care of the rest
+		Replicas = 1
+	}
+
+	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), v1.ListOptions{})
+	if err != nil {
+		internal.GetLogger().Error("wakeupHcNs - failed to list deployments: " + err.Error())
+	}
+
+	for _, d := range ds.Items {
+		d.Spec.Replicas = pointerOfInt32(Replicas)
+		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
+		if err != nil {
+			internal.GetLogger().Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
+		}
+	}
+
 }

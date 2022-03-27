@@ -28,11 +28,10 @@ func main() {
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
 
-	router.Handle("/hc_get", handlers.Hc_get)
+	router.Handle("/hc_instance", handlers.HC_instance)
 	// router.Handle("/hc_deploy", handlers.Hc_deploy)
-	router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
-
-	router.Handle("/hc_del", handlers.Hc_del)
+	// router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
+	// router.Handle("/hc_del", handlers.Hc_del)
 
 	router.Handle("/hc_launch_fallback", handlers.HC_launch_fallback)
 	router.Handle("/global_404_fallback", handlers.Global_404_launch_fallback)
