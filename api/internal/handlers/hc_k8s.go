@@ -54,7 +54,7 @@ type hcCfg struct {
 
 var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	if r.URL.Path != "/hc_instance" || r.Method != "POST" {
+	if r.URL.Path != "/hc_instance" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
