@@ -233,6 +233,8 @@ func K8s_getNs(cfg *rest.Config) (*corev1.NamespaceList, error) {
 
 }
 
+// ########################## k8Locker ##########################
+
 type k8Locker struct {
 	clientset *kubernetes.Clientset
 	namespace string
@@ -243,7 +245,7 @@ type k8Locker struct {
 }
 
 // NewLocker creates a Locker
-func (k8 *K8sSvs) NewLocker(namespace string) (*k8Locker, error) {
+func NewLocker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
 	name := "turkeyOps"
 	locker := &k8Locker{
 		name: name,
@@ -251,10 +253,15 @@ func (k8 *K8sSvs) NewLocker(namespace string) (*k8Locker, error) {
 	locker.namespace = namespace
 	locker.clientID = uuid.New().String()
 	locker.retryWait = 500 * time.Millisecond
-	locker.clientset = k8.ClientSet
+	clientSet, err := kubernetes.NewForConfig(k8Cfg)
+	if err != nil {
+		GetLogger().Error(err.Error())
+	}
+	locker.clientset = clientSet
+
 	// create the Lease if it doesn't exist
 	leaseClient := locker.clientset.CoordinationV1().Leases(namespace)
-	_, err := leaseClient.Get(context.TODO(), name, metav1.GetOptions{})
+	_, err = leaseClient.Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		if !k8errors.IsNotFound(err) {
 			return nil, err
