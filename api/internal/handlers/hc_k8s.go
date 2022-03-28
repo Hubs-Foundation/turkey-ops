@@ -381,19 +381,21 @@ func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
 	return nil
 }
 
-func hc_switch(w http.ResponseWriter, r *http.Request) error {
+func hc_switch(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 	cfg, err := makehcCfg(r)
 	if err != nil {
 		sess.Error("bad hcCfg: " + err.Error())
-		return err
+		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 	ns := "hc-" + cfg.Subdomain
 
 	//acquire lock
 	lock, err := internal.Cfg.K8ss_local.AcquireNsLabelLock(ns, "scalingLock")
 	if err != nil {
-		return err
+		sess.Error(err.Error())
+		return
 	}
 
 	Replicas := 0
@@ -406,23 +408,26 @@ func hc_switch(w http.ResponseWriter, r *http.Request) error {
 
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), v1.ListOptions{})
 	if err != nil {
-		internal.GetLogger().Error("wakeupHcNs - failed to list deployments: " + err.Error())
-		return err
+		sess.Error("wakeupHcNs - failed to list deployments: " + err.Error())
+		return
 	}
 
 	for _, d := range ds.Items {
+		sess.Log(fmt.Sprintf("gen_d: %v (%v)", d.Status.ObservedGeneration, d.Name))
 		d.Spec.Replicas = pointerOfInt32(Replicas)
-		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
+		d_updated, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
 		if err != nil {
-			internal.GetLogger().Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
-			return err
+			sess.Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
+			return
 		}
+		sess.Log(fmt.Sprintf("gen_d_updated: %v (%v)", d_updated.Status.ObservedGeneration, d_updated.Name))
+		time.Sleep(1 * time.Second)
+		sess.Log(fmt.Sprintf("gen_d_updated: %v (%v)", d_updated.Status.ObservedGeneration, d_updated.Name))
 	}
 
 	err = internal.Cfg.K8ss_local.ReleaseNsLabelLock(ns, "scalingLock", lock)
 	if err != nil {
-		return err
+		return
 	}
 
-	return nil
 }
