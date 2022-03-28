@@ -49,7 +49,7 @@ func (p *proxyman) new(target string) (*httputil.ReverseProxy, error) {
 	// proxy.Transport = &http.Transport{ResponseHeaderTimeout: 15 * time.Minute}
 	proxy.Transport = &http.Transport{
 		// Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
+		DialTLSContext: (&net.Dialer{
 			Timeout:   900 * time.Second,
 			KeepAlive: 900 * time.Second,
 			DualStack: true,
