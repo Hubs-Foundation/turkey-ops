@@ -61,7 +61,7 @@ function delClicked() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("DELETE", "/hc_instance?status=down", true);
+  xhttp.open("PATCH", "/hc_instance?status=down", true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }
@@ -70,7 +70,7 @@ function delClicked() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("DELETE", "/hc_instance?status=up", true);
+  xhttp.open("PATCH", "/hc_instance?status=up", true);
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }
