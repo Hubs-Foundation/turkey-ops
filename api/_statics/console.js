@@ -25,15 +25,15 @@ function logout() {
 }
 
 
-document.getElementById("hc_deploy").addEventListener("click", orcReq("POST", "/hc_instance"));
-document.getElementById("hc_get").addEventListener("click", orcReq("GET", "/hc_instance"));
-document.getElementById("hc_del").addEventListener("click", orcReq("DELETE", "/hc_instance"));
-document.getElementById("hc_pause").addEventListener("click", orcReq("PATCH", "/hc_instance?status=down"));
-document.getElementById("hc_resume").addEventListener("click", orcReq("PATCH", "/hc_instance?status=up"));
+document.getElementById("hc_deploy").addEventListener("click", function(){orcReq("POST", "/hc_instance");}, false);
+document.getElementById("hc_get").addEventListener("click", function(){orcReq("GET", "/hc_instance");}, false);
+document.getElementById("hc_del").addEventListener("click", function(){orcReq("DELETE", "/hc_instance");}, false);
+document.getElementById("hc_pause").addEventListener("click", function(){orcReq("PATCH", "/hc_instance?status=down");}, false);
+document.getElementById("hc_resume").addEventListener("click", function(){orcReq("PATCH", "/hc_instance?status=up");}, false);
 
-document.getElementById("turkeyAws").addEventListener("click", orcReq("POST", "/tco_aws"));
-document.getElementById("turkeyGcp").addEventListener("click", orcReq("POST", "/tco_gcp"));
-document.getElementById("turkeyGcp_del").addEventListener("click", orcReq("DELETE", "/tco_gcp"));
+document.getElementById("turkeyAws").addEventListener("click", function(){orcReq("POST", "/tco_aws");}, false);
+document.getElementById("turkeyGcp").addEventListener("click", function(){orcReq("POST", "/tco_gcp");}, false);
+document.getElementById("turkeyGcp_del").addEventListener("click", function(){orcReq("DELETE", "/tco_gcp");}, false);
 
 function orcReq(method, path) {
   cfg=document.getElementById("cfg").value
