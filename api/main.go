@@ -43,7 +43,6 @@ func main() {
 
 	router.Handle("/tco_aws", requireRole("foobar")(handlers.TurkeyAws))
 	router.Handle("/tco_gcp", requireRole("foobar")(handlers.TurkeyGcp))
-	router.Handle("/tco_gcp_del", requireRole("foobar")(handlers.TurkeyGcp_del))
 
 	router.Handle("/Dummy", handlers.Dummy)
 

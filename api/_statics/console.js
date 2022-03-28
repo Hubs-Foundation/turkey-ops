@@ -25,10 +25,17 @@ function logout() {
 }
 
 
+document.getElementById("hc_deploy").addEventListener("click", orcReq("POST", "/hc_instance"));
+document.getElementById("hc_get").addEventListener("click", orcReq("GET", "/hc_instance"));
+document.getElementById("hc_del").addEventListener("click", orcReq("DELETE", "/hc_instance"));
+document.getElementById("hc_pause").addEventListener("click", orcReq("PATCH", "/hc_instance?status=down"));
+document.getElementById("hc_resume").addEventListener("click", orcReq("PATCH", "/hc_instance?status=up"));
 
+document.getElementById("turkeyAws").addEventListener("click", orcReq("POST", "/tco_aws"));
+document.getElementById("turkeyGcp").addEventListener("click", orcReq("POST", "/tco_gcp"));
+document.getElementById("turkeyGcp_del").addEventListener("click", orcReq("DELETE", "/tco_gcp"));
 
-document.getElementById("hc_deploy").addEventListener("click", hc_deploy);
-function hc_deploy() {
+function orcReq(method, path) {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -37,74 +44,6 @@ function hc_deploy() {
   xhttp.send(cfg);
 }
 
-document.getElementById("hc_get").addEventListener("click", hc_get);
-function hc_get() {
-  cfg=document.getElementById("cfg").value
-  var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("GET", "/hc_instance", true);
-  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(cfg);
-}
-
-document.getElementById("hc_del").addEventListener("click", hc_del);
-function hc_del() {
-  cfg=document.getElementById("cfg").value
-  var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("DELETE", "/hc_instance", true);
-  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(cfg);
-}
-document.getElementById("hc_pause").addEventListener("click", hc_pause);
-function hc_pause() {
-  cfg=document.getElementById("cfg").value
-  var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("PATCH", "/hc_instance?status=down", true);
-  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(cfg);
-}
-document.getElementById("hc_resume").addEventListener("click", hc_resume);
-function hc_resume() {
-  cfg=document.getElementById("cfg").value
-  var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("PATCH", "/hc_instance?status=up", true);
-  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(cfg);
-}
-
-//-----------
-document.getElementById("turkeyAws").addEventListener("click", turkeyAws);
-function turkeyAws() {
-  cfg=document.getElementById("cluster_cfg").value
-  var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("POST", "/tco_aws", true);
-  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(cfg);
-}
-//-----------
-document.getElementById("turkeyGcp").addEventListener("click", turkeyGcp);
-function turkeyGcp() {
-  cfg=document.getElementById("cluster_cfg").value
-  var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("POST", "/tco_gcp", true);
-  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(cfg);
-}
-//-----------
-document.getElementById("turkeyGcp_del").addEventListener("click", turkeyGcp_del);
-function turkeyGcp_del() {
-  cfg=document.getElementById("cluster_cfg").value
-  var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open("POST", "/tco_gcp_del", true);
-  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(cfg);
-}
 //-------------------------
 function getDomain()
 {
