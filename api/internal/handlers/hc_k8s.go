@@ -394,7 +394,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 	//acquire lock
 	locker, err := internal.NewK8Locker(internal.NewK8sSvs_local().Cfg, ns)
 	if err != nil {
-		sess.Error("faild to acquire locker, try again later")
+		sess.Error("faild to acquire locker, try again later ... err: " + err.Error())
 		return
 	}
 
