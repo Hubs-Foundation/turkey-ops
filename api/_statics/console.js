@@ -25,30 +25,30 @@ function logout() {
 }
 
 
-document.getElementById("hc_deploy").addEventListener("click", orcReq("POST", "/hc_instance"), false);
-// function hc_deploy(){ orcReq("POST", "/hc_instance") }
+document.getElementById("hc_deploy").addEventListener("click", hc_deploy, false);
+function hc_deploy(){ orcReq("POST", "/hc_instance") }
 
-document.getElementById("hc_get").addEventListener("click", orcReq("GET", "/hc_instance"), false);
-// function hc_get(){ orcReq("GET", "/hc_instance") }
+document.getElementById("hc_get").addEventListener("click", hc_get, false);
+function hc_get(){ orcReq("GET", "/hc_instance") }
 
-document.getElementById("hc_del").addEventListener("click", orcReq("DELETE", "/hc_instance"), false);
-// function hc_del(){ orcReq("DELETE", "/hc_instance") }
+document.getElementById("hc_del").addEventListener("click", hc_del, false);
+function hc_del(){ orcReq("DELETE", "/hc_instance") }
 
-document.getElementById("hc_pause").addEventListener("click", orcReq("PATCH", "/hc_instance?status=down"), false);
-// function hc_pause(){ orcReq("PATCH", "/hc_instance?status=down") }
+document.getElementById("hc_pause").addEventListener("click", hc_pause, false);
+function hc_pause(){ orcReq("PATCH", "/hc_instance?status=down") }
 
-document.getElementById("hc_resume").addEventListener("click", orcReq("PATCH", "/hc_instance?status=up"), false);
-// function hc_resume(){ orcReq("PATCH", "/hc_instance?status=up") }
+document.getElementById("hc_resume").addEventListener("click", hc_resume, false);
+function hc_resume(){ orcReq("PATCH", "/hc_instance?status=up") }
 
 
-document.getElementById("turkeyAws").addEventListener("click", orcReq("POST", "/tco_aws"), false);
-// function turkeyAws(){ orcReq("POST", "/tco_aws") }
+document.getElementById("turkeyAws").addEventListener("click", turkeyAws, false);
+function turkeyAws(){ orcReq("POST", "/tco_aws") }
 
-document.getElementById("turkeyGcp").addEventListener("click", orcReq("POST", "/tco_gcp"), false);
-// function turkeyGcp(){ orcReq("POST", "/tco_gcp") }
+document.getElementById("turkeyGcp").addEventListener("click", turkeyGcp, false);
+function turkeyGcp(){ orcReq("POST", "/tco_gcp") }
 
-document.getElementById("turkeyGcp_del").addEventListener("click", orcReq("DELETE", "/tco_gcp"), false);
-// function turkeyGcp_del(){ orcReq("DELETE", "/tco_gcp") }
+document.getElementById("turkeyGcp_del").addEventListener("click", turkeyGcp_del, false);
+function turkeyGcp_del(){ orcReq("DELETE", "/tco_gcp") }
 
 
 
