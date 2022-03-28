@@ -240,7 +240,12 @@ func (k8 K8sSvs) AcquireNsLabelLock(namespaceName, labelKey string) (string, err
 	} else {
 		ns.Labels[labelKey] = uuid
 	}
-	ns_updated, err := k8.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	_, err = k8.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	ns_updated, err := k8.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespaceName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -262,7 +267,12 @@ func (k8 K8sSvs) ReleaseNsLabelLock(namespaceName, labelKey, uuid string) error 
 	} else {
 		ns.Labels[labelKey] = ""
 	}
-	ns_updated, err := k8.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	_, err = k8.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	ns_updated, err := k8.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespaceName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

@@ -45,17 +45,17 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess.SseChan = make(chan string)
-	if len(sess.DeadLetterQueue) > 0 {
-		sess.Log("&#127383; (logStream) <b>new</b> connection for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
-	} else {
-		sess.Log("&#127383; (logStream) <b>re</b>connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
-		if len(sess.DeadLetterQueue) > 0 {
-			sess.Log(fmt.Sprintf(" ###### poping %v messages in DeadLetterQueue ######", len(sess.DeadLetterQueue)))
-			for i, m := range sess.DeadLetterQueue {
-				sess.Log(fmt.Sprintf("msg #%v: %v", len(sess.DeadLetterQueue)-i, m))
-			}
-		}
-	}
+	// if len(sess.DeadLetterQueue) > 0 {
+	// 	sess.Log("&#127383; (logStream) <b>new</b> connection for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+	// } else {
+	// 	sess.Log("&#127383; (logStream) <b>re</b>connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+	// 	if len(sess.DeadLetterQueue) > 0 {
+	// 		sess.Log(fmt.Sprintf(" ###### poping %v messages in DeadLetterQueue ######", len(sess.DeadLetterQueue)))
+	// 		for i, m := range sess.DeadLetterQueue {
+	// 			sess.Log(fmt.Sprintf("msg #%v: %v", len(sess.DeadLetterQueue)-i, m))
+	// 		}
+	// 	}
+	// }
 
 	notify := w.(http.CloseNotifier).CloseNotify()
 	go func() {
