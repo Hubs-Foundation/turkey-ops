@@ -392,7 +392,11 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 	ns := "hc-" + cfg.Subdomain
 
 	//acquire lock
-	locker, err := internal.Cfg.K8ss_local.NewLocker(ns)
+	locker, err := internal.NewK8Locker(internal.NewK8sSvs_local().Cfg, ns)
+	if err != nil {
+		sess.Error("faild to acquire locker, try again later")
+	}
+
 	locker.Lock()
 
 	Replicas := 0

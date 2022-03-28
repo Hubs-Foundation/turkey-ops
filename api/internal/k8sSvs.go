@@ -245,7 +245,7 @@ type k8Locker struct {
 }
 
 // NewLocker creates a Locker
-func NewLocker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
+func NewK8Locker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
 	name := "turkeyOps"
 	locker := &k8Locker{
 		name: name,
