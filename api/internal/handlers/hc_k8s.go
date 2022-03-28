@@ -58,19 +58,14 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+
 	switch r.Method {
 	case "POST":
-		go func() {
-			err := hc_create(w, r)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				//todo -- update hc-instance status: error
-				return
-			}
-			//todo -- update hc-instance: completion
-		}()
-		w.WriteHeader(http.StatusAccepted)
-
+		err := hc_create(w, r)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
 	case "GET":
 		hc_get(w, r)
 	case "DELETE":
@@ -81,7 +76,6 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			hc_switch(w, r)
 			return
 		}
-
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
