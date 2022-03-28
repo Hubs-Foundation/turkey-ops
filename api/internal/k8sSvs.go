@@ -30,6 +30,7 @@ import (
 
 	coordinationv1 "k8s.io/api/coordination/v1"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
+	coordinationclientv1 "k8s.io/client-go/kubernetes/typed/coordination/v1"
 )
 
 type K8sSvs struct {
@@ -236,32 +237,21 @@ func K8s_getNs(cfg *rest.Config) (*corev1.NamespaceList, error) {
 // ########################## k8Locker ##########################
 
 type k8Locker struct {
-	clientset *kubernetes.Clientset
-	namespace string
-	name      string
-	clientID  string
-	retryWait time.Duration
-	ttl       time.Duration
+	leaseClient coordinationclientv1.LeaseInterface
+	namespace   string
+	name        string
+	clientID    string
+	retryWait   time.Duration
+	ttl         time.Duration
 }
 
 // NewLocker creates a Locker
 func NewK8Locker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
 	name := "turkeyOps"
-	locker := &k8Locker{
-		name: name,
-	}
-	locker.namespace = namespace
-	locker.clientID = uuid.New().String()
-	locker.retryWait = 500 * time.Millisecond
-	clientSet, err := kubernetes.NewForConfig(k8Cfg)
-	if err != nil {
-		GetLogger().Error(err.Error())
-	}
-	locker.clientset = clientSet
 
 	// create the Lease if it doesn't exist
-	leaseClient := locker.clientset.CoordinationV1().Leases(namespace)
-	_, err = leaseClient.Get(context.TODO(), name, metav1.GetOptions{})
+	leaseClient := Cfg.K8ss_local.ClientSet.CoordinationV1().Leases(namespace)
+	_, err := leaseClient.Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		if !k8errors.IsNotFound(err) {
 			return nil, err
@@ -279,17 +269,22 @@ func NewK8Locker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
 			return nil, err
 		}
 	}
-	return locker, nil
+	return &k8Locker{
+		name:        name,
+		namespace:   namespace,
+		clientID:    uuid.New().String(),
+		retryWait:   500 * time.Millisecond,
+		leaseClient: leaseClient,
+	}, nil
 }
 
 // Lock will block until the client is the holder of the Lease resource
 func (l *k8Locker) Lock() {
 
-	leaseClient := l.clientset.CoordinationV1().Leases(l.namespace)
 	// block until we get a lock
 	for {
 		// get the Lease
-		lease, err := leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
+		lease, err := l.leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
 		if err != nil {
 			panic(fmt.Sprintf("could not get Lease resource for lock: %v", err))
 		}
@@ -322,7 +317,7 @@ func (l *k8Locker) Lock() {
 		if l.ttl.Seconds() > 0 {
 			lease.Spec.LeaseDurationSeconds = pointer.Int32Ptr(int32(l.ttl.Seconds()))
 		}
-		_, err = leaseClient.Update(context.TODO(), lease, metav1.UpdateOptions{})
+		_, err = l.leaseClient.Update(context.TODO(), lease, metav1.UpdateOptions{})
 		if err == nil {
 			// we got the lock, break the loop
 			break
@@ -340,9 +335,8 @@ func (l *k8Locker) Lock() {
 
 // Unlock will remove the client as the holder of the Lease resource
 func (l *k8Locker) Unlock() {
-	leaseClient := l.clientset.CoordinationV1().Leases(l.namespace)
 
-	lease, err := leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
+	lease, err := l.leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
 	if err != nil {
 		panic(fmt.Sprintf("could not get Lease resource for lock: %v", err))
 	}
@@ -359,7 +353,7 @@ func (l *k8Locker) Unlock() {
 	lease.Spec.HolderIdentity = nil
 	lease.Spec.AcquireTime = nil
 	lease.Spec.LeaseDurationSeconds = nil
-	_, err = leaseClient.Update(context.TODO(), lease, metav1.UpdateOptions{})
+	_, err = l.leaseClient.Update(context.TODO(), lease, metav1.UpdateOptions{})
 	if err != nil {
 		panic(fmt.Sprintf("unlock: error when trying to update Lease: %v", err))
 	}
