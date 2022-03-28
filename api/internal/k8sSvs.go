@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -226,4 +227,48 @@ func K8s_getNs(cfg *rest.Config) (*corev1.NamespaceList, error) {
 	}
 	return nsList, nil
 
+}
+
+func (k8 K8sSvs) AcquireNsLabelLock(namespaceName, labelKey string) (string, error) {
+	uuid := uuid.New().String()
+	ns, err := k8.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespaceName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	if ns.Labels[labelKey] != "" {
+		return "", errors.New("already locked by : " + ns.Labels[labelKey])
+	} else {
+		ns.Labels[labelKey] = uuid
+	}
+	ns_updated, err := k8.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return "", err
+	}
+	if ns_updated.Labels[labelKey] != uuid {
+		return "", errors.New("lock verfication failed: expecting: " + uuid + ", getting: " + ns_updated.Labels[labelKey])
+	}
+
+	return uuid, nil
+}
+
+func (k8 K8sSvs) ReleaseNsLabelLock(namespaceName, labelKey, uuid string) error {
+
+	ns, err := k8.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespaceName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if ns.Labels[labelKey] != uuid {
+		return errors.New("unexpected uuid " + ns.Labels[labelKey])
+	} else {
+		ns.Labels[labelKey] = ""
+	}
+	ns_updated, err := k8.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	if ns_updated.Labels[labelKey] != "" {
+		return errors.New("lock verfication failed: expecting: " + uuid + ", getting: " + ns_updated.Labels[labelKey])
+	}
+
+	return nil
 }

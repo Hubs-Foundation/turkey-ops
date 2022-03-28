@@ -359,11 +359,11 @@ func AuthnProxy() http.Handler {
 	})
 }
 
-func modifyRequest(req *http.Request, headers map[string]string) {
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-}
+// func modifyRequest(req *http.Request, headers map[string]string) {
+// 	for k, v := range headers {
+// 		req.Header.Set(k, v)
+// 	}
+// }
 
 func ChkCookie() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

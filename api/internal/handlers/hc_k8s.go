@@ -60,7 +60,17 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	}
 	switch r.Method {
 	case "POST":
-		hc_create(w, r)
+		go func() {
+			err := hc_create(w, r)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				//todo -- update hc-instance status: error
+				return
+			}
+			//todo -- update hc-instance: completion
+		}()
+		w.WriteHeader(http.StatusAccepted)
+
 	case "GET":
 		hc_get(w, r)
 	case "DELETE":
@@ -78,14 +88,14 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 })
 
-func hc_create(w http.ResponseWriter, r *http.Request) {
+func hc_create(w http.ResponseWriter, r *http.Request) error {
 	sess := internal.GetSession(r.Cookie)
 
 	// #1 prepare configs
 	hcCfg, err := makehcCfg(r)
 	if err != nil {
 		sess.Error("bad hcCfg: " + err.Error())
-		return
+		return err
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
@@ -102,7 +112,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")
 	if err != nil {
 		sess.Error("failed to get ns_hc yam file because: " + err.Error())
-		return
+		return err
 	}
 
 	renderedYamls, _ := internal.K8s_render_yams([]string{string(yamBytes)}, hcCfg)
@@ -112,7 +122,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Disposition", "attachment; filename="+hcCfg.Subdomain+".yaml")
 		w.Header().Set("Content-Type", "text/plain")
 		io.Copy(w, strings.NewReader(k8sChartYaml))
-		return
+		return err
 	}
 
 	// #3 getting k8s config
@@ -120,9 +130,8 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	k8sCfg, err := rest.InClusterConfig()
 	// }
 	if k8sCfg == nil {
-		sess.Log("ERROR" + err.Error())
 		sess.Error(err.Error())
-		return
+		return err
 	}
 	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 
@@ -130,9 +139,8 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	sess.Log("&#128640; --- deployment started")
 	err = internal.Ssa_k8sChartYaml(hcCfg.TurkeyId, k8sChartYaml, k8sCfg)
 	if err != nil {
-		sess.Log("ERROR --- deployment FAILED !!! because" + fmt.Sprint(err))
 		sess.Error(err.Error())
-		return
+		return err
 	}
 
 	// quality of life improvement for /console people
@@ -146,12 +154,10 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			sess.Log("db already exists")
-			internal.GetLogger().Warn("db <" + hcCfg.DBname + "> already exists")
-			return
+			return nil
 		} else {
-			sess.Log("ERROR --- DB.conn.Exec FAILED !!! because" + fmt.Sprint(err))
 			sess.Error(err.Error())
-			return
+			return err
 		}
 	}
 	sess.Log("&#128024; --- db created: " + hcCfg.DBname)
@@ -163,6 +169,8 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		"tier":      hcCfg.Tier,
 		"turkeyId":  hcCfg.TurkeyId,
 	})
+
+	return nil
 }
 
 func hc_get(w http.ResponseWriter, r *http.Request) {
@@ -379,26 +387,33 @@ func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
 	return nil
 }
 
-func hc_switch(w http.ResponseWriter, r *http.Request) {
+func hc_switch(w http.ResponseWriter, r *http.Request) error {
 	sess := internal.GetSession(r.Cookie)
 	cfg, err := makehcCfg(r)
 	if err != nil {
-		sess.Log("bad hcCfg: " + err.Error())
-		return
+		sess.Error("bad hcCfg: " + err.Error())
+		return err
 	}
 	ns := "hc-" + cfg.Subdomain
+
+	//acquire lock
+	lock, err := internal.Cfg.K8ss_local.AcquireNsLabelLock(ns, "scalingLock")
+	if err != nil {
+		return err
+	}
 
 	Replicas := 0
 	status := r.URL.Query().Get("status")
 	if status == "up" {
 		// todo -- read tier, find out desired replica counts for each deployments (hubs, ret, spoke, ita, nearspark ... probably just ret)
-		//			or, just set them to 1 and let hpa taken care of the rest
+		//			or, (possible?) just set them to 1 and let hpa taken care of the rest
 		Replicas = 1
 	}
 
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		internal.GetLogger().Error("wakeupHcNs - failed to list deployments: " + err.Error())
+		return err
 	}
 
 	for _, d := range ds.Items {
@@ -406,7 +421,14 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
 		if err != nil {
 			internal.GetLogger().Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
+			return err
 		}
 	}
 
+	err = internal.Cfg.K8ss_local.ReleaseNsLabelLock(ns, "scalingLock", lock)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

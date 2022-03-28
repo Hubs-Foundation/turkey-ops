@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go v1.37.1
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/google/uuid v1.1.2
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/square/go-jose v2.6.0+incompatible
