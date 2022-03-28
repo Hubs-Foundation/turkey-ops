@@ -17,7 +17,7 @@ type CacheBoxSessData struct {
 	// UserData *UserData
 	UserData        map[string]string
 	SseChan         chan string
-	DeadLetterQueue chan string
+	DeadLetterQueue []string
 }
 
 func NewSessBox() *SessBox {
@@ -74,7 +74,8 @@ func (mb *MetaBox) Delete(key string) {
 func (sess *CacheBoxSessData) consoleLog(msg string) {
 	go func() {
 		if sess == nil {
-			logger.Debug("no session, ")
+			logger.Debug("no session --> DeadLetterQueue")
+			sess.DeadLetterQueue = append(sess.DeadLetterQueue, msg)
 			return
 		}
 
