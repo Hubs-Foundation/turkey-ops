@@ -27,8 +27,8 @@ function logout() {
 
 
 
-document.getElementById("hc_deploy").addEventListener("click", deployBtnClicked);
-function deployBtnClicked() {
+document.getElementById("hc_deploy").addEventListener("click", hc_deploy);
+function hc_deploy() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -37,8 +37,8 @@ function deployBtnClicked() {
   xhttp.send(cfg);
 }
 
-document.getElementById("hc_get").addEventListener("click", getBtnClicked);
-function getBtnClicked() {
+document.getElementById("hc_get").addEventListener("click", hc_get);
+function hc_get() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -47,8 +47,8 @@ function getBtnClicked() {
   xhttp.send(cfg);
 }
 
-document.getElementById("hc_del").addEventListener("click", delClicked);
-function delClicked() {
+document.getElementById("hc_del").addEventListener("click", hc_del);
+function hc_del() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -56,8 +56,8 @@ function delClicked() {
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }
-document.getElementById("hc_pause").addEventListener("click", delClicked);
-function delClicked() {
+document.getElementById("hc_pause").addEventListener("click", hc_pause);
+function hc_pause() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -65,8 +65,8 @@ function delClicked() {
   xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhttp.send(cfg);
 }
-document.getElementById("hc_resume").addEventListener("click", delClicked);
-function delClicked() {
+document.getElementById("hc_resume").addEventListener("click", hc_resume);
+function hc_resume() {
   cfg=document.getElementById("cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -76,8 +76,8 @@ function delClicked() {
 }
 
 //-----------
-document.getElementById("turkeyAws").addEventListener("click", turkeyAwsBtnClicked);
-function turkeyAwsBtnClicked() {
+document.getElementById("turkeyAws").addEventListener("click", turkeyAws);
+function turkeyAws() {
   cfg=document.getElementById("cluster_cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -86,8 +86,8 @@ function turkeyAwsBtnClicked() {
   xhttp.send(cfg);
 }
 //-----------
-document.getElementById("turkeyGcp").addEventListener("click", turkeyGcpBtnClicked);
-function turkeyGcpBtnClicked() {
+document.getElementById("turkeyGcp").addEventListener("click", turkeyGcp);
+function turkeyGcp() {
   cfg=document.getElementById("cluster_cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
@@ -96,8 +96,8 @@ function turkeyGcpBtnClicked() {
   xhttp.send(cfg);
 }
 //-----------
-document.getElementById("turkeyGcp_del").addEventListener("click", turkeyGcpDelBtnClicked);
-function turkeyGcpDelBtnClicked() {
+document.getElementById("turkeyGcp_del").addEventListener("click", turkeyGcp_del);
+function turkeyGcp_del() {
   cfg=document.getElementById("cluster_cfg").value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
