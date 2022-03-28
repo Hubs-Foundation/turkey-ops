@@ -46,7 +46,7 @@ type hcCfg struct {
 	GCP_SA_KEY_b64 string
 
 	//produced here
-	TurkeyId    string `json:"turkeyid"` // retrieved from db for UserEmail  fallback to calculated
+	TurkeyId    string `json:"turkeyid"` // retrieved from db with UserEmail ??? not used atm
 	JWK         string `json:"jwk"`      // encoded from PermsKey.public
 	GuardianKey string `json:"guardiankey"`
 	PhxKey      string `json:"phxkey"`
@@ -392,11 +392,8 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 	ns := "hc-" + cfg.Subdomain
 
 	//acquire lock
-	lock, err := internal.Cfg.K8ss_local.AcquireNsLabelLock(ns, "scalingLock")
-	if err != nil {
-		sess.Error(err.Error())
-		return
-	}
+	locker, err := internal.Cfg.K8ss_local.NewLocker(ns)
+	locker.Lock()
 
 	Replicas := 0
 	status := r.URL.Query().Get("status")
@@ -421,10 +418,6 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	//release
-	err = internal.Cfg.K8ss_local.ReleaseNsLabelLock(ns, "scalingLock", lock)
-	if err != nil {
-		return
-	}
+	locker.Unlock()
 
 }
