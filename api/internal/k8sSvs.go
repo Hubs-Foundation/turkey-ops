@@ -247,7 +247,7 @@ type k8Locker struct {
 
 // NewLocker creates a Locker
 func NewK8Locker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
-	name := "turkeyOps"
+	name := "turkey-ops"
 
 	// create the Lease if it doesn't exist
 	leaseClient := Cfg.K8ss_local.ClientSet.CoordinationV1().Leases(namespace)
