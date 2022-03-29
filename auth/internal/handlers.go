@@ -384,11 +384,13 @@ func ChkCookie() http.Handler {
 		// accessing := r.URL.Query()["req"]
 
 		clearCSRFcookies(w, r)
-		r.Header.Set("verified-UserEmail", email)
+
 		// json.NewEncoder(w).Encode(map[string]interface{}{
 		// 	"user_email": email,
 		// 	// "user_role":  "notyet",
 		// })
+
+		w.Header().Add("verified-UserEmail", email)
 		w.WriteHeader(http.StatusOK)
 	})
 }
