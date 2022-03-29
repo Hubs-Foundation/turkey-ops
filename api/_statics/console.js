@@ -26,34 +26,34 @@ function logout() {
 
 
 document.getElementById("hc_deploy").addEventListener("click", hc_deploy, false);
-function hc_deploy(){ orcReq("POST", "/hc_instance") }
+function hc_deploy(){ orcReq("POST", "/hc_instance","cfg") }
 
 document.getElementById("hc_get").addEventListener("click", hc_get, false);
-function hc_get(){ orcReq("GET", "/hc_instance") }
+function hc_get(){ orcReq("GET", "/hc_instance","cfg") }
 
 document.getElementById("hc_del").addEventListener("click", hc_del, false);
-function hc_del(){ orcReq("DELETE", "/hc_instance") }
+function hc_del(){ orcReq("DELETE", "/hc_instance","cfg") }
 
 document.getElementById("hc_pause").addEventListener("click", hc_pause, false);
-function hc_pause(){ orcReq("PATCH", "/hc_instance?status=down") }
+function hc_pause(){ orcReq("PATCH", "/hc_instance?status=down","cfg") }
 
 document.getElementById("hc_resume").addEventListener("click", hc_resume, false);
-function hc_resume(){ orcReq("PATCH", "/hc_instance?status=up") }
+function hc_resume(){ orcReq("PATCH", "/hc_instance?status=up","cfg") }
 
 
 document.getElementById("turkeyAws").addEventListener("click", turkeyAws, false);
-function turkeyAws(){ orcReq("POST", "/tco_aws") }
+function turkeyAws(){ orcReq("POST", "/tco_aws","cluster_cfg") }
 
 document.getElementById("turkeyGcp").addEventListener("click", turkeyGcp, false);
-function turkeyGcp(){ orcReq("POST", "/tco_gcp") }
+function turkeyGcp(){ orcReq("POST", "/tco_gcp","cluster_cfg") }
 
 document.getElementById("turkeyGcp_del").addEventListener("click", turkeyGcp_del, false);
-function turkeyGcp_del(){ orcReq("DELETE", "/tco_gcp") }
+function turkeyGcp_del(){ orcReq("DELETE", "/tco_gcp","cluster_cfg") }
 
 
 
-function orcReq(method, path) {
-  cfg=document.getElementById("cfg").value
+function orcReq(method, path, cfgBoxId) {
+  cfg=document.getElementById(cfgBoxId).value
   var xhttp = new XMLHttpRequest(); res=""
   xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
   xhttp.open(method, path, true);

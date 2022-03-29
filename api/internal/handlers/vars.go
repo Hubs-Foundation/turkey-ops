@@ -25,8 +25,8 @@ func Dumpheader(r *http.Request) string {
 
 type clusterCfg struct {
 	//required inputs
-	Region string `json:"REGION"` //us-east-1
-	Domain string `json:"DOMAIN"` //myhubs.net
+	Region string `json:"region"` //us-east-1
+	Domain string `json:"domain"` //myhubs.net
 
 	//required? but possible to fallback to locally available values
 	Env                     string `json:"env"`                     //dev
