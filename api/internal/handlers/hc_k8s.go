@@ -415,7 +415,6 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, d := range ds.Items {
-		sess.Log(fmt.Sprintf("gen_d: %v (%v)", d.Status.ObservedGeneration, d.Name))
 		d.Spec.Replicas = pointerOfInt32(Replicas)
 		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
 		if err != nil {
