@@ -73,6 +73,7 @@ func CheckJwtCookie(r *http.Request) (string, error) {
 			return "", errors.New("invalid token")
 		}
 		// good token
+		Logger.Sugar().Debugf("token.Raw: %v", token.Raw)
 		return token.Raw, nil
 
 	case *jwt.ValidationError: // something was wrong during the validation
@@ -233,7 +234,7 @@ func MakeCookie(r *http.Request, email string) *http.Cookie {
 	}
 }
 
-func MakeJwtCookie(r *http.Request, user idp.User) *http.Cookie {
+func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 	expires := cookieExpiry()
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
@@ -251,18 +252,19 @@ func MakeJwtCookie(r *http.Request, user idp.User) *http.Cookie {
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(cfg.PermsKey)
+	if err != nil {
 
-	fmt.Println(tokenString, err)
-
+		return nil, err
+	}
 	return &http.Cookie{
 		Name:     cfg.JwtCookieName,
-		Value:    token.Raw,
+		Value:    tokenString,
 		Path:     "/",
 		Domain:   cookieDomain(r),
 		HttpOnly: true,
 		Secure:   !cfg.InsecureCookie,
 		Expires:  expires,
-	}
+	}, nil
 }
 
 // ClearCookie clears the auth cookie
