@@ -148,7 +148,7 @@ resource "google_sql_database_instance" "pgsql" {
   region           = "{{.Region}}"
   deletion_protection = false
   settings {
-    tier = "db-custom-1-8192"
+    tier = "db-custom-1-6656"
     ip_configuration {
       ipv4_enabled    = true
       private_network = google_compute_network.vpc.id
