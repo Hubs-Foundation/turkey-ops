@@ -43,7 +43,8 @@ func CheckCookie(r *http.Request) (string, error) {
 	}
 
 	//=============testing==============================
-	_, _ = CheckJwtCookie(r)
+	CheckJwtCookieReturn, _ := CheckJwtCookie(r)
+	Logger.Sugar().Debug("CheckJwtCookie: " + CheckJwtCookieReturn)
 	//==================================================
 	return email, nil
 }
@@ -57,15 +58,17 @@ func CheckJwtCookie(r *http.Request) (string, error) {
 	}
 	// Validate cookie
 
-	Logger.Sugar().Debugf("cfg.PermsKey.Public(): %v", cfg.PermsKey.Public())
-	Logger.Sugar().Debugf("cfg.PermsKey.PublicKey: %v", cfg.PermsKey.PublicKey)
+	// Logger.Sugar().Debugf("cfg.PermsKey.Public(): %v", cfg.PermsKey.Public())
+	// Logger.Sugar().Debugf("cfg.PermsKey.PublicKey: %v", cfg.PermsKey.PublicKey)
 
 	token, err := jwt.Parse(c.Value, func(token *jwt.Token) (interface{}, error) {
 		// since we only use the one private key to sign the tokens,
 		// we also only use its public counter part to verify
 		return cfg.PermsKey.Public(), nil
 	})
-	Logger.Sugar().Debugf("token: %v", token)
+	// Logger.Sugar().Debugf("token: %v", token)
+	// Logger.Sugar().Debugf("token.Claims: %v", token.Claims)
+
 	// branch out into the possible error from signing
 
 	switch err.(type) {
@@ -78,7 +81,8 @@ func CheckJwtCookie(r *http.Request) (string, error) {
 		}
 		// good token
 		Logger.Sugar().Debugf("token.Raw: %v", token.Raw)
-		return token.Raw, nil
+		claims := token.Claims.(jwt.MapClaims)
+		return claims["fxa_email"].(string), nil
 
 	case *jwt.ValidationError: // something was wrong during the validation
 		vErr := err.(*jwt.ValidationError)
@@ -248,7 +252,7 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 		// "aud":"whomever?",
 		"exp": expires,
 		// "nbf": time.Now().UTC(),
-		"iat":       time.Now().UTC(),
+		// "iat":       time.Now().UTC(),	//need to impliment clock tolerance if we need this
 		"fxa_pic":   user.Avatar,
 		"fxa_2fa":   user.TwoFA,
 		"fxa_email": user.Email,
