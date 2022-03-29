@@ -56,10 +56,14 @@ func CheckJwtCookie(r *http.Request) (string, error) {
 		return "", errors.New("missing jwtCookie")
 	}
 	// Validate cookie
+
+	Logger.Sugar().Debugf("cfg.PermsKey.Public(): %v", cfg.PermsKey.Public())
+	Logger.Sugar().Debugf("cfg.PermsKey.PublicKey: %v", cfg.PermsKey.PublicKey)
+
 	token, err := jwt.Parse(c.Value, func(token *jwt.Token) (interface{}, error) {
 		// since we only use the one private key to sign the tokens,
 		// we also only use its public counter part to verify
-		return cfg.PermsKey.PublicKey, nil
+		return cfg.PermsKey.Public(), nil
 	})
 	Logger.Sugar().Debugf("token: %v", token)
 	// branch out into the possible error from signing
