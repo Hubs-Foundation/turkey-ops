@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
 	"main/internal/idp"
 
 	"net/http"
@@ -41,7 +42,55 @@ func CheckCookie(r *http.Request) (string, error) {
 		}
 		return "", err
 	}
+
+	//testing
+	_, _ = CheckJwtCookie(r)
+	//
 	return email, nil
+}
+
+func CheckJwtCookie(r *http.Request) (string, error) {
+	// Get auth cookie
+	c, err := r.Cookie(cfg.JwtCookieName)
+	if err != nil {
+		Logger.Sugar().Debug("missing jwtCookie: " + cfg.JwtCookieName)
+		return "", errors.New("missing jwtCookie")
+	}
+	// Validate cookie
+	token, err := jwt.Parse(c.Value, func(token *jwt.Token) (interface{}, error) {
+		// since we only use the one private key to sign the tokens,
+		// we also only use its public counter part to verify
+		return cfg.PermsKey_pub, nil
+	})
+
+	// branch out into the possible error from signing
+	switch err.(type) {
+
+	case nil: // no error
+
+		if !token.Valid { // but may still be invalid
+			Logger.Debug("invalid token: " + err.Error())
+			return "", errors.New("invalid token")
+		}
+		log.Printf("Someone accessed resricted area! Token:%+v\n", token)
+		// good token
+		return token.Raw, nil
+
+	case *jwt.ValidationError: // something was wrong during the validation
+		vErr := err.(*jwt.ValidationError)
+		switch vErr.Errors {
+		case jwt.ValidationErrorExpired:
+			Logger.Debug("token expired: " + err.Error())
+			return "", err
+		default:
+			Logger.Debug("unexpected error: " + err.Error())
+			return "", err
+		}
+
+	default: // something else went wrong
+		Logger.Debug("unexpected error: " + err.Error())
+		return "", err
+	}
 }
 
 // Request Validation
@@ -207,7 +256,7 @@ func MakeJwtCookie(r *http.Request, user idp.User) *http.Cookie {
 	fmt.Println(tokenString, err)
 
 	return &http.Cookie{
-		Name:     cfg.CookieName,
+		Name:     cfg.JwtCookieName,
 		Value:    token.Raw,
 		Path:     "/",
 		Domain:   cookieDomain(r),

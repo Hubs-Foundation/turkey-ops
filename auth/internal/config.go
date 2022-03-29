@@ -27,6 +27,7 @@ type Config struct {
 	CookieDomains          []CookieDomain       `long:"cookie-domain" env:"COOKIE_DOMAIN" env-delim:"," description:"Domain to set auth cookie on, can be set multiple times"`
 	InsecureCookie         bool                 `long:"insecure-cookie" env:"INSECURE_COOKIE" description:"Use insecure cookies"`
 	CookieName             string               `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
+	JwtCookieName          string               `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
 	CSRFCookieName         string               `long:"csrf-cookie-name" env:"CSRF_COOKIE_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
 	DefaultAction          string               `long:"default-action" env:"DEFAULT_ACTION" default:"auth" choice:"auth" choice:"allow" description:"Default action"`
 	DefaultProvider        string               `long:"default-provider" env:"DEFAULT_PROVIDER" default:"google" choice:"google" choice:"oidc" choice:"generic-oauth" description:"Default provider"`
@@ -46,7 +47,8 @@ type Config struct {
 	Secret   []byte `json:"-"`
 	Lifetime time.Duration
 
-	PermsKey *rsa.PrivateKey `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications ... used to sign jwt tokens here"`
+	PermsKey     *rsa.PrivateKey `description:"cluster wide private key for all reticulum authentications ... used to sign jwt tokens here"`
+	PermsKey_pub *rsa.PublicKey  `description:"PermsKey's public part ... used to validate jwt tokens here"`
 }
 
 func MakeCfg() {
@@ -64,6 +66,8 @@ func MakeCfg() {
 	cfg.Secret = []byte("dummy-SecretString-replace-me-with-env-var-later")
 	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
 	cfg.CookieName = "_turkeyauthcookie"
+	cfg.JwtCookieName = "_turkeyauthtoken"
+
 	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
 	cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)}
 	// cfg.LogoutRedirect = "https://api." + cfg.TurkeyDomain + "/console"
@@ -88,7 +92,7 @@ func MakeCfg() {
 		Logger.Error("[ERROR] @ Cfg.Providers.Fxa.Setup: " + err.Error())
 	}
 
-	cfg.PermsKey, err = preparePermsKey(os.Getenv("PERMS_KEY"))
+	cfg.PermsKey, cfg.PermsKey_pub, err = preparePermsKey(os.Getenv("PERMS_KEY"))
 	if err != nil {
 		Logger.Error(" preparePermsKey failed!!! " + err.Error())
 	}
@@ -238,18 +242,23 @@ func (c *CommaSeparatedList) MarshalFlag() (string, error) {
 	return strings.Join(*c, ","), nil
 }
 
-func preparePermsKey(rawPermsKey string) (*rsa.PrivateKey, error) {
+func preparePermsKey(rawPermsKey string) (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	// rawPermsKey := os.Getenv("PERMS_KEY")
 	//making cfg.JWK out of cfg.PermsKey ... pem.Decode needs "real" line breakers in the "pem byte array"
 	perms_key_str := strings.Replace(rawPermsKey, `\\n`, "\n", -1)
 	pb, _ := pem.Decode([]byte(perms_key_str))
 	if pb == nil {
 		Logger.Sugar().Errorf("failed to decode perms key... perms_key_str %v, rawPermsKey %v", perms_key_str, rawPermsKey)
-		return nil, errors.New("bad key")
+		return nil, nil, errors.New("bad key")
 	}
+
 	PermsKey, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return PermsKey, nil
+	PermsKey_pub, err := x509.ParsePKCS1PublicKey(pb.Bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	return PermsKey, PermsKey_pub, nil
 }
