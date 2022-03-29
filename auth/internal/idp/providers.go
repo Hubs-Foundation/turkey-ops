@@ -34,10 +34,10 @@ type User struct {
 	Email          string `json:"email"`
 	Locale         string `json:"locale"`
 	TwoFA          bool   `json:"twoFactorAuthentication"`
-	MetricsEnabled string `json:"metricsEnabled"`
+	MetricsEnabled bool   `json:"metricsEnabled"`
 	Uid            string `json:"uid"`
 	Avatar         string `json:"avatar"`
-	AvatarDefault  string `json:"avatarDefault"`
+	AvatarDefault  bool   `json:"avatarDefault"`
 	Sub            string `json:"sub"`
 }
 
