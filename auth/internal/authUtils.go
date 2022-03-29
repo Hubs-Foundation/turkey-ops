@@ -189,19 +189,20 @@ func MakeJwtCookie(r *http.Request, user idp.User) *http.Cookie {
 	expires := cookieExpiry()
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"iss": cfg.TurkeyDomain,
 		"sub": user.Sub,
 		// "aud":"whomever?",
 		"exp": expires,
 		// "nbf": time.Now().UTC(),
-		"iat":     time.Now().UTC(),
-		"fxa_pic": user.Avatar,
-		"fxa_2fa": user.TwoFA,
+		"iat":       time.Now().UTC(),
+		"fxa_pic":   user.Avatar,
+		"fxa_2fa":   user.TwoFA,
+		"fxa_email": user.Email,
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString(cfg.Secret)
+	tokenString, err := token.SignedString(cfg.PermsKey)
 
 	fmt.Println(tokenString, err)
 

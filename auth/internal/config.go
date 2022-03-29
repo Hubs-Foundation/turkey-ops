@@ -1,7 +1,10 @@
 package internal
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
@@ -42,10 +45,13 @@ type Config struct {
 	// Filled during transformations
 	Secret   []byte `json:"-"`
 	Lifetime time.Duration
+
+	PermsKey *rsa.PrivateKey `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications ... used to sign jwt tokens here"`
 }
 
 func MakeCfg() {
 	cfg = &Config{}
+
 	cfg.TurkeyDomain = os.Getenv("turkeyDomain")
 	rootDomain := rootDomain(cfg.TurkeyDomain)
 	if rootDomain == "" {
@@ -81,6 +87,12 @@ func MakeCfg() {
 	if err != nil {
 		Logger.Error("[ERROR] @ Cfg.Providers.Fxa.Setup: " + err.Error())
 	}
+
+	cfg.PermsKey, err = preparePermsKey(os.Getenv("PERMS_KEY"))
+	if err != nil {
+		Logger.Error(" preparePermsKey failed!!! " + err.Error())
+	}
+
 }
 
 func rootDomain(fullDomain string) string {
@@ -224,4 +236,20 @@ func (c *CommaSeparatedList) UnmarshalFlag(value string) error {
 // MarshalFlag converts an array back to a comma separated list
 func (c *CommaSeparatedList) MarshalFlag() (string, error) {
 	return strings.Join(*c, ","), nil
+}
+
+func preparePermsKey(rawPermsKey string) (*rsa.PrivateKey, error) {
+	// rawPermsKey := os.Getenv("PERMS_KEY")
+	//making cfg.JWK out of cfg.PermsKey ... pem.Decode needs "real" line breakers in the "pem byte array"
+	perms_key_str := strings.Replace(rawPermsKey, `\\n`, "\n", -1)
+	pb, _ := pem.Decode([]byte(perms_key_str))
+	if pb == nil {
+		Logger.Sugar().Errorf("failed to decode perms key... perms_key_str %v, rawPermsKey %v", perms_key_str, rawPermsKey)
+		return nil, errors.New("bad key")
+	}
+	PermsKey, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	return PermsKey, nil
 }

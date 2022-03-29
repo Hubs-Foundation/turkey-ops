@@ -86,6 +86,11 @@ spec:
           value: {{.Domain}}        
         - name: trustedClients  # must end with ','
           value: https://api.{{.Domain}}/console,http://localhost:3030,
+        - name: PERMS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PERMS_KEY         
         - name: COOKIE_SECRET
           valueFrom:
             secretKeyRef:
