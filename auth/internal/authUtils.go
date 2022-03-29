@@ -44,7 +44,7 @@ func CheckCookie(r *http.Request) (string, error) {
 
 	//=============testing==============================
 	CheckJwtCookieReturn, _ := CheckJwtCookie(r)
-	Logger.Sugar().Debug("CheckJwtCookie: " + CheckJwtCookieReturn)
+	Logger.Sugar().Debug("CheckJwtCookieReturn: " + CheckJwtCookieReturn)
 	//==================================================
 	return email, nil
 }
@@ -252,7 +252,7 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 		// "aud":"whomever?",
 		"exp": expires,
 		// "nbf": time.Now().UTC(),
-		// "iat":       time.Now().UTC(),	//need to impliment clock tolerance if we need this
+		"iat":       time.Now().Add(-24 * time.Hour).UTC(),
 		"fxa_pic":   user.Avatar,
 		"fxa_2fa":   user.TwoFA,
 		"fxa_email": user.Email,
