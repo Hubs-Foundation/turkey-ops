@@ -112,9 +112,9 @@ func Logout() http.Handler {
 }
 
 // oauth callback handler
-func OauthFxa() http.Handler {
+func Oauth() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/_fxa" {
+		if r.URL.Path != "/_oauth" && r.URL.Path != "/_fxa" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
@@ -183,88 +183,6 @@ func OauthFxa() http.Handler {
 		Logger.Sugar().Debug("auth cookie generated: ", user)
 
 		// Redirect
-		w.Header().Set("X-Forwarded-UserName", user.Name)
-		w.Header().Set("X-Forwarded-UserPicture", user.Picture)
-
-		w.Header().Set("X-Forwarded-User", user.Email)
-		http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
-
-	})
-}
-
-// oauth callback handler
-func Oauth() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/_oauth" {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-
-		Logger.Debug("Handling callback")
-		// Logger.Debug("dumpHeader: " + dumpHeader(r))
-
-		// Check state
-		state := r.URL.Query().Get("state")
-		if err := ValidateState(state); err != nil {
-			Logger.Sugar().Warn("Error validating state: " + err.Error())
-			http.Error(w, "Not authorized", http.StatusUnauthorized)
-			return
-		}
-
-		// Check for CSRF cookie
-		c, err := FindCSRFCookie(r, state)
-		if err != nil {
-			Logger.Sugar().Warn("Missing csrf cookie")
-			http.Error(w, "Not authorized", http.StatusUnauthorized)
-			return
-		}
-
-		// Validate CSRF cookie against state
-		valid, providerName, redirect, err := ValidateCSRFCookie(c, state)
-		if !valid {
-			Logger.Sugar().Warn("Error validating csrf cookie: " + err.Error())
-			http.Error(w, "Not authorized", http.StatusUnauthorized)
-			return
-		}
-
-		// Get provider
-		p, err := cfg.GetProvider(providerName)
-		if err != nil {
-			Logger.Sugar().Warn("Invalid provider in csrf cookie: " + providerName)
-			http.Error(w, "Not authorized", http.StatusUnauthorized)
-			return
-		}
-
-		// Clear CSRF cookie
-		http.SetCookie(w, ClearCSRFCookie(r, c))
-
-		// Exchange code for token
-		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_oauth", r.URL.Query().Get("code"))
-		if err != nil {
-			Logger.Sugar().Warn("Code exchange failed with provider: " + err.Error())
-			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		Logger.Sugar().Debug("token", token)
-
-		// Get user
-		user, err := p.GetUser(token.AccessToken)
-		if err != nil {
-			Logger.Sugar().Warn("Error getting user: " + err.Error())
-			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		Logger.Sugar().Debug("user", user)
-
-		// Generate cookie
-		http.SetCookie(w, MakeCookie(r, user.Email))
-
-		Logger.Sugar().Debug("auth cookie generated: ", user)
-
-		// Redirect
-		w.Header().Set("X-Forwarded-UserName", user.Name)
-		w.Header().Set("X-Forwarded-UserPicture", user.Picture)
-
 		w.Header().Set("X-Forwarded-User", user.Email)
 		http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
 

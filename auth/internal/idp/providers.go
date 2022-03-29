@@ -10,7 +10,7 @@ import (
 // Providers contains all the implemented providers
 type Providers struct {
 	Google Google `group:"Google Provider" namespace:"google" env-namespace:"GOOGLE"`
-	Fxa Fxa `group:"FxA Provider" namespace:"fxa" env-namespace:"FXA"`
+	Fxa    Fxa    `group:"FxA Provider" namespace:"fxa" env-namespace:"FXA"`
 	// OIDC         OIDC         `group:"OIDC Provider" namespace:"oidc" env-namespace:"OIDC"`
 	GenericOAuth GenericOAuth `group:"Generic OAuth2 Provider" namespace:"generic-oauth" env-namespace:"GENERIC_OAUTH"`
 }
@@ -31,14 +31,14 @@ type Token struct {
 
 // User is the authenticated user
 type User struct {
-	Id            string `json:"id"`
-	Email         string `json:"email"`
-	VerifiedEmail bool   `json:"verified_email"`
-	Name          string `json:"name"`
-	GivenName     string `json:"given_name"`
-	FamilyName    string `json:"family_name"`
-	Picture       string `json:"picture"`
-	Locale        string `json:"locale"`
+	Email          string `json:"email"`
+	Locale         string `json:"locale"`
+	TwoFA          bool   `json:"twoFactorAuthentication"`
+	MetricsEnabled string `json:"metricsEnabled"`
+	Uid            string `json:"uid"`
+	Avatar         string `json:"avatar"`
+	AvatarDefault  string `json:"avatarDefault"`
+	Sub            string `json:"sub"`
 }
 
 // OAuthProvider is a provider using the oauth2 library
