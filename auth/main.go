@@ -17,6 +17,8 @@ func main() {
 	internal.InitProxyman()
 
 	router := http.NewServeMux()
+	router.Handle("/", internal.AuthnProxy())
+
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/login", internal.Login())
 	router.Handle("/_oauth", internal.Oauth())
@@ -25,7 +27,8 @@ func main() {
 	router.Handle("/logout", internal.Logout())
 	// router.Handle("/traefik-ip", internal.TraefikIp())
 	router.Handle("/authn", internal.Authn())
-	router.Handle("/", internal.AuthnProxy())
+
+	router.Handle("/chk_cookie", internal.ChkCookie())
 
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	//curl localhost:9001/zaplvl

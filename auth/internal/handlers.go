@@ -2,7 +2,6 @@ package internal
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -49,9 +48,9 @@ func Login() http.Handler {
 		}
 
 		email, err := CheckCookie(r)
-		err = errors.New("fake error to force authRedirect, remove me after fxa's done")
+		// err = errors.New("fake error to force authRedirect, remove me after fxa's done")
 		if err != nil {
-			Logger.Debug("valid auth cookie not found >>> authRedirect")
+			Logger.Debug("valid auth cookie not found >>> authRedirect ... err: " + err.Error())
 			authRedirect(w, r, idp[0])
 		}
 
