@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"main/internal/idp"
 
 	"net/http"
@@ -43,9 +42,9 @@ func CheckCookie(r *http.Request) (string, error) {
 		return "", err
 	}
 
-	//testing
+	//=============testing==============================
 	_, _ = CheckJwtCookie(r)
-	//
+	//==================================================
 	return email, nil
 }
 
@@ -60,10 +59,11 @@ func CheckJwtCookie(r *http.Request) (string, error) {
 	token, err := jwt.Parse(c.Value, func(token *jwt.Token) (interface{}, error) {
 		// since we only use the one private key to sign the tokens,
 		// we also only use its public counter part to verify
-		return cfg.PermsKey_pub, nil
+		return cfg.PermsKey.PublicKey, nil
 	})
-
+	Logger.Sugar().Debugf("token: %v", token)
 	// branch out into the possible error from signing
+
 	switch err.(type) {
 
 	case nil: // no error
@@ -72,7 +72,6 @@ func CheckJwtCookie(r *http.Request) (string, error) {
 			Logger.Debug("invalid token: " + err.Error())
 			return "", errors.New("invalid token")
 		}
-		log.Printf("Someone accessed resricted area! Token:%+v\n", token)
 		// good token
 		return token.Raw, nil
 
