@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -116,10 +117,10 @@ func (f *Fxa) GetUser(token string) (User, error) {
 	defer res.Body.Close()
 	fmt.Println("GetUser.res.StatusCode = ", res.StatusCode)
 
-	err = json.NewDecoder(res.Body).Decode(&user)
-	// bodyBytes, err := ioutil.ReadAll(res.Body)
-	// fmt.Println("GetUser -- bodyBytes -- " + string(bodyBytes))
-	// err = json.Unmarshal(bodyBytes, &user)
+	// err = json.NewDecoder(res.Body).Decode(&user)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	fmt.Println("GetUser -- bodyBytes -- " + string(bodyBytes))
+	err = json.Unmarshal(bodyBytes, &user)
 
 	return user, err
 }
