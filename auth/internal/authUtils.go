@@ -303,9 +303,9 @@ func makeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 }
 
 // ClearCookie clears the auth cookie
-func ClearCookie(r *http.Request) *http.Cookie {
+func ClearCookie(r *http.Request, cookieName string) *http.Cookie {
 	return &http.Cookie{
-		Name:     cfg.CookieName,
+		Name:     cookieName,
 		Value:    "",
 		Path:     "/",
 		Domain:   cookieDomain(r),
