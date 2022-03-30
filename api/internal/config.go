@@ -16,7 +16,7 @@ type Config struct {
 	PodLabelApp  string
 	AuthProxyUrl string `auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)`
 
-	Env      string `long:"environment" env:"ENV" description:"env config"`
+	Env      string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
 	Domain   string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
 	DBuser   string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
 	DBpass   string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`

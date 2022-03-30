@@ -94,7 +94,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) error {
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
 
-	fileOption := "_sc_ha"
+	fileOption := "_gcs_sc"
 	if os.Getenv("CLOUD") == "aws" {
 		fileOption = "_s3fs"
 	}

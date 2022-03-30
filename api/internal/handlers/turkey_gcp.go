@@ -231,7 +231,7 @@ func runTf(cfg clusterCfg, verb string) error {
 	// render the template.tf with cfg.Stackname into a Stackname named folder so that
 	// 1. we can run terraform from that folder
 	// 2. terraform will use a Stackname named folder in it's remote backend
-	tfTemplateFile := wd + "/_files/tf/gcp.template.tf"
+	tfTemplateFile := wd + "/_files/tf/gcp.template." + cfg.Env + ".tf"
 	tf_bin := wd + "/_files/tf/terraform"
 	tfdir := wd + "/_files/tf/" + cfg.Stackname
 	os.Mkdir(tfdir, os.ModePerm)
