@@ -36,6 +36,7 @@ func CheckCookie(r *http.Request) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	Logger.Sugar().Debugf("good jwt cookie, jwt.MapClaims: %v", claims)
 	return claims.(jwt.MapClaims)["fxa_email"].(string), nil
 }
 
@@ -82,9 +83,6 @@ func checkJwtCookie(r *http.Request) (jwt.Claims, error) {
 		return nil, errors.New("invalid token")
 	}
 	// good token
-	Logger.Sugar().Debugf("good token -- token.Raw: %v", token.Raw)
-	// claims := token.Claims.(jwt.MapClaims)
-	// return claims["fxa_email"].(string), nil
 	return token.Claims, nil
 
 	// Logger.Sugar().Debugf("token: %v", token)

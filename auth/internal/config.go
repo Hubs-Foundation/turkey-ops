@@ -98,7 +98,10 @@ func MakeCfg() {
 		Logger.Error(" preparePermsKey failed!!! " + err.Error())
 	}
 	cfg.PermsKey_pub = cfg.PermsKey.Public()
-	Logger.Sugar().Infof("PermsKey_pub: %v", cfg.PermsKey_pub)
+	//log out pem encoded public key
+	pubKeyBytes := x509.MarshalPKCS1PublicKey(&cfg.PermsKey.PublicKey)
+	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
+	Logger.Sugar().Infof("PermsKey_pub: %v", strings.ReplaceAll(string(pemBytes), "\n", `\\n`))
 }
 
 func rootDomain(fullDomain string) string {
