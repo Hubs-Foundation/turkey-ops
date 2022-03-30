@@ -82,6 +82,8 @@ spec:
         image: mozillareality/turkeyauth:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
+        - name: ENV
+          value: {{.Env}}
         - name: turkeyDomain
           value: {{.Domain}}        
         - name: trustedClients  # must end with ','
@@ -209,6 +211,8 @@ spec:
         image: mozillareality/turkeyapi:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
+        - name: ENV
+          value: {{.Env}}       
         - name: POD_IP
           valueFrom:
             fieldRef:

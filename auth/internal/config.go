@@ -56,7 +56,7 @@ type Config struct {
 func MakeCfg() {
 	cfg = &Config{}
 
-	cfg.Env = os.Getenv("Env")
+	cfg.Env = os.Getenv("ENV")
 	if cfg.Env == "" {
 		cfg.Env = "dev"
 	}

@@ -34,9 +34,11 @@ func CheckCookie(r *http.Request) (string, error) {
 	//jwt cookie
 	claims, err := checkJwtCookie(r)
 	if err != nil {
-		//let pass for authCookie holder too
-		return checkAuthCookie(r)
-		return "", err
+		if cfg.Env == "dev" { // (dev env only) or if you have a good authCookie ?
+			return checkAuthCookie(r)
+		} else {
+			return "", err
+		}
 	}
 	Logger.Sugar().Debugf("good jwt cookie, jwt.MapClaims: %v", claims)
 	return claims.(jwt.MapClaims)["fxa_email"].(string), nil
