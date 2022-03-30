@@ -91,7 +91,7 @@ func CheckJwtCookie(r *http.Request) (string, error) {
 			Logger.Debug("token expired: " + err.Error())
 			return "", err
 		default:
-			Logger.Debug("unexpected error: " + err.Error())
+			Logger.Debug("jwt.ValidationError -- unexpected: " + err.Error())
 			return "", err
 		}
 
@@ -250,9 +250,9 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 		"iss": cfg.TurkeyDomain,
 		"sub": user.Sub,
 		// "aud":"whomever?",
-		"exp": expires,
+		"exp": expires.Unix(),
 		// "nbf": time.Now().UTC(),
-		"iat":       time.Now().Add(-24 * time.Hour).UTC(),
+		"iat":       time.Now().Add(-1 * time.Minute).Unix(),
 		"fxa_pic":   user.Avatar,
 		"fxa_2fa":   user.TwoFA,
 		"fxa_email": user.Email,
