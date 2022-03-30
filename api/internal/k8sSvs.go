@@ -62,9 +62,13 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				GetLogger().Sugar().Debugf("updated: %v", newObj)
+				ns := newObj.(*corev1.Namespace)
+				HC_NS_TABLE.Set(ns.Name, HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
 			},
 			DeleteFunc: func(obj interface{}) {
 				GetLogger().Sugar().Debugf("deleted: %v", obj)
+				ns := obj.(*corev1.Namespace)
+				HC_NS_TABLE.Del(ns.Name)
 			},
 		},
 	)

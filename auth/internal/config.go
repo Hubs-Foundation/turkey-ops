@@ -19,9 +19,10 @@ var cfg *Config
 
 // Config holds the runtime application config
 type Config struct {
-	TurkeyDomain   string `turkey domain`
-	Domain         string `root domain`
-	TrustedClients string `ie. https://portal.myhubs.net`
+	Env            string `description:"dev/staging/prod"`
+	TurkeyDomain   string `description:"turkey domain"`
+	Domain         string `description:"root domain"`
+	TrustedClients string `description:"ie. https://portal.myhubs.net"`
 
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config                 func(s string) error `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
@@ -30,8 +31,8 @@ type Config struct {
 	CookieName             string               `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
 	JwtCookieName          string               `long:"cookie-name" env:"COOKIE_NAME" default:"_forward_auth" description:"Cookie Name"`
 	CSRFCookieName         string               `long:"csrf-cookie-name" env:"CSRF_COOKIE_NAME" default:"_forward_auth_csrf" description:"CSRF Cookie Name"`
-	DefaultAction          string               `long:"default-action" env:"DEFAULT_ACTION" default:"auth" choice:"auth" choice:"allow" description:"Default action"`
-	DefaultProvider        string               `long:"default-provider" env:"DEFAULT_PROVIDER" default:"google" choice:"google" choice:"oidc" choice:"generic-oauth" description:"Default provider"`
+	DefaultAction          string               `long:"default-action" env:"DEFAULT_ACTION" default:"auth" choice:"auth,allow" description:"Default action"`
+	DefaultProvider        string               `long:"default-provider" env:"DEFAULT_PROVIDER" default:"fxa" choice:"google,fxa,oidc,generic-oauth" description:"Default provider"`
 	Domains                CommaSeparatedList   `long:"domain" env:"DOMAIN" env-delim:"," description:"Only allow given email domains, can be set multiple times"`
 	LifetimeString         int                  `long:"lifetime" env:"LIFETIME" default:"43200" description:"Lifetime in seconds"`
 	LogoutRedirect         string               `long:"logout-redirect" env:"LOGOUT_REDIRECT" description:"URL to redirect to following logout"`
@@ -54,6 +55,11 @@ type Config struct {
 
 func MakeCfg() {
 	cfg = &Config{}
+
+	cfg.Env = os.Getenv("Env")
+	if cfg.Env == "" {
+		cfg.Env = "dev"
+	}
 
 	cfg.TurkeyDomain = os.Getenv("turkeyDomain")
 	rootDomain := rootDomain(cfg.TurkeyDomain)

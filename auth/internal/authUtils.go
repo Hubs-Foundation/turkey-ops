@@ -34,6 +34,8 @@ func CheckCookie(r *http.Request) (string, error) {
 	//jwt cookie
 	claims, err := checkJwtCookie(r)
 	if err != nil {
+		//let pass for authCookie holder too
+		return checkAuthCookie(r)
 		return "", err
 	}
 	Logger.Sugar().Debugf("good jwt cookie, jwt.MapClaims: %v", claims)
@@ -244,18 +246,7 @@ func useAuthDomain(r *http.Request) (bool, string) {
 
 // Cookie methods
 
-// MakeCookie creates an auth cookie
-func MakeCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
-
-	//auth cookie
-	// return makeAuthCookie(r, user.Email), nil
-
-	//jwt cookie
-	return makeJwtCookie(r, user)
-
-}
-
-func makeAuthCookie(r *http.Request, email string) *http.Cookie {
+func MakeAuthCookie(r *http.Request, email string) *http.Cookie {
 	expires := cookieExpiry()
 	mac := cookieSignature(r, email, fmt.Sprintf("%d", expires.Unix()))
 	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), email)
@@ -271,7 +262,7 @@ func makeAuthCookie(r *http.Request, email string) *http.Cookie {
 	}
 }
 
-func makeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
+func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 	expires := cookieExpiry()
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
