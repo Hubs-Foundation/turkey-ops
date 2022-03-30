@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -232,6 +233,10 @@ func runTf(cfg clusterCfg, verb string) error {
 	// 1. we can run terraform from that folder
 	// 2. terraform will use a Stackname named folder in it's remote backend
 	tfTemplateFile := wd + "/_files/tf/gcp.template." + cfg.Env + ".tf"
+	if _, err := os.Stat(tfTemplateFile); errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
 	tf_bin := wd + "/_files/tf/terraform"
 	tfdir := wd + "/_files/tf/" + cfg.Stackname
 	os.Mkdir(tfdir, os.ModePerm)
