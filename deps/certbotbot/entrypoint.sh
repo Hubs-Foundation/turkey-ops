@@ -45,5 +45,5 @@ echo "getting new cert"
 if ! get_new_cert; then echo "ERROR failed to get new cert, exit in 15 min"; sleep 900; exit 1; fi
 if ! save_cert; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
 
-kubectl -n ingress rollout restart deployment ingress-controller
+kubectl -n ingress rollout restart deployment haproxy
 kubectl -n ingress patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */3 * *"}}'
