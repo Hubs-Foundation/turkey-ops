@@ -27,6 +27,19 @@ func GetClient(r *http.Request) string {
 }
 
 func CheckCookie(r *http.Request) (string, error) {
+
+	//auth cookie
+	// return checkAuthCookie(r)
+
+	//jwt cookie
+	claims, err := checkJwtCookie(r)
+	if err != nil {
+		return "", err
+	}
+	return claims.(jwt.MapClaims)["fxa_email"].(string), nil
+}
+
+func checkAuthCookie(r *http.Request) (string, error) {
 	// Get auth cookie
 	c, err := r.Cookie(cfg.CookieName)
 	if err != nil {
@@ -42,19 +55,15 @@ func CheckCookie(r *http.Request) (string, error) {
 		return "", err
 	}
 
-	//=============testing==============================
-	CheckJwtCookieReturn, _ := CheckJwtCookie(r)
-	Logger.Sugar().Debug("CheckJwtCookieReturn: " + CheckJwtCookieReturn)
-	//==================================================
 	return email, nil
 }
 
-func CheckJwtCookie(r *http.Request) (string, error) {
+func checkJwtCookie(r *http.Request) (jwt.Claims, error) {
 	// Get auth cookie
 	c, err := r.Cookie(cfg.JwtCookieName)
 	if err != nil {
 		Logger.Sugar().Debug("missing jwtCookie: " + cfg.JwtCookieName)
-		return "", errors.New("missing jwtCookie")
+		return nil, errors.New("missing jwtCookie")
 	}
 	// Validate cookie
 
@@ -66,39 +75,51 @@ func CheckJwtCookie(r *http.Request) (string, error) {
 		// we also only use its public counter part to verify
 		return cfg.PermsKey.Public(), nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+	// good token
+	Logger.Sugar().Debugf("good token -- token.Raw: %v", token.Raw)
+	// claims := token.Claims.(jwt.MapClaims)
+	// return claims["fxa_email"].(string), nil
+	return token.Claims, nil
+
 	// Logger.Sugar().Debugf("token: %v", token)
 	// Logger.Sugar().Debugf("token.Claims: %v", token.Claims)
 
 	// branch out into the possible error from signing
 
-	switch err.(type) {
+	// switch err.(type) {
 
-	case nil: // no error
+	// case nil: // no error
 
-		if !token.Valid { // but may still be invalid
-			Logger.Debug("invalid token: " + err.Error())
-			return "", errors.New("invalid token")
-		}
-		// good token
-		Logger.Sugar().Debugf("token.Raw: %v", token.Raw)
-		claims := token.Claims.(jwt.MapClaims)
-		return claims["fxa_email"].(string), nil
+	// 	if !token.Valid { // but may still be invalid
+	// 		Logger.Debug("invalid token: " + err.Error())
+	// 		return "", errors.New("invalid token")
+	// 	}
+	// 	// good token
+	// 	Logger.Sugar().Debugf("good token -- token.Raw: %v", token.Raw)
+	// 	claims := token.Claims.(jwt.MapClaims)
+	// 	return claims["fxa_email"].(string), nil
 
-	case *jwt.ValidationError: // something was wrong during the validation
-		vErr := err.(*jwt.ValidationError)
-		switch vErr.Errors {
-		case jwt.ValidationErrorExpired:
-			Logger.Debug("token expired: " + err.Error())
-			return "", err
-		default:
-			Logger.Debug("jwt.ValidationError -- unexpected: " + err.Error())
-			return "", err
-		}
+	// case *jwt.ValidationError: // something was wrong during the validation
+	// 	vErr := err.(*jwt.ValidationError)
+	// 	switch vErr.Errors {
+	// 	case jwt.ValidationErrorExpired:
+	// 		Logger.Debug("token expired: " + err.Error())
+	// 		return "", err
+	// 	default:
+	// 		Logger.Debug("jwt.ValidationError -- unexpected: " + err.Error())
+	// 		return "", err
+	// 	}
 
-	default: // something else went wrong
-		Logger.Debug("unexpected error: " + err.Error())
-		return "", err
-	}
+	// default: // something else went wrong
+	// 	Logger.Debug("unexpected error: " + err.Error())
+	// 	return "", err
+	// }
 }
 
 // Request Validation
@@ -226,7 +247,17 @@ func useAuthDomain(r *http.Request) (bool, string) {
 // Cookie methods
 
 // MakeCookie creates an auth cookie
-func MakeCookie(r *http.Request, email string) *http.Cookie {
+func MakeCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
+
+	//auth cookie
+	// return makeAuthCookie(r, user.Email), nil
+
+	//jwt cookie
+	return makeJwtCookie(r, user)
+
+}
+
+func makeAuthCookie(r *http.Request, email string) *http.Cookie {
 	expires := cookieExpiry()
 	mac := cookieSignature(r, email, fmt.Sprintf("%d", expires.Unix()))
 	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), email)
@@ -242,7 +273,7 @@ func MakeCookie(r *http.Request, email string) *http.Cookie {
 	}
 }
 
-func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
+func makeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 	expires := cookieExpiry()
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
@@ -257,11 +288,9 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 		"fxa_2fa":   user.TwoFA,
 		"fxa_email": user.Email,
 	})
-
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(cfg.PermsKey)
 	if err != nil {
-
 		return nil, err
 	}
 	return &http.Cookie{

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
@@ -47,7 +48,8 @@ type Config struct {
 	Secret   []byte `json:"-"`
 	Lifetime time.Duration
 
-	PermsKey *rsa.PrivateKey `description:"cluster wide private key for all reticulum authentications ... used to sign jwt tokens here"`
+	PermsKey     *rsa.PrivateKey  `description:"cluster wide private key for all reticulum authentications ... used to sign jwt tokens here"`
+	PermsKey_pub crypto.PublicKey `description:"public part of PermsKey ... used to verify jwt tokens here"`
 }
 
 func MakeCfg() {
@@ -95,7 +97,8 @@ func MakeCfg() {
 	if err != nil {
 		Logger.Error(" preparePermsKey failed!!! " + err.Error())
 	}
-
+	cfg.PermsKey_pub = cfg.PermsKey.Public()
+	Logger.Sugar().Infof("PermsKey_pub: %v", cfg.PermsKey_pub)
 }
 
 func rootDomain(fullDomain string) string {

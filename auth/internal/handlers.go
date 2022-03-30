@@ -178,16 +178,14 @@ func Oauth() http.Handler {
 		Logger.Sugar().Debug("user", user)
 
 		// Generate cookie
-		http.SetCookie(w, MakeCookie(r, user.Email))
-		Logger.Sugar().Debug("auth cookie generated: ", user)
-
-		//=============testing==============================
-		jwtCookie, err := MakeJwtCookie(r, user)
+		cookie, err := MakeCookie(r, user)
 		if err != nil {
-			Logger.Error("MakeJwtCookie failed: " + err.Error())
+			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
+			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+			return
 		}
-		http.SetCookie(w, jwtCookie)
-		//==================================================
+		http.SetCookie(w, cookie)
+		Logger.Sugar().Debug("cookie generated for: ", user)
 
 		// Redirect
 		w.Header().Set("X-Forwarded-User", user.Email)
