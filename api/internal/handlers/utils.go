@@ -149,6 +149,7 @@ type clusterCfg struct {
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
 	// this will just be Region ...
 	AWS_REGION string `json:"AWS_REGION"` //us-east-1
+	ItaChan    string `json:"itachan"`    //ita's listening channel (dev, beta, stable), falls back to Env / swaping staging for beta
 
 	//optional inputs
 	deploymentPrefix     string `json:"name"`                 //t-
@@ -229,6 +230,10 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	if cfg.Env == "" {
 		cfg.Env = "dev"
 		internal.GetLogger().Warn("Env unspecified -- using dev")
+	}
+	if cfg.ItaChan == "" {
+		cfg.ItaChan = strings.Replace(cfg.Env, "staging", "beta", 1)
+		internal.GetLogger().Warn("ItaChan unspecified -- fallinb back to Env (swaping staging for beta): " + cfg.ItaChan)
 	}
 
 	//optional inputs

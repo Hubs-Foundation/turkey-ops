@@ -44,6 +44,7 @@ type hcCfg struct {
 	SmtpUser       string `json:"smtpuser"`
 	SmtpPass       string `json:"smtppass"`
 	GCP_SA_KEY_b64 string
+	ItaChan        string
 
 	//produced here
 	TurkeyId    string `json:"turkeyid"` // retrieved from db with UserEmail ??? not used atm
@@ -284,6 +285,7 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 	cfg.SmtpUser = internal.Cfg.SmtpUser
 	cfg.SmtpPass = internal.Cfg.SmtpPass
 	cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
+	cfg.ItaChan = internal.Cfg.Env
 
 	//produc the rest
 	cfg.GuardianKey = "strongSecret#1"

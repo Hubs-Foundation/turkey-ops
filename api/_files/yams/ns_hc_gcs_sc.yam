@@ -625,6 +625,8 @@ kind: Deployment
 metadata:
   name: ita
   namespace: hc-{{.Subdomain}}
+  labels:
+    CHANNEL: {{.ItaChan}}
 spec:
   replicas: 1
   selector:

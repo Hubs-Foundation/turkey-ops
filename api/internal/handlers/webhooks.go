@@ -43,21 +43,16 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	//check api key for ddos protection?
+	//todo -- make an api key sort of thing for ddos protection?
+	//todo -- doublecheck back against github and dockerhub?
 
 	internal.GetLogger().Sugar().Debugf("dump headers: %v", r.Header)
 
-	//++++++++++++++++++++++++
-
-	//get bytes for debug print + decode
 	rBodyBytes, _ := ioutil.ReadAll(r.Body)
 	internal.GetLogger().Debug(prettyPrintJson(rBodyBytes))
 	decoder := json.NewDecoder(bytes.NewBuffer(rBodyBytes))
-
-	//or if we don't need debug print:
 	//decoder := json.NewDecoder(r.Body)
 
-	//-----------------------
 	var ghaReport ghaReport
 	err := decoder.Decode(&ghaReport)
 	if err != nil {
