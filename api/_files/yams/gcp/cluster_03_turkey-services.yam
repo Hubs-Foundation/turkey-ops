@@ -156,7 +156,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: haproxy
     haproxy.org/request-set-header: |
-      backend http://turkey-api:888/
+      backend http://turkeyapi:888/
 spec:
   rules:
   - host: api.{{.Domain}}
@@ -169,6 +169,13 @@ spec:
             name: turkeyauth
             port: 
               number: 9001
+      - path: /webhooks
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyapi
+            port: 
+              number: 888              
 ---
 apiVersion: v1
 kind: Secret
@@ -192,18 +199,18 @@ type: kubernetes.io/dockerconfigjson
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: turkey-api
+  name: turkeyapi
   namespace: turkey-services
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: turkey-api
+      app: turkeyapi
   minReadySeconds: 2
   template:
     metadata:
       labels:
-        app: turkey-api
+        app: turkeyapi
     spec:
       serviceAccountName: api-sa
       containers:
@@ -305,7 +312,7 @@ spec:
           value: {{.CLOUD}}
         livenessProbe:
           httpGet:
-            path: "http://turkey-api.turkey-services/Healthz"
+            path: "http://turkeyapi.turkey-services/Healthz"
             port: 888
           initialDelaySeconds: 20
           timeoutSeconds: 1
@@ -323,7 +330,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: turkey-api
+  name: turkeyapi
   namespace: turkey-services
 spec:
   ports:
@@ -331,7 +338,7 @@ spec:
     port: 888
     targetPort: 888
   selector:
-    app: turkey-api
+    app: turkeyapi
 ---
 apiVersion: v1
 kind: ServiceAccount
