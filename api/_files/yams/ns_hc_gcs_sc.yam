@@ -287,8 +287,9 @@ spec:
           value: "http://speelycaptor.turkey-services:5000"
         livenessProbe:
           httpGet:
-            path: "http://reticulum.{{.Subdomain}}"
-            port: 1111
+            path: https://localhost/health
+            port: 4000
+            scheme: HTTPS
           initialDelaySeconds: 20
           timeoutSeconds: 1
           periodSeconds: 120
@@ -457,8 +458,9 @@ spec:
             value: 
           livenessProbe:
             httpGet:
-              path: "http://hubs.{{.Subdomain}}"
-              port: 1111
+              path: https://localhost/healthz
+              port: 8080
+              scheme: HTTPS
             initialDelaySeconds: 20
             timeoutSeconds: 1
             periodSeconds: 120
@@ -543,8 +545,9 @@ spec:
             value: nearspark.hc-{{.Subdomain}}:5000
           livenessProbe:
             httpGet:
-              path: "http://localhost/_healthz"
-              port: 1111
+              path: https://localhost/healthz
+              port: 8080
+              scheme: HTTPS
             initialDelaySeconds: 20
             timeoutSeconds: 1
             periodSeconds: 120
@@ -654,6 +657,13 @@ spec:
           limits:
             memory: 200Mi
             cpu: 0.2
+        livenessProbe:
+          httpGet:
+            path: http://localhost/healthz
+            port: 6000
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120            
 ---
 ########################################################################
 ######################   ita rbac  #####################################

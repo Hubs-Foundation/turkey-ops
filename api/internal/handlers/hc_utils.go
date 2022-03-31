@@ -39,7 +39,9 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	internal.GetLogger().Debug(Dumpheader(r))
+
+	internal.GetLogger().Sugar().Debugf("dump headers: %v", r.Header)
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	html := `
 	<h1> your hubs services are warming up, <br>
@@ -73,6 +75,8 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+	internal.GetLogger().Sugar().Debugf("dump headers: %v", r.Header)
+
 	nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
 
 	// not requesting a hubs cloud namespace == bounce
@@ -101,7 +105,8 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	go wakeupHcNs(nsName)
 	internal.HC_NS_TABLE.Set(nsName, internal.HcNsNotes{Lastchecked: time.Now()})
 
-	internal.GetLogger().Debug("wakeupHcNs launched for nsName: " + nsName + ", Dumpheader(r): " + Dumpheader(r))
+	internal.GetLogger().Debug("wakeupHcNs launched for nsName: " + nsName)
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, g404_std_RespMsg)
 
