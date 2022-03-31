@@ -496,6 +496,7 @@ spec:
     metadata:
       labels:
         app: ita
+        CHANNEL: stable
     spec:
       serviceAccountName: ita-sa
       containers:
@@ -509,8 +510,6 @@ spec:
               fieldPath: metadata.namespace
         - name: POD_DEPLOYMENT_NAME
           value: ita
-        - name: CHANNEL
-          value: stable
         resources:
           requests:
             memory: 50Mi

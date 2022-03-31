@@ -64,7 +64,7 @@ func MakeCfg() {
 	//unexpected(or empty) channel value ==> fallback to stable
 	_, ok := cfg.SupportedChannels[cfg.ListeningChannel]
 	if !ok {
-		Logger.Warn("bad env var CHANNEL: " + cfg.ListeningChannel + ", so we'll use stable")
+		Logger.Warn("bad CHANNEL: " + cfg.ListeningChannel + ", so we'll use stable")
 		cfg.ListeningChannel = "stable"
 	}
 
