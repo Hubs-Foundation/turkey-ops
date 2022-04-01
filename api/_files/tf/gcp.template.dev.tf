@@ -162,6 +162,7 @@ resource "google_sql_user" "db_user" {
   password = "{{.DbPass}}"
 }
 resource "google_sql_database" "portal_db" {
+  provider = google-beta
   name     = "portal"
   instance = google_sql_database_instance.pgsql.name
 }
