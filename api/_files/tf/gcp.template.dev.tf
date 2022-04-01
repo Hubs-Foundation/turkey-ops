@@ -161,3 +161,7 @@ resource "google_sql_user" "db_user" {
   instance = google_sql_database_instance.pgsql.name
   password = "{{.DbPass}}"
 }
+resource "google_sql_database" "portal_db" {
+  name     = "portal"
+  instance = google_sql_database_instance.pgsql.name
+}

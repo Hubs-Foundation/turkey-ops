@@ -31,6 +31,8 @@ stringData:
   SMTP_PORT: "{{.SMTP_PORT}}"
   SMTP_USER: {{.SMTP_USER}}
   SMTP_PASS: {{.SMTP_PASS}}
+  PORTAL_DATABASE_URL: ecto://postgres:{{.DB_PASS}}@{{.DB_HOST}}/portal
+  PORTAL_SECRET_KEY_BASE: {{.COOKIE_SECRET}}
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
@@ -680,4 +682,89 @@ spec:
     targetPort: 5000
   selector:
     app: speelycaptor
-
+---
+####################################################################################
+####################################### portal #######################################
+####################################################################################  
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkeyportal
+  namespace: turkey-services
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+spec:
+  rules:
+  - host: portal.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyportal
+            port: 
+              number: 4000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: turkeyportal
+  namespace: turkey-services
+  labels:
+    app: turkeyportal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turkeyportal
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: turkeyportal
+    spec:
+      # terminationGracePeriodSeconds: 3
+      containers:
+      - name: turkeyportal
+        image: mozillareality/turkeyportal:1.1
+        imagePullPolicy: IfNotPresent        
+        env:
+        - name: PHX_SERVER
+          value: string
+        - name: RELEASE_NAME
+          value: string
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PORTAL_DATABASE_URL      #ecto://USER:PASS@HOST/DATABASE
+        - name: SECRET_KEY_BASE
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PORTAL_SECRET_KEY_BASE
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 0.1
+          limits:
+            memory: 2Gi
+            cpu: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: turkeyportal
+  namespace: turkey-services
+  labels:
+    app: turkeyportal
+spec:
+  type: ClusterIP
+  selector:
+    app: turkeyportal
+  ports:
+  - name: http
+    port: 4000
+    targetPort: 4000
