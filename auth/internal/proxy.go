@@ -48,16 +48,16 @@ func (p *proxyman) new(target string) (*httputil.ReverseProxy, error) {
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
 	// proxy.Transport = &http.Transport{ResponseHeaderTimeout: 15 * time.Minute}
 	proxy.Transport = &http.Transport{
-		// Proxy: http.ProxyFromEnvironment,
-		DialTLSContext: (&net.Dialer{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
 			Timeout:   900 * time.Second,
 			KeepAlive: 900 * time.Second,
 			DualStack: true,
 		}).DialContext,
-		// MaxIdleConns:          100,
-		IdleConnTimeout: 900 * time.Second,
-		// TLSHandshakeTimeout:   10 * time.Second,
-		// ExpectContinueTimeout: 1 * time.Second,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       900 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 	}
 	// original := proxy.Director
 	// proxy.Director = func(r *http.Request) {

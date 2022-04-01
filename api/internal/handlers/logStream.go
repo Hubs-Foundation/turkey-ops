@@ -45,6 +45,8 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess.SseChan = make(chan string)
+	sess.Log("&#127383; (logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+
 	// if len(sess.DeadLetterQueue) > 0 {
 	// 	sess.Log("&#127383; (logStream) <b>new</b> connection for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
 	// } else {
