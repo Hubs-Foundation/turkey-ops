@@ -731,6 +731,8 @@ spec:
         image: mozillareality/turkeyportal:1.1
         imagePullPolicy: IfNotPresent        
         env:
+        - name: PHX_HOST
+          value: portal.{{.Domain}}
         - name: PHX_SERVER
           value: string
         - name: RELEASE_NAME
