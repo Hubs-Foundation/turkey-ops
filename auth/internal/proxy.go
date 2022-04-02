@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -48,10 +47,10 @@ func (p *proxyman) new(target string) (*httputil.ReverseProxy, error) {
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
 	proxy.Transport = &http.Transport{
 		// Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   900 * time.Second,
-			KeepAlive: 900 * time.Second,
-		}).DialContext,
+		// DialContext: (&net.Dialer{
+		// 	Timeout:   900 * time.Second,
+		// 	KeepAlive: 900 * time.Second,
+		// }).DialContext,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       900 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
