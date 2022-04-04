@@ -58,7 +58,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		<-notify
 		// internal.CACHE.Get(cookie.Value).SseChan = nil
 		sess.SseChan = nil
-		log.Println("HTTP connection just closed.")
+		internal.GetLogger().Debug("connection closed.")
 	}()
 
 	// //vvvvvvvvvvvvvvvvvvvvv junk log producer for debugging vvvvvvvvvvvvvvvvvvvvvvvvvvvv

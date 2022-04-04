@@ -76,6 +76,7 @@ func (sess *CacheBoxSessData) consoleLog(msg string) {
 		if sess == nil {
 			logger.Debug("no session")
 			sess.DeadLetters = append(sess.DeadLetters, msg)
+			logger.Sugar().Debugf("DeadLetters count: %v", len(sess.DeadLetters))
 			return
 		}
 

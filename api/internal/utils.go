@@ -152,6 +152,9 @@ func ParseJsonReqBody(reqBody io.ReadCloser) (map[string]string, error) {
 
 func GetSession(Cookie func(string) (*http.Cookie, error)) *CacheBoxSessData {
 	cookie, _ := Cookie(SessionTokenName)
+	if cookie == nil {
+		return nil
+	}
 	sess := CACHE.Load(cookie.Value)
 	if sess == nil {
 		logger.Debug("WARNING @ GetSession: session not found")
