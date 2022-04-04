@@ -288,6 +288,8 @@ spec:
           value: "http://photomnemonic.turkey-services:5000"  
         - name: turkeyCfg_SPEELYCAPTOR
           value: "http://speelycaptor.turkey-services:5000"
+        - name: turkeyCfg_STORAGE_QUOTA_GB
+          value: "{{.StorageLimit}}"
         livenessProbe:
           httpGet:
             path: https://localhost/health
