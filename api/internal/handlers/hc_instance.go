@@ -116,7 +116,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	sess.Log("&#128640; --- deployment started")
 	err = internal.Ssa_k8sChartYaml(hcCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
 	if err != nil {
-		sess.Error(err.Error())
+		sess.Error("error @ k8s deploy: " + err.Error())
 		http.Error(w, "error @ k8s deploy: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
