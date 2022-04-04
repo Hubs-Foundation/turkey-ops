@@ -105,19 +105,41 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")
 	if err != nil {
 		sess.Error("failed to get ns_hc yam file because: " + err.Error())
-		http.Error(w, "error @ getting k8s chart file: "+err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ getting k8s chart file",
+			"hub_id": hcCfg.HubId,
+		})
 		return
 	}
 
 	renderedYamls, _ := internal.K8s_render_yams([]string{string(yamBytes)}, hcCfg)
 	k8sChartYaml := renderedYamls[0]
 
+	// #3 pre-deployment checks
+	// is subdomain available?
+	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
+		metav1.ListOptions{LabelSelector: "Subdomain=" + hcCfg.Subdomain})
+	if len(nsList.Items) != 0 {
+		sess.Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "subdomain already exists",
+			"hub_id": hcCfg.HubId,
+		})
+		return
+	}
+
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
 	sess.Log("&#128640; --- deployment started")
 	err = internal.Ssa_k8sChartYaml(hcCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
 	if err != nil {
 		sess.Error("error @ k8s deploy: " + err.Error())
-		http.Error(w, "error @ k8s deploy: "+err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ k8s deploy: " + err.Error(),
+			"hub_id": hcCfg.HubId,
+		})
 		return
 	}
 
@@ -133,8 +155,11 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			sess.Log("db already exists")
 		} else {
-			sess.Error(err.Error())
-			http.Error(w, "error @ create hub db: "+err.Error(), http.StatusInternalServerError)
+			sess.Error("error @ create hub db: " + err.Error())
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"result": "error @ create hub db: " + err.Error(),
+				"hub_id": hcCfg.HubId,
+			})
 			return
 		}
 	}
@@ -142,7 +167,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"task":   "create",
+		"result": "done",
 		"hub_id": hcCfg.HubId,
 	})
 
