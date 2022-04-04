@@ -251,8 +251,8 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 
 	//generate the rest
 	pwdSeed := int64(hash(cfg.Stackname))
-	cfg.DB_PASS = internal.PwdGen(15, pwdSeed)
-	cfg.COOKIE_SECRET = internal.PwdGen(15, pwdSeed)
+	cfg.DB_PASS = internal.PwdGen(15, pwdSeed, "D~")
+	cfg.COOKIE_SECRET = internal.PwdGen(15, pwdSeed, "C~")
 	cfg.DB_HOST = "to-be-determined-after-infra-deployment"
 	cfg.DB_CONN = "to-be-determined-after-infra-deployment"
 	cfg.PSQL = "to-be-determined-after-infra-deployment"

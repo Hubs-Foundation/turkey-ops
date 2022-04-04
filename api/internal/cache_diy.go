@@ -74,7 +74,7 @@ func (mb *MetaBox) Delete(key string) {
 func (sess *CacheBoxSessData) consoleLog(msg string) {
 	go func() {
 		if sess == nil {
-			logger.Debug("no session --> DeadLetterQueue?")
+			logger.Debug("no session")
 			// sess.DeadLetterQueue = append(sess.DeadLetterQueue, msg)
 			return
 		}
@@ -102,13 +102,17 @@ func (sess *CacheBoxSessData) Panic(msg string) {
 	sess.consoleLog(msg)
 	logger.Panic(msg)
 }
+
+//  log <Error>, plus push to console if sess != nil
 func (sess *CacheBoxSessData) Error(msg string) {
-	sess.consoleLog("ERROR" + msg)
 	logger.Error(msg)
+	sess.consoleLog("ERROR " + msg)
 }
+
+//  log <debug>, plus push to console if sess != nil
 func (sess *CacheBoxSessData) Log(msg string) {
-	sess.consoleLog(msg)
 	logger.Debug(msg)
+	sess.consoleLog(msg)
 }
 
 func NewCacheBox() CacheBox {

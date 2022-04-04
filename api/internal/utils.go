@@ -90,9 +90,8 @@ func AddCacheData(c *http.Cookie) *CacheBoxSessData {
 // 	return timeHex
 // }
 
-// PwDGen -- will use all printable chars except space and delete (why is delete a printable char?)
-// aka. ascii code 33 - 126
-func PwdGen(length int, seed int64) string {
+// PwDGen -- see dict
+func PwdGen(length int, seed int64, padding string) string {
 	// var seed int64
 	// binary.Read(crand.Reader, binary.BigEndian, &seed)
 	// mr := mrand.New(mrand.NewSource(seed))
@@ -109,12 +108,13 @@ func PwdGen(length int, seed int64) string {
 	rand.Seed(seed)
 
 	pwd := make([]rune, length)
-	var dict = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	var dict = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 	dictLen := len(dict)
 	for i := range pwd {
 		pwd[i] = dict[rand.Intn(dictLen)]
 	}
-	return "~" + string(pwd) + "~"
+
+	return padding + string(pwd) + padding
 }
 
 func StackNameGen() string {

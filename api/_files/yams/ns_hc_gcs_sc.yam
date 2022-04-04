@@ -1,10 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: hc-{{.Subdomain}}
+  name: hc-{{.HubId}}
   labels:
-    TurkeyId: {{.TurkeyId}}
+    Subdomain: {{.Subdomain}}
     Tier: {{.Tier}}
+    CcuLimit: {{.CcuLimit}}
+    StorageLimit: {{.StorageLimit}}
+
 ---
 ########################################################################
 ###################### configs #########################################
@@ -13,7 +16,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: configs
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 stringData:
   NODE_COOKIE: foobar
   SUB_DOMAIN: {{.Subdomain}}
@@ -43,7 +46,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: turkey-https
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
   annotations:
     kubernetes.io/ingress.class: haproxy
     haproxy.org/server-ssl: "true"
@@ -131,7 +134,7 @@ spec:
 # kind: PersistentVolumeClaim # no plan to polluting the cluster with custom k8s operator managed storageClass so aws' gp2/ebs will be used
 # metadata:
 #   name: {{.Subdomain}}-pvc
-#   namespace: hc-{{.Subdomain}}
+#   namespace: hc-{{.HubId}}
 # spec:
 #   accessModes:
 #     - ReadWriteOnce # only mode supported by the cheap and clean gp2 / ebs on aws. effectively preventing deployment/pod scaling -- not needed after we made ret stateless with storage redesign
@@ -143,7 +146,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: reticulum
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   replicas: 2
   selector:
@@ -274,7 +277,7 @@ spec:
         - name: turkeyCfg_ITA_HOST
           value: http://ita.turkey-services
         - name: turkeyCfg_IMG_PROXY
-          value: http://nearspark.hc-{{.Subdomain}}
+          value: http://nearspark.hc-{{.HubId}}
         - name: turkeyCfg_HEADER_AUTHZ
           value: "duuuuuuuuuuuuuuuuuuuuuuuuumy"
         - name: turkeyCfg_YTDL_HOST
@@ -387,7 +390,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ret
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   clusterIP: None
   ports:
@@ -404,7 +407,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hubs
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   replicas: 1 
   selector:
@@ -476,7 +479,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: hubs
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   clusterIP: None
   ports:
@@ -493,7 +496,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spoke
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   replicas: 1 
   selector:
@@ -542,7 +545,7 @@ spec:
           - name: turkeyCfg_sentry_dsn
             value: 
           - name: turkeyCfg_thumbnail_server
-            value: nearspark.hc-{{.Subdomain}}:5000
+            value: nearspark.hc-{{.HubId}}:5000
           livenessProbe:
             httpGet:
               path: https://localhost/healthz
@@ -563,7 +566,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: spoke
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   clusterIP: None
   ports:
@@ -580,7 +583,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nearspark
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   replicas: 1 
   selector:
@@ -608,7 +611,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nearspark
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   ports:
   - name: http
@@ -624,7 +627,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ita
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
   labels:
     CHANNEL: {{.ItaChan}}
 spec:
@@ -674,13 +677,13 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ita-sa
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ita-rb--hc-{{.Subdomain}}
-  namespace: hc-{{.Subdomain}}
+  name: ita-rb--hc-{{.HubId}}
+  namespace: hc-{{.HubId}}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -688,4 +691,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: ita-sa
-  namespace: hc-{{.Subdomain}}            
+  namespace: hc-{{.HubId}}            

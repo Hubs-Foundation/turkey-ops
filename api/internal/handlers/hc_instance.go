@@ -8,12 +8,10 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -26,10 +24,17 @@ import (
 )
 
 type hcCfg struct {
+
 	//required input
-	Subdomain string `json:"subdomain"`
-	Tier      string `json:"tier"`
 	UserEmail string `json:"useremail"`
+
+	//required, but with fallbacks
+	AccountId    string `json:"account_id"`    // turkey account id, fallback to random string produced by useremail seeded rnd func
+	HubId        string `json:"hub_id"`        // id of the hub instance, also used to name the hub's namespace, fallback to  random string produced by AccountId seeded rnd func
+	Tier         string `json:"tier"`          // fallback to free
+	CcuLimit     string `json:"ccu_limit"`     // fallback to 20
+	StorageLimit string `json:"storage_limit"` // fallback to 0.5
+	Subdomain    string `json:"subdomain"`     // fallback to HubId
 
 	//optional inputs
 	Options string `json:"options"` //additional options, underscore(_)prefixed -- ie. "_ebs"
@@ -46,9 +51,8 @@ type hcCfg struct {
 	GCP_SA_KEY_b64 string
 	ItaChan        string
 
-	//produced here
-	TurkeyId    string `json:"turkeyid"` // retrieved from db with UserEmail ??? not used atm
-	JWK         string `json:"jwk"`      // encoded from PermsKey.public
+	//generated per instance
+	JWK         string `json:"jwk"` // encoded from PermsKey.public
 	GuardianKey string `json:"guardiankey"`
 	PhxKey      string `json:"phxkey"`
 }
@@ -62,11 +66,7 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 	switch r.Method {
 	case "POST":
-		err := hc_create(w, r)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
+		hc_create(w, r)
 	case "GET":
 		hc_get(w, r)
 	case "DELETE":
@@ -77,71 +77,54 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			hc_switch(w, r)
 			return
 		}
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
 })
 
-func hc_create(w http.ResponseWriter, r *http.Request) error {
+func hc_create(w http.ResponseWriter, r *http.Request) {
+
 	sess := internal.GetSession(r.Cookie)
 
 	// #1 prepare configs
-	hcCfg, err := makehcCfg(r)
+	hcCfg, err := makeHcCfg(r)
 	if err != nil {
 		sess.Error("bad hcCfg: " + err.Error())
-		return err
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-
 	fileOption := "_gcs_sc"
 	if os.Getenv("CLOUD") == "aws" {
 		fileOption = "_s3fs"
 	}
-	// if strings.Contains(hcCfg.Options, "_sc_ha") {
-	// 	fileOption = "_sc_ha"
-	// }
 	sess.Log(" >>>>>> selected option: " + fileOption)
 
 	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")
 	if err != nil {
 		sess.Error("failed to get ns_hc yam file because: " + err.Error())
-		return err
+		http.Error(w, "error @ getting k8s chart file: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	renderedYamls, _ := internal.K8s_render_yams([]string{string(yamBytes)}, hcCfg)
 	k8sChartYaml := renderedYamls[0]
-	// #2.5 dryrun option
-	if hcCfg.Tier == "dryrun" {
-		w.Header().Set("Content-Disposition", "attachment; filename="+hcCfg.Subdomain+".yaml")
-		w.Header().Set("Content-Type", "text/plain")
-		io.Copy(w, strings.NewReader(k8sChartYaml))
-		return err
-	}
-
-	// #3 getting k8s config
-	sess.Log("&#9989; ... using InClusterConfig")
-	k8sCfg, err := rest.InClusterConfig()
-	// }
-	if k8sCfg == nil {
-		sess.Error(err.Error())
-		return err
-	}
-	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
 	sess.Log("&#128640; --- deployment started")
-	err = internal.Ssa_k8sChartYaml(hcCfg.TurkeyId, k8sChartYaml, k8sCfg)
+	err = internal.Ssa_k8sChartYaml(hcCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
 	if err != nil {
 		sess.Error(err.Error())
-		return err
+		http.Error(w, "error @ k8s deploy: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	// quality of life improvement for /console people
 	skipadminLink := "https://" + hcCfg.Subdomain + "." + hcCfg.Domain + "?skipadmin"
 	sess.Log("&#128640; --- deployment completed for: <a href=\"" +
-		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + hcCfg.TurkeyId + ":" + hcCfg.Subdomain + "</b></a>")
+		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + hcCfg.AccountId + ":" + hcCfg.Subdomain + "</b></a>")
 	sess.Log("&#128231; --- admin email: " + hcCfg.UserEmail)
 
 	// #5 create db
@@ -149,29 +132,26 @@ func hc_create(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			sess.Log("db already exists")
-			return nil
 		} else {
 			sess.Error(err.Error())
-			return err
+			http.Error(w, "error @ create hub db: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 	sess.Log("&#128024; --- db created: " + hcCfg.DBname)
 
-	// #7 done, return a json report for portal to consume
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"subdomain": hcCfg.Subdomain,
-		"admin":     hcCfg.UserEmail,
-		"tier":      hcCfg.Tier,
-		"turkeyId":  hcCfg.TurkeyId,
+		"task":   "create",
+		"hub_id": hcCfg.HubId,
 	})
 
-	return nil
 }
 
 func hc_get(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
 
-	cfg, err := makehcCfg(r)
+	cfg, err := getHcCfg(r)
 	if err != nil {
 		sess.Log("bad hcCfg: " + err.Error())
 		return
@@ -195,20 +175,37 @@ func hc_get(w http.ResponseWriter, r *http.Request) {
 	//list ns
 	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
 		metav1.ListOptions{
-			LabelSelector: "TurkeyId=" + cfg.TurkeyId,
+			LabelSelector: "AccountId=" + cfg.AccountId,
 		})
 	if err != nil {
 		sess.Error(err.Error())
 		return
 	}
-	sess.Log("GET --- user <" + cfg.TurkeyId + "> owns: ")
+	sess.Log("GET --- user <" + cfg.AccountId + "> owns: ")
 	for _, ns := range nsList.Items {
 		sess.Log("......ObjectMeta.GetName: " + ns.ObjectMeta.GetName())
 		sess.Log("......ObjectMeta.Labels.dump: " + fmt.Sprint(ns.ObjectMeta.Labels))
 	}
 }
 
-func makehcCfg(r *http.Request) (hcCfg, error) {
+func getHcCfg(r *http.Request) (hcCfg, error) {
+	var cfg hcCfg
+	//get r.body
+	rBodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Println("ERROR @ reading r.body, error = " + err.Error())
+		return cfg, err
+	}
+	//make cfg
+	err = json.Unmarshal(rBodyBytes, &cfg)
+	if err != nil {
+		fmt.Println("bad hcCfg: " + string(rBodyBytes))
+		return cfg, err
+	}
+	return cfg, nil
+}
+
+func makeHcCfg(r *http.Request) (hcCfg, error) {
 	var cfg hcCfg
 
 	//get r.body
@@ -224,27 +221,43 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 		return cfg, err
 	}
 
-	//use authenticated useremail
-	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail")
-	if cfg.UserEmail == "" { //verify format?
+	//userEmail supplied?
+	if cfg.UserEmail == "" {
+		cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail") //try fallback to authenticated useremail
+	} //verify format?
+	if cfg.UserEmail == "" { // can't create without email
 		return cfg, errors.New("bad input, missing UserEmail or X-Forwarded-UserEmail")
 		// cfg.UserEmail = "fooooo@barrrr.com"
 	}
 
-	// TurkeyId is required
-	if cfg.TurkeyId == "" {
-		return cfg, errors.New("ERROR missing hcCfg.TurkeyId")
+	// AccountId
+	if cfg.AccountId == "" {
+		cfg.AccountId = internal.PwdGen(8, int64(hash(cfg.UserEmail)), "")
+		fmt.Println()
 	}
-
+	// HubId
+	if cfg.HubId == "" {
+		cfg.HubId = internal.PwdGen(6, int64(hash(cfg.AccountId)), "")
+		//cfg.AccountId + "-" + strconv.FormatInt(time.Now().Unix()-1648957620, 36)
+	}
 	//default Tier is free
 	if cfg.Tier == "" {
 		cfg.Tier = "free"
 	}
-	//default Subdomain is a string hashed from turkeyId and time
-	if cfg.Subdomain == "" {
-		cfg.Subdomain = cfg.TurkeyId + "-" + strconv.FormatInt(time.Now().Unix()-1626102245, 36)
+	//default CcuLimit is 20
+	if cfg.CcuLimit == "" {
+		cfg.CcuLimit = "20"
 	}
-	cfg.DBname = "ret_" + strings.ReplaceAll(cfg.Subdomain, "-", "_")
+	//default StorageLimit is 0.5
+	if cfg.StorageLimit == "" {
+		cfg.StorageLimit = "0.5"
+	}
+	//default Subdomain is a string hashed from AccountId and time
+	if cfg.Subdomain == "" {
+		cfg.Subdomain = cfg.HubId
+	}
+	// cfg.DBname = "ret_" + strings.ReplaceAll(cfg.Subdomain, "-", "_")
+	cfg.DBname = "ret_" + cfg.HubId
 
 	//cluster wide private key for all reticulum authentications
 	cfg.PermsKey = internal.Cfg.PermsKey
@@ -261,9 +274,9 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 	perms_key_str := strings.Replace(cfg.PermsKey, `\\n`, "\n", -1)
 	pb, _ := pem.Decode([]byte(perms_key_str))
 	if pb == nil {
-		fmt.Println("failed to decode perms key")
-		fmt.Println("perms_key_str: " + perms_key_str)
-		fmt.Println(" cfg.PermsKey: " + cfg.PermsKey)
+		internal.GetLogger().Error("failed to decode perms key")
+		internal.GetLogger().Error("perms_key_str: " + perms_key_str)
+		internal.GetLogger().Error(" cfg.PermsKey: " + cfg.PermsKey)
 		return cfg, errors.New("failed to decode perms key")
 	}
 	perms_key, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
@@ -296,37 +309,37 @@ func makehcCfg(r *http.Request) (hcCfg, error) {
 
 func hc_delete(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
-	cfg, err := makehcCfg(r)
+	hcCfg, err := getHcCfg(r)
 	if err != nil {
 		sess.Error("bad hcCfg: " + err.Error())
 		return
 	}
 
 	go func() {
-		sess.Log("&#128024 deleting db: " + cfg.DBname)
+		sess.Log("&#128024 deleting db: " + hcCfg.DBname)
 
 		//delete db -- force
 		force := true
-		_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
+		_, err = internal.PgxPool.Exec(context.Background(), "drop database "+hcCfg.DBname)
 		if err != nil {
 			if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
-				err = pg_kick_all(cfg, sess)
+				err = pg_kick_all(hcCfg, sess)
 				if err != nil {
 					sess.Error(err.Error())
 					return
 				}
-				_, err = internal.PgxPool.Exec(context.Background(), "drop database "+cfg.DBname)
+				_, err = internal.PgxPool.Exec(context.Background(), "drop database "+hcCfg.DBname)
 			}
 			if err != nil {
 				sess.Error(err.Error())
 				return
 			}
 		}
-		sess.Log("&#128024 deleted db: " + cfg.DBname)
+		sess.Log("&#128024 deleted db: " + hcCfg.DBname)
 	}()
 
 	go func() {
-		nsName := "hc-" + cfg.Subdomain
+		nsName := "hc-" + hcCfg.Subdomain
 		sess.Log("&#128024 deleting ns: " + nsName)
 
 		//getting k8s config
@@ -355,11 +368,11 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 		sess.Log("&#127754 deleted ns: " + nsName)
 	}()
 
+	//return
+	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"subdomain": cfg.Subdomain,
-		"admin":     cfg.UserEmail,
-		"tier":      cfg.Tier,
-		"turkeyId":  cfg.TurkeyId,
+		"task":   "deletion",
+		"hub_id": hcCfg.HubId,
 	})
 }
 
@@ -385,7 +398,7 @@ func pg_kick_all(cfg hcCfg, sess *internal.CacheBoxSessData) error {
 
 func hc_switch(w http.ResponseWriter, r *http.Request) {
 	sess := internal.GetSession(r.Cookie)
-	cfg, err := makehcCfg(r)
+	cfg, err := getHcCfg(r)
 	if err != nil {
 		sess.Error("bad hcCfg: " + err.Error())
 		w.WriteHeader(http.StatusNotFound)
