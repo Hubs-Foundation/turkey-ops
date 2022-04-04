@@ -85,12 +85,12 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 func hc_create(w http.ResponseWriter, r *http.Request) {
 
-	sess := internal.GetSession(r.Cookie)
+	// sess := internal.GetSession(r.Cookie)
 
 	// #1 prepare configs
 	hcCfg, err := makeHcCfg(r)
 	if err != nil {
-		sess.Error("bad hcCfg: " + err.Error())
+		internal.GetLogger().Error("bad hcCfg: " + err.Error())
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -100,11 +100,11 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv("CLOUD") == "aws" {
 		fileOption = "_s3fs"
 	}
-	sess.Log(" >>>>>> selected option: " + fileOption)
+	internal.GetLogger().Debug(" >>>>>> selected option: " + fileOption)
 
 	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")
 	if err != nil {
-		sess.Error("failed to get ns_hc yam file because: " + err.Error())
+		internal.GetLogger().Error("failed to get ns_hc yam file because: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"result": "error @ getting k8s chart file",
@@ -121,7 +121,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
 		metav1.ListOptions{LabelSelector: "Subdomain=" + hcCfg.Subdomain})
 	if len(nsList.Items) != 0 {
-		sess.Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
+		internal.GetLogger().Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"result": "subdomain already exists",
@@ -131,10 +131,10 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
-	sess.Log("&#128640; --- deployment started")
+	internal.GetLogger().Debug("&#128640; --- deployment started for: " + hcCfg.HubId)
 	err = internal.Ssa_k8sChartYaml(hcCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
 	if err != nil {
-		sess.Error("error @ k8s deploy: " + err.Error())
+		internal.GetLogger().Error("error @ k8s deploy: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"result": "error @ k8s deploy: " + err.Error(),
@@ -143,19 +143,19 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// quality of life improvement for /console people
-	skipadminLink := "https://" + hcCfg.Subdomain + "." + hcCfg.Domain + "?skipadmin"
-	sess.Log("&#128640; --- deployment completed for: <a href=\"" +
-		skipadminLink + "\" target=\"_blank\"><b>&#128279;" + hcCfg.AccountId + ":" + hcCfg.Subdomain + "</b></a>")
-	sess.Log("&#128231; --- admin email: " + hcCfg.UserEmail)
+	// // quality of life improvement for /console people
+	// skipadminLink := "https://" + hcCfg.Subdomain + "." + hcCfg.Domain + "?skipadmin"
+	// sess.Log("&#128640; --- deployment completed for: <a href=\"" +
+	// 	skipadminLink + "\" target=\"_blank\"><b>&#128279;" + hcCfg.AccountId + ":" + hcCfg.Subdomain + "</b></a>")
+	// sess.Log("&#128231; --- admin email: " + hcCfg.UserEmail)
 
 	// #5 create db
 	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+hcCfg.DBname+"\"")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
-			sess.Log("db already exists")
+			internal.GetLogger().Debug("db already exists: " + hcCfg.DBname)
 		} else {
-			sess.Error("error @ create hub db: " + err.Error())
+			internal.GetLogger().Error("error @ create hub db: " + err.Error())
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"result": "error @ create hub db: " + err.Error(),
 				"hub_id": hcCfg.HubId,
@@ -163,7 +163,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	sess.Log("&#128024; --- db created: " + hcCfg.DBname)
+	internal.GetLogger().Debug("&#128024; --- db created: " + hcCfg.DBname)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
