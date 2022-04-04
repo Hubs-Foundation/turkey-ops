@@ -262,7 +262,7 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	}
 	// HubId
 	if cfg.HubId == "" {
-		cfg.HubId = internal.PwdGen(6, int64(hash(cfg.AccountId)), "")
+		cfg.HubId = internal.PwdGen(6, int64(hash(cfg.AccountId+cfg.Subdomain)), "")
 		//cfg.AccountId + "-" + strconv.FormatInt(time.Now().Unix()-1648957620, 36)
 	}
 	//default Tier is free
