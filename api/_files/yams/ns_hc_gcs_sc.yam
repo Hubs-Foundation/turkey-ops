@@ -5,8 +5,8 @@ metadata:
   labels:
     Subdomain: {{.Subdomain}}
     Tier: {{.Tier}}
-    CcuLimit: {{.CcuLimit}}
-    StorageLimit: {{.StorageLimit}}
+    CcuLimit: "{{.CcuLimit}}"
+    StorageLimit: "{{.StorageLimit}}"
 
 ---
 ########################################################################
