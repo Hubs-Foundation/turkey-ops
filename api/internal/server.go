@@ -32,7 +32,7 @@ func StartServer(router *http.ServeMux, port int) {
 	flag.StringVar(&listenAddr, "listen-addr", ":"+strconv.Itoa(port), "server listen address")
 	flag.Parse()
 
-	logger.Debug("Server is starting...")
+	Logger.Debug("Server is starting...")
 
 	nextRequestID := func() string {
 		// return fmt.Sprintf("%d", time.Now().UnixNano())
@@ -55,7 +55,7 @@ func StartServer(router *http.ServeMux, port int) {
 
 	go func() {
 		<-quit
-		logger.Debug("Server is shutting down...")
+		Logger.Debug("Server is shutting down...")
 		atomic.StoreInt32(&Healthy, 0)
 
 		ctx, cancel := context.WithTimeout(context.Background(),
@@ -64,17 +64,17 @@ func StartServer(router *http.ServeMux, port int) {
 
 		server.SetKeepAlivesEnabled(false)
 		if err := server.Shutdown(ctx); err != nil {
-			logger.Sugar().Fatalf("Could not gracefully shutdown the server: %v\n", err)
+			Logger.Sugar().Fatalf("Could not gracefully shutdown the server: %v\n", err)
 		}
 		close(done)
 	}()
-	logger.Debug("Server is ready to handle requests at: " + listenAddr)
+	Logger.Debug("Server is ready to handle requests at: " + listenAddr)
 	atomic.StoreInt32(&Healthy, 1)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
+		Logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}
 	<-done
-	logger.Debug("Server stopped")
+	Logger.Debug("Server stopped")
 }
 func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -97,7 +97,7 @@ func logging() func(http.Handler) http.Handler {
 				if !ok {
 					requestID = "unknown"
 				}
-				logger.Debug("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
+				Logger.Debug("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
 			}()
 			next.ServeHTTP(w, r)
 		})

@@ -53,15 +53,15 @@ func MakeCfg() {
 	Cfg.Port = getEnv("POD_PORT", "888")
 	Cfg.PodIp = os.Getenv("POD_IP")
 	if net.ParseIP(Cfg.PodIp) == nil {
-		logger.Error("bad PodIp: " + Cfg.PodIp + ", things like groupcache will not work properly")
+		Logger.Error("bad PodIp: " + Cfg.PodIp + ", things like groupcache will not work properly")
 	}
 	Cfg.PodNS = os.Getenv("POD_NS")
 	if Cfg.PodNS == "" {
-		logger.Error("missing env var: POD_NS")
+		Logger.Error("missing env var: POD_NS")
 	}
 	Cfg.PodLabelApp = os.Getenv("POD_LABEL_APP")
 	if Cfg.PodLabelApp == "" {
-		logger.Error("missing env var: POD_LABEL_APP")
+		Logger.Error("missing env var: POD_LABEL_APP")
 	}
 	Cfg.Env = getEnv("ENV", "dev")
 	Cfg.Domain = os.Getenv("DOMAIN")
@@ -92,10 +92,12 @@ func MakeCfg() {
 	// f.Close()
 
 	Cfg.K8ss_local = NewK8sSvs_local()
+	if Cfg.K8ss_local != nil {
 
-	touchCfgMap("hubsbuilds-dev")
-	touchCfgMap("hubsbuilds-beta")
-	touchCfgMap("hubsbuilds-stable")
+		touchCfgMap("hubsbuilds-dev")
+		touchCfgMap("hubsbuilds-beta")
+		touchCfgMap("hubsbuilds-stable")
+	}
 
 }
 

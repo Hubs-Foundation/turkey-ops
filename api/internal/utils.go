@@ -19,7 +19,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var logger *zap.Logger
+var Logger *zap.Logger
 var Atom zap.AtomicLevel
 
 func InitLogger() {
@@ -31,22 +31,22 @@ func InitLogger() {
 	encoderCfg.FunctionKey = "f"
 	encoderCfg.MessageKey = "m"
 	// encoderCfg.FunctionKey = "f"
-	logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), Atom), zap.AddCaller())
+	Logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), Atom), zap.AddCaller())
 
-	defer logger.Sync()
+	defer Logger.Sync()
 
 	Atom.SetLevel(zap.DebugLevel)
 }
 
 func GetLogger() *zap.Logger {
-	return logger
+	return Logger
 }
 
 func NewUUID() []byte {
 	uuid := make([]byte, 16)
 	n, err := io.ReadFull(crand.Reader, uuid)
 	if n != len(uuid) || err != nil {
-		logger.Panic("NewUUID err, something's not right")
+		Logger.Panic("NewUUID err, something's not right")
 		return uuid
 	}
 	// variant bits;
@@ -58,7 +58,7 @@ func NewUUID() []byte {
 }
 
 func CreateNewSession() *http.Cookie {
-	logger.Debug("######################## create new sessions: ########################")
+	Logger.Debug("######################## create new sessions: ########################")
 	id := base64.RawURLEncoding.EncodeToString(NewUUID())
 	cookie := &http.Cookie{
 		Name:  SessionTokenName,
@@ -69,7 +69,7 @@ func CreateNewSession() *http.Cookie {
 		&CacheBoxSessData{},
 		time.Hour*1,
 	)
-	logger.Debug("######################## new sessions created ########################")
+	Logger.Debug("######################## new sessions created ########################")
 	return cookie
 }
 
@@ -156,7 +156,7 @@ func GetSession(Cookie func(string) (*http.Cookie, error)) *CacheBoxSessData {
 	}
 	sess := CACHE.Load(cookie.Value)
 	if sess == nil {
-		logger.Debug("WARNING @ GetSession: session not found")
+		Logger.Debug("WARNING @ GetSession: session not found")
 	}
 	return sess
 }

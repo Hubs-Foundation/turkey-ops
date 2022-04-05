@@ -29,7 +29,7 @@ func StartLruCache() {
 
 	_, err := Cache.StartWatchingPeerPods()
 	if err != nil {
-		logger.Error("failed to StartCache: " + err.Error())
+		Logger.Error("failed to StartCache: " + err.Error())
 	}
 }
 
@@ -53,16 +53,16 @@ func (c *GCache) StartWatchingPeerPods() (chan struct{}, error) {
 		0,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				// logger.Sugar().Debugf("pod added: %s \n", obj)
-				logger.Sugar().Debugf("pod added")
+				// Logger.Sugar().Debugf("pod added: %s \n", obj)
+				Logger.Sugar().Debugf("pod added")
 				c.updatePeers(obj)
 			},
 			DeleteFunc: func(obj interface{}) {
-				logger.Sugar().Debugf("pod deleted")
+				Logger.Sugar().Debugf("pod deleted")
 				c.updatePeers(obj)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				logger.Sugar().Debugf("pod updated")
+				Logger.Sugar().Debugf("pod updated")
 				c.updatePeers(newObj)
 			},
 		},
@@ -75,13 +75,13 @@ func (c *GCache) StartWatchingPeerPods() (chan struct{}, error) {
 func (c *GCache) updatePeers(obj interface{}) {
 	pod, ok := obj.(*v1.Pod)
 	if !ok {
-		logger.Error("expected type v1.Endpoints but got:" + reflect.TypeOf(obj).String())
+		Logger.Error("expected type v1.Endpoints but got:" + reflect.TypeOf(obj).String())
 	}
-	// logger.Sugar().Debugf("updatePeers : %s \n", pod)
-	logger.Debug("updatePeers: pod.Status.PodIP == " + pod.Status.PodIP)
+	// Logger.Sugar().Debugf("updatePeers : %s \n", pod)
+	Logger.Debug("updatePeers: pod.Status.PodIP == " + pod.Status.PodIP)
 	for _, c := range pod.Status.ContainerStatuses {
-		logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Name == " + c.Name)
-		logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Ready == " + strconv.FormatBool(c.Ready))
+		Logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Name == " + c.Name)
+		Logger.Debug("updatePeers: pod.Status.ContainerStatuses[0].Ready == " + strconv.FormatBool(c.Ready))
 	}
 
 	// c.Pool.Set(peers...)

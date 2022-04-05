@@ -17,7 +17,7 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	query, err := url.QueryUnescape(r.URL.RawQuery)
 	if err != nil {
-		logger.Panic("failed to unescape r.URL.RawQuery: " + r.URL.RawQuery)
+		internal.Logger.Panic("failed to unescape r.URL.RawQuery: " + r.URL.RawQuery)
 	}
 	// //~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// for _, item := range strings.Split(query, "&"){
@@ -35,19 +35,19 @@ var Ytdl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 	if err != nil {
-		logger.Panic("failed to invoke lambda: " + err.Error())
+		internal.Logger.Panic("failed to invoke lambda: " + err.Error())
 	}
 
 	if resp.FunctionError != nil {
-		logger.Panic("ytdl lambda failed: " + *resp.FunctionError)
+		internal.Logger.Panic("ytdl lambda failed: " + *resp.FunctionError)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(resp.Payload)
 
 	var m map[string]string
 	json.Unmarshal(resp.Payload, &m)
-	logger.Debug("ytdl query: " + query)
-	logger.Debug("ytdl debugMsg: " + m["debugMsg"])
+	internal.Logger.Debug("ytdl query: " + query)
+	internal.Logger.Debug("ytdl debugMsg: " + m["debugMsg"])
 
 	// fmt.Fprint(w, string(resp.Payload))
 	// json.NewEncoder(w).Encode(string(resp.Payload))

@@ -74,9 +74,9 @@ func (mb *MetaBox) Delete(key string) {
 func (sess *CacheBoxSessData) consoleLog(msg string) {
 	go func() {
 		if sess == nil {
-			logger.Debug("no session")
+			Logger.Debug("no session")
 			sess.DeadLetters = append(sess.DeadLetters, msg)
-			logger.Sugar().Debugf("DeadLetters count: %v", len(sess.DeadLetters))
+			Logger.Sugar().Debugf("DeadLetters count: %v", len(sess.DeadLetters))
 			return
 		}
 
@@ -88,7 +88,7 @@ func (sess *CacheBoxSessData) consoleLog(msg string) {
 			time.Sleep(delayStep)
 			delay = time.Second * 1
 			if attempt >= maxAttempt {
-				logger.Debug("no channel")
+				Logger.Debug("no channel")
 				return
 			}
 			attempt = attempt + 1
@@ -101,18 +101,18 @@ func (sess *CacheBoxSessData) consoleLog(msg string) {
 
 func (sess *CacheBoxSessData) Panic(msg string) {
 	sess.consoleLog(msg)
-	logger.Panic(msg)
+	Logger.Panic(msg)
 }
 
 //  log <Error>, plus push to console if sess != nil
 func (sess *CacheBoxSessData) Error(msg string) {
-	logger.Error(msg)
+	Logger.Error(msg)
 	sess.consoleLog("ERROR " + msg)
 }
 
 //  log <debug>, plus push to console if sess != nil
 func (sess *CacheBoxSessData) Log(msg string) {
-	logger.Debug(msg)
+	Logger.Debug(msg)
 	sess.consoleLog(msg)
 }
 

@@ -14,16 +14,18 @@ func main() {
 	internal.MakePgxPool()
 
 	//++++++++++++++++++++++++ testing...
-	internal.StartLruCache()
-	internal.Cfg.K8ss_local.StartWatching_HcNs()
+	if internal.Cfg.K8ss_local != nil {
+		internal.StartLruCache()
+		internal.Cfg.K8ss_local.StartWatching_HcNs()
+	}
 	//-----------------------------------
 
 	router := http.NewServeMux()
 
 	router.Handle("/Healthz", handlers.Healthz())
 
-	// router.Handle("/console", handlers.Console)
-	router.Handle("/console", requireRole("foobar")(handlers.Console))
+	router.Handle("/console", handlers.Console)
+	// router.Handle("/console", requireRole("foobar")(handlers.Console))
 
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)

@@ -11,7 +11,7 @@ var PgxPool *pgxpool.Pool
 func MakePgxPool() {
 	p, err := pgxpool.Connect(context.Background(), Cfg.DBconn+"/portal")
 	if err != nil {
-		logger.Error("Unable to connect to database: " + err.Error())
+		Logger.Error("Unable to connect to database: " + err.Error())
 	}
 	PgxPool = p
 }
@@ -22,7 +22,7 @@ func MakePgxPool() {
 // 		fmt.Sprintf(`INSERT into hubs (hub_id, status) values ('%v','%v') ON CONFLICT DO UPDATE`, hubId, status),
 // 	)
 // 	if err != nil {
-// 		logger.Error(err.Error())
+// 		Logger.Error(err.Error())
 // 		return err
 // 	}
 // 	return nil

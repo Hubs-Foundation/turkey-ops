@@ -56,13 +56,13 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// go func() {
 	// 	<-notify
 	// 	sess.SseChan = nil
-	// 	logger.Debug("connection closed.")
+	// 	internal.Logger.Debug("connection closed.")
 	// }()
 	go func() {
 		select {
 		case <-r.Context().Done():
 			sess.SseChan = nil
-			logger.Debug("session dropped because connection was closed.")
+			internal.Logger.Debug("session dropped because connection was closed.")
 			return
 		default:
 		}
@@ -78,7 +78,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	}
 	// }()
 	// //^^^^^^^^^^^^^^^^^^^^^ junk log producer for debugging ^^^^^^^^^^^^^^^^^^^^^^^^^
-	logger.Debug("connection established for:" + r.RemoteAddr + " @ " + cookie.Value)
+	internal.Logger.Debug("connection established for:" + r.RemoteAddr + " @ " + cookie.Value)
 
 	for {
 		if sess.SseChan == nil {

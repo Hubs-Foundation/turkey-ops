@@ -40,7 +40,7 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	logger.Sugar().Debugf("dump headers: %v", r.Header)
+	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	html := `
@@ -75,13 +75,13 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	logger.Sugar().Debugf("dump headers: %v", r.Header)
+	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
 
 	nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
 
 	// not requesting a hubs cloud namespace == bounce
 	if !internal.HC_NS_TABLE.Has(nsName) {
-		logger.Debug("404 bounc / !internal.HC_NS_TABLE.Has for: " + nsName)
+		internal.Logger.Debug("404 bounc / !internal.HC_NS_TABLE.Has for: " + nsName)
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -90,7 +90,7 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	// high frequency pokes == bounce
 	coolDown := 15 * time.Minute
 	if time.Since(notes.Lastchecked) < coolDown {
-		logger.Debug("on coolDown bounc for: " + nsName)
+		internal.Logger.Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, g404_std_RespMsg)
 		return
@@ -105,7 +105,7 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	go wakeupHcNs(nsName)
 	internal.HC_NS_TABLE.Set(nsName, internal.HcNsNotes{Lastchecked: time.Now()})
 
-	logger.Debug("wakeupHcNs launched for nsName: " + nsName)
+	internal.Logger.Debug("wakeupHcNs launched for nsName: " + nsName)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, g404_std_RespMsg)
@@ -119,7 +119,7 @@ func wakeupHcNs(ns string) {
 	//scale things back up in this namespace
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), v1.ListOptions{})
 	if err != nil {
-		logger.Error("wakeupHcNs - failed to list deployments: " + err.Error())
+		internal.Logger.Error("wakeupHcNs - failed to list deployments: " + err.Error())
 	}
 
 	scaleUpTo := 1
@@ -127,7 +127,7 @@ func wakeupHcNs(ns string) {
 		d.Spec.Replicas = pointerOfInt32(scaleUpTo)
 		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
 		if err != nil {
-			logger.Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
+			internal.Logger.Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
 		}
 	}
 

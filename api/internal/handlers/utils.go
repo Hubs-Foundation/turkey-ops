@@ -23,8 +23,6 @@ import (
 	"time"
 )
 
-var logger = internal.GetLogger()
-
 // var KeepAlive = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 // })
@@ -177,13 +175,13 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		logger.Warn("ERROR @ reading r.body, error = " + err.Error())
+		internal.Logger.Warn("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
 	//make cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
-		logger.Warn("bad clusterCfg: " + string(rBodyBytes))
+		internal.Logger.Warn("bad clusterCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
 
@@ -198,54 +196,54 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	}
 	//required but with fallbacks
 	if cfg.OAUTH_CLIENT_ID_FXA == "" {
-		logger.Warn("OAUTH_CLIENT_ID_FXA not supplied, falling back to local value")
+		internal.Logger.Warn("OAUTH_CLIENT_ID_FXA not supplied, falling back to local value")
 		cfg.OAUTH_CLIENT_ID_FXA = os.Getenv("OAUTH_CLIENT_ID_FXA")
 	}
 	if cfg.OAUTH_CLIENT_SECRET_FXA == "" {
-		logger.Warn("OAUTH_CLIENT_SECRET_FXA not supplied, falling back to local value")
+		internal.Logger.Warn("OAUTH_CLIENT_SECRET_FXA not supplied, falling back to local value")
 		cfg.OAUTH_CLIENT_SECRET_FXA = os.Getenv("OAUTH_CLIENT_SECRET_FXA")
 	}
 	if cfg.SMTP_SERVER == "" {
-		logger.Warn("SMTP_SERVER not supplied, falling back to local value")
+		internal.Logger.Warn("SMTP_SERVER not supplied, falling back to local value")
 		cfg.SMTP_SERVER = internal.Cfg.SmtpServer
 	}
 	if cfg.SMTP_PORT == "" {
-		logger.Warn("SMTP_PORT not supplied, falling back to local value")
+		internal.Logger.Warn("SMTP_PORT not supplied, falling back to local value")
 		cfg.SMTP_PORT = internal.Cfg.SmtpPort
 	}
 	if cfg.SMTP_USER == "" {
-		logger.Warn("SMTP_USER not supplied, falling back to local value")
+		internal.Logger.Warn("SMTP_USER not supplied, falling back to local value")
 		cfg.SMTP_USER = internal.Cfg.SmtpUser
 	}
 	if cfg.SMTP_PASS == "" {
-		logger.Warn("SMTP_PASS not supplied, falling back to local value")
+		internal.Logger.Warn("SMTP_PASS not supplied, falling back to local value")
 		cfg.SMTP_PASS = internal.Cfg.SmtpPass
 	}
 	if cfg.AWS_KEY == "" {
-		logger.Warn("AWS_KEY not supplied, falling back to local value")
+		internal.Logger.Warn("AWS_KEY not supplied, falling back to local value")
 		cfg.AWS_KEY = internal.Cfg.AwsKey
 	}
 	if cfg.AWS_SECRET == "" {
-		logger.Warn("AWS_SECRET not supplied, falling back to local value")
+		internal.Logger.Warn("AWS_SECRET not supplied, falling back to local value")
 		cfg.AWS_SECRET = internal.Cfg.AwsSecret
 	}
 	if cfg.Env == "" {
 		cfg.Env = "dev"
-		logger.Warn("Env unspecified -- using dev")
+		internal.Logger.Warn("Env unspecified -- using dev")
 	}
 	if cfg.ItaChan == "" {
 		cfg.ItaChan = strings.Replace(cfg.Env, "staging", "beta", 1)
-		logger.Warn("ItaChan unspecified -- fallinb back to Env (swaping staging for beta): " + cfg.ItaChan)
+		internal.Logger.Warn("ItaChan unspecified -- fallinb back to Env (swaping staging for beta): " + cfg.ItaChan)
 	}
 
 	//optional inputs
 	if cfg.DeploymentPrefix == "" {
 		cfg.DeploymentPrefix = "t-"
-		logger.Warn("deploymentPrefix unspecified -- using (default)" + cfg.DeploymentPrefix)
+		internal.Logger.Warn("deploymentPrefix unspecified -- using (default)" + cfg.DeploymentPrefix)
 	}
 	if cfg.DeploymentId == "" {
 		cfg.DeploymentId = strconv.FormatInt(time.Now().Unix()-1648672222, 36)
-		logger.Info("deploymentId: " + cfg.DeploymentId)
+		internal.Logger.Info("deploymentId: " + cfg.DeploymentId)
 	}
 	if cfg.Stackname == "" {
 		cfg.Stackname = cfg.DeploymentPrefix + cfg.DeploymentId
@@ -267,7 +265,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 
 	if cfg.GCP_SA_KEY_b64 == "" {
 		cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
-		logger.Warn("GCP_SA_KEY_b64 unspecified -- using: " + cfg.GCP_SA_KEY_b64)
+		internal.Logger.Warn("GCP_SA_KEY_b64 unspecified -- using: " + cfg.GCP_SA_KEY_b64)
 	}
 
 	return cfg, nil
