@@ -15,7 +15,7 @@ func main() {
 
 	//++++++++++++++++++++++++ testing...
 	if internal.Cfg.K8ss_local != nil {
-		internal.StartLruCache()
+		// internal.StartLruCache()
 		internal.Cfg.K8ss_local.StartWatching_HcNs()
 	}
 	//-----------------------------------
