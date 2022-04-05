@@ -31,13 +31,12 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("Transfer-Encoding", "chunked")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	// check if user got a good cookie
+	// check if this is an ui session
 	cookie, err := r.Cookie(internal.SessionTokenName)
 	if err != nil {
 		fmt.Fprintf(w, "no session cookie")
 		return
 	}
-
 	sess := internal.CACHE.Load(cookie.Value)
 	if sess == nil {
 		fmt.Fprintf(w, "no session")
@@ -45,7 +44,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess.SseChan = make(chan string)
-	sess.Log("<p style=\"color:Gray;\">(logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr + "</p>")
+	sess.Log("(logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
 	if len(sess.DeadLetters) > 0 {
 		sess.Log(fmt.Sprintf(" ###### poping %v messages in DeadLetterQueue ######", len(sess.DeadLetters)))
 		for i, m := range sess.DeadLetters {
@@ -63,7 +62,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
 			sess.SseChan = nil
-			internal.GetLogger().Debug("session dropped because connection got closed.")
+			internal.GetLogger().Debug("session dropped because connection was closed.")
 			return
 		default:
 		}
@@ -88,19 +87,23 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		msg, has := <-sess.SseChan
 		if has {
-			fmt.Fprintf(w, "data: ["+time.Now().UTC().Format("2006.01.02-15:04:05")+"] -- "+msgBeautifier(msg)+"\n\n")
+			fmt.Fprintf(w, "data: "+msgBeautifier(msg, "")+"\n\n")
 		}
 		f.Flush()
 	}
 	log.Println("Finished HTTP request at ", r.URL.Path)
 })
 
-func msgBeautifier(msg string) string {
+func msgBeautifier(msg, color string) string {
 	if strings.HasPrefix(msg, "ERROR") {
 		msg = "&#128293;" + msg + "&#128293;"
 	}
 	if strings.HasPrefix(msg, "WARNING") {
 		msg = "&#128576;" + msg + "&#128576;"
+	}
+	msg = "[sse @ " + time.Now().UTC().Format("2006.01.02-15:04:05") + "] " + msg
+	if color != "" {
+		msg = "<span style=\"color:" + color + ";\">" + msg + "</span>"
 	}
 	return msg
 }
