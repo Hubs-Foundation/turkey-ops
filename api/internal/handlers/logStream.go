@@ -34,14 +34,14 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// check if user got a good cookie
 	cookie, err := r.Cookie(internal.SessionTokenName)
 	if err != nil {
-		fmt.Fprintf(w, "??? who are you ???")
+		fmt.Fprintf(w, "no session cookie")
 		return
 	}
 
 	sess := internal.CACHE.Load(cookie.Value)
 	if sess == nil {
-		fmt.Fprintf(w, "??? where's your cacheData ???")
-		sess = internal.AddCacheData(cookie)
+		fmt.Fprintf(w, "no session")
+		return
 	}
 
 	sess.SseChan = make(chan string)
@@ -53,12 +53,20 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	notify := w.(http.CloseNotifier).CloseNotify()
+	// notify := w.(http.CloseNotifier).CloseNotify()
+	// go func() {
+	// 	<-notify
+	// 	sess.SseChan = nil
+	// 	internal.GetLogger().Debug("connection closed.")
+	// }()
 	go func() {
-		<-notify
-		// internal.CACHE.Get(cookie.Value).SseChan = nil
-		sess.SseChan = nil
-		internal.GetLogger().Debug("connection closed.")
+		select {
+		case <-r.Context().Done():
+			sess.SseChan = nil
+			internal.GetLogger().Debug("session dropped: connection closed.")
+			return
+		default:
+		}
 	}()
 
 	// //vvvvvvvvvvvvvvvvvvvvv junk log producer for debugging vvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -71,7 +79,6 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	}
 	// }()
 	// //^^^^^^^^^^^^^^^^^^^^^ junk log producer for debugging ^^^^^^^^^^^^^^^^^^^^^^^^^
-
 	fmt.Println("connection established for:" + r.RemoteAddr + " @ " + cookie.Value)
 
 	for {
@@ -79,18 +86,12 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(" ??? LogStream: channel == nil ??? quit !!!")
 			break
 		}
-
 		msg, has := <-sess.SseChan
 		if has {
-
 			fmt.Fprintf(w, "data: ["+time.Now().UTC().Format("2006.01.02-15:04:05")+"] -- "+msgBeautifier(msg)+"\n\n")
 		}
-
-		// fmt.Fprintf(w, "data: ["+time.Now().UTC().Format("2006.01.02-15:04:05")+"] -- %s\n\n", <-internal.CACHE.Get(cookie.Value).SseChan)
-
 		f.Flush()
 	}
-
 	log.Println("Finished HTTP request at ", r.URL.Path)
 })
 
