@@ -252,6 +252,8 @@ spec:
           value: "http://photomnemonic.turkey-services:5000"  
         - name: turkeyCfg_SPEELYCAPTOR
           value: "http://speelycaptor.turkey-services:5000"
+        - name: turkeyCfg_STORAGE_QUOTA_GB
+          value: "12"          
         livenessProbe:
           httpGet:
             path: "http://reticulum.{{.Subdomain}}"
