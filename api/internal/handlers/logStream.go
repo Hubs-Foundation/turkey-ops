@@ -45,7 +45,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess.SseChan = make(chan string)
-	sess.Log("&#127383; (logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+	sess.Log("<p style=\"color:Gray;\">(logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr + "</p>")
 	if len(sess.DeadLetters) > 0 {
 		sess.Log(fmt.Sprintf(" ###### poping %v messages in DeadLetterQueue ######", len(sess.DeadLetters)))
 		for i, m := range sess.DeadLetters {
@@ -63,7 +63,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
 			sess.SseChan = nil
-			internal.GetLogger().Debug("session dropped: connection closed.")
+			internal.GetLogger().Debug("session dropped because connection got closed.")
 			return
 		default:
 		}

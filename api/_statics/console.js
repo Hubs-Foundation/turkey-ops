@@ -57,7 +57,7 @@ function orcReq(method, path, cfgBoxId) {
   divLogBoard=document.getElementById("divLogBoard");
   var xhr = new XMLHttpRequest(); res=""
   xhr.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {
-    res = this.responseText;
+    res = "res = http"+this.status + ": "+ this.responseText;
     divLogBoard.innerHTML+=res +"<br>";
     divLogBoard.scrollTop = divLogBoard.scrollHeight;
   }};
