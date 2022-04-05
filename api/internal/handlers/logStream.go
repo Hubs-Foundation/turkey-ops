@@ -44,7 +44,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess.SseChan = make(chan string)
-	sess.Log("(logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+	sess.Log("DEBUG (logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
 	if len(sess.DeadLetters) > 0 {
 		sess.Log(fmt.Sprintf(" ###### poping %v messages in DeadLetterQueue ######", len(sess.DeadLetters)))
 		for i, m := range sess.DeadLetters {
@@ -87,23 +87,24 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		msg, has := <-sess.SseChan
 		if has {
-			fmt.Fprintf(w, "data: "+msgBeautifier(msg, "")+"\n\n")
+			fmt.Fprintf(w, "data: "+msgBeautifier(msg)+"\n\n")
 		}
 		f.Flush()
 	}
 	log.Println("Finished HTTP request at ", r.URL.Path)
 })
 
-func msgBeautifier(msg, color string) string {
+func msgBeautifier(msg string) string {
+	msg = "[sse @ " + time.Now().UTC().Format("2006.01.02-15:04:05") + "] " + msg
+
 	if strings.HasPrefix(msg, "ERROR") {
 		msg = "&#128293;" + msg + "&#128293;"
 	}
 	if strings.HasPrefix(msg, "WARNING") {
 		msg = "&#128576;" + msg + "&#128576;"
 	}
-	msg = "[sse @ " + time.Now().UTC().Format("2006.01.02-15:04:05") + "] " + msg
-	if color != "" {
-		msg = "<span style=\"color:" + color + ";\">" + msg + "</span>"
+	if strings.HasPrefix(msg, "DEBUG") {
+		msg = "<span style=\"color:Gray;\">" + msg + "</span>"
 	}
 	return msg
 }
