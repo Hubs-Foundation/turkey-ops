@@ -200,7 +200,7 @@ func hc_get(w http.ResponseWriter, r *http.Request) {
 	//list ns
 	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
 		metav1.ListOptions{
-			LabelSelector: "AccountId=" + cfg.AccountId,
+			LabelSelector: "subdomain=" + cfg.Subdomain,
 		})
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
@@ -341,8 +341,8 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
+		hcCfg.DBname = "ret_" + hcCfg.HubId
 		internal.GetLogger().Debug("&#128024 deleting db: " + hcCfg.DBname)
-
 		//delete db -- force
 		force := true
 		_, err = internal.PgxPool.Exec(context.Background(), "drop database "+hcCfg.DBname)
@@ -364,7 +364,7 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	go func() {
-		nsName := "hc-" + hcCfg.Subdomain
+		nsName := "hc-" + hcCfg.HubId
 		internal.GetLogger().Debug("&#128024 deleting ns: " + nsName)
 
 		//getting k8s config
