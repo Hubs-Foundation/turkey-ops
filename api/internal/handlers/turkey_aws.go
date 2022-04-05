@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/smtp"
@@ -24,15 +23,15 @@ import (
 )
 
 var (
-	eks_yams = []string{
-		"cluster_00_deps.yam",
-		"cluster_01_ingress.yam",
-		"cluster_02_tools.yam",
-		"cluster_03_turkey-services.yam",
-		"cluster_04_turkey-stream.yam",
-		"cluster_05_monitoring.yam",
-		"cluster_autoscaler_aws.yam",
-	}
+	// eks_yams = []string{
+	// 	"cluster_00_deps.yam",
+	// 	"cluster_01_ingress.yam",
+	// 	"cluster_02_tools.yam",
+	// 	"cluster_03_turkey-services.yam",
+	// 	"cluster_04_turkey-stream.yam",
+	// 	"cluster_05_monitoring.yam",
+	// 	"cluster_autoscaler_aws.yam",
+	// }
 	aws_yams_dir = "./_files/yams/aws/"
 )
 var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,36 +47,36 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// ######################################### 1. get cfg from r.body ########################################
 		cfg, err := turkey_makeCfg(r)
 		if err != nil {
-			internal.GetLogger().Error("ERROR @ turkey_makeCfg: " + err.Error())
+			logger.Error("ERROR @ turkey_makeCfg: " + err.Error())
 			return
 		}
 		cfg.CLOUD = "aws"
 		//aws service
 		awss, err := internal.NewAwsSvs(cfg.AWS_KEY, cfg.AWS_SECRET, cfg.AWS_REGION)
 		if err != nil {
-			internal.GetLogger().Error("ERROR @ NewAwsSvs: " + err.Error())
+			logger.Error("ERROR @ NewAwsSvs: " + err.Error())
 			return
 		}
 		//test aws creds
 		accountNum, err := awss.GetAccountID()
 		if err != nil {
-			internal.GetLogger().Error("ERROR @ GetAccountID: " + err.Error())
+			logger.Error("ERROR @ GetAccountID: " + err.Error())
 			return
 		}
-		internal.GetLogger().Debug("good aws creds, account #: " + accountNum)
+		logger.Debug("good aws creds, account #: " + accountNum)
 		// ################## 1.1 see if we have a *.<domain> cert in aws (acm) ###########
 		cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName("*."+cfg.Domain, "ISSUED")
 		if err != nil {
 			cfg.AWS_Ingress_Cert_ARN = `not-found_arn:aws:acm:<region>:<acct>:certificate/<id>`
 		} else {
-			internal.GetLogger().Debug("found wildcard cert for <*." + cfg.Domain + "> in aws acm: " + cfg.AWS_Ingress_Cert_ARN)
+			logger.Debug("found wildcard cert for <*." + cfg.Domain + "> in aws acm: " + cfg.AWS_Ingress_Cert_ARN)
 		}
 		// ################## 1.2 see if we have a <domain> in aws (route53) ##############
 		err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", "deploying.myhubs.net")
 		if err != nil {
-			internal.GetLogger().Debug(err.Error())
+			logger.Debug(err.Error())
 		} else {
-			internal.GetLogger().Debug("found " + cfg.Domain + " in route53")
+			logger.Debug("found " + cfg.Domain + " in route53")
 		}
 		go func() {
 			// ######################################### 2. run cloudformation #########################################
@@ -98,28 +97,28 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			go func() {
 				err = awss.CreateCFstack(cfg.Stackname, cfS3Folder+"main.yaml", cfParams, cfTags)
 				if err != nil {
-					internal.GetLogger().Error("ERROR @ CreateCFstack for " + cfg.Stackname + ": " + err.Error())
+					logger.Error("ERROR @ CreateCFstack for " + cfg.Stackname + ": " + err.Error())
 					return
 				}
 
 			}()
-			internal.GetLogger().Debug("&#128640;CreateCFstack started for stackName=" + cfg.Stackname)
+			logger.Debug("&#128640;CreateCFstack started for stackName=" + cfg.Stackname)
 			reportCreateCFstackStatus(cfg.Stackname, cfg, awss)
 			// ######################################### 3. post cloudformation configs ###################################
 			report, err := postCfConfigs(cfg, cfg.Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"))
 			if err != nil {
-				internal.GetLogger().Error("ERROR @ postDeploymentConfigs for " + cfg.Stackname + ": " + err.Error())
+				logger.Error("ERROR @ postDeploymentConfigs for " + cfg.Stackname + ": " + err.Error())
 				return
 			}
 			// ################# 3.1. update CNAME if domain's managed in route53
 			err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", report["lb"])
 			if err != nil {
-				internal.GetLogger().Debug(err.Error())
+				logger.Debug(err.Error())
 			}
-			internal.GetLogger().Debug(" --- report for (" + cfg.Stackname + ") --- sknoonerToken: " + report["skoonerToken"])
-			internal.GetLogger().Debug(" --- report for (" + cfg.Stackname + ") --- you must create this CNAME record manually in your nameserver {" +
+			logger.Debug(" --- report for (" + cfg.Stackname + ") --- sknoonerToken: " + report["skoonerToken"])
+			logger.Debug(" --- report for (" + cfg.Stackname + ") --- you must create this CNAME record manually in your nameserver {" +
 				cfg.Domain + ":" + report["lb"] + "}, and then go to dash." + cfg.Domain + " to view and configure cluster access")
-			internal.GetLogger().Debug("done: " + cfg.Stackname)
+			logger.Debug("done: " + cfg.Stackname)
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -137,42 +136,42 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string) (map[string]string, error) {
 	cfParams, err := getCfOutputParamMap(stackName, awss)
 	if err != nil {
-		internal.GetLogger().Error("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
+		logger.Error("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
 		return nil, err
 	}
 	cfg.DB_HOST = cfParams["DB_HOST"]
 	k8sCfg, err := awss.GetK8sConfigFromEks(stackName)
 	if err != nil {
-		internal.GetLogger().Error("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
+		logger.Error("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
 		return nil, err
 	}
-	internal.GetLogger().Debug("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	logger.Debug("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 	cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 	cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
 
 	// cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName(cfg.Domain)
 	// if err != nil {
-	// 	internal.GetLogger().Error("ACM_findCertByDomainName err: " + err.Error())
+	// 	logger.Error("ACM_findCertByDomainName err: " + err.Error())
 	// 	cfg.AWS_Ingress_Cert_ARN = `fix-me_arn:aws:acm:<region>:<acct>:certificate/<id>`
 	// }
 	// k8sYamls, err := collectAndRenderYams(cfg.Env, awss, cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 	k8sYamls, err := collectAndRenderYams_localAws(cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 
 	if err != nil {
-		internal.GetLogger().Error("failed @ collectYams: " + err.Error())
+		logger.Error("failed @ collectYams: " + err.Error())
 		return nil, err
 	}
 	for _, yaml := range k8sYamls {
 		err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg)
 		if err != nil {
-			internal.GetLogger().Error("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
+			logger.Error("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
 			return nil, err
 		}
 	}
 	report := make(map[string]string)
 	toolsSecrets, err := internal.K8s_GetAllSecrets(k8sCfg, "tools")
 	if err != nil {
-		internal.GetLogger().Error("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
+		logger.Error("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
 		return nil, err
 	}
 	for k, v := range toolsSecrets {
@@ -180,19 +179,19 @@ func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, auth
 			report["skoonerToken"] = string(v["token"])
 		}
 	}
-	internal.GetLogger().Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
+	logger.Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
 	lb, err := internal.K8s_GetServiceIngress0(k8sCfg, "ingress", "lb")
 	if err != nil {
-		internal.GetLogger().Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
+		logger.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
 		return nil, err
 	}
 	report["lb"] = lb.Hostname
-	internal.GetLogger().Debug("~~~~~~~~~~lb: " + report["lb"])
+	logger.Debug("~~~~~~~~~~lb: " + report["lb"])
 
 	//----------------------------------------
 	err = eksIpLimitationFix(k8sCfg, awss, stackName)
 	if err != nil {
-		internal.GetLogger().Error("@eksIpLimitationFix: " + err.Error())
+		logger.Error("@eksIpLimitationFix: " + err.Error())
 	}
 	//
 
@@ -217,7 +216,7 @@ func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, auth
 			"\r\n"),
 	)
 	if err != nil {
-		internal.GetLogger().Error(err.Error())
+		logger.Error(err.Error())
 	}
 
 	return report, nil
@@ -250,14 +249,14 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, awss *internal.
 	tries := 3
 	for strings.Contains(stackStatus, "IN_PROGRESS") {
 		if tries < 1 {
-			internal.GetLogger().Error("failed @ reportCreateCFstackStatus: timeout")
+			logger.Error("failed @ reportCreateCFstackStatus: timeout")
 			return errors.New("timeout")
 		}
 		stacks, err := awss.GetStack(stackName)
 		if err != nil {
 			tries--
-			internal.GetLogger().Error("@ reportCreateCFstackStatus -- err: " + err.Error())
-			internal.GetLogger().Error("@ reportCreateCFstackStatus -- tries left" + strconv.Itoa(tries))
+			logger.Error("@ reportCreateCFstackStatus -- err: " + err.Error())
+			logger.Error("@ reportCreateCFstackStatus -- tries left" + strconv.Itoa(tries))
 			time.Sleep(time.Second * 30)
 			continue
 		}
@@ -270,34 +269,34 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, awss *internal.
 		if stack.StackStatusReason != nil {
 			reportMsg = reportMsg + " because " + *stack.StackStatusReason
 		}
-		internal.GetLogger().Debug(reportMsg)
+		logger.Debug(reportMsg)
 		time.Sleep(time.Second * 60)
 	}
 	return nil
 }
 
-func collectAndRenderYams(env string, awss *internal.AwsSvs, cfg clusterCfg) ([]string, error) {
-	var yams []string
+// func collectAndRenderYams_s3Aws(env string, awss *internal.AwsSvs, cfg clusterCfg) ([]string, error) {
+// 	var yams []string
 
-	internal.GetLogger().Debug(fmt.Sprintf("%v", eks_yams))
+// 	logger.Debug(fmt.Sprintf("%v", eks_yams))
 
-	for _, s3Key := range eks_yams {
-		yamS3 := env + "/yams/" + s3Key
-		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yamS3)
-		if err != nil {
-			return yams, err
-		}
-		yams = append(yams, yam)
-	}
-	internal.GetLogger().Debug(fmt.Sprintf("len(yams) = %v", len(yams)))
+// 	for _, s3Key := range eks_yams {
+// 		yamS3 := env + "/yams/" + s3Key
+// 		yam, err := awss.S3Download_string(internal.Cfg.TurkeyCfg_s3_bkt, yamS3)
+// 		if err != nil {
+// 			return yams, err
+// 		}
+// 		yams = append(yams, yam)
+// 	}
+// 	logger.Debug(fmt.Sprintf("len(yams) = %v", len(yams)))
 
-	yamls, err := internal.K8s_render_yams(yams, cfg)
-	if err != nil {
-		return nil, err
-	}
+// 	yamls, err := internal.K8s_render_yams(yams, cfg)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return yamls, nil
-}
+// 	return yamls, nil
+// }
 
 func collectAndRenderYams_localAws(cfg clusterCfg) ([]string, error) {
 	yamFiles, _ := ioutil.ReadDir(aws_yams_dir)
@@ -321,7 +320,7 @@ func collectAndRenderYams_localAws(cfg clusterCfg) ([]string, error) {
 // 	//----------create SSM parameter
 // 	// paramMap, err := getSSMparamFromS3json(awss, cfg, "ssmParam.json")
 // 	// if err != nil {
-// 	// 	internal.GetLogger().Debug("ERROR @ createSSMparamFromS3json: " + err.Error())
+// 	// 	logger.Debug("ERROR @ createSSMparamFromS3json: " + err.Error())
 // 	// 	return err
 // 	// }
 // 	paramMap := make(map[string]string)
@@ -401,7 +400,7 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 		SourceVersion:      aws.String("1"),
 		VersionDescription: aws.String("same-as-version-1"),
 	})
-	internal.GetLogger().Sugar().Debugf("ec2Client.CreateLaunchTemplateVersion ==> %v", *r2)
+	logger.Sugar().Debugf("ec2Client.CreateLaunchTemplateVersion ==> %v", *r2)
 	if err != nil {
 		return err
 	}
@@ -414,7 +413,7 @@ func eksIpLimitationFix(k8sCfg *rest.Config, as *internal.AwsSvs, stackName stri
 			Version: aws.String("2"),
 		},
 	})
-	internal.GetLogger().Sugar().Debugf("eksClient.UpdateNodegroupVersion ==> %v", *r3)
+	logger.Sugar().Debugf("eksClient.UpdateNodegroupVersion ==> %v", *r3)
 	if err != nil {
 		return err
 	}

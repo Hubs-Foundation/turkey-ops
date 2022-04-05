@@ -89,7 +89,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	// #1 prepare configs
 	hcCfg, err := makeHcCfg(r)
 	if err != nil {
-		internal.GetLogger().Error("bad hcCfg: " + err.Error())
+		logger.Error("bad hcCfg: " + err.Error())
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -99,11 +99,11 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv("CLOUD") == "aws" {
 		fileOption = "_s3fs"
 	}
-	internal.GetLogger().Debug(" >>>>>> selected option: " + fileOption)
+	logger.Debug(" >>>>>> selected option: " + fileOption)
 
 	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")
 	if err != nil {
-		internal.GetLogger().Error("failed to get ns_hc yam file because: " + err.Error())
+		logger.Error("failed to get ns_hc yam file because: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"result": "error @ getting k8s chart file",
@@ -120,7 +120,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
 		metav1.ListOptions{LabelSelector: "Subdomain=" + hcCfg.Subdomain})
 	if len(nsList.Items) != 0 {
-		internal.GetLogger().Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
+		logger.Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"result": "subdomain already exists",
@@ -130,10 +130,10 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
-	internal.GetLogger().Debug("&#128640; --- deployment started for: " + hcCfg.HubId)
+	logger.Debug("&#128640; --- deployment started for: " + hcCfg.HubId)
 	err = internal.Ssa_k8sChartYaml(hcCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
 	if err != nil {
-		internal.GetLogger().Error("error @ k8s deploy: " + err.Error())
+		logger.Error("error @ k8s deploy: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"result": "error @ k8s deploy: " + err.Error(),
@@ -144,17 +144,17 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 
 	// // quality of life improvement for /console people
 	// skipadminLink := "https://" + hcCfg.Subdomain + "." + hcCfg.Domain + "?skipadmin"
-	// internal.GetLogger().Debug("&#128640; --- deployment completed for: <a href=\"" +
+	// logger.Debug("&#128640; --- deployment completed for: <a href=\"" +
 	// 	skipadminLink + "\" target=\"_blank\"><b>&#128279;" + hcCfg.AccountId + ":" + hcCfg.Subdomain + "</b></a>")
-	// internal.GetLogger().Debug("&#128231; --- admin email: " + hcCfg.UserEmail)
+	// logger.Debug("&#128231; --- admin email: " + hcCfg.UserEmail)
 
 	// #5 create db
 	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+hcCfg.DBname+"\"")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
-			internal.GetLogger().Debug("db already exists: " + hcCfg.DBname)
+			logger.Debug("db already exists: " + hcCfg.DBname)
 		} else {
-			internal.GetLogger().Error("error @ create hub db: " + err.Error())
+			logger.Error("error @ create hub db: " + err.Error())
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"result": "error @ create hub db: " + err.Error(),
 				"hub_id": hcCfg.HubId,
@@ -162,7 +162,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	internal.GetLogger().Debug("&#128024; --- db created: " + hcCfg.DBname)
+	logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -181,23 +181,23 @@ func hc_get(w http.ResponseWriter, r *http.Request) {
 
 	cfg, err := getHcCfg(r)
 	if err != nil {
-		internal.GetLogger().Debug("bad hcCfg: " + err.Error())
+		logger.Debug("bad hcCfg: " + err.Error())
 		return
 	}
 
 	//getting k8s config
-	internal.GetLogger().Debug("&#9989; ... using InClusterConfig")
+	logger.Debug("&#9989; ... using InClusterConfig")
 	k8sCfg, err := rest.InClusterConfig()
 	// }
 	if k8sCfg == nil {
-		internal.GetLogger().Debug("ERROR" + err.Error())
-		internal.GetLogger().Error(err.Error())
+		logger.Debug("ERROR" + err.Error())
+		logger.Error(err.Error())
 		return
 	}
-	internal.GetLogger().Debug("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	logger.Debug("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 	clientset, err := kubernetes.NewForConfig(k8sCfg)
 	if err != nil {
-		internal.GetLogger().Error(err.Error())
+		logger.Error(err.Error())
 		return
 	}
 	//list ns
@@ -206,13 +206,13 @@ func hc_get(w http.ResponseWriter, r *http.Request) {
 			LabelSelector: "subdomain=" + cfg.Subdomain,
 		})
 	if err != nil {
-		internal.GetLogger().Error(err.Error())
+		logger.Error(err.Error())
 		return
 	}
-	internal.GetLogger().Debug("GET --- user <" + cfg.AccountId + "> owns: ")
+	logger.Debug("GET --- user <" + cfg.AccountId + "> owns: ")
 	for _, ns := range nsList.Items {
-		internal.GetLogger().Debug("......ObjectMeta.GetName: " + ns.ObjectMeta.GetName())
-		internal.GetLogger().Debug("......ObjectMeta.Labels.dump: " + fmt.Sprint(ns.ObjectMeta.Labels))
+		logger.Debug("......ObjectMeta.GetName: " + ns.ObjectMeta.GetName())
+		logger.Debug("......ObjectMeta.Labels.dump: " + fmt.Sprint(ns.ObjectMeta.Labels))
 	}
 }
 
@@ -221,13 +221,13 @@ func getHcCfg(r *http.Request) (hcCfg, error) {
 	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		internal.GetLogger().Error("ERROR @ reading r.body, error = " + err.Error())
+		logger.Error("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
 	//make cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
-		internal.GetLogger().Error("bad hcCfg: " + string(rBodyBytes))
+		logger.Error("bad hcCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
 	return cfg, nil
@@ -239,13 +239,13 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		internal.GetLogger().Error("ERROR @ reading r.body, error = " + err.Error())
+		logger.Error("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
 	//make cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
-		internal.GetLogger().Error("bad hcCfg: " + string(rBodyBytes))
+		logger.Error("bad hcCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
 
@@ -261,12 +261,12 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	// AccountId
 	if cfg.AccountId == "" {
 		cfg.AccountId = internal.PwdGen(8, int64(hash(cfg.UserEmail)), "")
-		internal.GetLogger().Debug("AccountId unspecified, using: " + cfg.AccountId)
+		logger.Debug("AccountId unspecified, using: " + cfg.AccountId)
 	}
 	// HubId
 	if cfg.HubId == "" {
 		cfg.HubId = internal.PwdGen(6, int64(hash(cfg.AccountId+cfg.Subdomain)), "")
-		internal.GetLogger().Debug("HubId unspecified, using: " + cfg.HubId)
+		logger.Debug("HubId unspecified, using: " + cfg.HubId)
 	}
 	//default Tier is free
 	if cfg.Tier == "" {
@@ -302,9 +302,9 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	perms_key_str := strings.Replace(cfg.PermsKey, `\\n`, "\n", -1)
 	pb, _ := pem.Decode([]byte(perms_key_str))
 	if pb == nil {
-		internal.GetLogger().Error("failed to decode perms key")
-		internal.GetLogger().Error("perms_key_str: " + perms_key_str)
-		internal.GetLogger().Error(" cfg.PermsKey: " + cfg.PermsKey)
+		logger.Error("failed to decode perms key")
+		logger.Error("perms_key_str: " + perms_key_str)
+		logger.Error(" cfg.PermsKey: " + cfg.PermsKey)
 		return cfg, errors.New("failed to decode perms key")
 	}
 	perms_key, err := x509.ParsePKCS1PrivateKey(pb.Bytes)
@@ -339,13 +339,13 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	// sess := internal.GetSession(r.Cookie)
 	hcCfg, err := getHcCfg(r)
 	if err != nil {
-		internal.GetLogger().Error("bad hcCfg: " + err.Error())
+		logger.Error("bad hcCfg: " + err.Error())
 		return
 	}
 
 	go func() {
 		hcCfg.DBname = "ret_" + hcCfg.HubId
-		internal.GetLogger().Debug("&#128024 deleting db: " + hcCfg.DBname)
+		logger.Debug("&#128024 deleting db: " + hcCfg.DBname)
 		//delete db -- force
 		force := true
 		_, err = internal.PgxPool.Exec(context.Background(), "drop database "+hcCfg.DBname)
@@ -353,47 +353,32 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 			if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
 				err = pg_kick_all(hcCfg)
 				if err != nil {
-					internal.GetLogger().Error(err.Error())
+					logger.Error(err.Error())
 					return
 				}
 				_, err = internal.PgxPool.Exec(context.Background(), "drop database "+hcCfg.DBname)
 			}
 			if err != nil {
-				internal.GetLogger().Error(err.Error())
+				logger.Error(err.Error())
 				return
 			}
 		}
-		internal.GetLogger().Debug("&#128024 deleted db: " + hcCfg.DBname)
+		logger.Debug("&#128024 deleted db: " + hcCfg.DBname)
 	}()
 
 	go func() {
 		nsName := "hc-" + hcCfg.HubId
-		internal.GetLogger().Debug("&#128024 deleting ns: " + nsName)
-
-		//getting k8s config
-		internal.GetLogger().Debug("&#9989; ... using InClusterConfig")
-		k8sCfg, err := rest.InClusterConfig()
-		// }
-		if k8sCfg == nil {
-			internal.GetLogger().Error(err.Error())
-			return
-		}
-		internal.GetLogger().Debug("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-		clientset, err := kubernetes.NewForConfig(k8sCfg)
-		if err != nil {
-			internal.GetLogger().Error("failed to get kubecfg" + err.Error())
-			return
-		}
+		logger.Debug("&#128024 deleting ns: " + nsName)
 
 		//delete ns
-		err = clientset.CoreV1().Namespaces().Delete(context.TODO(),
+		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
 			nsName,
 			metav1.DeleteOptions{})
 		if err != nil {
-			internal.GetLogger().Error("delete ns failed: " + err.Error())
+			logger.Error("delete ns failed: " + err.Error())
 			return
 		}
-		internal.GetLogger().Debug("&#127754 deleted ns: " + nsName)
+		logger.Debug("&#127754 deleted ns: " + nsName)
 	}()
 
 	//return
@@ -409,7 +394,7 @@ func pg_kick_all(cfg hcCfg) error {
 	tries := 0
 	for sqatterCount != 0 && tries < 3 {
 		squatters, _ := internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
-		internal.GetLogger().Debug("WARNING: pg_kick_all: kicking <" + fmt.Sprint(squatters.RowsAffected()) + "> squatters from " + cfg.DBname)
+		logger.Debug("WARNING: pg_kick_all: kicking <" + fmt.Sprint(squatters.RowsAffected()) + "> squatters from " + cfg.DBname)
 		_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM public`)
 		_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM `+internal.Cfg.DBuser)
 		_, _ = internal.PgxPool.Exec(context.Background(), `SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '`+cfg.DBname+`'`)
@@ -430,7 +415,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 
 	cfg, err := getHcCfg(r)
 	if err != nil {
-		internal.GetLogger().Error("bad hcCfg: " + err.Error())
+		logger.Error("bad hcCfg: " + err.Error())
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -439,7 +424,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 	//acquire lock
 	locker, err := internal.NewK8Locker(internal.NewK8sSvs_local().Cfg, ns)
 	if err != nil {
-		internal.GetLogger().Error("faild to acquire locker, try again later ... err: " + err.Error())
+		logger.Error("faild to acquire locker, try again later ... err: " + err.Error())
 		return
 	}
 
@@ -455,7 +440,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		internal.GetLogger().Error("wakeupHcNs - failed to list deployments: " + err.Error())
+		logger.Error("wakeupHcNs - failed to list deployments: " + err.Error())
 		return
 	}
 
@@ -463,7 +448,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 		d.Spec.Replicas = pointerOfInt32(Replicas)
 		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
-			internal.GetLogger().Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
+			logger.Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
 			return
 		}
 	}

@@ -218,15 +218,15 @@ func MakeKeys(stackName, workDir string) error {
 	var pvtKey, _ = rsa.GenerateKey(rand.Reader, 2048)
 	pvtKey.Precompute()
 	pvtKeyBytes := x509.MarshalPKCS1PrivateKey(pvtKey)
-	ioutil.WriteFile(workDir+"/jwt-key.der", pvtKeyBytes, 444)
-	ioutil.WriteFile(workDir+"/jwt-key.pem", pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: pvtKeyBytes}), 444)
+	ioutil.WriteFile(workDir+"/jwt-key.der", pvtKeyBytes, 0600)
+	ioutil.WriteFile(workDir+"/jwt-key.pem", pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: pvtKeyBytes}), 0600)
 	pubKeyBytes, _ := x509.MarshalPKIXPublicKey(pvtKey.PublicKey)
-	ioutil.WriteFile(workDir+"/jwt-pub.der", pubKeyBytes, 444)
-	ioutil.WriteFile(workDir+"/jwt-pub.pem", pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes}), 444)
+	ioutil.WriteFile(workDir+"/jwt-pub.der", pubKeyBytes, 0600)
+	ioutil.WriteFile(workDir+"/jwt-pub.pem", pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes}), 0600)
 	//jwk json
 	jwk := jose.JSONWebKey{Key: pvtKey}
 	jwkJsonBytes, _ := jwk.MarshalJSON()
-	ioutil.WriteFile(workDir+"/jwt-pub.json", jwkJsonBytes, 444)
+	ioutil.WriteFile(workDir+"/jwt-pub.json", jwkJsonBytes, 0600)
 
 	//
 	// cmd_ls := exec.Command("ls", "-lha", workDir)

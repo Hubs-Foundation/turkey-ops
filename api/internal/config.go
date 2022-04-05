@@ -14,7 +14,7 @@ type Config struct {
 	PodIp        string
 	PodNS        string
 	PodLabelApp  string
-	AuthProxyUrl string `auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)`
+	AuthProxyUrl string `description:"auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)"`
 
 	Env      string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
 	Domain   string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`

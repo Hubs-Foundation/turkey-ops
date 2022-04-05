@@ -23,6 +23,8 @@ import (
 	"time"
 )
 
+var logger = internal.GetLogger()
+
 // var KeepAlive = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 // })
@@ -152,8 +154,8 @@ type clusterCfg struct {
 	ItaChan    string `json:"itachan"`    //ita's listening channel (dev, beta, stable), falls back to Env / swaping staging for beta
 
 	//optional inputs
-	deploymentPrefix     string `json:"name"`                 //t-
-	deploymentId         string `json:"deploymentId"`         //s0meid
+	DeploymentPrefix     string `json:"name"`                 //t-
+	DeploymentId         string `json:"deploymentId"`         //s0meid
 	AWS_Ingress_Cert_ARN string `json:"aws_ingress_cert_arn"` //arn:aws:acm:us-east-1:123456605633:certificate/123456ab-f861-470b-a837-123456a76e17
 	Options              string `json:"options"`              //additional options, dot(.)prefixed -- ie. ".dryrun"
 
@@ -175,13 +177,13 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		internal.GetLogger().Warn("ERROR @ reading r.body, error = " + err.Error())
+		logger.Warn("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
 	//make cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
-		internal.GetLogger().Warn("bad clusterCfg: " + string(rBodyBytes))
+		logger.Warn("bad clusterCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
 
@@ -196,57 +198,57 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	}
 	//required but with fallbacks
 	if cfg.OAUTH_CLIENT_ID_FXA == "" {
-		internal.GetLogger().Warn("OAUTH_CLIENT_ID_FXA not supplied, falling back to local value")
+		logger.Warn("OAUTH_CLIENT_ID_FXA not supplied, falling back to local value")
 		cfg.OAUTH_CLIENT_ID_FXA = os.Getenv("OAUTH_CLIENT_ID_FXA")
 	}
 	if cfg.OAUTH_CLIENT_SECRET_FXA == "" {
-		internal.GetLogger().Warn("OAUTH_CLIENT_SECRET_FXA not supplied, falling back to local value")
+		logger.Warn("OAUTH_CLIENT_SECRET_FXA not supplied, falling back to local value")
 		cfg.OAUTH_CLIENT_SECRET_FXA = os.Getenv("OAUTH_CLIENT_SECRET_FXA")
 	}
 	if cfg.SMTP_SERVER == "" {
-		internal.GetLogger().Warn("SMTP_SERVER not supplied, falling back to local value")
+		logger.Warn("SMTP_SERVER not supplied, falling back to local value")
 		cfg.SMTP_SERVER = internal.Cfg.SmtpServer
 	}
 	if cfg.SMTP_PORT == "" {
-		internal.GetLogger().Warn("SMTP_PORT not supplied, falling back to local value")
+		logger.Warn("SMTP_PORT not supplied, falling back to local value")
 		cfg.SMTP_PORT = internal.Cfg.SmtpPort
 	}
 	if cfg.SMTP_USER == "" {
-		internal.GetLogger().Warn("SMTP_USER not supplied, falling back to local value")
+		logger.Warn("SMTP_USER not supplied, falling back to local value")
 		cfg.SMTP_USER = internal.Cfg.SmtpUser
 	}
 	if cfg.SMTP_PASS == "" {
-		internal.GetLogger().Warn("SMTP_PASS not supplied, falling back to local value")
+		logger.Warn("SMTP_PASS not supplied, falling back to local value")
 		cfg.SMTP_PASS = internal.Cfg.SmtpPass
 	}
 	if cfg.AWS_KEY == "" {
-		internal.GetLogger().Warn("AWS_KEY not supplied, falling back to local value")
+		logger.Warn("AWS_KEY not supplied, falling back to local value")
 		cfg.AWS_KEY = internal.Cfg.AwsKey
 	}
 	if cfg.AWS_SECRET == "" {
-		internal.GetLogger().Warn("AWS_SECRET not supplied, falling back to local value")
+		logger.Warn("AWS_SECRET not supplied, falling back to local value")
 		cfg.AWS_SECRET = internal.Cfg.AwsSecret
 	}
 	if cfg.Env == "" {
 		cfg.Env = "dev"
-		internal.GetLogger().Warn("Env unspecified -- using dev")
+		logger.Warn("Env unspecified -- using dev")
 	}
 	if cfg.ItaChan == "" {
 		cfg.ItaChan = strings.Replace(cfg.Env, "staging", "beta", 1)
-		internal.GetLogger().Warn("ItaChan unspecified -- fallinb back to Env (swaping staging for beta): " + cfg.ItaChan)
+		logger.Warn("ItaChan unspecified -- fallinb back to Env (swaping staging for beta): " + cfg.ItaChan)
 	}
 
 	//optional inputs
-	if cfg.deploymentPrefix == "" {
-		cfg.deploymentPrefix = "t-"
-		internal.GetLogger().Warn("deploymentPrefix unspecified -- using (default)" + cfg.deploymentPrefix)
+	if cfg.DeploymentPrefix == "" {
+		cfg.DeploymentPrefix = "t-"
+		logger.Warn("deploymentPrefix unspecified -- using (default)" + cfg.DeploymentPrefix)
 	}
-	if cfg.deploymentId == "" {
-		cfg.deploymentId = strconv.FormatInt(time.Now().Unix()-1648672222, 36)
-		internal.GetLogger().Info("deploymentId: " + cfg.deploymentId)
+	if cfg.DeploymentId == "" {
+		cfg.DeploymentId = strconv.FormatInt(time.Now().Unix()-1648672222, 36)
+		logger.Info("deploymentId: " + cfg.DeploymentId)
 	}
 	if cfg.Stackname == "" {
-		cfg.Stackname = cfg.deploymentPrefix + cfg.deploymentId
+		cfg.Stackname = cfg.DeploymentPrefix + cfg.DeploymentId
 	}
 
 	//generate the rest
@@ -265,7 +267,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 
 	if cfg.GCP_SA_KEY_b64 == "" {
 		cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
-		internal.GetLogger().Warn("GCP_SA_KEY_b64 unspecified -- using: " + cfg.GCP_SA_KEY_b64)
+		logger.Warn("GCP_SA_KEY_b64 unspecified -- using: " + cfg.GCP_SA_KEY_b64)
 	}
 
 	return cfg, nil

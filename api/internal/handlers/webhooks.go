@@ -46,24 +46,24 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//todo -- make an api key sort of thing for ddos protection?
 	//todo -- doublecheck back against github and dockerhub?
 
-	internal.GetLogger().Sugar().Debugf("dump headers: %v", r.Header)
+	logger.Sugar().Debugf("dump headers: %v", r.Header)
 
 	rBodyBytes, _ := ioutil.ReadAll(r.Body)
-	internal.GetLogger().Debug(prettyPrintJson(rBodyBytes))
+	logger.Debug(prettyPrintJson(rBodyBytes))
 	decoder := json.NewDecoder(bytes.NewBuffer(rBodyBytes))
 	//decoder := json.NewDecoder(r.Body)
 
 	var ghaReport ghaReport
 	err := decoder.Decode(&ghaReport)
 	if err != nil {
-		internal.GetLogger().Debug(" bad r.Body" + err.Error())
+		logger.Debug(" bad r.Body" + err.Error())
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
 	_, ok := supportedChannels[ghaReport.Channel]
 	if !ok {
-		internal.GetLogger().Error("bad ghaReport.Channel: " + ghaReport.Channel)
+		logger.Error("bad ghaReport.Channel: " + ghaReport.Channel)
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -71,22 +71,22 @@ var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//publish
 	TagArr := strings.Split(ghaReport.Tag, ":")
 	if len(TagArr) != 2 {
-		internal.GetLogger().Error("bad ghaReport.Tag: " + ghaReport.Tag)
+		logger.Error("bad ghaReport.Tag: " + ghaReport.Tag)
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
 	err = publishToConfigmap_label("hubsbuilds-"+ghaReport.Channel, TagArr[0], TagArr[1])
 	if err != nil {
-		internal.GetLogger().Error(err.Error())
+		logger.Error(err.Error())
 	}
 	// err = publishToConfigmap_data("hubsbuilds", ghaReport.Channel, TagArr[0], TagArr[1])
 	// if err != nil {
-	// 	internal.GetLogger().Error(err.Error())
+	// 	logger.Error(err.Error())
 	// }
 	// err = publishToNamespaceTag(ghaReport.Channel, TagArr[0], TagArr[1])
 	// if err != nil {
-	// 	internal.GetLogger().Error("publishToNamespaceTag failed: " + err.Error())
+	// 	logger.Error("publishToNamespaceTag failed: " + err.Error())
 	// }
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 })
@@ -97,11 +97,11 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	internal.GetLogger().Sugar().Debugf("dump headers: %v", r.Header)
+	logger.Sugar().Debugf("dump headers: %v", r.Header)
 	//++++++++++++++++++++++++
 	//get bytes for debug print + decode
 	rBodyBytes, _ := ioutil.ReadAll(r.Body)
-	internal.GetLogger().Debug(prettyPrintJson(rBodyBytes))
+	logger.Debug(prettyPrintJson(rBodyBytes))
 	decoder := json.NewDecoder(bytes.NewBuffer(rBodyBytes))
 	//or if we don't need debug print:
 	//decoder := json.NewDecoder(r.Body)
@@ -110,7 +110,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	var dockerJson dockerhubWebhookJson
 	err := decoder.Decode(&dockerJson)
 	if err != nil || !strings.HasPrefix(dockerJson.Callback_url, "https://registry.hub.docker.com/u/mozillareality/") {
-		internal.GetLogger().Debug(" bad r.Body, is it json? have they changed it? (https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload)")
+		logger.Debug(" bad r.Body, is it json? have they changed it? (https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload)")
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -118,7 +118,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//todo: verify ... docker's really lacking here, maybe check with docker and then cross check with github action?
 
 	//assume we can trust the payload at this point
-	internal.GetLogger().Debug(fmt.Sprintf("parsed dockerJson: %+v", dockerJson))
+	logger.Debug(fmt.Sprintf("parsed dockerJson: %+v", dockerJson))
 	channel := ""
 	if dockerJson.Push_data.Tag == "dev-" {
 		channel = "dev"
@@ -128,7 +128,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		channel = "prod"
 	}
 	fulltag := dockerJson.Repository.Repo_name + ":" + dockerJson.Push_data.Tag
-	internal.GetLogger().Debug("channel: " + channel + ", fulltag: " + fulltag)
+	logger.Debug("channel: " + channel + ", fulltag: " + fulltag)
 
 	if channel == "" {
 		return
@@ -137,7 +137,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	//publish
 	// err = publishToNamespaceTag(channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 	// if err != nil {
-	// 	internal.GetLogger().Error(err.Error())
+	// 	logger.Error(err.Error())
 	// }
 
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -147,7 +147,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 func publishToConfigmap_label(cfgmapName string, imgRepoName string, imgTag string) error {
 	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), cfgmapName, metav1.GetOptions{})
 	if err != nil {
-		internal.GetLogger().Error(err.Error())
+		logger.Error(err.Error())
 	}
 	cfgmap.Labels[imgRepoName] = imgTag
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
@@ -157,7 +157,7 @@ func publishToConfigmap_label(cfgmapName string, imgRepoName string, imgTag stri
 // func publishToConfigmap_data(cfgmapName string, channel string, imgRepoName string, imgTag string) error {
 // 	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), cfgmapName, metav1.GetOptions{})
 // 	if err != nil {
-// 		internal.GetLogger().Error(err.Error())
+// 		logger.Error(err.Error())
 // 	}
 // 	cfgkey := channel + "." + strings.Replace(imgRepoName, "/", "_", -1)
 // 	cfgmap.Data[cfgkey] = imgTag
@@ -168,24 +168,24 @@ func publishToConfigmap_label(cfgmapName string, imgRepoName string, imgTag stri
 // func processNsList(nsList *corev1.NamespaceList, channel string, repoName string, tag string) {
 // 	for _, item := range nsList.Items {
 // 		nsName := item.Name
-// 		internal.GetLogger().Debug("nsName: " + nsName)
+// 		logger.Debug("nsName: " + nsName)
 
 // 		dClient := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName)
 
 // 		if strings.HasPrefix(nsName, "hc-") && item.Labels["channel"] == channel {
 // 			dList, err := dClient.List(context.Background(), metav1.ListOptions{})
 // 			if err != nil {
-// 				internal.GetLogger().Panic(err.Error())
+// 				logger.Panic(err.Error())
 // 			}
 // 			for _, d := range dList.Items {
 // 				for i, c := range d.Spec.Template.Spec.Containers {
-// 					internal.GetLogger().Debug("c.Image: " + c.Image + ", repoName: " + repoName)
+// 					logger.Debug("c.Image: " + c.Image + ", repoName: " + repoName)
 
 // 					if strings.Split(c.Image, ":")[0] == repoName {
 // 						d.Spec.Template.Spec.Containers[i].Image = repoName + ":" + tag
 // 						_, err := dClient.Update(context.Background(), &d, metav1.UpdateOptions{})
 // 						if err != nil {
-// 							internal.GetLogger().Panic(err.Error())
+// 							logger.Panic(err.Error())
 // 						}
 // 					}
 // 				}
@@ -208,8 +208,8 @@ var TurkeyGitops = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	internal.GetLogger().Sugar().Debugf("dump headers: %v", r.Header)
+	logger.Sugar().Debugf("dump headers: %v", r.Header)
 	rBodyBytes, _ := ioutil.ReadAll(r.Body)
-	internal.GetLogger().Debug(prettyPrintJson(rBodyBytes))
+	logger.Debug(prettyPrintJson(rBodyBytes))
 
 })

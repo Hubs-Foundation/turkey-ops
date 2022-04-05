@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	mrand "math/rand"
 	"net/http"
 	"os"
@@ -105,13 +104,13 @@ func PwdGen(length int, seed int64, padding string) string {
 	// 	replace := string(byte(mr.Intn(26) + 65)) //ascii 65~90 aka. A~Z
 	// 	pwd = strings.Replace(pwd, c, replace, -1)
 	// }
-	rand.Seed(seed)
+	mrand.Seed(seed)
 
 	pwd := make([]rune, length)
 	var dict = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 	dictLen := len(dict)
 	for i := range pwd {
-		pwd[i] = dict[rand.Intn(dictLen)]
+		pwd[i] = dict[mrand.Intn(dictLen)]
 	}
 
 	return padding + string(pwd) + padding
