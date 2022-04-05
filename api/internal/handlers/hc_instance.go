@@ -16,7 +16,6 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -167,10 +166,14 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"result": "done",
-		"hub_id": hcCfg.HubId,
+		"result":        "created",
+		"useremail":     hcCfg.UserEmail,
+		"hub_id":        hcCfg.HubId,
+		"subdomain":     hcCfg.Subdomain,
+		"tier":          hcCfg.Tier,
+		"ccu_limit":     hcCfg.CcuLimit,
+		"storage_limit": hcCfg.StorageLimit,
 	})
-
 }
 
 func hc_get(w http.ResponseWriter, r *http.Request) {
@@ -396,7 +399,7 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	//return
 	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"task":   "deletion",
+		"result": "deleted",
 		"hub_id": hcCfg.HubId,
 	})
 }
@@ -431,7 +434,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	ns := "hc-" + cfg.Subdomain
+	ns := "hc-" + cfg.HubId
 
 	//acquire lock
 	locker, err := internal.NewK8Locker(internal.NewK8sSvs_local().Cfg, ns)
@@ -450,7 +453,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 		Replicas = 1
 	}
 
-	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), v1.ListOptions{})
+	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		internal.GetLogger().Error("wakeupHcNs - failed to list deployments: " + err.Error())
 		return
@@ -458,7 +461,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 
 	for _, d := range ds.Items {
 		d.Spec.Replicas = pointerOfInt32(Replicas)
-		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
+		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
 			internal.GetLogger().Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
 			return

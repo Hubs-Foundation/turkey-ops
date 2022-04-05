@@ -63,7 +63,7 @@ todo(internal only): <br>
 1. a better looking page here <br>
 `
 var g404_err_RespMsg = `
-<h1> your hubs infra's dead ... <br> but don't worry because some poor engineers on our end's getting a pagerduty for it </h1>
+<h1> your hubs infra's dead ... <br> but don't worry because some engineers on our end's getting a pagerduty for it </h1>
 disclaimer: this page is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
 todo(internal only): <br>
 1. a better looking page here <br>
