@@ -36,47 +36,48 @@ var (
 	aws_yams_dir = "./_files/yams/aws/"
 )
 var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// sess := internal.GetSession(r.Cookie)
+
 	switch r.Method {
 	case "POST":
 		if r.URL.Path != "/tco_aws" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		sess := internal.GetSession(r.Cookie)
 
 		// ######################################### 1. get cfg from r.body ########################################
 		cfg, err := turkey_makeCfg(r)
 		if err != nil {
-			sess.Error("ERROR @ turkey_makeCfg: " + err.Error())
+			internal.GetLogger().Error("ERROR @ turkey_makeCfg: " + err.Error())
 			return
 		}
 		cfg.CLOUD = "aws"
 		//aws service
 		awss, err := internal.NewAwsSvs(cfg.AWS_KEY, cfg.AWS_SECRET, cfg.AWS_REGION)
 		if err != nil {
-			sess.Error("ERROR @ NewAwsSvs: " + err.Error())
+			internal.GetLogger().Error("ERROR @ NewAwsSvs: " + err.Error())
 			return
 		}
 		//test aws creds
 		accountNum, err := awss.GetAccountID()
 		if err != nil {
-			sess.Error("ERROR @ GetAccountID: " + err.Error())
+			internal.GetLogger().Error("ERROR @ GetAccountID: " + err.Error())
 			return
 		}
-		sess.Log("good aws creds, account #: " + accountNum)
+		internal.GetLogger().Debug("good aws creds, account #: " + accountNum)
 		// ################## 1.1 see if we have a *.<domain> cert in aws (acm) ###########
 		cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName("*."+cfg.Domain, "ISSUED")
 		if err != nil {
 			cfg.AWS_Ingress_Cert_ARN = `not-found_arn:aws:acm:<region>:<acct>:certificate/<id>`
 		} else {
-			sess.Log("found wildcard cert for <*." + cfg.Domain + "> in aws acm: " + cfg.AWS_Ingress_Cert_ARN)
+			internal.GetLogger().Debug("found wildcard cert for <*." + cfg.Domain + "> in aws acm: " + cfg.AWS_Ingress_Cert_ARN)
 		}
 		// ################## 1.2 see if we have a <domain> in aws (route53) ##############
 		err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", "deploying.myhubs.net")
 		if err != nil {
-			sess.Log(err.Error())
+			internal.GetLogger().Debug(err.Error())
 		} else {
-			sess.Log("found " + cfg.Domain + " in route53")
+			internal.GetLogger().Debug("found " + cfg.Domain + " in route53")
 		}
 		go func() {
 			// ######################################### 2. run cloudformation #########################################
@@ -97,28 +98,28 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			go func() {
 				err = awss.CreateCFstack(cfg.Stackname, cfS3Folder+"main.yaml", cfParams, cfTags)
 				if err != nil {
-					sess.Error("ERROR @ CreateCFstack for " + cfg.Stackname + ": " + err.Error())
+					internal.GetLogger().Error("ERROR @ CreateCFstack for " + cfg.Stackname + ": " + err.Error())
 					return
 				}
 
 			}()
-			sess.Log("&#128640;CreateCFstack started for stackName=" + cfg.Stackname)
-			reportCreateCFstackStatus(cfg.Stackname, cfg, sess, awss)
+			internal.GetLogger().Debug("&#128640;CreateCFstack started for stackName=" + cfg.Stackname)
+			reportCreateCFstackStatus(cfg.Stackname, cfg, awss)
 			// ######################################### 3. post cloudformation configs ###################################
-			report, err := postCfConfigs(cfg, cfg.Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"), sess)
+			report, err := postCfConfigs(cfg, cfg.Stackname, awss, r.Header.Get("X-Forwarded-UserEmail"))
 			if err != nil {
-				sess.Error("ERROR @ postDeploymentConfigs for " + cfg.Stackname + ": " + err.Error())
+				internal.GetLogger().Error("ERROR @ postDeploymentConfigs for " + cfg.Stackname + ": " + err.Error())
 				return
 			}
 			// ################# 3.1. update CNAME if domain's managed in route53
 			err = awss.Route53_addRecord("*."+cfg.Domain, "CNAME", report["lb"])
 			if err != nil {
-				sess.Log(err.Error())
+				internal.GetLogger().Debug(err.Error())
 			}
-			sess.Log(" --- report for (" + cfg.Stackname + ") --- sknoonerToken: " + report["skoonerToken"])
-			sess.Log(" --- report for (" + cfg.Stackname + ") --- you must create this CNAME record manually in your nameserver {" +
+			internal.GetLogger().Debug(" --- report for (" + cfg.Stackname + ") --- sknoonerToken: " + report["skoonerToken"])
+			internal.GetLogger().Debug(" --- report for (" + cfg.Stackname + ") --- you must create this CNAME record manually in your nameserver {" +
 				cfg.Domain + ":" + report["lb"] + "}, and then go to dash." + cfg.Domain + " to view and configure cluster access")
-			sess.Log("done: " + cfg.Stackname)
+			internal.GetLogger().Debug("done: " + cfg.Stackname)
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -133,45 +134,45 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 })
 
-func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string, sess *internal.CacheBoxSessData) (map[string]string, error) {
+func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, authnUser string) (map[string]string, error) {
 	cfParams, err := getCfOutputParamMap(stackName, awss)
 	if err != nil {
-		sess.Error("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
+		internal.GetLogger().Error("post cf deployment: failed to getCfOutputParamMap: " + err.Error())
 		return nil, err
 	}
 	cfg.DB_HOST = cfParams["DB_HOST"]
 	k8sCfg, err := awss.GetK8sConfigFromEks(stackName)
 	if err != nil {
-		sess.Error("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
+		internal.GetLogger().Error("post cf deployment: failed to get k8sCfg for eks name: " + stackName + "err: " + err.Error())
 		return nil, err
 	}
-	sess.Log("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+	internal.GetLogger().Debug("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
 	cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 	cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
 
 	// cfg.AWS_Ingress_Cert_ARN, err = awss.ACM_findCertByDomainName(cfg.Domain)
 	// if err != nil {
-	// 	sess.Error("ACM_findCertByDomainName err: " + err.Error())
+	// 	internal.GetLogger().Error("ACM_findCertByDomainName err: " + err.Error())
 	// 	cfg.AWS_Ingress_Cert_ARN = `fix-me_arn:aws:acm:<region>:<acct>:certificate/<id>`
 	// }
 	// k8sYamls, err := collectAndRenderYams(cfg.Env, awss, cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 	k8sYamls, err := collectAndRenderYams_localAws(cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 
 	if err != nil {
-		sess.Error("failed @ collectYams: " + err.Error())
+		internal.GetLogger().Error("failed @ collectYams: " + err.Error())
 		return nil, err
 	}
 	for _, yaml := range k8sYamls {
 		err := internal.Ssa_k8sChartYaml("turkey_cluster", yaml, k8sCfg)
 		if err != nil {
-			sess.Error("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
+			internal.GetLogger().Error("post cf deployment: failed @ Ssa_k8sChartYaml" + err.Error())
 			return nil, err
 		}
 	}
 	report := make(map[string]string)
 	toolsSecrets, err := internal.K8s_GetAllSecrets(k8sCfg, "tools")
 	if err != nil {
-		sess.Error("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
+		internal.GetLogger().Error("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
 		return nil, err
 	}
 	for k, v := range toolsSecrets {
@@ -182,7 +183,7 @@ func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, auth
 	internal.GetLogger().Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
 	lb, err := internal.K8s_GetServiceIngress0(k8sCfg, "ingress", "lb")
 	if err != nil {
-		sess.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
+		internal.GetLogger().Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
 		return nil, err
 	}
 	report["lb"] = lb.Hostname
@@ -191,7 +192,7 @@ func postCfConfigs(cfg clusterCfg, stackName string, awss *internal.AwsSvs, auth
 	//----------------------------------------
 	err = eksIpLimitationFix(k8sCfg, awss, stackName)
 	if err != nil {
-		sess.Error("@eksIpLimitationFix: " + err.Error())
+		internal.GetLogger().Error("@eksIpLimitationFix: " + err.Error())
 	}
 	//
 
@@ -243,20 +244,20 @@ func getCfOutputParamMap(stackName string, awss *internal.AwsSvs) (map[string]st
 	return paramMap, nil
 }
 
-func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.CacheBoxSessData, awss *internal.AwsSvs) error {
+func reportCreateCFstackStatus(stackName string, cfg clusterCfg, awss *internal.AwsSvs) error {
 	time.Sleep(time.Second * 10)
 	stackStatus := "something something IN_PROGRESS"
 	tries := 3
 	for strings.Contains(stackStatus, "IN_PROGRESS") {
 		if tries < 1 {
-			sess.Error("failed @ reportCreateCFstackStatus: timeout")
+			internal.GetLogger().Error("failed @ reportCreateCFstackStatus: timeout")
 			return errors.New("timeout")
 		}
 		stacks, err := awss.GetStack(stackName)
 		if err != nil {
 			tries--
-			sess.Error("@ reportCreateCFstackStatus -- err: " + err.Error())
-			sess.Error("@ reportCreateCFstackStatus -- tries left" + strconv.Itoa(tries))
+			internal.GetLogger().Error("@ reportCreateCFstackStatus -- err: " + err.Error())
+			internal.GetLogger().Error("@ reportCreateCFstackStatus -- tries left" + strconv.Itoa(tries))
 			time.Sleep(time.Second * 30)
 			continue
 		}
@@ -269,7 +270,7 @@ func reportCreateCFstackStatus(stackName string, cfg clusterCfg, sess *internal.
 		if stack.StackStatusReason != nil {
 			reportMsg = reportMsg + " because " + *stack.StackStatusReason
 		}
-		sess.Log(reportMsg)
+		internal.GetLogger().Debug(reportMsg)
 		time.Sleep(time.Second * 60)
 	}
 	return nil
@@ -320,7 +321,7 @@ func collectAndRenderYams_localAws(cfg clusterCfg) ([]string, error) {
 // 	//----------create SSM parameter
 // 	// paramMap, err := getSSMparamFromS3json(awss, cfg, "ssmParam.json")
 // 	// if err != nil {
-// 	// 	sess.Log("ERROR @ createSSMparamFromS3json: " + err.Error())
+// 	// 	internal.GetLogger().Debug("ERROR @ createSSMparamFromS3json: " + err.Error())
 // 	// 	return err
 // 	// }
 // 	paramMap := make(map[string]string)

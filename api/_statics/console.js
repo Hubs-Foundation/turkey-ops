@@ -54,11 +54,16 @@ function turkeyGcp_del(){ orcReq("DELETE", "/tco_gcp","cluster_cfg") }
 
 function orcReq(method, path, cfgBoxId) {
   cfg=document.getElementById(cfgBoxId).value
-  var xhttp = new XMLHttpRequest(); res=""
-  xhttp.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {res = this.responseText;}};
-  xhttp.open(method, path, true);
-  xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhttp.send(cfg);
+  divLogBoard=document.getElementById("divLogBoard");
+  var xhr = new XMLHttpRequest(); res=""
+  xhr.onreadystatechange = function() {if (this.readyState == 4 && this.status == 200) {
+    res = this.responseText;
+    divLogBoard.innerHTML+=res +"<br>";
+    divLogBoard.scrollTop = divLogBoard.scrollHeight;
+  }};
+  xhr.open(method, path, true);
+  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xhr.send(cfg);
 }
 
 //-------------------------
