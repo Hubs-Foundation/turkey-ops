@@ -44,7 +44,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sess.SseChan = make(chan string)
-	sess.Log("DEBUG (logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
+	sess.Log("DEBUG (/logStream) connected for sess: " + cookie.Value + " &#9193;" + r.RemoteAddr)
 	if len(sess.DeadLetters) > 0 {
 		sess.Log(fmt.Sprintf(" ###### poping %v messages in DeadLetterQueue ######", len(sess.DeadLetters)))
 		for i, m := range sess.DeadLetters {
