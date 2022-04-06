@@ -356,6 +356,9 @@ func GimmieTestJwtCookie() http.Handler {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
+
+		Logger.Debug("dumpHeader: " + dumpHeader(r))
+
 		rBodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			Logger.Error("bad body: " + string(rBodyBytes))
