@@ -358,6 +358,8 @@ func GimmieTestJwtCookie() http.Handler {
 		}
 
 		Logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Sugar().Debugf("r.RemoteAddr: %v", r.RemoteAddr)
+		Logger.Sugar().Debugf("r.RequestURI: %v", r.RequestURI)
 
 		rBodyBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
