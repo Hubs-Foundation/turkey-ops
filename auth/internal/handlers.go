@@ -2,6 +2,9 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"main/internal/idp"
 	"net/http"
 	"net/url"
 	"strings"
@@ -346,3 +349,34 @@ func ChkCookie() http.Handler {
 // 		}
 // 	})
 // }
+
+func GimmieTestJwtCookie() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/gimmie_test_jwt_cookie" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		rBodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			Logger.Error("bad body: " + string(rBodyBytes))
+			http.Error(w, "bad body: "+string(rBodyBytes), http.StatusBadRequest)
+			return
+		}
+		var user idp.User
+		err = json.Unmarshal(rBodyBytes, &user)
+		if err != nil {
+			Logger.Error("failed to unmarshal body to user: " + err.Error())
+			http.Error(w, "failed to unmarshal body to user: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		jwtCookie, err := MakeJwtCookie(r, user)
+		if err != nil {
+			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
+			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+			return
+		}
+
+		fmt.Fprintf(w, jwtCookie.Value)
+	})
+}

@@ -30,6 +30,8 @@ func main() {
 
 	router.Handle("/chk_cookie", internal.ChkCookie())
 
+	router.Handle("/gimmie_test_jwt_cookie", internal.GimmieTestJwtCookie())
+
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	//curl localhost:9001/zaplvl
 	//apk add curl; curl -X PUT -d 'level=debug' localhost:9001/zaplvl
