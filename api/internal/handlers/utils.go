@@ -272,7 +272,10 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: pvtKeyBytes})
 	pemString := string(pemBytes)
 	cfg.PERMS_KEY = strings.ReplaceAll(pemString, "\n", `\\n`)
-	cfg.CLOUD = "???"
+	if cfg.CLOUD == "" {
+		internal.Logger.Warn("cfg.CLOUD unspecified, falling back to (because it probably is): gcp")
+		cfg.CLOUD = "gcp"
+	}
 
 	if cfg.GCP_SA_KEY_b64 == "" {
 		cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
