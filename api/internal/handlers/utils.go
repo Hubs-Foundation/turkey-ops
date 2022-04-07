@@ -147,6 +147,9 @@ type clusterCfg struct {
 	GCP_SA_KEY_b64          string `json:"GCP_SA_KEY"`              // cat $(the gcp-iam-service-account-key-json file)
 	AWS_KEY                 string `json:"AWS_KEY"`                 //AKIAYEJRSWRAQSAM8888
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
+	GCP_SA_HMAC_KEY         string `json:"GCP_SA_HMAC_KEY"`         //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.GOOG1EGPHPZU7F3GUTJCVQWLTYCY747EUAVHHEHQBN4WXSMPXJU4488888888
+	GCP_SA_HMAC_SECRET      string `json:"GCP_SA_HMAC_SECRET"`      //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
+
 	// this will just be Region ...
 	AWS_REGION string `json:"AWS_REGION"` //us-east-1
 	ItaChan    string `json:"itachan"`    //ita's listening channel (dev, beta, stable), falls back to Env / swaping staging for beta
@@ -226,6 +229,14 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	if cfg.AWS_SECRET == "" {
 		internal.Logger.Warn("AWS_SECRET not supplied, falling back to local value")
 		cfg.AWS_SECRET = internal.Cfg.AwsSecret
+	}
+	if cfg.GCP_SA_HMAC_KEY == "" {
+		internal.Logger.Warn("GCP_SA_HMAC_KEY not supplied, falling back to local value")
+		cfg.GCP_SA_HMAC_KEY = internal.Cfg.GCP_SA_HMAC_KEY
+	}
+	if cfg.GCP_SA_HMAC_SECRET == "" {
+		internal.Logger.Warn("GCP_SA_HMAC_SECRET not supplied, falling back to local value")
+		cfg.GCP_SA_HMAC_SECRET = internal.Cfg.GCP_SA_HMAC_SECRET
 	}
 	if cfg.Env == "" {
 		cfg.Env = "dev"

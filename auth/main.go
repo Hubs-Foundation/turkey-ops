@@ -31,10 +31,11 @@ func main() {
 	router.Handle("/chk_cookie", internal.ChkCookie())
 
 	router.Handle("/gimmie_test_jwt_cookie", internalEndpoint()(internal.GimmieTestJwtCookie()))
+	//curl -d '{"email":"foo@bar.baz","uid":"1234"}' localhost:9001/gimmie_test_jwt_cookie
 
 	router.Handle("/zaplvl", internalEndpoint()(internal.Atom))
-	//curl localhost:9001/zaplvl
-	//apk add curl; curl -X PUT -d 'level=debug' localhost:9001/zaplvl
+	//get: curl localhost:9001/zaplvl
+	//set: curl -X PUT -d 'level=debug' localhost:9001/zaplvl
 
 	internal.StartServer(router, 9001)
 }

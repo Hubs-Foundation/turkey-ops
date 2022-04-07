@@ -23,14 +23,15 @@ type Config struct {
 	DBconn   string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
 	PermsKey string `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications"`
 
-	AwsKey    string `long:"aws-key" env:"AWS_KEY" description:"AWS_ACCESS_KEY_ID"`
-	AwsSecret string `long:"aws-secret" env:"AWS_SECRET" description:"AWS_SECRET_ACCESS_KEY"`
-	AwsRegion string `long:"aws-region" env:"AWS_REGION" description:"AWS_REGION"`
-
-	SmtpServer string
-	SmtpPort   string
-	SmtpUser   string
-	SmtpPass   string
+	AwsKey             string `long:"aws-key" env:"AWS_KEY" description:"AWS_ACCESS_KEY_ID"`
+	AwsSecret          string `long:"aws-secret" env:"AWS_SECRET" description:"AWS_SECRET_ACCESS_KEY"`
+	AwsRegion          string `long:"aws-region" env:"AWS_REGION" description:"AWS_REGION"`
+	GCP_SA_HMAC_KEY    string `description:"https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888"`
+	GCP_SA_HMAC_SECRET string `description:"https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888"`
+	SmtpServer         string
+	SmtpPort           string
+	SmtpUser           string
+	SmtpPass           string
 
 	DockerhubUser string
 	DockerhubPass string
@@ -71,6 +72,9 @@ func MakeCfg() {
 	Cfg.AwsKey = os.Getenv("AWS_KEY")
 	Cfg.AwsSecret = os.Getenv("AWS_SECRET")
 	Cfg.AwsRegion = os.Getenv("AWS_REGION")
+	Cfg.GCP_SA_HMAC_KEY = os.Getenv("GCP_SA_HMAC_KEY")
+	Cfg.GCP_SA_HMAC_SECRET = os.Getenv("GCP_SA_HMAC_SECRET")
+
 	Cfg.PermsKey = os.Getenv("PERMS_KEY")
 
 	Cfg.SmtpServer = os.Getenv("SMTP_SERVER")

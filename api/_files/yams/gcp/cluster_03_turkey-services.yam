@@ -33,6 +33,8 @@ stringData:
   SMTP_PASS: {{.SMTP_PASS}}
   PORTAL_DATABASE_URL: ecto://postgres:{{.DB_PASS}}@{{.DB_HOST}}/portal
   PORTAL_SECRET_KEY_BASE: {{.COOKIE_SECRET}}
+  GCP_SA_HMAC_KEY: {{.GCP_SA_HMAC_KEY}}
+  GCP_SA_HMAC_SECRET: {{.GCP_SA_HMAC_SECRET}}  
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
@@ -312,6 +314,16 @@ spec:
               key: GCP_SA_KEY
         - name: CLOUD
           value: {{.CLOUD}}
+        - name: GCP_SA_HMAC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_HMAC_KEY
+        - name: GCP_SA_HMAC_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_HMAC_SECRET          
         livenessProbe:
           httpGet:
             path: "http://turkeyapi.turkey-services/Healthz"
@@ -656,12 +668,24 @@ spec:
               name: configs
               key: AWS_REGION
         - name: scratchBucketId
-          value: turkey-speelycaptor-scratch
+          value: turkey-speelycaptor-scratch-does-not-matter-it-seems
+        - name: CLOUD
+          value: {{.CLOUD}}          
         - name: scratchBucketRegion
           valueFrom:
             secretKeyRef:
               name: configs
               key: AWS_REGION
+        - name: GCP_SA_HMAC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_HMAC_KEY
+        - name: GCP_SA_HMAC_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_HMAC_SECRET                
         resources:
           requests:
             memory: 50Mi

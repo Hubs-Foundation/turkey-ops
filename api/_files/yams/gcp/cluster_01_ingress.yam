@@ -18,6 +18,8 @@ metadata:
   name: haproxy-config
   namespace: ingress
 data:
+  backend-config-snippet: |
+    option forwardfor
   ssl-redirect: "true"
   syslog-server: 'address:stdout, format: raw, facility:daemon'
 ---
