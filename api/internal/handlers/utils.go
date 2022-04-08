@@ -249,7 +249,9 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 
 	//optional inputs
 	if cfg.DeploymentPrefix == "" {
-		cfg.DeploymentPrefix = "t-"
+		// cfg.DeploymentPrefix = "t-"
+		// internal.Logger.Warn("deploymentPrefix unspecified -- using (default)" + cfg.DeploymentPrefix)
+		cfg.DeploymentPrefix = strings.ReplaceAll(cfg.Domain, ".", "")
 		internal.Logger.Warn("deploymentPrefix unspecified -- using (default)" + cfg.DeploymentPrefix)
 	}
 	if cfg.DeploymentId == "" {

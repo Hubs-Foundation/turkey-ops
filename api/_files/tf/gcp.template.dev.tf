@@ -40,7 +40,7 @@ resource "google_compute_network" "vpc" {
 }
 resource "google_compute_subnetwork" "private" {
   provider = google-beta
-  name          = "{{.Stackname}}-private"
+  name          = "{{.Stackname}}-pvt"
   region        = "{{.Region}}"
   network       = google_compute_network.vpc.name
   ip_cidr_range = "10.0.0.0/16"
@@ -48,7 +48,7 @@ resource "google_compute_subnetwork" "private" {
 }
 resource "google_compute_subnetwork" "public" {
   provider = google-beta
-  name          = "{{.Stackname}}-public"
+  name          = "{{.Stackname}}-pub"
   region        = "{{.Region}}"
   network       = google_compute_network.vpc.name
   ip_cidr_range = "10.1.0.0/16"
@@ -77,29 +77,22 @@ resource "google_container_cluster" "gke" {
   initial_node_count       = 1
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
-  ip_allocation_policy {  
-    # cluster_ipv4_cidr_block = "10.200.0.0/14" #for pods
-    # services_ipv4_cidr_block = "10.250.0.0/16"    
-  }  # let gcp pick to avoid "cidr range not available" errors
+  ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
   cluster_autoscaling {
     enabled = true
     resource_limits{
       resource_type = "memory"
-      minimum = 24
-      maximum = 156
+      minimum = 16
+      maximum = 64
     }
     resource_limits{
       resource_type = "cpu"
       minimum = 4
-      maximum = 24
+      maximum = 16
     }
   }
-  # addons_config{
-  #   http_load_balancing{
-  #     disabled = true
-  #   }
-  # }
 }
+
 resource "google_container_node_pool" "gke_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-node-pool"
@@ -128,7 +121,7 @@ resource "google_container_node_pool" "gke_nodes" {
 ################## pgsql
 resource "google_compute_global_address" "private_ip_address" {
   provider = google-beta
-  name          = "{{.Stackname}}-pvt-ip"
+  name          = "{{.Stackname}}"
   purpose       = "VPC_PEERING"
   address_type  = "INTERNAL"
   prefix_length = 16

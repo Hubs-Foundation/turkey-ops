@@ -117,7 +117,7 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 			"noreply@"+internal.Cfg.Domain,
 			[]string{authnUser, "gtan@mozilla.com"},
 			[]byte("To: "+authnUser+"\r\n"+
-				"Subject: turkey_gcp just deployed <"+cfg.Stackname+"> \r\n"+
+				"Subject: turkey_gcp just deployed <"+cfg.Stackname+"> for <"+cfg.Domain+"> \r\n"+
 				"\r\n******required ("+dnsMsg+")******"+
 				"\r\n- dns record required: *."+cfg.Domain+" : "+report["lb"]+
 				"\r\n******for https://dash."+cfg.Domain+"******"+
@@ -137,6 +137,7 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 	}()
 
+	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"stackName":    cfg.Stackname,
 		"statusUpdate": "GET@/tco_gcp_status",
