@@ -259,7 +259,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		internal.Logger.Info("deploymentId: " + cfg.DeploymentId)
 	}
 	if cfg.Stackname == "" {
-		cfg.Stackname = cfg.DeploymentPrefix + "-" + cfg.DeploymentId
+		cfg.Stackname = cfg.DeploymentPrefix + cfg.DeploymentId
 	}
 
 	//generate the rest
