@@ -1,10 +1,12 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: hc-{{.Subdomain}}
+  name: hc-{{.HubId}}
   labels:
-    TurkeyId: {{.TurkeyId}}
+    Subdomain: {{.Subdomain}}
     Tier: {{.Tier}}
+    CcuLimit: "{{.CcuLimit}}"
+    StorageLimit: "{{.StorageLimit}}"
 ---
 ########################################################################
 ###################### configs #########################################
@@ -13,7 +15,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: configs
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 stringData:
   NODE_COOKIE: foobar
   SUB_DOMAIN: {{.Subdomain}}
@@ -33,6 +35,8 @@ stringData:
   ADM_EMAIL: {{.UserEmail}}
   PGRST_DB_URI: postgres://postgres:{{.DBpass}}@pgbouncer.turkey-services/{{.DBname}}
   PGRST_JWT_SECRET: "{{.JWK}}"
+data:
+  GCP_SA_KEY: {{.GCP_SA_KEY_b64}}   
 ---
 ######################################################################################
 ###################################### ingress #######################################
@@ -41,7 +45,7 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: turkey-https
-  namespace: hc-{{.Subdomain}}
+  namespace: hc-{{.HubId}}
 spec:
   entryPoints:
     - https

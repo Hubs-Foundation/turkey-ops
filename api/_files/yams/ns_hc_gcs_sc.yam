@@ -274,8 +274,8 @@ spec:
             secretKeyRef:
               name: configs
               key: ADM_EMAIL
-        - name: turkeyCfg_ITA_HOST
-          value: http://ita.turkey-services
+        # - name: turkeyCfg_ITA_HOST
+        #   value: http://ita
         - name: turkeyCfg_IMG_PROXY
           value: http://nearspark.hc-{{.HubId}}
         - name: turkeyCfg_HEADER_AUTHZ
@@ -285,9 +285,9 @@ spec:
         # - name: turkeyCfg_YTDL_HOST
         #   value: "http://ytdl.turkey-services"
         - name: turkeyCfg_PHOTOMNEMONIC
-          value: "http://photomnemonic.turkey-services:5000"  
+          value: "http://photomnemonic:5000"  
         - name: turkeyCfg_SPEELYCAPTOR
-          value: "http://speelycaptor.turkey-services:5000"
+          value: "http://speelycaptor:5000"
         - name: turkeyCfg_STORAGE_QUOTA_GB
           value: "{{.StorageLimit}}"
         livenessProbe:
@@ -694,3 +694,111 @@ subjects:
 - kind: ServiceAccount
   name: ita-sa
   namespace: hc-{{.HubId}}            
+---
+########################################################################
+######################   speelycaptor   ###############################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speelycaptor
+  namespace: hc-{{.HubId}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: speelycaptor
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: speelycaptor
+    spec:
+      containers:
+      - image: mozillareality/speelycaptor:stable-latest
+        imagePullPolicy: Always
+        name: speelycaptor
+        env:
+        - name: scratchBucketId
+          value: turkey-speelycaptor-scratch-does-not-matter-it-seems
+        - name: CLOUD
+          value: {{.CLOUD}}          
+        - name: scratchBucketRegion
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_REGION
+        - name: GCP_SA_HMAC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_HMAC_KEY
+        - name: GCP_SA_HMAC_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_HMAC_SECRET                
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 0.05
+          limits:
+            memory: 500Mi
+            cpu: 0.5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: speelycaptor
+  namespace: hc-{{.HubId}}
+spec:
+  ports:
+  - name: speelycaptor
+    port: 5000
+    targetPort: 5000
+  selector:
+    app: speelycaptor
+---
+########################################################################
+######################   photomnemonic   ###############################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photomnemonic
+  namespace: hc-{{.HubId}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: photomnemonic
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: photomnemonic
+    spec:
+      containers:
+      - image: mozillareality/photomnemonic:stable-latest
+        imagePullPolicy: Always
+        name: photomnemonic
+        resources:
+          requests:
+            memory: 50Mi
+            cpu: 0.05
+          limits:
+            memory: 500Mi
+            cpu: 0.5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: photomnemonic
+  namespace: hc-{{.HubId}}
+spec:
+  ports:
+  - name: photomnemonic
+    port: 5000
+    targetPort: 5000
+  selector:
+    app: photomnemonic
