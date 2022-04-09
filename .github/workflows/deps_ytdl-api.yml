@@ -16,6 +16,9 @@ jobs:
       - uses: actions/checkout@v2
       - name: docker build + push
         run: |
+          curl -sSL https://sdk.cloud.google.com | bash      
+          /home/runner/google-cloud-sdk/bin/gcloud --version
+          
           ytdlVer=$(curl https://pypi.org/pypi/youtube_dl/json | jq -r '.info.version')
           cd ./deps/ytdl/api_flask
           tag="$registryName/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer"
@@ -24,8 +27,7 @@ jobs:
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
           sudo docker push $tag
 
-          echo "[info] pushing to gcr"
-          curl -sSL https://sdk.cloud.google.com | bash          
+          echo "[info] pushing to gcr"              
           gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer"
           echo ${{ secrets.GCP_HUBS_DEV_SA_JSON }} > gcpsakey
           GOOGLE_APPLICATION_CREDENTIALS="gcpsakey" /home/runner/google-cloud-sdk/bin/gcloud auth configure-docker
