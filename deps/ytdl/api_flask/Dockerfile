@@ -1,6 +1,6 @@
 FROM python:alpine
 
-RUN pip3 install youtube-dl flask gunicorn
+RUN pip3 install youtube-dl flask gunicorn requests
 COPY main.py .
 #WORKDIR /app
 
