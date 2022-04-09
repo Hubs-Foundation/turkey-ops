@@ -23,5 +23,10 @@ jobs:
           docker build . -t $tag
           echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
           sudo docker push $tag
-          
 
+          echo "[info] pushing to gcr"
+          gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer"
+          echo ${{ secrets.GCP_HUBS_DEV_SA_JSON }} > gcpsakey && export GOOGLE_APPLICATION_CREDENTIALS="gcpsakey"
+          gcloud auth configure-docker
+          docker tag $tag $gcrtag && docker push $gcrtag
+        
