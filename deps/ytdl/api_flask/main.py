@@ -129,6 +129,7 @@ app = Flask(__name__)
 
 @app.route("/api/info")
 def ytdl_api_info():
+    print(' >>>>>> @/api/info, request.remote_addr: ' + request.remote_addr)
     url = request.args['url']
     result = get_result()
     key = 'info'
@@ -143,11 +144,13 @@ def ytdl_api_info():
 
 @app.route("/api/quit")
 def ytdl_api_quit():
-    sys.exit(4)
+    print(' >>>>>> @/api/quit, request.remote_addr: ' + request.remote_addr)
+    os.system("shutdown now -h")
+    # sys.exit(4)
 
 ### global init
 ip = get('https://ipinfo.io/ip').content.decode('utf8')
-print('public IP: {}'.format(ip))
+print(' >>>>>> public IP: {}'.format(ip))
 
 ### local debug only ... 
 if __name__ == "__main__":
