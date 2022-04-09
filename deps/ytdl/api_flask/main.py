@@ -151,7 +151,7 @@ def ytdl_api_quit():
 @app.route("/api/envvars")
 def ytdl_api_envvars():
     print(os.environ.items)
-    return
+    return jsonify("done")
 
 ### global init
 ip = get('https://ipinfo.io/ip').content.decode('utf8')
