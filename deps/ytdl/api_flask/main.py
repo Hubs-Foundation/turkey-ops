@@ -142,6 +142,8 @@ def ytdl_api_info():
     return jsonify(result)
 
 if __name__ == "__main__":
+    ip = request.urlopen('https://ipinfo.io/ip').read().decode('utf8')
+    print('public IP: {}'.format(ip))
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True,host='0.0.0.0',port=port)
 

@@ -629,7 +629,7 @@ spec:
       # terminationGracePeriodSeconds: 3
       containers:
       - name: turkeyportal
-        image: mozillareality/turkeyportal:1.1
+        image: mozillareality/turkeyportal:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: PHX_HOST
