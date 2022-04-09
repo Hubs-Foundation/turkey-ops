@@ -26,7 +26,7 @@ jobs:
 
           echo "[info] pushing to gcr"
           curl -sSL https://sdk.cloud.google.com | bash
-          export PATH="/usr/lib/google-cloud-sdk/bin:$PATH" && source ~/.bash_profile
+          source /home/runner/google-cloud-sdk/path.bash.inc
           gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer"
           echo ${{ secrets.GCP_HUBS_DEV_SA_JSON }} > gcpsakey
           export GOOGLE_APPLICATION_CREDENTIALS="gcpsakey"
