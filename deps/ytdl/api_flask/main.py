@@ -1,4 +1,4 @@
-import sys, json, os, socket
+import sys, json, os, socket, errno
 import youtube_dl
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
@@ -145,17 +145,16 @@ def ytdl_api_info():
 @app.route("/api/quit")
 def ytdl_api_quit():
     print(' >>>>>> @/api/quit, request.remote_addr: ' + request.remote_addr)
-    os.system("shutdown now -h")
-    # sys.exit(4)
+    sys.exit(errno.EINTR)
 
 @app.route("/aidiheaipi")
 def ytdl_api_envvars():
-    return jsonify(id + "@" + ip)
+    return jsonify(id + " @ " + ip)
 
 ### global init
 ip = get('https://ipinfo.io/ip').content.decode('utf8')
 id = get('http://metadata.google.internal/computeMetadata/v1/instance/id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-print (' >>>>>> publicIP:' + id + "@" + ip + ' <<<<<<')
+print (' >>>>>> publicIP:' + id + " @ " + ip + ' <<<<<<')
 
 ### local debug only ... 
 if __name__ == "__main__":
