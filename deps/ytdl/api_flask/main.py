@@ -1,4 +1,4 @@
-import sys, json, os
+import sys, json, os, errno
 import youtube_dl
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
@@ -145,8 +145,9 @@ def ytdl_api_info():
 @app.route("/api/quit")
 def ytdl_api_quit():
     print(' >>>>>> @/api/quit, request.remote_addr: ' + request.remote_addr)
-    os.system("shutdown now -h")
+    # os.system("shutdown now -h")
     # sys.exit(4)
+    sys.exit(errno.EINTR)
 
 ### global init
 ip = get('https://ipinfo.io/ip').content.decode('utf8')
