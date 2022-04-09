@@ -1,4 +1,4 @@
-import sys, json, os, errno
+import sys, json, os, errno, socket
 import youtube_dl
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
@@ -129,7 +129,7 @@ app = Flask(__name__)
 
 @app.route("/api/info")
 def ytdl_api_info():
-    print(' >>>>>> @/api/info, request.remote_addr: ' + request.remote_addr)
+    print(' ------ @/api/info, request.remote_addr: ' + request.remote_addr)
     url = request.args['url']
     result = get_result()
     key = 'info'
@@ -144,16 +144,21 @@ def ytdl_api_info():
 
 @app.route("/api/quit")
 def ytdl_api_quit():
-    print(' >>>>>> @/api/quit, request.remote_addr: ' + request.remote_addr)
+    print(' ------ @/api/quit, request.remote_addr: ' + request.remote_addr)
     # os.system("shutdown now -h")
     # sys.exit(4)
     sys.exit(errno.EINTR)
 
+@app.route("/api/envvars")
+def ytdl_api_quit():
+    print(os.environ.items)
+    return
+
 ### global init
 ip = get('https://ipinfo.io/ip').content.decode('utf8')
-print(' >>>>>> public IP: {}'.format(ip))
+print (' >>>>>> host:', socket.gethostname(), ', public IP:', ip, ' <<<<<<')
 
-### local debug only ... 
+### local debug only ... not used with gunicorn
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True,host='0.0.0.0',port=port)
