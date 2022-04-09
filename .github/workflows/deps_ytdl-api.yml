@@ -26,8 +26,8 @@ jobs:
 
           echo "[info] pushing to gcr"   
           echo "${{ secrets.GCP_HUBS_DEV_SA_JSON }}" > gcpsakey && ls -lha gcpsakey          
-          export GOOGLE_APPLICATION_CREDENTIALS="gcpsakey" && sudo /usr/lib/google-cloud-sdk/bin/gcloud auth configure-docker -q gcr.io
-          gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer"
-          echo "gcrtag: $gcrtag"
+          export GOOGLE_APPLICATION_CREDENTIALS="gcpsakey" 
+          sudo /usr/lib/google-cloud-sdk/bin/gcloud auth configure-docker -q gcr.io && sudo ls -lha /root/.docker/
+          gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer" && echo "[info] gcrtag: $gcrtag"
           sudo docker tag $tag $gcrtag && docker push $gcrtag
         
