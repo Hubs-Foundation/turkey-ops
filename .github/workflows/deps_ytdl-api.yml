@@ -3,7 +3,7 @@ on:
   push:
     branches: [ master, dev ]
     paths:
-    - 'deps/ytdl/flask/*'
+    - 'deps/ytdl/api_flask/*'
     - '.github/workflows/deps_ytdl-api.yml'
   workflow_dispatch:
 env:
