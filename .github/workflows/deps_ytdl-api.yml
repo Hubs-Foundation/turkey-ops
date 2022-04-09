@@ -25,7 +25,7 @@ jobs:
           sudo docker push $tag
 
           echo "[info] pushing to gcr"   
-          echo "${{ secrets.GCP_HUBS_DEV_SA_JSON_b64 }}" | base64 -d > gcpsakey.json && cat gcpsakey.json
+          echo "${{ secrets.GCP_HUBS_DEV_SA_JSON_b64 }}" | base64 -d > gcpsakey.json
           gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer" && echo "[info] gcrtag: $gcrtag"          
           sudo gcloud auth activate-service-account hubs-dev-sa@hubs-dev-333333.iam.gserviceaccount.com --key-file=gcpsakey.json
           sudo gcloud auth configure-docker -q gcr.io
