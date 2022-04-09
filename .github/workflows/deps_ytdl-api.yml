@@ -20,7 +20,7 @@ jobs:
         run: |
           curl -sSL https://sdk.cloud.google.com | bash      
           /home/runner/google-cloud-sdk/bin/gcloud --version
-          echo ${{ secrets.GCP_HUBS_DEV_SA_JSON }} > gcpsakey && ls -lha gcpsakey
+          echo "${{ secrets.GCP_HUBS_DEV_SA_JSON }}" > gcpsakey && ls -lha gcpsakey
           
           ytdlVer=$(curl https://pypi.org/pypi/youtube_dl/json | jq -r '.info.version')
           cd ./deps/ytdl/api_flask
