@@ -15,11 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: docker build + push
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: gcpsakey
         run: |
           curl -sSL https://sdk.cloud.google.com | bash      
           /home/runner/google-cloud-sdk/bin/gcloud --version
-          echo ${{ secrets.GCP_HUBS_DEV_SA_JSON }} > gcpsakey
-          export GOOGLE_APPLICATION_CREDENTIALS=gcpsakey          
+          echo ${{ secrets.GCP_HUBS_DEV_SA_JSON }} > gcpsakey && ls -lha gcpsakey
           
           ytdlVer=$(curl https://pypi.org/pypi/youtube_dl/json | jq -r '.info.version')
           cd ./deps/ytdl/api_flask
