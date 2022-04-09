@@ -155,7 +155,8 @@ def ytdl_api_envvars():
 
 ### global init
 ip = get('https://ipinfo.io/ip').content.decode('utf8')
-print (' >>>>>> host:'+ socket.gethostname()+ ', public IP:'+ ip, ' <<<<<<')
+id = get('http://metadata.google.internal/computeMetadata/v1/instance/id').content.decode('utf8')
+print (' >>>>>> host:'+ socket.gethostname()+ ', publicIP:'+ ip + ', id: '+ id +' <<<<<<')
 
 ### local debug only ... 
 if __name__ == "__main__":
