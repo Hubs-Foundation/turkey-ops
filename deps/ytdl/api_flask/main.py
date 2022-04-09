@@ -153,9 +153,9 @@ def ytdl_api_envvars():
     return jsonify(id + "@" + ip)
 
 ### global init
-ip = get('https://ipinfo.io/ip', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-id = get('http://metadata.google.internal/computeMetadata/v1/instance/id').content.decode('utf8')
-print (' >>>>>> publicIP:'+ ip + ', id: '+ id +' <<<<<<')
+ip = get('https://ipinfo.io/ip').content.decode('utf8')
+id = get('http://metadata.google.internal/computeMetadata/v1/instance/id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+print (' >>>>>> publicIP:' + id + "@" + ip + ' <<<<<<')
 
 ### local debug only ... 
 if __name__ == "__main__":
