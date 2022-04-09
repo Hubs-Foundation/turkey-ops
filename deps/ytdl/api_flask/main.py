@@ -148,6 +148,11 @@ def ytdl_api_quit():
     os.system("shutdown now -h")
     # sys.exit(4)
 
+@app.route("/api/envvars")
+def ytdl_api_quit():
+    print(os.environ.items)
+    return
+
 ### global init
 ip = get('https://ipinfo.io/ip').content.decode('utf8')
 print (' >>>>>> host:'+ socket.gethostname()+ ', public IP:'+ ip, ' <<<<<<')
