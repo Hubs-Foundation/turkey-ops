@@ -148,15 +148,14 @@ def ytdl_api_quit():
     os.system("shutdown now -h")
     # sys.exit(4)
 
-@app.route("/api/envvars")
+@app.route("/aidiheaipi")
 def ytdl_api_envvars():
-    print(os.environ.items)
-    return jsonify("done")
+    return jsonify(id + "@" + ip)
 
 ### global init
-ip = get('https://ipinfo.io/ip').content.decode('utf8')
+ip = get('https://ipinfo.io/ip', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
 id = get('http://metadata.google.internal/computeMetadata/v1/instance/id').content.decode('utf8')
-print (' >>>>>> host:'+ socket.gethostname()+ ', publicIP:'+ ip + ', id: '+ id +' <<<<<<')
+print (' >>>>>> publicIP:'+ ip + ', id: '+ id +' <<<<<<')
 
 ### local debug only ... 
 if __name__ == "__main__":
