@@ -2,6 +2,7 @@ import sys, json, os
 import youtube_dl
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
+from requests import get
 
 def lambda_handler(event, context):
     # event['url']="http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"
@@ -141,7 +142,7 @@ def ytdl_api_info():
     return jsonify(result)
 
 ### global init
-ip = request.urlopen('https://ipinfo.io/ip').read().decode('utf8')
+ip = get('https://ipinfo.io/ip').content.decode('utf8')
 print('public IP: {}'.format(ip))
 
 ### local debug only ... 
