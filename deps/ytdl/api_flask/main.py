@@ -149,7 +149,7 @@ def ytdl_api_quit():
     # sys.exit(4)
 
 @app.route("/api/envvars")
-def ytdl_api_quit():
+def ytdl_api_envvars():
     print(os.environ.items)
     return
 
