@@ -25,7 +25,7 @@ jobs:
           sudo docker push $tag
 
           echo "[info] pushing to gcr"
-          curl -sSL https://sdk.cloud.google.com | bash && source /root/google-cloud-sdk/path.bash.inc
+          curl -sSL https://sdk.cloud.google.com | bash && source /home/runner/google-cloud-sdk/path.bash.inc
           gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer"
           echo ${{ secrets.GCP_HUBS_DEV_SA_JSON }} > gcpsakey
           export GOOGLE_APPLICATION_CREDENTIALS="gcpsakey"
