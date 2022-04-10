@@ -151,8 +151,8 @@ def ytdl_api_quit():
 def ytdl_api_envvars():
     print(json.dumps(dict(
         severity="Info",
-        message="1",
-        ip=ip,        
+        message=">>>1<<<",
+        component=ip,        
     )))
     return jsonify(id + " @ " + ip)
 
