@@ -149,6 +149,11 @@ def ytdl_api_quit():
 
 @app.route("/aidiheaipi")
 def ytdl_api_envvars():
+    print(json.dumps(dict(
+        severity="Info",
+        message="1",
+        ip=ip,        
+    )))
     return jsonify(id + " @ " + ip)
 
 ### global init
