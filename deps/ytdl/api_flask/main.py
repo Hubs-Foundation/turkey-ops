@@ -142,24 +142,24 @@ def ytdl_api_info():
     }
     return jsonify(result)
 
-@app.route("/api/quit")
-def ytdl_api_quit():
-    print(' >>>>>> @/api/quit, request.remote_addr: ' + request.remote_addr)
-    sys.exit(errno.EINTR)
+# @app.route("/api/quit")
+# def ytdl_api_quit():
+#     print(' >>>>>> @/api/quit, request.remote_addr: ' + request.remote_addr)
+#     sys.exit(errno.EINTR)
 
 @app.route("/aidiheaipi")
 def ytdl_api_envvars():
-    print(json.dumps(dict(
-        severity="warning",
-        message=">>>1<<<",
-        component=ip,        
-    )))
-    return jsonify(id + " @ " + ip)
+    # print(json.dumps(dict(
+    #     severity="Info",
+    #     message=">>>1<<<",
+    #     component=ip,        
+    # )))
+    return (">>>>>> publicIP: @@@ "+ip + " @@@ >>>>>> id: " + id)
 
 ### global init
 ip = get('https://ipinfo.io/ip').content.decode('utf8')
 id = get('http://metadata.google.internal/computeMetadata/v1/instance/id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-print (' >>>>>> publicIP:' + id + " @ " + ip + ' <<<<<<')
+print (">>>>>> publicIP: @@@ "+ip + " @@@ >>>>>> id: " + id)
 
 ### local debug only ... 
 if __name__ == "__main__":
