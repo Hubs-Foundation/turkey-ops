@@ -129,7 +129,6 @@ app = Flask(__name__)
 
 @app.route("/api/info")
 def ytdl_api_info():
-    print(' >>>>>> @/api/info, request.remote_addr: ' + request.remote_addr)
     url = request.args['url']
     result = get_result()
     key = 'info'
@@ -147,13 +146,8 @@ def ytdl_api_info():
 #     print(' >>>>>> @/api/quit, request.remote_addr: ' + request.remote_addr)
 #     sys.exit(errno.EINTR)
 
-@app.route("/aidiheaipi")
+@app.route("/info")
 def ytdl_api_envvars():
-    # print(json.dumps(dict(
-    #     severity="Info",
-    #     message=">>>1<<<",
-    #     component=ip,        
-    # )))
     return (">>>>>> publicIP: @@@ "+ip + " @@@ >>>>>> id: " + id)
 
 ### global init
