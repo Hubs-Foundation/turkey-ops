@@ -150,7 +150,7 @@ def ytdl_api_quit():
 @app.route("/aidiheaipi")
 def ytdl_api_envvars():
     print(json.dumps(dict(
-        severity="Info",
+        severity="warning",
         message=">>>1<<<",
         component=ip,        
     )))
