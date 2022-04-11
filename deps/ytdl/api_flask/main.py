@@ -171,7 +171,8 @@ def ytdl_api_stats():
     top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
     report={
         "_rkey": rkey,
-        "_top": str(top_stat[0])
+        "_top_ip": str(top_stat[0][0]),
+        "_top_cnt": str(top_stat[0][1])
     }
     stats=redis_client.zrangebyscore(rkey, 0, 9999, withscores=True)
     for ip, cnt in stats:
