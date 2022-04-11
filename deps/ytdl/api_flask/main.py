@@ -163,8 +163,8 @@ def ytdl_api_info():
     return jsonify(result)
 
 @app.route("/api/stats")
-def ytdl_api_stats():    
-    return print(redis_client.zrange("ytdl", 0, -1))
+def ytdl_api_stats():
+    return ''.join(redis_client.zrange("ytdl", 0, -1)).decode('utf-8')
 
 @app.route("/api/rr")
 def ytdl_api_rr():
