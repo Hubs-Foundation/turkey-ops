@@ -198,8 +198,8 @@ def ytdl_api_stats():
         report[str(cnt)]=str(ip)
     return jsonify(        report        )
 
-@app.route("/api/rr_test")
-def ytdl_api_rr():
+@app.route("/api/rrtest")
+def ytdl_api_rrtest():
     return cloudrun_rollout_restart()
 
 ### global init
