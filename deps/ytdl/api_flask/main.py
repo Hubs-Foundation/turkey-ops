@@ -169,7 +169,7 @@ def ytdl_api_stats():
     stats=redis_client.zrangebyscore(rkey, 0, -1, withscores=True)
     report={}
     for ip, cnt in stats:
-        report[ip]=cnt
+        report[str(ip)]=str(cnt)
     return jsonify(report)
 
 @app.route("/api/rr")
