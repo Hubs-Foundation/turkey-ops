@@ -245,9 +245,12 @@ func clearCSRFcookies(w http.ResponseWriter, r *http.Request) {
 
 func AuthnProxy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		Logger.Sugar().Debugf("request dump: %v", r)
+
 		backend, ok := r.Header["Backend"]
 		if !ok || len(backend) != 1 {
-			Logger.Sugar().Errorf("bad r.Headers[backend]")
+			Logger.Sugar().Debugf("bad r.Headers[backend]")
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
@@ -258,7 +261,6 @@ func AuthnProxy() http.Handler {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		Logger.Sugar().Debugf("request dump: %v", r)
 
 		if r.URL.Path == "/" { //no direct calls, i can't tell host but i can tell path
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)

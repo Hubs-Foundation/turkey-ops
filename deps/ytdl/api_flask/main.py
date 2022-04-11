@@ -1,8 +1,8 @@
-import sys, json, os, socket, errno
-import youtube_dl
+import youtube_dl, sys, json, os, socket, requests, redis
+import google.auth
+import google.auth.transport.requests
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
-from requests import get
 
 def lambda_handler(event, context):
     # event['url']="http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"
@@ -123,6 +123,27 @@ def flatten_result(result):
             videos.extend(flatten_result(r))
     return videos
 
+def rollout_restart():
+    prj_id=os.environ.get('PROJECT_ID', '')
+    if prj_id=="":
+        prj_id=requests.get(' http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+    svc_name=os.environ.get('SERVICE_NAME', '')
+    if svc_name=="":
+        raise ValueError('env var SERVICE_NAME is required to create new revision')
+
+    creds, project = google.auth.default( scopes=['googleapis.com/auth/cloud-platform'])
+    auth_req = google.auth.transport.requests.Request()
+    creds.refresh(auth_req)
+    res = requests.put(
+        "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/"+prj_id+"/services/"+svc_name, 
+        headers={
+            "Content-type":"application/json",
+            "Authorization":"Bearer "+creds.token
+            }
+        )
+
+    return res
+
 #########################################################################
 
 app = Flask(__name__)
@@ -139,27 +160,46 @@ def ytdl_api_info():
         'url': url,
         key: result,
     }
+    redis_client.incr(inst_ip, 1)
+    redis_client.zadd("ytdl", inst_ip, incr=1)
     return jsonify(result)
 
-# @app.route("/api/quit")
-# def ytdl_api_quit():
-#     print(' >>>>>> @/api/quit, request.remote_addr: ' + request.remote_addr)
-#     sys.exit(errno.EINTR)
+@app.route("/api/stats_inst")
+def ytdl_api_stats_inst():
+    count = redis_client.get(inst_ip).decode("utf-8") 
 
-@app.route("/info")
-def ytdl_api_envvars():
-    return (">>>>>> publicIP: @@@ "+ip + " @@@ >>>>>> id: " + id)
+    return jsonify(
+        instance_ip=inst_ip, 
+        ytdl_count=count, 
+        instance_id=inst_id
+        )
+
+@app.route("/api/stats_global")
+def ytdl_api_stats_global():
+    return redis_client.zrange("ytdl", 0, -1)
+
+@app.route("/api/rr")
+def ytdl_api_rr():
+    return rollout_restart()
 
 ### global init
-ip = get('https://ipinfo.io/ip').content.decode('utf8')
-id = get('http://metadata.google.internal/computeMetadata/v1/instance/id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-print (">>>>>> publicIP: @@@ "+ip + " @@@ >>>>>> id: " + id)
+inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
+try:
+    inst_id = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+except:
+    inst_id = "n/a"
+print (">>>>>> publicIP: @@@ "+inst_ip + " @@@ >>>>>> id: " + inst_id)
+
+redis_host = os.environ.get('REDISHOST', '10.208.38.179')
+redis_port = int(os.environ.get('REDISPORT', 6379))
+redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
+
 
 ### local debug only ... 
 if __name__ == "__main__":
     # print(os.environ.items)
     print("hostname: "+socket.gethostname())
-    # port = int(os.environ.get("PORT", 5000))
-    # app.run(debug=True,host='0.0.0.0',port=port)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True,host='0.0.0.0',port=port)
 
 
