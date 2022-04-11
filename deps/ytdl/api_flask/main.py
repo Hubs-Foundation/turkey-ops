@@ -166,7 +166,9 @@ def ytdl_api_info():
 
 @app.route("/api/stats")
 def ytdl_api_stats():
-    return ''.join(redis_client.zrange(rkey, 0, -1)).decode('utf-8')
+
+
+    return b''.join(redis_client.zrange(rkey, 0, -1)).decode('utf-8')
 
 @app.route("/api/rr")
 def ytdl_api_rr():
@@ -187,10 +189,11 @@ date = datetime.today().strftime("%Y%m%d")
 rkey = "ytdl:"+date
 redis_client.expire(rkey, 604800)   # a week
 
+print("hostname: "+socket.gethostname() + ", rkey: "+rkey)
+
 ### local debug only ... 
 if __name__ == "__main__":
     # print(os.environ.items)
-    print("hostname: "+socket.gethostname() + ", rkey: "+rkey)
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True,host='0.0.0.0',port=port)
 
