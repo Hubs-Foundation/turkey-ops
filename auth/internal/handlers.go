@@ -245,8 +245,20 @@ func clearCSRFcookies(w http.ResponseWriter, r *http.Request) {
 
 func AuthnProxy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		Logger.Sugar().Debugf("r.Header, %v", r.Header)
-		Logger.Sugar().Debugf("r.URL: %v, r.Host: %v, r.URL.Path: %v", r.URL, r.Host, r.URL.Path)
+		backend, ok := r.Header["Backend"]
+		if !ok || len(backend) != 1 {
+			Logger.Sugar().Errorf("bad r.Headers[backend]")
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		urlStr := backend[0]
+		backendUrl, err := url.Parse(urlStr)
+		if err != nil {
+			Logger.Sugar().Errorf("bad r.Headers[backend], (%v) because %v", urlStr, err.Error())
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		Logger.Sugar().Debugf("request dump: %v", r)
 
 		if r.URL.Path == "/" { //no direct calls, i can't tell host but i can tell path
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -257,13 +269,7 @@ func AuthnProxy() http.Handler {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		urlStr := r.Header.Get("backend")
-		backendUrl, err := url.Parse(urlStr)
-		if err != nil {
-			Logger.Sugar().Errorf("bad r.Headers[backend], (%v) because %v", urlStr, err.Error())
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
+
 		Logger.Sugar().Debugf("backend url: %v", backendUrl)
 
 		email, err := CheckCookie(r)
