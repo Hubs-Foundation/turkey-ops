@@ -167,7 +167,10 @@ def ytdl_api_info():
 @app.route("/api/stats")
 def ytdl_api_stats():
     stats=redis_client.zrangebyscore(rkey, 0, 99, withscores=True)
-    report={}
+    report={
+        "rkey": rkey,
+
+    }
     for ip, cnt in stats:
         report[str(ip)]=str(cnt)
     return jsonify(        report        )
@@ -189,7 +192,7 @@ redis_port = int(os.environ.get('REDISPORT', 6379))
 redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
 date = datetime.today().strftime("%Y%m%d")
 rkey = "ytdl:"+date
-# redis_client.expire(rkey, 604800)   # a week
+redis_client.expire(rkey, 604800)   # a week
 
 print("hostname: "+socket.gethostname() + ", rkey: "+rkey)
 
