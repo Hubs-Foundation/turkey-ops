@@ -2,6 +2,7 @@ import youtube_dl, sys, json, os, socket, requests, redis
 import google.auth, google.auth.transport.requests
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
+from datetime import datetime
 
 def lambda_handler(event, context):
     # event['url']="http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"
@@ -159,12 +160,13 @@ def ytdl_api_info():
         'url': url,
         key: result,
     }
-    redis_client.zincrby("ytdl", 1, inst_ip)
+    redis_client.zincrby(rkey, 1, inst_ip)
+    
     return jsonify(result)
 
 @app.route("/api/stats")
 def ytdl_api_stats():
-    return ''.join(redis_client.zrange("ytdl", 0, -1)).decode('utf-8')
+    return ''.join(redis_client.zrange(rkey, 0, -1)).decode('utf-8')
 
 @app.route("/api/rr")
 def ytdl_api_rr():
@@ -181,12 +183,14 @@ print (">>>>>> publicIP: @@@ "+inst_ip + " @@@ >>>>>> id: " + inst_id)
 redis_host = os.environ.get('REDISHOST', '10.208.38.179')
 redis_port = int(os.environ.get('REDISPORT', 6379))
 redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
-
+date = datetime.today().strftime("%Y%m%d")
+rkey = "ytdl:"+date
+redis_client.expire(rkey, 604800)   # a week
 
 ### local debug only ... 
 if __name__ == "__main__":
     # print(os.environ.items)
-    print("hostname: "+socket.gethostname())
+    print("hostname: "+socket.gethostname() + ", rkey: "+rkey)
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True,host='0.0.0.0',port=port)
 
