@@ -1,5 +1,6 @@
 import youtube_dl, sys, json, os, socket, requests, redis, logging
 import google.auth, google.auth.transport.requests
+# from google.oauth2 import service_account
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
 from datetime import datetime
@@ -124,14 +125,14 @@ def flatten_result(result):
     return videos
 
 def rollout_restart():
-    prj_id=os.environ.get('PROJECT_ID', '')
-    if prj_id=="":
-        prj_id=requests.get(' http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+    # prj_id=os.environ.get('PROJECT_ID', '')
+    # if prj_id=="":
+    #     prj_id=requests.get(' http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
     svc_name=os.environ.get('SERVICE_NAME', '')
     if svc_name=="":
         raise ValueError('env var SERVICE_NAME is required to create new revision')
 
-    creds, project = google.auth.default( scopes=['googleapis.com/auth/cloud-platform'])
+    creds, prj_id = google.auth.default( scopes=['googleapis.com/auth/cloud-platform'])
     auth_req = google.auth.transport.requests.Request()
     creds.refresh(auth_req)
     res = requests.put(
