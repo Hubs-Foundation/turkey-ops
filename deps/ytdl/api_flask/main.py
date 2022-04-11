@@ -168,7 +168,7 @@ def ytdl_api_info():
 
 @app.route("/api/stats")
 def ytdl_api_stats():
-    top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True, score_cast_func={lambda x: int(x)})
+    top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True, score_cast_func=toInt)
     report={
         "_rkey": rkey,
         "_top": str(top_stat[0])
