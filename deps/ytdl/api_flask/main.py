@@ -166,9 +166,11 @@ def ytdl_api_info():
 
 @app.route("/api/stats")
 def ytdl_api_stats():
-
-
-    return b''.join(redis_client.zrange(rkey, 0, -1)).decode('utf-8')
+    stats=redis_client.zrangebyscore(rkey, 0, -1, withscores=True)
+    report="~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+    for ip, cnt in stats:
+        report+= "~ " + str(ip) + ": " + str(cnt) + " ~\n"
+    return report
 
 @app.route("/api/rr")
 def ytdl_api_rr():
