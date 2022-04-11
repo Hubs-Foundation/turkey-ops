@@ -146,8 +146,6 @@ def rollout_restart():
 
 def toInt(num):
     return int(num)
-def toStr(bytes):
-    return str(bytes)
 #########################################################################
 
 app = Flask(__name__)
@@ -170,10 +168,10 @@ def ytdl_api_info():
 
 @app.route("/api/stats")
 def ytdl_api_stats():
-    top_ip, top_ip_cnt =redis_client.zrevrange(rkey, 0,0, withscores=True, score_cast_func=toInt)
+    top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True, score_cast_func={lambda x: int(x)})
     report={
         "_rkey": rkey,
-        "_top": str(top_ip[0] + "@" + str(top_ip_cnt))
+        "_top": str(top_stat[0])
     }
     stats=redis_client.zrangebyscore(rkey, 0, 9999, withscores=True, score_cast_func=toInt)
     for ip, cnt in stats:
