@@ -1,4 +1,5 @@
-import youtube_dl, sys, json, os, socket, requests, redis, google.auth
+import youtube_dl, sys, json, os, socket, requests, redis
+import google.auth, google.auth.transport.requests
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
 
