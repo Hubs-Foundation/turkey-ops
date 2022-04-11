@@ -166,6 +166,28 @@ def ytdl_api_info():
 
 @app.route("/api/stats")
 def ytdl_api_stats():
+    ###
+    r1=redis_client.zrangebyscore(rkey, 0, -1)
+    print("r1",len(r1))
+    for b in r1:
+        print(str(b))
+    r2=redis_client.get(rkey)
+    print("r2.len:",len(r2))
+    for b in r2:
+        print(str(b))
+    r3=redis_client.zrange(rkey, 0, -1)
+    print("r3.len:",len(r3))
+    for b in r3:
+        print(str(b))    
+    r4=redis_client.zrangebyscore(rkey, 0, -1, withscores=True)
+    print("r4.len:",len(r4))
+    for b in r4:
+        print(str(b))           
+    r5=redis_client.zrangebyscore(rkey, 0, -1, withscores=True)
+    print("r5.len:",len(r5))
+    for b in r5:
+        print(str(b))    
+    ###
     stats=redis_client.zrangebyscore(rkey, 0, -1, withscores=True)
     report={}
     for ip, cnt in stats:
