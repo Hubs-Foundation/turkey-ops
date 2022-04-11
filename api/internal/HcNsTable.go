@@ -6,7 +6,9 @@ import (
 )
 
 //concurrent cached/map for hubs cloud namespace bookkeeping
-type HcNsTable struct{}
+type HcNsTable struct {
+	hcNsTable map[string]HcNsNotes
+}
 
 //singleton instance
 var HC_NS_TABLE = &HcNsTable{}
@@ -18,33 +20,31 @@ type HcNsNotes struct {
 	Labels      map[string]string
 }
 
-var hcNsTable = map[string]HcNsNotes{}
-
 func (t HcNsTable) Get(nsName string) HcNsNotes {
 	mu.Lock()
 	defer mu.Unlock()
 
-	return hcNsTable[nsName]
+	return t.hcNsTable[nsName]
 }
 
 func (t HcNsTable) Set(nsName string, value HcNsNotes) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	hcNsTable[nsName] = value
+	t.hcNsTable[nsName] = value
 }
 
 func (t HcNsTable) Del(nsName string) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	delete(hcNsTable, nsName)
+	delete(t.hcNsTable, nsName)
 }
 
 func (t HcNsTable) Has(nsName string) bool {
 	mu.Lock()
 	defer mu.Unlock()
 
-	_, has := hcNsTable[nsName]
+	_, has := t.hcNsTable[nsName]
 	return has
 }
