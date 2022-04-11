@@ -171,10 +171,6 @@ def ytdl_api_stats():
     print("r1",len(r1))
     for b in r1:
         print(str(b))
-    r2=redis_client.get(rkey)
-    print("r2.len:",len(r2))
-    for b in r2:
-        print(str(b))
     r3=redis_client.zrange(rkey, 0, -1)
     print("r3.len:",len(r3))
     for b in r3:
