@@ -159,23 +159,12 @@ def ytdl_api_info():
         'url': url,
         key: result,
     }
-    redis_client.incr(inst_ip, 1)
-    redis_client.zadd("ytdl", inst_ip, incr=1)
+    redis_client.zincrby("ytdl", 1, inst_ip)
     return jsonify(result)
 
-@app.route("/api/stats_inst")
-def ytdl_api_stats_inst():
-    count = redis_client.get(inst_ip).decode("utf-8") 
-
-    return jsonify(
-        instance_ip=inst_ip, 
-        ytdl_count=count, 
-        instance_id=inst_id
-        )
-
-@app.route("/api/stats_global")
-def ytdl_api_stats_global():
-    return redis_client.zrange("ytdl", 0, -1)
+@app.route("/api/stats")
+def ytdl_api_stats():    
+    return print(redis_client.zrange("ytdl", 0, -1))
 
 @app.route("/api/rr")
 def ytdl_api_rr():
