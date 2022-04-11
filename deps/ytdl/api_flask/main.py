@@ -1,6 +1,7 @@
 import youtube_dl, sys, json, os, socket, requests, redis, logging
-import google.auth, google.auth.transport.requests
+# import google.auth, google.auth.transport.requests
 # from google.oauth2 import service_account
+from google.cloud import run_v2
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
 from datetime import datetime
@@ -124,24 +125,35 @@ def flatten_result(result):
             videos.extend(flatten_result(r))
     return videos
 
-def rollout_restart():
-    # prj_id=os.environ.get('PROJECT_ID', '')
-    # if prj_id=="":
-    #     prj_id=requests.get(' http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+def cloudrun_rollout_restart():
     svc_name=os.environ.get('SERVICE_NAME', '')
     if svc_name=="":
         raise ValueError('env var SERVICE_NAME is required to create new revision')
-
-    creds, prj_id = google.auth.default( scopes=['googleapis.com/auth/cloud-platform'])
-    auth_req = google.auth.transport.requests.Request()
-    creds.refresh(auth_req)
-    res = requests.put(
-        "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/"+prj_id+"/services/"+svc_name, 
-        headers={
-            "Content-type":"application/json",
-            "Authorization":"Bearer "+creds.token
-            }
+    client = run_v2.ServicesClient()
+    request = run_v2.UpdateServiceRequest(
+        service=svc_name
         )
+    res = client.update_service(request=request)
+
+
+
+
+
+    # # prj_id=os.environ.get('PROJECT_ID', '')
+    # # if prj_id=="":
+    # #     prj_id=requests.get(' http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+
+
+    # creds, prj_id = google.auth.default( scopes=['googleapis.com/auth/cloud-platform'])
+    # auth_req = google.auth.transport.requests.Request()
+    # creds.refresh(auth_req)
+    # res = requests.put(
+    #     "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/"+prj_id+"/services/"+svc_name, 
+    #     headers={
+    #         "Content-type":"application/json",
+    #         "Authorization":"Bearer "+creds.token
+    #         }
+    #     )
 
     return res
 
@@ -186,9 +198,9 @@ def ytdl_api_stats():
         report[str(cnt)]=str(ip)
     return jsonify(        report        )
 
-@app.route("/api/rr")
+@app.route("/api/rr_test")
 def ytdl_api_rr():
-    return rollout_restart()
+    return cloudrun_rollout_restart()
 
 ### global init
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
@@ -210,6 +222,8 @@ logging.info ("IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethost
 ### local debug only ... 
 if __name__ == "__main__":
     # print(os.environ.items)
+    # os.environ.setdefault('SERVICE_NAME', 'hubs-ytdl')
+    # cloudrun_rollout_restart()
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True,host='0.0.0.0',port=port)
 
