@@ -1,4 +1,4 @@
-import youtube_dl, sys, json, os, socket, requests, redis
+import youtube_dl, sys, json, os, socket, requests, redis, logging
 import google.auth, google.auth.transport.requests
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
@@ -163,7 +163,13 @@ def ytdl_api_info():
         key: result,
     }
     redis_client.zincrby(rkey, 1, inst_ip)
-    
+
+    top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
+    top_ip=str(top_stat[0][0])
+    top_cnt=int(top_stat[0][1])
+    if top_cnt >=redeploy_at:
+        logging.warning( "starting redeployment because "+top_ip + " with cnt="+top_cnt+" exceeded " + str(redeploy_at))
+
     return jsonify(result)
 
 @app.route("/api/stats")
@@ -189,8 +195,8 @@ try:
     inst_id = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
 except:
     inst_id = "n/a"
-print (">>>>>> publicIP: @@@ "+inst_ip + " @@@ >>>>>> id: " + inst_id)
 
+redeploy_at = int(os.environ.get('REDEPLOY_AT', 4500))
 redis_host = os.environ.get('REDISHOST', '10.208.38.179')
 redis_port = int(os.environ.get('REDISPORT', 6379))
 redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
@@ -198,7 +204,7 @@ date = datetime.today().strftime("%Y%m%d")
 rkey = "ytdl:"+date
 redis_client.expire(rkey, 604800)   # a week
 
-print("hostname: "+socket.gethostname() + ", rkey: "+rkey)
+logging.info ("IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 
 ### local debug only ... 
 if __name__ == "__main__":
