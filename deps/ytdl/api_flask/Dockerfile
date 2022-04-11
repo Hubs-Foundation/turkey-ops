@@ -1,6 +1,6 @@
 FROM python:alpine
 
-RUN pip3 install youtube-dl flask gunicorn requests redis google-cloud-run
+RUN pip3 install youtube-dl flask gunicorn requests redis google-cloud
 COPY main.py .
 #WORKDIR /app
 
