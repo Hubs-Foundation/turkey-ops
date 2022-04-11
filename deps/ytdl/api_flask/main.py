@@ -130,9 +130,10 @@ def cloudrun_rollout_restart():
     if svc_name=="":
         raise ValueError('env var SERVICE_NAME is required to create new revision')
     client = run_v2.ServicesClient()
-    request = run_v2.UpdateServiceRequest(
-        service=svc_name
-        )
+
+    req=run_v2.GetServiceRequest(name=svc_name)
+
+    request = run_v2.UpdateServiceRequest(service=client.get_service(request=req))
     res = client.update_service(request=request)
 
 
