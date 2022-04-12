@@ -132,10 +132,9 @@ def cloudrun_rollout_restart():
     client = run_v2.ServicesClient()
 
     req=run_v2.GetServiceRequest(name=svc_name_full)
-
-    request = run_v2.UpdateServiceRequest(service=client.get_service(request=req))
+    svc=client.get_service(request=req)    
+    request = run_v2.UpdateServiceRequest(service=svc)
     res = client.update_service(request=request)
-
     return res
 
 def toInt(num):
