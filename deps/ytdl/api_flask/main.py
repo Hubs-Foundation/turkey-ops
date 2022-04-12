@@ -223,11 +223,12 @@ inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 inst_id = getGcpMetadata(METADATA_URL+"instance/id")
 
 redeploy_at = int(os.environ.get('REDEPLOY_AT', 4500))
-redis_host = os.environ.get('REDISHOST', '10.208.38.179')
-redis_port = int(os.environ.get('REDISPORT', 6379))
-redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
-date = datetime.today().strftime("%Y%m%d")
-rkey = "ytdl:"+date
+
+redis_client = redis.StrictRedis(
+    host=os.environ.get('REDISHOST', '10.208.38.179'), 
+    port=int(os.environ.get('REDISPORT', 6379)))
+
+rkey = "ytdl:"+ datetime.today().strftime("%Y%m%d")
 
 redis_client.expire(rkey, 604800)   # a week
 # try:
