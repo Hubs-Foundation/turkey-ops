@@ -227,8 +227,8 @@ inst_id = getGcpMetadata(METADATA_URL+"instance/id")
 redeploy_at = int(os.environ.get('REDEPLOY_AT', 4500))
 
 redis_client = redis.StrictRedis(
-    host=os.environ.get('REDISHOST', '10.208.38.179'), 
-    port=int(os.environ.get('REDISPORT', 6379)))
+    host=os.environ.get('REDIS_HOST', '10.208.38.179'), 
+    port=int(os.environ.get('REDIS_PORT', 6379)))
 
 rkey = "ytdl:"+ datetime.today().strftime("%Y%m%d")
 
