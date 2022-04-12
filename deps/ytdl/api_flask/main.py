@@ -216,7 +216,7 @@ svcName="hubs-ytdl"
 imgNameTag="gcr.io/hubs-dev-333333/ytdl:96_2021.12.17"
 
 SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
-inst_sa_token = requests.get(METADATA_URL+"instance/service-accounts/"+SA+"/token").content.decode('utf8')
+inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+SA+"/token")
 logging.info("inst_sa_token: "+ inst_sa_token)
 
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
@@ -228,7 +228,10 @@ redis_port = int(os.environ.get('REDISPORT', 6379))
 redis_client = redis.StrictRedis(host=redis_host, port=redis_port)
 date = datetime.today().strftime("%Y%m%d")
 rkey = "ytdl:"+date
-redis_client.expire(rkey, 604800)   # a week
+try:
+    redis_client.expire(rkey, 604800)   # a week
+except:
+    logging.error("bad redis")
 
 logging.info ("IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 
