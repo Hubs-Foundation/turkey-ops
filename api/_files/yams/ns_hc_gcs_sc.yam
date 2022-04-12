@@ -148,7 +148,7 @@ metadata:
   name: reticulum
   namespace: hc-{{.HubId}}
   annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict": "true" 
+    cluster-autoscaler.kubernetes.io/safe-to-evict: true
 spec:
   replicas: 2
   selector:
@@ -724,7 +724,7 @@ spec:
         - name: scratchBucketId
           value: turkey-speelycaptor-scratch-does-not-matter-it-seems
         - name: CLOUD
-          value: {{.CLOUD}}          
+          value: gcp
         - name: scratchBucketRegion
           valueFrom:
             secretKeyRef:
