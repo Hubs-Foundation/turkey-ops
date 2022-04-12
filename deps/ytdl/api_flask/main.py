@@ -230,11 +230,11 @@ redis_client = redis.StrictRedis(
 
 rkey = "ytdl:"+ datetime.today().strftime("%Y%m%d")
 
-redis_client.expire(rkey, 604800)   # a week
-# try:
-#     redis_client.expire(rkey, 604800)   # a week
-# except:
-#     logging.error("bad redis")
+# redis_client.expire(rkey, 604800)   # a week
+try:
+    redis_client.expire(rkey, 604800)   # a week
+except:
+    logging.error("bad redis")
 
 logging.info ("IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 
