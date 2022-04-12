@@ -126,35 +126,15 @@ def flatten_result(result):
     return videos
 
 def cloudrun_rollout_restart():
-    svc_name=os.environ.get('SERVICE_NAME', '')
-    if svc_name=="":
+    svc_name_full=os.environ.get('SERVICE_NAME_FULL', '')
+    if svc_name_full=="":
         raise ValueError('env var SERVICE_NAME is required to create new revision')
     client = run_v2.ServicesClient()
 
-    req=run_v2.GetServiceRequest(name=svc_name)
+    req=run_v2.GetServiceRequest(name=svc_name_full)
 
     request = run_v2.UpdateServiceRequest(service=client.get_service(request=req))
     res = client.update_service(request=request)
-
-
-
-
-
-    # # prj_id=os.environ.get('PROJECT_ID', '')
-    # # if prj_id=="":
-    # #     prj_id=requests.get(' http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-
-
-    # creds, prj_id = google.auth.default( scopes=['googleapis.com/auth/cloud-platform'])
-    # auth_req = google.auth.transport.requests.Request()
-    # creds.refresh(auth_req)
-    # res = requests.put(
-    #     "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/"+prj_id+"/services/"+svc_name, 
-    #     headers={
-    #         "Content-type":"application/json",
-    #         "Authorization":"Bearer "+creds.token
-    #         }
-    #     )
 
     return res
 
