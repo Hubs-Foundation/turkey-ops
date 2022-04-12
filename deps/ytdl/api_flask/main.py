@@ -126,24 +126,39 @@ def flatten_result(result):
     return videos
 
 def cloudrun_rollout_restart():
-    svc_name_full=os.environ.get('SERVICE_NAME_FULL', '')
-    if svc_name_full=="":
-        raise ValueError('env var SERVICE_NAME is required to create new revision')
-    client = run_v2.ServicesClient()
+    # if SVC_NAME_FULL=="":
+    #     raise ValueError('env var SERVICE_NAME is required to create new revision')
+    # client = run_v2.ServicesClient()
 
-    listReq = run_v2.ListServicesRequest(parent="projects/hubs-dev-333333/locations/us-central1")
-    page_result = client.list_services(request=listReq)
-    for response in page_result:
-        print(response)
+    # req=run_v2.GetServiceRequest(name=SVC_NAME_FULL)
+    # svc=client.get_service(request=req)
+    # request = run_v2.UpdateServiceRequest(service=svc)
+    # res = client.update_service(request=request)
 
-    req=run_v2.GetServiceRequest(name=svc_name_full)
-    svc=client.get_service(request=req)
-    request = run_v2.UpdateServiceRequest(service=svc)
-    res = client.update_service(request=request)
+
+    knative_json='''
+    {"apiVersion": "serving.knative.dev/v1","kind": "Service","metadata": {"name": "{svcName}","namespace": "{projectId}"},
+    "spec": {"template": {"spec": {"containers": [{"image": "{imgNameTag}"}]}}}}
+    '''.format(svcName=svcName, projectId=PROJECT_ID, imgNameTag=imgNameTag)
+
+    res=requests.put(
+        "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
+        headers={
+            "Content-type":"application/json",
+            "Authorization":"Bearer "+inst_sa_token,
+            }).content.decode('utf8')
+    
     return res
 
 def toInt(num):
     return int(num)
+
+def getGcpMetadata(url):
+    try:
+        return requests.get(url, headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+    except:
+        logging.error("getGcpMetadata failed for url: "+url)        
+    return "" 
 #########################################################################
 
 app = Flask(__name__)
@@ -172,7 +187,10 @@ def ytdl_api_info():
 
 @app.route("/api/stats")
 def ytdl_api_stats():
-    report={"_rkey": rkey}
+    report={
+        "_rkey": rkey,
+        "_inst_ip": inst_ip,
+        }
     
     # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
     
@@ -191,11 +209,18 @@ def ytdl_api_rrtest():
     return cloudrun_rollout_restart()
 
 ### global init
+METADATA_URL="http://metadata.google.internal/computeMetadata/v1/"
+PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333.iam.gserviceaccount.com")
+
+svcName="hubs-ytdl"
+imgNameTag="gcr.io/hubs-dev-333333/ytdl:96_2021.12.17"
+
+SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
+inst_sa_token = requests.get(METADATA_URL+"instance/service-accounts/"+SA+"/token").content.decode('utf8')
+logging.info("inst_sa_token: "+ inst_sa_token)
+
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
-try:
-    inst_id = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/id', headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-except:
-    inst_id = "n/a"
+inst_id = getGcpMetadata(METADATA_URL+"instance/id")
 
 redeploy_at = int(os.environ.get('REDEPLOY_AT', 4500))
 redis_host = os.environ.get('REDISHOST', '10.208.38.179')
