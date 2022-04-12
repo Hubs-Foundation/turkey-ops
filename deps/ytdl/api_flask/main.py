@@ -146,7 +146,9 @@ def cloudrun_rollout_restart():
         headers={
             "Content-type":"application/json",
             "Authorization":"Bearer "+inst_sa_token,
-            }).content.decode('utf8')
+            },
+        json=knative_json,
+        ).content.decode('utf8')
     
     return res
 
