@@ -131,6 +131,11 @@ def cloudrun_rollout_restart():
         raise ValueError('env var SERVICE_NAME is required to create new revision')
     client = run_v2.ServicesClient()
 
+    listReq = run_v2.ListServicesRequest(parent="projects/hubs-dev-333333/locations/us-central1")
+    page_result = client.list_services(request=listReq)
+    for response in page_result:
+        print(response)
+
     req=run_v2.GetServiceRequest(name=svc_name_full)
     svc=client.get_service(request=req)
     request = run_v2.UpdateServiceRequest(service=svc)
@@ -167,16 +172,19 @@ def ytdl_api_info():
 
 @app.route("/api/stats")
 def ytdl_api_stats():
-    top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
-    report={
-        "_rkey": rkey,
-        "_top_ip": str(top_stat[0][0]),
-        "_top_cnt": str(top_stat[0][1])
-    }
+    report={"_rkey": rkey}
+    
+    # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
+    
     stats=redis_client.zrangebyscore(rkey, 0, 9999, withscores=True)
-    for ip, cnt in stats:
-        report[str(cnt)]=str(ip)
-    return jsonify(        report        )
+
+    if len(stats)>0:
+        report["_top_ip"] = str(stats[0][0])
+        report["_top_cnt"] = str(stats[0][1])
+        for ip, cnt in stats:
+            report[str(cnt)]=str(ip)
+    
+    return jsonify(report)
 
 @app.route("/api/rrtest")
 def ytdl_api_rrtest():
