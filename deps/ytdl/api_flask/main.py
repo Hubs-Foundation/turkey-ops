@@ -162,7 +162,7 @@ def ytdl_api_info():
     }
     redis_client.zincrby(rkey, 1, inst_ip)
 
-    top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
+    top_stat =redis_client.zrevrange(rkey, 0,-1, withscores=True)
     top_ip=str(top_stat[0][0])
     top_cnt=int(top_stat[0][1])
     if top_cnt >=redeploy_at:
@@ -176,11 +176,11 @@ def ytdl_api_stats():
     
     # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
     
-    stats=redis_client.zrevrangebyscore(rkey, 0, 99, withscores=True)
+    stats=redis_client.zrevrange(rkey, 0, -1, withscores=True)
 
     if len(stats)>0:
-        report["_top_ip"] = str(stats[0][0])
-        report["_top_cnt"] = str(stats[0][1])
+        report["_top_ip"] = str(stats[len(stats)-1][0])
+        report["_top_cnt"] = str(stats[len(stats)-1][1])
         for ip, cnt in stats:
             report[str(cnt)]=str(ip)
     
