@@ -219,7 +219,7 @@ imgNameTag="gcr.io/hubs-dev-333333/ytdl:96_2021.12.17"
 
 SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
 inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+SA+"/token")
-logging.info("inst_sa_token: "+ inst_sa_token)
+logging.debug("inst_sa_token: "+ inst_sa_token)
 
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 inst_id = getGcpMetadata(METADATA_URL+"instance/id")
@@ -238,7 +238,7 @@ try:
 except:
     logging.error("bad redis")
 
-logging.info ("IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
+logging.debug("IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 
 ### local debug only ... 
 if __name__ == "__main__":
