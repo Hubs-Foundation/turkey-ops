@@ -139,10 +139,7 @@ def cloudrun_rollout_restart():
     # res = client.update_service(request=request)
 
 
-    knative_json='''
-    {"apiVersion": "serving.knative.dev/v1","kind": "Service","metadata": {"name": "{svcName}","namespace": "{projectId}"},
-    "spec": {"template": {"spec": {"containers": [{"image": "{imgNameTag}"}]}}}}
-    '''.format(svcName=svcName, projectId=PROJECT_ID, imgNameTag=imgNameTag)
+    knative_json='{"apiVersion": "serving.knative.dev/v1","kind": "Service","metadata": {"name": "{svcName}","namespace": "{projectId}"},"spec": {"template": {"spec": {"containers": [{"image": "{imgNameTag}"}]}}}}'.format(svcName=svcName, projectId=PROJECT_ID, imgNameTag=imgNameTag)
 
     res=requests.put(
         "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
@@ -222,7 +219,8 @@ imgNameTag="gcr.io/hubs-dev-333333/ytdl:96_2021.12.17"
 
 SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
 inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+SA+"/token")
-logging.debug("inst_sa_token: "+ inst_sa_token)
+logging.debug(" @@@@@@@ inst_sa_token: "+ inst_sa_token)
+print(" >>>>>>>> inst_sa_token: "+ inst_sa_token)
 
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 inst_id = getGcpMetadata(METADATA_URL+"instance/id")
