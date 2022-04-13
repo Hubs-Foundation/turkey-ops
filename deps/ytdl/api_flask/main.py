@@ -7,7 +7,6 @@ from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
 from datetime import datetime
 
-google.cloud.logging.Client().setup_logging()
 
 def lambda_handler(event, context):
     # event['url']="http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"
@@ -210,15 +209,20 @@ def ytdl_api_stats():
 def ytdl_api_rrtest():
     return cloudrun_rollout_restart()
 
-### global init
+################################################# init
+try:
+    google.cloud.logging.Client().setup_logging()
+except:
+    logging.warning("gcp logging failed to init")
+
 METADATA_URL="http://metadata.google.internal/computeMetadata/v1/"
 PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333.iam.gserviceaccount.com")
 
 svcName="hubs-ytdl"
 imgNameTag="gcr.io/hubs-dev-333333/ytdl:96_2021.12.17"
 
-SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
-inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+SA+"/token")
+# SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
+inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/default/token")
 logging.debug(" @@@@@@@ inst_sa_token: "+ inst_sa_token)
 print(" >>>>>>>> inst_sa_token: "+ inst_sa_token)
 
