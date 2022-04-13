@@ -142,7 +142,7 @@ def cloudrun_rollout_restart():
     res=requests.get(
         getSvcUrl, 
         headers={ "Authorization":"Bearer "+inst_sa_token} )    
-    print(res)
+    print(res.json)
 
     sys.stdout.flush()
 
@@ -156,7 +156,7 @@ def cloudrun_rollout_restart():
     #     ).content.decode('utf8')
     # logging.warning(res)
     # print(res)
-    return res
+    return res.json
 
 def toInt(num):
     return int(num)
@@ -215,7 +215,7 @@ def ytdl_api_stats():
 @app.route("/api/rrtest")
 def ytdl_api_rrtest():
     
-    return str(cloudrun_rollout_restart())
+    return cloudrun_rollout_restart()
 
 ################################################# init
 try:
