@@ -212,7 +212,8 @@ def ytdl_api_stats():
 
 @app.route("/api/rrtest")
 def ytdl_api_rrtest():
-    return cloudrun_rollout_restart()
+    
+    return str(cloudrun_rollout_restart())
 
 ################################################# init
 try:
