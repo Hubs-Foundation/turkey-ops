@@ -146,10 +146,36 @@ def cloudrun_rollout_restart():
     print("get-res.text"+reqStr)
     sys.stdout.flush()
 
+    reqJson=json.loads(res.text)
+    args = {
+        'ServiceName':reqJson["metadata"]["name"], 
+        'Project_ID':reqJson["metadata"]["namespace"], 
+        'vpcConn':reqJson["spec"]["template"]["annotations"]["run.googleapis.com/vpc-access-connector"],
+        'sa':reqJson["spec"]["spec"]["serviceAccountName"], 
+        'image':reqJson["spec"]["spec"]["containers"]["image"]}
+    knativeStr='''{"apiVersion": "serving.knative.dev/v1",
+    "kind": "Service",
+    "metadata": {"name": "{ServiceName}","namespace": "{Project_ID}"},
+    "spec": {
+      "template": {
+        "metadata": {
+            "name": "hubs-ytdl-00095-fur",
+            "annotations": {
+              "run.googleapis.com/vpc-access-egress": "private-ranges-only",
+              "run.googleapis.com/vpc-access-connector": "{vpcConn}"}},
+        "spec": {
+          "serviceAccountName": "{sa}",
+          "containers": [{
+              "image": "{image}",
+              "env": [{"name": "dummy","value": "dummy"}]}]}}}}'''.format(**args)
+    print(json.dumps(args))
+    print(args)
+    sys.stdout.flush()
+
     res=requests.put(
         knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
-        files={'file': ('knative.json', reqStr)},
+        files={'file': ('knative.json', knativeStr)},
         )
 
     logging.warning(res)
@@ -231,8 +257,8 @@ full_sa="hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com"
 inst_sa_token_res = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+full_sa+"/token")
 
 inst_sa_token=json.loads(inst_sa_token_res)['access_token']
-logging.debug(" @@@@@@@ inst_sa_token: "+ inst_sa_token)
-print(" >>>>>>>> inst_sa_token: "+ inst_sa_token)
+# logging.debug(" @@@@@@@ inst_sa_token: "+ inst_sa_token)
+# print(" >>>>>>>> inst_sa_token: "+ inst_sa_token)
 
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 inst_id = getGcpMetadata(METADATA_URL+"instance/id")
