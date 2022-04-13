@@ -137,9 +137,11 @@ def cloudrun_rollout_restart():
     # request = run_v2.UpdateServiceRequest(service=svc)
     # res = client.update_service(request=request)
 
+    getSvcUrl="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{}/services/{}".format(PROJECT_ID, svcName)
+    print("getSvcUrl: " + getSvcUrl)
     res=requests.get(
-        "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
-        headers={ "Authorization":"Bearer "+inst_sa_token} )
+        getSvcUrl, 
+        headers={ "Authorization":"Bearer "+inst_sa_token} )    
     print(res)
 
     sys.stdout.flush()
