@@ -149,7 +149,7 @@ def cloudrun_rollout_restart():
             },
         json=knative_json,
         ).content.decode('utf8')
-    
+    logging.warning(res)
     return res
 
 def toInt(num):
