@@ -137,26 +137,23 @@ def cloudrun_rollout_restart():
     # request = run_v2.UpdateServiceRequest(service=svc)
     # res = client.update_service(request=request)
 
-    getSvcUrl="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{}/services/{}".format(PROJECT_ID, svcName)
-    print("getSvcUrl: " + getSvcUrl)
-    res=requests.get(
-        getSvcUrl, 
-        headers={ "Authorization":"Bearer "+inst_sa_token} )    
-    print(res.json)
-    print("res.text: "+res.text)
+    knativeBase="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/"
 
+    getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName)
+    print("getSvcUrl: " + getSvcUrl)
+    res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
+    reqStr = res.text
+    print("get-res.text"+reqStr)
     sys.stdout.flush()
 
-    # res=requests.put(
-    #     "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
-    #     headers={
-    #         "Content-type":"application/json",
-    #         "Authorization":"Bearer "+inst_sa_token,
-    #         },
-    #     # json=knative_json,
-    #     ).content.decode('utf8')
-    # logging.warning(res)
-    # print(res)
+    res=requests.put(
+        knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
+        headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
+        files={'file': ('knative.json', reqStr)},
+        ).content.decode('utf8')
+
+    logging.warning(res)
+    print("put-res.text"+res.text)
     return res.json
 
 def toInt(num):
