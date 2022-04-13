@@ -8,6 +8,11 @@ from flask import Flask, request, jsonify
 from datetime import datetime
 
 
+
+################################################################################################## 
+####################### ytdl helpers, got junks, todo: clean it up ###############################
+##################################################################################################
+
 def lambda_handler(event, context):
     # event['url']="http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"
     # print("Received event: " + json.dumps(event, indent=2))
@@ -127,6 +132,10 @@ def flatten_result(result):
             videos.extend(flatten_result(r))
     return videos
 
+################################################################################################## 
+##################################### turkey funcs ###############################################
+##################################################################################################
+
 def cloudrun_rollout_restart():
     # if SVC_NAME_FULL=="":
     #     raise ValueError('env var SERVICE_NAME is required to create new revision')
@@ -140,10 +149,10 @@ def cloudrun_rollout_restart():
     knativeBase="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/"
 
     getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName)
-    print("getSvcUrl: " + getSvcUrl)
+    print(" >>>>>> getSvcUrl: " + getSvcUrl)
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
     reqStr = res.text
-    print("get-res.text"+reqStr)
+    print(" >>>>>> get-res.text"+reqStr)
     sys.stdout.flush()
 
     reqJson=json.loads(res.text)
@@ -179,7 +188,7 @@ def cloudrun_rollout_restart():
         )
 
     logging.warning(res)
-    print("put-res.text"+res.text)
+    print(" >>>>>> put-res.text"+res.text)
     return res.text
 
 def toInt(num):
@@ -191,7 +200,10 @@ def getGcpMetadata(url):
     except:
         logging.error("getGcpMetadata failed for url: "+url)        
     return "" 
-#########################################################################
+
+################################################################################################## 
+########################################## routes ################################################
+##################################################################################################
 
 app = Flask(__name__)
 
@@ -240,11 +252,13 @@ def ytdl_api_stats():
 def ytdl_api_rrtest():
     r=cloudrun_rollout_restart()
     return str(r)
-
-################################################# init
+################################################################################################## 
+########################################### init #################################################
+##################################################################################################
 try:
     google.cloud.logging.Client().setup_logging()
 except:
+    print(" >>>>>> gcp logging failed to init")
     logging.warning("gcp logging failed to init")
 
 METADATA_URL="http://metadata.google.internal/computeMetadata/v1/"
@@ -252,13 +266,9 @@ PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333")
 
 svcName="hubs-ytdl"
 
-# inst_sa_token_res = getGcpMetadata(METADATA_URL+"instance/service-accounts/default/token")
 full_sa="hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com"
 inst_sa_token_res = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+full_sa+"/token")
-
 inst_sa_token=json.loads(inst_sa_token_res)['access_token']
-# logging.debug(" @@@@@@@ inst_sa_token: "+ inst_sa_token)
-# print(" >>>>>>>> inst_sa_token: "+ inst_sa_token)
 
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 inst_id = getGcpMetadata(METADATA_URL+"instance/id")
@@ -268,13 +278,13 @@ redeploy_at = int(os.environ.get('REDEPLOY_AT', 4500))
 redis_client = redis.StrictRedis(
     host=os.environ.get('REDIS_HOST', '10.208.38.179'), 
     port=int(os.environ.get('REDIS_PORT', 6379)))
-
 rkey = "ytdl:"+ datetime.today().strftime("%Y%m%d")
 
 # redis_client.expire(rkey, 604800)   # a week
 try:
     redis_client.expire(rkey, 604800)   # a week
 except:
+    print(" >>>>>> bad redis")
     logging.error("bad redis")
 
 logging.debug(" @@@@@@ IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
@@ -282,8 +292,9 @@ print(" >>>>>> IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethost
 
 sys.stdout.flush()
 
-
-### local debug only ... 
+################################################################################################## 
+##################################### local debug only ###########################################
+##################################################################################################
 if __name__ == "__main__":
     # print(os.environ.items)
     # os.environ.setdefault('SERVICE_NAME', 'hubs-ytdl')
