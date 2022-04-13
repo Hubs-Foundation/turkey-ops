@@ -226,7 +226,7 @@ PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333.iam.gserviceaccount.com"
 svcName="hubs-ytdl"
 
 # SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
-inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/default/token").json()['access_token']
+inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/default/token")#.json()['access_token']
 
 logging.debug(" @@@@@@@ inst_sa_token: "+ inst_sa_token)
 print(" >>>>>>>> inst_sa_token: "+ inst_sa_token)
