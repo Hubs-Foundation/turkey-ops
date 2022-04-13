@@ -149,8 +149,11 @@ def cloudrun_rollout_restart():
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
 
     reqJson=json.loads(res.text)
+    revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
+    print("revisionName" + revisionName)
     args = {
-        'ServiceName':svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S"), 
+        'ServiceName':svcName, 
+        'revisionName':revisionName,         
         'Project_ID':reqJson["metadata"]["namespace"], 
         'vpcConn':reqJson["spec"]["template"]["metadata"]["annotations"]["run.googleapis.com/vpc-access-connector"],
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
@@ -165,7 +168,7 @@ def cloudrun_rollout_restart():
     "spec": {{
         "template": {{
         "metadata": {{
-            "name": "hubs-ytdl-00095-fur",
+            "name": "{revisionName}",
             "annotations": {{
                 "run.googleapis.com/vpc-access-egress": "private-ranges-only",
                 "run.googleapis.com/vpc-access-connector": "{vpcConn}"}}}},
