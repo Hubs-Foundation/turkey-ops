@@ -160,8 +160,8 @@ def cloudrun_rollout_restart():
         'ServiceName':reqJson["metadata"]["name"], 
         'Project_ID':reqJson["metadata"]["namespace"], 
         'vpcConn':reqJson["spec"]["template"]["metadata"]["annotations"]["run.googleapis.com/vpc-access-connector"],
-        'sa':reqJson["spec"]["spec"]["serviceAccountName"], 
-        'image':reqJson["spec"]["spec"]["containers"]["image"]}
+        'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
+        'image':reqJson["spec"]["template"]["spec"]["containers"]["image"]}
     knativeStr='''{"apiVersion": "serving.knative.dev/v1",
     "kind": "Service",
     "metadata": {"name": "{ServiceName}","namespace": "{Project_ID}"},
