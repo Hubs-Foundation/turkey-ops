@@ -149,6 +149,7 @@ def cloudrun_rollout_restart():
         json=knative_json,
         ).content.decode('utf8')
     logging.warning(res)
+    print(res)
     return res
 
 def toInt(num):
@@ -222,7 +223,7 @@ svcName="hubs-ytdl"
 imgNameTag="gcr.io/hubs-dev-333333/ytdl:96_2021.12.17"
 
 # SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
-inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/default/token")
+inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+svcName+"/token")
 logging.debug(" @@@@@@@ inst_sa_token: "+ inst_sa_token)
 print(" >>>>>>>> inst_sa_token: "+ inst_sa_token)
 
