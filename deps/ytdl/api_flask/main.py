@@ -150,11 +150,11 @@ def cloudrun_rollout_restart():
         knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
         files={'file': ('knative.json', reqStr)},
-        ).content.decode('utf8')
+        )
 
     logging.warning(res)
     print("put-res.text"+res.text)
-    return res.json
+    return res.text
 
 def toInt(num):
     return int(num)
