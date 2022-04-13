@@ -178,8 +178,7 @@ def cloudrun_rollout_restart():
     res=requests.put(
         knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
-        files={'file': ('knative.json', knativeJsonStr)},
-        )
+        json=json.loads(knativeJsonStr))
 
     logging.warning(res)
     print(" >>>>>> put-res.text"+res.text)
