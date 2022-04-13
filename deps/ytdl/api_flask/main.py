@@ -239,8 +239,8 @@ try:
 except:
     logging.error("bad redis")
 
-logging.debug("IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
-
+logging.debug(" @@@@@@ IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
+print(" >>>>>> IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 ### local debug only ... 
 if __name__ == "__main__":
     # print(os.environ.items)
