@@ -165,17 +165,15 @@ def cloudrun_rollout_restart():
             "name": "hubs-ytdl-00095-fur",
             "annotations": {{
                 "run.googleapis.com/vpc-access-egress": "private-ranges-only",
-                "run.googleapis.com/vpc-access-connector": "{vpcConn}"}},
+                "run.googleapis.com/vpc-access-connector": "{vpcConn}"}}}},
         "spec": {{
             "serviceAccountName": "{sa}",
             "containers": [{{
                 "image": "{image}",
-                "env": [{{"name": "dummy","value": "dummy"}}]}}]}}}}}}}}}}
+                "env": [{{"name": "dummy","value": "dummy"}}]}}]}}}}}}}}
     '''.format(**args)
-    sys.stdout.flush()
 
     print(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
-
 
     res=requests.put(
         knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
@@ -185,6 +183,9 @@ def cloudrun_rollout_restart():
 
     logging.warning(res)
     print(" >>>>>> put-res.text"+res.text)
+
+    sys.stdout.flush()
+    
     return res.text
 
 def toInt(num):
@@ -258,8 +259,8 @@ except:
     logging.warning("gcp logging failed to init")
 
 METADATA_URL="http://metadata.google.internal/computeMetadata/v1/"
-PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333")
 
+PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333")
 svcName="hubs-ytdl"
 
 full_sa="hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com"
