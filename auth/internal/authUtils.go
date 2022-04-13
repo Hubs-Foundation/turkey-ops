@@ -275,10 +275,11 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 		// "aud":"whomever?",
 		"exp": expires.Unix(),
 		// "nbf": time.Now().UTC(),
-		"iat":       time.Now().Add(-1 * time.Minute).Unix(),
-		"fxa_pic":   user.Avatar,
-		"fxa_2fa":   user.TwoFA,
-		"fxa_email": user.Email,
+		"iat":             time.Now().Add(-1 * time.Minute).Unix(),
+		"fxa_pic":         user.Avatar,
+		"fxa_2fa":         user.TwoFA,
+		"fxa_email":       user.Email,
+		"fxa_displayName": user.DisplayName,
 	})
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(cfg.PermsKey)

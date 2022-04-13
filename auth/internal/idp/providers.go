@@ -39,6 +39,7 @@ type User struct {
 	Avatar         string `json:"avatar"`
 	AvatarDefault  bool   `json:"avatarDefault"`
 	Sub            string `json:"sub"`
+	DisplayName    string `json:"displayName"`
 }
 
 // OAuthProvider is a provider using the oauth2 library
