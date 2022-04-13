@@ -137,9 +137,6 @@ def flatten_result(result):
 ##################################################################################################
 
 def cloudrun_rollout_restart():
-    # if SVC_NAME_FULL=="":
-    #     raise ValueError('env var SERVICE_NAME is required to create new revision')
-    # client = run_v2.ServicesClient()
 
     # req=run_v2.GetServiceRequest(name=SVC_NAME_FULL)
     # svc=client.get_service(request=req)
@@ -149,11 +146,7 @@ def cloudrun_rollout_restart():
     knativeBase="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/"
 
     getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName)
-    print(" >>>>>> getSvcUrl: " + getSvcUrl)
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
-    reqStr = res.text
-    print(" >>>>>> get-res.text"+reqStr)
-    sys.stdout.flush()
 
     reqJson=json.loads(res.text)
     args = {
@@ -162,29 +155,32 @@ def cloudrun_rollout_restart():
         'vpcConn':reqJson["spec"]["template"]["metadata"]["annotations"]["run.googleapis.com/vpc-access-connector"],
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
         'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"]}
-    knativeStr='''{"apiVersion": "serving.knative.dev/v1",
+    knativeJsonStr='''
+    {{"apiVersion": "serving.knative.dev/v1",
     "kind": "Service",
-    "metadata": {"name": "{ServiceName}","namespace": "{Project_ID}"},
-    "spec": {
-      "template": {
-        "metadata": {
+    "metadata": {{"name": "{ServiceName}","namespace": "{Project_ID}"}},
+    "spec": {{
+        "template": {{
+        "metadata": {{
             "name": "hubs-ytdl-00095-fur",
-            "annotations": {
-              "run.googleapis.com/vpc-access-egress": "private-ranges-only",
-              "run.googleapis.com/vpc-access-connector": "{vpcConn}"}},
-        "spec": {
-          "serviceAccountName": "{sa}",
-          "containers": [{
-              "image": "{image}",
-              "env": [{"name": "dummy","value": "dummy"}]}]}}}}'''.format(**args)
-    print(json.dumps(args))
-    print(args)
+            "annotations": {{
+                "run.googleapis.com/vpc-access-egress": "private-ranges-only",
+                "run.googleapis.com/vpc-access-connector": "{vpcConn}"}},
+        "spec": {{
+            "serviceAccountName": "{sa}",
+            "containers": [{{
+                "image": "{image}",
+                "env": [{{"name": "dummy","value": "dummy"}}]}}]}}}}}}}}}}
+    '''.format(**args)
     sys.stdout.flush()
+
+    print(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
+
 
     res=requests.put(
         knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
-        files={'file': ('knative.json', knativeStr)},
+        files={'file': ('knative.json', knativeJsonStr)},
         )
 
     logging.warning(res)
