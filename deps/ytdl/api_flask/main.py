@@ -224,7 +224,7 @@ except:
     logging.warning("gcp logging failed to init")
 
 METADATA_URL="http://metadata.google.internal/computeMetadata/v1/"
-PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333.iam.gserviceaccount.com")
+PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333")
 
 svcName="hubs-ytdl"
 
