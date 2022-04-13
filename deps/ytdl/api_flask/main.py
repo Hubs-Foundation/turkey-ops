@@ -2,9 +2,12 @@ import youtube_dl, sys, json, os, socket, requests, redis, logging
 # import google.auth, google.auth.transport.requests
 # from google.oauth2 import service_account
 from google.cloud import run_v2
+import google.cloud.logging
 from youtube_dl.utils import std_headers, random_user_agent
 from flask import Flask, request, jsonify
 from datetime import datetime
+
+google.cloud.logging.Client().setup_logging()
 
 def lambda_handler(event, context):
     # event['url']="http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"
