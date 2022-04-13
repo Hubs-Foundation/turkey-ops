@@ -137,19 +137,23 @@ def cloudrun_rollout_restart():
     # request = run_v2.UpdateServiceRequest(service=svc)
     # res = client.update_service(request=request)
 
-
-    knative_json='{"apiVersion": "serving.knative.dev/v1","kind": "Service","metadata": {"name": "{svcName}","namespace": "{projectId}"},"spec": {"template": {"spec": {"containers": [{"image": "{imgNameTag}"}]}}}}'.format(svcName=svcName, projectId=PROJECT_ID, imgNameTag=imgNameTag)
-
-    res=requests.put(
+    res=requests.get(
         "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
-        headers={
-            "Content-type":"application/json",
-            "Authorization":"Bearer "+inst_sa_token,
-            },
-        json=knative_json,
-        ).content.decode('utf8')
-    logging.warning(res)
+        headers={ "Authorization":"Bearer "+inst_sa_token} )
     print(res)
+
+    sys.stdout.flush()
+
+    # res=requests.put(
+    #     "https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
+    #     headers={
+    #         "Content-type":"application/json",
+    #         "Authorization":"Bearer "+inst_sa_token,
+    #         },
+    #     # json=knative_json,
+    #     ).content.decode('utf8')
+    # logging.warning(res)
+    # print(res)
     return res
 
 def toInt(num):
@@ -220,10 +224,10 @@ METADATA_URL="http://metadata.google.internal/computeMetadata/v1/"
 PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333.iam.gserviceaccount.com")
 
 svcName="hubs-ytdl"
-imgNameTag="gcr.io/hubs-dev-333333/ytdl:96_2021.12.17"
 
 # SA=os.environ.get("SA_NAME", svcName+"@"+PROJECT_ID+".iam.gserviceaccount.com")
-inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+svcName+"/token")
+inst_sa_token = getGcpMetadata(METADATA_URL+"instance/service-accounts/default/token").json()['access_token']
+
 logging.debug(" @@@@@@@ inst_sa_token: "+ inst_sa_token)
 print(" >>>>>>>> inst_sa_token: "+ inst_sa_token)
 
