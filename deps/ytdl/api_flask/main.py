@@ -1,4 +1,4 @@
-import youtube_dl, sys, json, os, socket, requests, redis, logging
+import youtube_dl, sys, json, os, socket, requests, redis, logging, random, base64
 # import google.auth, google.auth.transport.requests
 # from google.oauth2 import service_account
 from google.cloud import run_v2
@@ -150,11 +150,14 @@ def cloudrun_rollout_restart():
 
     reqJson=json.loads(res.text)
     args = {
-        'ServiceName':reqJson["metadata"]["name"], 
+        'ServiceName':svcName + datetime.today().strftime("%Y%m%d%H%M%S"), 
         'Project_ID':reqJson["metadata"]["namespace"], 
         'vpcConn':reqJson["spec"]["template"]["metadata"]["annotations"]["run.googleapis.com/vpc-access-connector"],
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
         'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"]}
+
+    print(args)
+    
     knativeJsonStr='''
     {{"apiVersion": "serving.knative.dev/v1",
     "kind": "Service",
