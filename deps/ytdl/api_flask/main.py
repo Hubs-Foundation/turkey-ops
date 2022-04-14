@@ -264,11 +264,12 @@ try:
     gcpLoggingClient=google.cloud.logging.Client()
     gcpLoggingClient.setup_logging()
     mode.add("gcp")
-except:
-    print(" >>>>>> gcp logging failed to init")
-    logging.warning("gcp logging failed to init")
+except Exception as e:
+    print(" >>>>>> gcp logging failed to init: " + str(e))
+    logging.warning("gcp logging failed to init" + str(e))
 
 metadataUrl=os.environ.get('metadataUrl', "http://metadata.google.internal/computeMetadata/v1/")
+print("metadataUrl="+metadataUrl)
 
 projectId=getGcpMetadata(metadataUrl+"project/project-id")
 svcName="hubs-ytdl"
