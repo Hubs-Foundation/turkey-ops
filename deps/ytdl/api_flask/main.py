@@ -201,8 +201,8 @@ def getGcpMetadata(url):
         val=requests.get(url, headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
         print("getGcpMetadata -- got <"+getGcpMetadata + "> for "+url)
         return val
-    except:
-        logging.error("getGcpMetadata failed for url: "+url)        
+    except Exception as e:
+        logging.error("getGcpMetadata failed for url: "+url + "error="+str(e))
     return "" 
 
 ################################################################################################## 
@@ -264,6 +264,7 @@ try:
     gcpLoggingClient=google.cloud.logging.Client()
     gcpLoggingClient.setup_logging()
     mode.add("gcp")
+    logging.info("mode + gcp")
 except Exception as e:
     print(" >>>>>> gcp logging failed to init: " + str(e))
     logging.warning("gcp logging failed to init" + str(e))
