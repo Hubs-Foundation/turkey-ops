@@ -145,7 +145,7 @@ def cloudrun_rollout_restart():
 
     knativeBase="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/"
 
-    getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName)
+    getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(projectId, svcName)
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
 
     reqJson=json.loads(res.text)
@@ -154,7 +154,7 @@ def cloudrun_rollout_restart():
     args = {
         'ServiceName':svcName, 
         'revisionName':revisionName,         
-        'Project_ID':reqJson["metadata"]["namespace"], 
+        'projectId':reqJson["metadata"]["namespace"], 
         'vpcConn':reqJson["spec"]["template"]["metadata"]["annotations"]["run.googleapis.com/vpc-access-connector"],
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
         'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"]}
@@ -164,7 +164,7 @@ def cloudrun_rollout_restart():
     knativeJsonStr='''
     {{"apiVersion": "serving.knative.dev/v1",
     "kind": "Service",
-    "metadata": {{"name": "{ServiceName}","namespace": "{Project_ID}"}},
+    "metadata": {{"name": "{ServiceName}","namespace": "{projectId}"}},
     "spec": {{
         "template": {{
         "metadata": {{
@@ -182,7 +182,7 @@ def cloudrun_rollout_restart():
     print(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
 
     res=requests.put(
-        knativeBase+"namespaces/{}/services/{}".format(PROJECT_ID, svcName), 
+        knativeBase+"namespaces/{}/services/{}".format(projectId, svcName), 
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
         json=json.loads(knativeJsonStr))
 
@@ -198,7 +198,9 @@ def toInt(num):
 
 def getGcpMetadata(url):
     try:
-        return requests.get(url, headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+        val=requests.get(url, headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
+        print("getGcpMetadata -- got <"+getGcpMetadata + "> for "+url)
+        return val
     except:
         logging.error("getGcpMetadata failed for url: "+url)        
     return "" 
@@ -257,23 +259,30 @@ def ytdl_api_rrtest():
 ################################################################################################## 
 ########################################### init #################################################
 ##################################################################################################
+mode=set()
 try:
-    google.cloud.logging.Client().setup_logging()
+    gcpLoggingClient=google.cloud.logging.Client()
+    gcpLoggingClient.setup_logging()
+    mode.add("gcp")
 except:
     print(" >>>>>> gcp logging failed to init")
     logging.warning("gcp logging failed to init")
 
-METADATA_URL="http://metadata.google.internal/computeMetadata/v1/"
+metadataUrl=os.environ.get('metadataUrl', "http://metadata.google.internal/computeMetadata/v1/")
 
-PROJECT_ID=os.environ.get("PROJECT_ID","hubs-dev-333333")
+projectId=getGcpMetadata(metadataUrl+"project/project-id")
 svcName="hubs-ytdl"
 
+###
+insta_name=projectId=getGcpMetadata(metadataUrl+"instance/name")
+###
+
 full_sa="hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com"
-inst_sa_token_res = getGcpMetadata(METADATA_URL+"instance/service-accounts/"+full_sa+"/token")
+inst_sa_token_res = getGcpMetadata(metadataUrl+"instance/service-accounts/"+full_sa+"/token")
 inst_sa_token=json.loads(inst_sa_token_res)['access_token']
 
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
-inst_id = getGcpMetadata(METADATA_URL+"instance/id")
+inst_id = getGcpMetadata(metadataUrl+"instance/id")
 
 redeploy_at = int(os.environ.get('REDEPLOY_AT', 4500))
 
