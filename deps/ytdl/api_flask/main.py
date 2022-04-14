@@ -15,7 +15,7 @@ from datetime import datetime
 
 def lambda_handler(event, context):
     # event['url']="http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"
-    # print("Received event: " + json.dumps(event, indent=2))
+    # logging.debug"Received event: " + json.dumps(event, indent=2))
     params=event['url'].split('?',1)[1]
     ytdl_params=dict(item.split('=',1) for item in params.split('&'))
     ytdl_url=ytdl_params['url']
@@ -150,7 +150,7 @@ def cloudrun_rollout_restart():
 
     reqJson=json.loads(res.text)
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
-    print("revisionName" + revisionName)
+    logging.debug("revisionName" + revisionName)
     args = {
         'ServiceName':svcName, 
         'revisionName':revisionName,         
@@ -159,7 +159,7 @@ def cloudrun_rollout_restart():
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
         'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"]}
 
-    print(args)
+    logging.debug(args)
     
     knativeJsonStr='''
     {{"apiVersion": "serving.knative.dev/v1",
@@ -179,7 +179,7 @@ def cloudrun_rollout_restart():
                 "env": [{{"name": "dummy","value": "dummy"}}]}}]}}}}}}}}
     '''.format(**args)
 
-    print(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
+    logging.debug(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
 
     res=requests.put(
         knativeBase+"namespaces/{}/services/{}".format(projectId, svcName), 
@@ -187,7 +187,7 @@ def cloudrun_rollout_restart():
         json=json.loads(knativeJsonStr))
 
     logging.warning(res)
-    print(" >>>>>> put-res.text"+res.text)
+    logging.debug(" >>>>>> put-res.text"+res.text)
 
     sys.stdout.flush()
     
@@ -199,7 +199,7 @@ def toInt(num):
 def getGcpMetadata(url):
     try:
         val=requests.get(url, headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-        print("getGcpMetadata -- got <"+getGcpMetadata + "> for "+url)
+        logging.info("getGcpMetadata -- got <"+ val + "> for "+url)
         return val
     except Exception as e:
         logging.error("getGcpMetadata failed for url: "+url + "error="+str(e))
@@ -266,11 +266,10 @@ try:
     mode.add("gcp")
     logging.info("mode + gcp")
 except Exception as e:
-    print(" >>>>>> gcp logging failed to init: " + str(e))
-    logging.warning("gcp logging failed to init" + str(e))
+    logging.info("gcp logging failed to init" + str(e))
 
 metadataUrl=os.environ.get('metadataUrl', "http://metadata.google.internal/computeMetadata/v1/")
-print("metadataUrl="+metadataUrl)
+logging.debug("metadataUrl="+metadataUrl)
 
 projectId=getGcpMetadata(metadataUrl+"project/project-id")
 svcName="hubs-ytdl"
@@ -286,7 +285,7 @@ inst_sa_token=json.loads(inst_sa_token_res)['access_token']
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 inst_id = getGcpMetadata(metadataUrl+"instance/id")
 
-redeploy_at = int(os.environ.get('REDEPLOY_AT', 4500))
+redeploy_at = int(os.environ.get('REDEPLOY_AT', 450))
 
 redis_client = redis.StrictRedis(
     host=os.environ.get('REDIS_HOST', '10.208.38.179'), 
@@ -297,11 +296,9 @@ rkey = "ytdl:"+ datetime.today().strftime("%Y%m%d")
 try:
     redis_client.expire(rkey, 604800)   # a week
 except:
-    print(" >>>>>> bad redis")
     logging.error("bad redis")
 
 logging.debug(" @@@@@@ IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
-print(" >>>>>> IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 
 sys.stdout.flush()
 
@@ -309,7 +306,7 @@ sys.stdout.flush()
 ##################################### local debug only ###########################################
 ##################################################################################################
 if __name__ == "__main__":
-    # print(os.environ.items)
+    # logging.debug(os.environ.items)
     # os.environ.setdefault('SERVICE_NAME', 'hubs-ytdl')
     # cloudrun_rollout_restart()
     port = int(os.environ.get("PORT", 5000))
