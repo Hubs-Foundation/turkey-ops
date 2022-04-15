@@ -725,11 +725,6 @@ spec:
           value: turkey-speelycaptor-scratch-does-not-matter-it-seems
         - name: CLOUD
           value: gcp
-        - name: scratchBucketRegion
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: AWS_REGION
         - name: GCP_SA_HMAC_KEY
           valueFrom:
             secretKeyRef:
