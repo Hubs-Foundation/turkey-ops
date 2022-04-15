@@ -73,7 +73,10 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	internal.Logger.Error(err.Error())
 	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	// }
-	updateGcsTurkeyBuildReportFile(dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	err = updateGcsTurkeyBuildReportFile(dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	if err != nil {
+		internal.GetLogger().Error(err.Error())
+	}
 
 })
 
