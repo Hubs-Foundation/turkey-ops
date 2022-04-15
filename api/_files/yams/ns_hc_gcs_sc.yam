@@ -283,7 +283,7 @@ spec:
         - name: turkeyCfg_HEADER_AUTHZ
           value: "duuuuuuuuuuuuuuuuuuuuuuuuumy"
         - name: turkeyCfg_YTDL_HOST
-          value: "http://localhost:8080"
+          value: "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"
         # - name: turkeyCfg_YTDL_HOST
         #   value: "http://ytdl.turkey-services"
         - name: turkeyCfg_PHOTOMNEMONIC
@@ -338,7 +338,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: RET_MODE
-          value: will-not-start-turkey-updater
+          value: RET_MODE==will-not-start-turkey-updater
         resources:
           requests:
             memory: 50Mi
@@ -346,11 +346,11 @@ spec:
           limits:
             memory: 200Mi
             cpu: 0.2              
-      - name: ytdl
-        image: mozillareality/ytdl:6_2021.6.6
-        ports:
-        - containerPort: 8080
-        imagePullPolicy: IfNotPresent
+      # - name: ytdl
+      #   image: mozillareality/ytdl:6_2021.6.6
+      #   ports:
+      #   - containerPort: 8080
+      #   imagePullPolicy: IfNotPresent
       ###############################################
       ########## gcsfuse ############################
       ###############################################

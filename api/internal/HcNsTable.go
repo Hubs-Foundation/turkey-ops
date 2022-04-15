@@ -11,7 +11,9 @@ type HcNsTable struct {
 }
 
 //singleton instance
-var HC_NS_TABLE = &HcNsTable{}
+var HC_NS_TABLE = &HcNsTable{
+	hcNsTable: make(map[string]HcNsNotes),
+}
 
 var mu sync.Mutex
 

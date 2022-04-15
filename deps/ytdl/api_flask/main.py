@@ -199,7 +199,7 @@ def toInt(num):
 def getGcpMetadata(url):
     try:
         val=requests.get(url, headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-        logging.info("getGcpMetadata -- got <"+ val + "> for "+url)
+        logging.info("getGcpMetadata -- got <"+ val[:99] + "> for "+url)
         return val
     except Exception as e:
         logging.error("getGcpMetadata failed for url: "+url + "error="+str(e))
@@ -271,32 +271,28 @@ except Exception as e:
 metadataUrl=os.environ.get('metadataUrl', "http://metadata.google.internal/computeMetadata/v1/")
 logging.debug("metadataUrl="+metadataUrl)
 
-projectId=getGcpMetadata(metadataUrl+"project/project-id")
 svcName="hubs-ytdl"
-
-###
-insta_name=projectId=getGcpMetadata(metadataUrl+"instance/name")
-###
-
 full_sa="hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com"
+inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
+redeploy_at = int(os.environ.get('REDEPLOY_AT', 450))
+
+projectId=getGcpMetadata(metadataUrl+"project/project-id")
 inst_sa_token_res = getGcpMetadata(metadataUrl+"instance/service-accounts/"+full_sa+"/token")
 inst_sa_token=json.loads(inst_sa_token_res)['access_token']
-
-inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 inst_id = getGcpMetadata(metadataUrl+"instance/id")
 
-redeploy_at = int(os.environ.get('REDEPLOY_AT', 450))
 
 redis_client = redis.StrictRedis(
     host=os.environ.get('REDIS_HOST', '10.208.38.179'), 
     port=int(os.environ.get('REDIS_PORT', 6379)))
 rkey = "ytdl:"+ datetime.today().strftime("%Y%m%d")
 
-# redis_client.expire(rkey, 604800)   # a week
 try:
     redis_client.expire(rkey, 604800)   # a week
+    mode.add("redis")
+    logging.debug("mode + redis")
 except:
-    logging.error("bad redis")
+    logging.warn("no redis")
 
 logging.debug(" @@@@@@ IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 
