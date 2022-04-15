@@ -13,8 +13,8 @@ func main() {
 	internal.InitLogger()
 	internal.MakeCfg()
 
-	cron := internal.NewCron("dummy-1h", "1h")
-	cron.Load("dummy", internal.Cronjob_dummy)
+	// cron := internal.NewCron("dummy-1h", "1h")
+	// cron.Load("dummy", internal.Cronjob_dummy)
 
 	router := http.NewServeMux()
 	//legacy ita endpoints

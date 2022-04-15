@@ -39,16 +39,18 @@ type hcCfg struct {
 	Options string `json:"options"` //additional options, underscore(_)prefixed -- ie. "_ebs"
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
-	Domain         string `json:"domain"`
-	DBname         string `json:"dbname"`
-	DBpass         string `json:"dbpass"`
-	PermsKey       string `json:"permskey"`
-	SmtpServer     string `json:"smtpserver"`
-	SmtpPort       string `json:"smtpport"`
-	SmtpUser       string `json:"smtpuser"`
-	SmtpPass       string `json:"smtppass"`
-	GCP_SA_KEY_b64 string
-	ItaChan        string
+	Domain             string `json:"domain"`
+	DBname             string `json:"dbname"`
+	DBpass             string `json:"dbpass"`
+	PermsKey           string `json:"permskey"`
+	SmtpServer         string `json:"smtpserver"`
+	SmtpPort           string `json:"smtpport"`
+	SmtpUser           string `json:"smtpuser"`
+	SmtpPass           string `json:"smtppass"`
+	GCP_SA_KEY_b64     string
+	ItaChan            string
+	GCP_SA_HMAC_KEY    string `json:"GCP_SA_HMAC_KEY"`    //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.GOOG1EGPHPZU7F3GUTJCVQWLTYCY747EUAVHHEHQBN4WXSMPXJU4488888888
+	GCP_SA_HMAC_SECRET string `json:"GCP_SA_HMAC_SECRET"` //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
 
 	//generated per instance
 	JWK         string `json:"jwk"` // encoded from PermsKey.public
@@ -327,6 +329,8 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	cfg.SmtpPass = internal.Cfg.SmtpPass
 	cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
 	cfg.ItaChan = internal.Cfg.Env
+	cfg.GCP_SA_HMAC_KEY = internal.Cfg.GCP_SA_HMAC_KEY
+	cfg.GCP_SA_HMAC_SECRET = internal.Cfg.GCP_SA_HMAC_SECRET
 
 	//produc the rest
 	cfg.GuardianKey = "strongSecret#1"
