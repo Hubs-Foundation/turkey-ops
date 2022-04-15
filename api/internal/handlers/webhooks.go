@@ -73,12 +73,14 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	internal.Logger.Error(err.Error())
 	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	// }
+	updateGcsTurkeyBuildReportFile(dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 
 })
 
 func updateGcsTurkeyBuildReportFile(imgReponame, imgTag string) error {
 	bucket := "turkeycfg"
 	filename := "build-report"
+	//read
 	curr, err := internal.Cfg.Gcps.GCS_ReadFile(bucket, filename)
 	if err != nil {
 		return err
@@ -88,7 +90,17 @@ func updateGcsTurkeyBuildReportFile(imgReponame, imgTag string) error {
 	if err != nil {
 		return err
 	}
-
+	//update
+	brMap[imgReponame] = imgTag
+	//write
+	brMapBytes, err := json.Marshal(brMap)
+	if err != nil {
+		return err
+	}
+	err = internal.Cfg.Gcps.GCS_WriteFile(bucket, filename, string(brMapBytes))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
