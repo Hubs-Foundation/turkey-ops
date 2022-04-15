@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
 
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
@@ -59,6 +60,43 @@ func (g *GcpSvs) DeleteObjects(bucketName, prefix string) error {
 	}
 	GetLogger().Debug(fmt.Sprintf("deleted <%v> objs", cnt))
 	return nil
+}
+
+func (g *GcpSvs) GCS_WriteFile(bucketName, filename, fileContent string) error {
+	GetLogger().Debug("uploading to bucket: " + bucketName + ", key: " + filename)
+	client, err := storage.NewClient(context.Background())
+	if err != nil {
+		return err
+	}
+	obj := client.Bucket(bucketName).Object(filename)
+	w := obj.NewWriter(context.Background())
+	_, err = fmt.Fprint(w, fileContent)
+	if err != nil {
+		return err
+	}
+	if err := w.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *GcpSvs) GCS_ReadFile(bucketName, filename string) ([]byte, error) {
+	GetLogger().Debug("uploading to bucket: " + bucketName + ", key: " + filename)
+	client, err := storage.NewClient(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	obj := client.Bucket(bucketName).Object(filename)
+	r, err := obj.NewReader(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	bytes, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return bytes, nil
 }
 
 func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {

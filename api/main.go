@@ -39,7 +39,7 @@ func main() {
 	router.Handle("/global_404_fallback", handlers.Global_404_launch_fallback)
 
 	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
-	router.Handle("/webhooks/ghaturkey", handlers.GhaTurkey)
+	// router.Handle("/webhooks/ghaturkey", handlers.GhaTurkey)
 
 	router.Handle("/ytdl/api/info", handlers.Ytdl)
 

@@ -148,7 +148,7 @@ metadata:
   name: reticulum
   namespace: hc-{{.HubId}}
   annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: true
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 spec:
   replicas: 2
   selector:
