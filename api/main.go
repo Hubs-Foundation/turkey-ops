@@ -20,7 +20,7 @@ func main() {
 	}
 	//-----------------------------------
 	cron := internal.NewCron("cron-10m", "10m")
-	cron.Load("dummy", internal.Cronjob_dummy)
+	cron.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
 
 	cron.Start()
 

@@ -2,15 +2,13 @@ package handlers
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"main/internal"
 	"net/http"
+	"strconv"
 	"strings"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var supportedChannels = map[string]bool{
@@ -59,30 +57,35 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	//todo: verify ... docker's really lacking here, check with docker, maybe cross check with github action too?
 
+	tagArr := strings.Split(dockerJson.Push_data.Tag, "-")
+
 	//assume we can trust the payload at this point
 	internal.Logger.Debug(fmt.Sprintf("parsed dockerJson: %+v", dockerJson))
-	channel := strings.Split(dockerJson.Push_data.Tag, "-")[0]
+	channel := tagArr[0]
 	_, ok := supportedChannels[channel]
 	if !ok {
 		internal.Logger.Error("bad Channel: " + channel)
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	// err = publishToConfigmap_label("hubsbuilds-"+channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
-	// if err != nil {
-	// 	internal.Logger.Error(err.Error())
-	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-	// }
-	err = updateGcsTurkeyBuildReportFile(dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
+	//filter out utility tags
+	if len(tagArr) < 2 {
+		return
+	}
+	if _, err := strconv.Atoi(tagArr[1]); err != nil {
+		return
+	}
+
+	err = updateGcsTurkeyBuildReportFile(channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 	if err != nil {
 		internal.GetLogger().Error(err.Error())
 	}
 
 })
 
-func updateGcsTurkeyBuildReportFile(imgReponame, imgTag string) error {
+func updateGcsTurkeyBuildReportFile(channel, imgReponame, imgTag string) error {
 	bucket := "turkeycfg"
-	filename := "build-report"
+	filename := "build-report" + channel
 	//read
 	curr, err := internal.Cfg.Gcps.GCS_ReadFile(bucket, filename)
 	if err != nil {
@@ -107,16 +110,6 @@ func updateGcsTurkeyBuildReportFile(imgReponame, imgTag string) error {
 	return nil
 }
 
-func publishToConfigmap_label(cfgmapName string, imgRepoName string, imgTag string) error {
-	cfgmap, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), cfgmapName, metav1.GetOptions{})
-	if err != nil {
-		internal.Logger.Error(err.Error())
-	}
-	cfgmap.Labels[imgRepoName] = imgTag
-	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
-	return err
-}
-
 func prettyPrintJson(jsonBytes []byte) string {
 	d := json.NewDecoder(bytes.NewBuffer(jsonBytes))
 	var m map[string]interface{}
@@ -130,51 +123,52 @@ type ghaReport struct {
 	Channel string `json:"channel"`
 }
 
-var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/webhooks/ghaturkey" || r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-	//todo -- make an api key sort of thing for ddos protection?
-	//todo -- doublecheck back against github and dockerhub?
+// var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 	if r.URL.Path != "/webhooks/ghaturkey" || r.Method != "POST" {
+// 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 		return
+// 	}
+// 	//todo -- make an api key sort of thing for ddos protection?
+// 	//todo -- doublecheck back against github and dockerhub?
 
-	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
+// 	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
 
-	rBodyBytes, _ := ioutil.ReadAll(r.Body)
-	internal.Logger.Debug(prettyPrintJson(rBodyBytes))
-	decoder := json.NewDecoder(bytes.NewBuffer(rBodyBytes))
-	//decoder := json.NewDecoder(r.Body)
+// 	rBodyBytes, _ := ioutil.ReadAll(r.Body)
+// 	internal.Logger.Debug(prettyPrintJson(rBodyBytes))
+// 	decoder := json.NewDecoder(bytes.NewBuffer(rBodyBytes))
+// 	//decoder := json.NewDecoder(r.Body)
 
-	var ghaReport ghaReport
-	err := decoder.Decode(&ghaReport)
-	if err != nil {
-		internal.Logger.Debug(" bad r.Body" + err.Error())
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
+// 	var ghaReport ghaReport
+// 	err := decoder.Decode(&ghaReport)
+// 	if err != nil {
+// 		internal.Logger.Debug(" bad r.Body" + err.Error())
+// 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 		return
+// 	}
 
-	_, ok := supportedChannels[ghaReport.Channel]
-	if !ok {
-		internal.Logger.Error("bad ghaReport.Channel: " + ghaReport.Channel)
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
+// 	_, ok := supportedChannels[ghaReport.Channel]
+// 	if !ok {
+// 		internal.Logger.Error("bad ghaReport.Channel: " + ghaReport.Channel)
+// 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 		return
+// 	}
 
-	//publish
-	TagArr := strings.Split(ghaReport.Tag, ":")
-	if len(TagArr) != 2 {
-		internal.Logger.Error("bad ghaReport.Tag: " + ghaReport.Tag)
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
+// 	//publish
+// 	TagArr := strings.Split(ghaReport.Tag, ":")
+// 	if len(TagArr) != 2 {
+// 		internal.Logger.Error("bad ghaReport.Tag: " + ghaReport.Tag)
+// 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 		return
+// 	}
 
-	err = publishToConfigmap_label("hubsbuilds-"+ghaReport.Channel, TagArr[0], TagArr[1])
-	if err != nil {
-		internal.Logger.Error(err.Error())
-	}
+// 	err = publishToConfigmap_label("hubsbuilds-"+ghaReport.Channel, TagArr[0], TagArr[1])
+// 	if err != nil {
+// 		internal.Logger.Error(err.Error())
+// 	}
 
-	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-})
+// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// })
+
 var TurkeyGitops = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/webhooks/turkeygitops" || r.Method != "POST" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)

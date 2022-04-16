@@ -17,6 +17,7 @@ type Config struct {
 	AuthProxyUrl string `description:"auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)"`
 
 	Env      string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
+	Channel  string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
 	Domain   string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
 	DBuser   string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
 	DBpass   string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`
@@ -65,6 +66,12 @@ func MakeCfg() {
 		Logger.Error("missing env var: POD_LABEL_APP")
 	}
 	Cfg.Env = getEnv("ENV", "dev")
+	Cfg.Channel = getEnv("CHANNEL", Cfg.Env)
+	if Cfg.Env == "staging" {
+		Cfg.Channel = "beta"
+	} else if Cfg.Env == "prod" {
+		Cfg.Channel = "stable"
+	}
 	Cfg.Domain = os.Getenv("DOMAIN")
 	Cfg.DBconn = os.Getenv("DB_CONN")
 	Cfg.DBuser = getEnv("DB_USER", "postgres")

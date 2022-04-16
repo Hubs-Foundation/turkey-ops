@@ -1,7 +1,11 @@
 package internal
 
 import (
+	"context"
+	"encoding/json"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Cron struct {
@@ -67,6 +71,64 @@ func (c *Cron) Start() {
 
 func Cronjob_dummy() {
 	Logger.Debug("hello from Cronjob_dummy")
+}
+
+func Cronjob_publishTurkeyBuildReport() {
+	channel := Cfg.Channel
+	bucket := "turkeycfg"
+
+	filename := "build-report" + channel
+	//read
+	br, err := Cfg.Gcps.GCS_ReadFile(bucket, filename)
+	if err != nil {
+		Logger.Error(err.Error())
+	}
+	//make brMap
+	brMap := make(map[string]string)
+	err = json.Unmarshal(br, &brMap)
+	if err != nil {
+		Logger.Error(err.Error())
+	}
+
+	Logger.Sugar().Warnf("publishing: channel: %v brMap: %v", channel, brMap)
+
+	//publish
+	err = publishToConfigmap_label(channel, brMap)
+	if err != nil {
+		Logger.Error("failed to publishToConfigmap_label: " + err.Error())
+	}
+
+	// //indexing (regroup brMap) for channels
+	// brMap_chan := make(map[string]map[string]string)
+	// for k, v := range brMap {
+	// 	for _, channel := range []string{"dev, beta, stable"} {
+	// 		if strings.HasPrefix(v, channel+"-") {
+	// 			brMap_chan[channel][k] = v
+	// 		} else {
+	// 			Logger.Error("unexpected tag found in brMap[" + k + "]: " + v)
+	// 		}
+	// 	}
+	// }
+	// //publish them
+	// for k, v := range brMap_chan {
+	// 	err := publishToConfigmap_label(k, v)
+	// 	if err != nil {
+	// 		Logger.Error("failed to publishToConfigmap_label: " + err.Error())
+	// 	}
+	// }
+
+}
+
+func publishToConfigmap_label(channel string, repo_tag_map map[string]string) error {
+	cfgmap, err := Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(Cfg.PodNS).Get(context.Background(), "hubsbuilds-"+channel, metav1.GetOptions{})
+	if err != nil {
+		Logger.Error(err.Error())
+	}
+	for k, v := range repo_tag_map {
+		cfgmap.Labels[k] = v
+	}
+	_, err = Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(Cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
+	return err
 }
 
 // func Cronjob_updateDeployment(deploymentName string) {
