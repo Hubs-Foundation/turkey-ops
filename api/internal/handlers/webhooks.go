@@ -85,7 +85,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 func updateGcsTurkeyBuildReportFile(channel, imgReponame, imgTag string) error {
 	bucket := "turkeycfg"
-	filename := "build-report" + channel
+	filename := "build-report-" + channel
 	//read
 	curr, err := internal.Cfg.Gcps.GCS_ReadFile(bucket, filename)
 	if err != nil {

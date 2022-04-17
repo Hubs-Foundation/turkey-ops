@@ -77,7 +77,7 @@ func Cronjob_publishTurkeyBuildReport() {
 	channel := Cfg.Channel
 	bucket := "turkeycfg"
 
-	filename := "build-report" + channel
+	filename := "build-report-" + channel
 	//read
 	br, err := Cfg.Gcps.GCS_ReadFile(bucket, filename)
 	if err != nil {
