@@ -63,7 +63,7 @@ func (g *GcpSvs) DeleteObjects(bucketName, prefix string) error {
 }
 
 func (g *GcpSvs) GCS_WriteFile(bucketName, filename, fileContent string) error {
-	GetLogger().Debug("uploading to bucket: " + bucketName + ", key: " + filename)
+	GetLogger().Debug("writing to bucket: " + bucketName + ", key: " + filename)
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (g *GcpSvs) GCS_WriteFile(bucketName, filename, fileContent string) error {
 }
 
 func (g *GcpSvs) GCS_ReadFile(bucketName, filename string) ([]byte, error) {
-	GetLogger().Debug("uploading to bucket: " + bucketName + ", key: " + filename)
+	GetLogger().Debug("reading bucket: " + bucketName + ", key: " + filename)
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
 		return nil, err

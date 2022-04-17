@@ -50,7 +50,7 @@ func (c *Cron) Start() {
 		c.Interval = defaultCronInterval
 		interval, _ = time.ParseDuration(defaultCronInterval)
 	}
-	Logger.Info("starting cron jobs, interval = " + interval.String())
+	Logger.Info("starting cron jobs for -- name: " + c.Name + ", interval:" + c.Interval)
 	go func() {
 		time.Sleep(interval)
 		t := time.Tick(interval)
@@ -91,7 +91,6 @@ func Cronjob_publishTurkeyBuildReport() {
 	}
 
 	Logger.Sugar().Warnf("publishing: channel: %v brMap: %v", channel, brMap)
-	return
 
 	//publish
 	err = publishToConfigmap_label(channel, brMap)

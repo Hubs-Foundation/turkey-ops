@@ -66,12 +66,15 @@ func MakeCfg() {
 		Logger.Error("missing env var: POD_LABEL_APP")
 	}
 	Cfg.Env = getEnv("ENV", "dev")
+	Logger.Info("Cfg.Env: " + Cfg.Env)
+
 	Cfg.Channel = getEnv("CHANNEL", Cfg.Env)
 	if Cfg.Env == "staging" {
 		Cfg.Channel = "beta"
 	} else if Cfg.Env == "prod" {
 		Cfg.Channel = "stable"
 	}
+	Logger.Info("Cfg.Channel: " + Cfg.Channel)
 	Cfg.Domain = os.Getenv("DOMAIN")
 	Cfg.DBconn = os.Getenv("DB_CONN")
 	Cfg.DBuser = getEnv("DB_USER", "postgres")
