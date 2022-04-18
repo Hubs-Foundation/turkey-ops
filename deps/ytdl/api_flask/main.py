@@ -149,6 +149,12 @@ def cloudrun_rollout_restart():
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
 
     reqJson=json.loads(res.text)
+    ###
+    for status in reqJson["status"]["conditions"]:
+        if status != "True":
+            return "skipped -- not ready for new revision (already in progress?)"
+    ###
+
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
     logging.debug("revisionName" + revisionName)
     args = {
@@ -186,7 +192,7 @@ def cloudrun_rollout_restart():
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
         json=json.loads(knativeJsonStr))
 
-    logging.warning("cloudrun_rollout_restart.res.status_code: ",res.status_code)
+    logging.warning("cloudrun_rollout_restart.res.status_code: "+str(res.status_code))
     # logging.debug(" >>>>>> put-res.text"+res.text)
     
     return res.text
@@ -226,8 +232,8 @@ def ytdl_api_info():
     top_stat =redis_client.zrevrange(rkey, 0,-1, withscores=True)
     top_ip=str(top_stat[0][0])
     top_cnt=int(top_stat[0][1])
-    if top_cnt >=redeploy_at:
-        logging.warning( "redeploying -- ", top_ip, " with cnt=", top_cnt, " exceeded ", redeploy_at)
+    if top_cnt >=redeploy_at :
+        logging.warning( "redeploying -- " + top_ip + " with cnt=" + str(top_cnt)+ " exceeded "+ str(redeploy_at))
         cloudrun_rollout_restart()
 
     return jsonify(result)
