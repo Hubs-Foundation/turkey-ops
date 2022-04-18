@@ -149,12 +149,13 @@ def cloudrun_rollout_restart():
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
 
     reqJson=json.loads(res.text)
+    logging.debug(reqJson)
     ###
     for status in reqJson["status"]["conditions"]:
         logging.debug('reqJson["status"]["conditions"]: ' + str(status))
         if str(status) != "True":
             logging.debug("skipped -- not ready for new revision (already in progress?)")
-            # return ""
+            return ""
     ###
 
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
@@ -265,10 +266,10 @@ def ytdl_api_stats():
     
     return jsonify(report)
 
-# @app.route("/api/rrtest")
-# def ytdl_api_rrtest():
-#     r=cloudrun_rollout_restart()
-#     return str(r)
+@app.route("/api/rrtest")
+def ytdl_api_rrtest():
+    r=cloudrun_rollout_restart()
+    return str(r)
 ################################################################################################## 
 ########################################### init #################################################
 ##################################################################################################
