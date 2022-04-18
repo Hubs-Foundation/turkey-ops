@@ -154,9 +154,13 @@ def cloudrun_rollout_restart():
     sys.stdout.flush()
     
     ###
-    for status in reqJson["status"]["conditions"]:
+    for condition in reqJson["status"]["conditions"]:
+        status=str(condition["status"])
         logging.debug('reqJson["status"]["conditions"]: ' + str(status))
-        if str(status) != "True":
+        print("~~~~~~~~~~~~~~~status" + status)
+        sys.stdout.flush()
+        
+        if status != "True":
             logging.debug("skipped -- not ready for new revision (already in progress?)")
             return "skip"
     ###
