@@ -249,9 +249,11 @@ def ytdl_api_info():
 
 @app.route("/api/stats")
 def ytdl_api_stats():
+    _inst_ip_cnt = redis_client.zscore(rkey, inst_ip)
     report={
         "_rkey": rkey,
         "_inst_ip": inst_ip,
+        "_inst_ip_cnt": _inst_ip_cnt,
         }
     
     # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
@@ -288,7 +290,7 @@ logging.debug("metadataUrl="+metadataUrl)
 svcName=os.environ.get("svcName","hubs-ytdl")
 full_sa=os.environ.get("fullSaNAme", "hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com")
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
-redeploy_at = int(os.environ.get('REDEPLOY_AT', 450))
+redeploy_at = int(os.environ.get('REDEPLOY_AT', 88))
 
 projectId=getGcpMetadata(metadataUrl+"project/project-id")
 inst_sa_token_res = getGcpMetadata(metadataUrl+"instance/service-accounts/"+full_sa+"/token")
