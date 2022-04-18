@@ -227,7 +227,7 @@ def ytdl_api_info():
     top_ip=str(top_stat[0][0])
     top_cnt=int(top_stat[0][1])
     if top_cnt >=redeploy_at:
-        logging.warning( "redeploying -- "+top_ip + " with cnt="+top_cnt+" exceeded " + str(redeploy_at))
+        logging.warning( "redeploying -- ", top_ip, " with cnt=", top_cnt, " exceeded ", redeploy_at)
         cloudrun_rollout_restart()
 
     return jsonify(result)
