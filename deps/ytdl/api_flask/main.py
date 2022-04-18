@@ -151,8 +151,10 @@ def cloudrun_rollout_restart():
     reqJson=json.loads(res.text)
     ###
     for status in reqJson["status"]["conditions"]:
-        if status != True:
-            return "skipped -- not ready for new revision (already in progress?)"
+        logging.debug('reqJson["status"]["conditions"]: ' + str(reqJson["status"]["conditions"]))
+        if str(status) != "True":
+            logging.debug("skipped -- not ready for new revision (already in progress?)")
+            return ""
     ###
 
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
