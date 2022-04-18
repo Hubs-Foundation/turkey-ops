@@ -148,6 +148,7 @@ def cloudrun_rollout_restart():
     getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(projectId, svcName)
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
 
+    print(res.text)
     reqJson=json.loads(res.text)
     logging.debug(reqJson)
     ###
@@ -155,7 +156,7 @@ def cloudrun_rollout_restart():
         logging.debug('reqJson["status"]["conditions"]: ' + str(status))
         if str(status) != "True":
             logging.debug("skipped -- not ready for new revision (already in progress?)")
-            return ""
+            return "skip"
     ###
 
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
