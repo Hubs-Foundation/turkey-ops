@@ -151,6 +151,8 @@ def cloudrun_rollout_restart():
     print(res.text)
     reqJson=json.loads(res.text)
     logging.debug(reqJson)
+    sys.stdout.flush()
+    
     ###
     for status in reqJson["status"]["conditions"]:
         logging.debug('reqJson["status"]["conditions"]: ' + str(status))
