@@ -179,17 +179,15 @@ def cloudrun_rollout_restart():
                 "env": [{{"name": "dummy","value": "dummy"}}]}}]}}}}}}}}
     '''.format(**args)
 
-    logging.debug(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
+    # logging.debug(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
 
     res=requests.put(
         knativeBase+"namespaces/{}/services/{}".format(projectId, svcName), 
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
         json=json.loads(knativeJsonStr))
 
-    logging.warning(res)
-    logging.debug(" >>>>>> put-res.text"+res.text)
-
-    sys.stdout.flush()
+    logging.warning("cloudrun_rollout_restart.res.status_code: ",res.status_code)
+    # logging.debug(" >>>>>> put-res.text"+res.text)
     
     return res.text
 
@@ -229,7 +227,8 @@ def ytdl_api_info():
     top_ip=str(top_stat[0][0])
     top_cnt=int(top_stat[0][1])
     if top_cnt >=redeploy_at:
-        logging.warning( "starting redeployment because "+top_ip + " with cnt="+top_cnt+" exceeded " + str(redeploy_at))
+        logging.warning( "redeploying -- "+top_ip + " with cnt="+top_cnt+" exceeded " + str(redeploy_at))
+        cloudrun_rollout_restart()
 
     return jsonify(result)
 
@@ -252,10 +251,10 @@ def ytdl_api_stats():
     
     return jsonify(report)
 
-@app.route("/api/rrtest")
-def ytdl_api_rrtest():
-    r=cloudrun_rollout_restart()
-    return str(r)
+# @app.route("/api/rrtest")
+# def ytdl_api_rrtest():
+#     r=cloudrun_rollout_restart()
+#     return str(r)
 ################################################################################################## 
 ########################################### init #################################################
 ##################################################################################################
@@ -271,8 +270,8 @@ except Exception as e:
 metadataUrl=os.environ.get('metadataUrl', "http://metadata.google.internal/computeMetadata/v1/")
 logging.debug("metadataUrl="+metadataUrl)
 
-svcName="hubs-ytdl"
-full_sa="hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com"
+svcName=os.environ.get("svcName","hubs-ytdl")
+full_sa=os.environ.get("fullSaNAme", "hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com")
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 redeploy_at = int(os.environ.get('REDEPLOY_AT', 450))
 
@@ -292,7 +291,7 @@ try:
     mode.add("redis")
     logging.debug("mode + redis")
 except:
-    logging.warn("no redis")
+    logging.warn("bad redis config")
 
 logging.debug(" @@@@@@ IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 

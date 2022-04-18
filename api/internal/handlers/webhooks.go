@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"main/internal"
 	"net/http"
 	"strconv"
@@ -64,7 +62,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	channel := tagArr[0]
 	_, ok := supportedChannels[channel]
 	if !ok {
-		internal.Logger.Error("bad Channel: " + channel)
+		internal.Logger.Debug("bad Channel: " + channel)
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -110,18 +108,18 @@ func updateGcsTurkeyBuildReportFile(channel, imgReponame, imgTag string) error {
 	return nil
 }
 
-func prettyPrintJson(jsonBytes []byte) string {
-	d := json.NewDecoder(bytes.NewBuffer(jsonBytes))
-	var m map[string]interface{}
-	_ = d.Decode(&m)
-	b, _ := json.MarshalIndent(m, "", "  ")
-	return string(b)
-}
+// func prettyPrintJson(jsonBytes []byte) string {
+// 	d := json.NewDecoder(bytes.NewBuffer(jsonBytes))
+// 	var m map[string]interface{}
+// 	_ = d.Decode(&m)
+// 	b, _ := json.MarshalIndent(m, "", "  ")
+// 	return string(b)
+// }
 
-type ghaReport struct {
-	Tag     string `json:"tag"`
-	Channel string `json:"channel"`
-}
+// type ghaReport struct {
+// 	Tag     string `json:"tag"`
+// 	Channel string `json:"channel"`
+// }
 
 // var GhaTurkey = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 // 	if r.URL.Path != "/webhooks/ghaturkey" || r.Method != "POST" {
@@ -169,14 +167,14 @@ type ghaReport struct {
 // 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 // })
 
-var TurkeyGitops = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/webhooks/turkeygitops" || r.Method != "POST" {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
+// var TurkeyGitops = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 	if r.URL.Path != "/webhooks/turkeygitops" || r.Method != "POST" {
+// 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+// 		return
+// 	}
 
-	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
-	rBodyBytes, _ := ioutil.ReadAll(r.Body)
-	internal.Logger.Debug(prettyPrintJson(rBodyBytes))
+// 	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
+// 	rBodyBytes, _ := ioutil.ReadAll(r.Body)
+// 	internal.Logger.Debug(prettyPrintJson(rBodyBytes))
 
-})
+// })

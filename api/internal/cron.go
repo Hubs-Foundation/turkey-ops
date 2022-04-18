@@ -90,7 +90,7 @@ func Cronjob_publishTurkeyBuildReport() {
 		Logger.Error(err.Error())
 	}
 
-	Logger.Sugar().Warnf("publishing: channel: %v brMap: %v", channel, brMap)
+	Logger.Sugar().Debugf("publishing: channel: %v brMap: %v", channel, brMap)
 
 	//publish
 	err = publishToConfigmap_label(channel, brMap)
