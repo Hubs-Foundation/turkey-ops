@@ -148,21 +148,13 @@ def cloudrun_rollout_restart():
     getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(projectId, svcName)
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
 
-    print(res.text)
     reqJson=json.loads(res.text)
-    logging.debug(reqJson)
-    sys.stdout.flush()
-    
+
     ###
     for condition in reqJson["status"]["conditions"]:
-        status=str(condition["status"])
-        logging.debug('reqJson["status"]["conditions"]: ' + str(status))
-        print("~~~~~~~~~~~~~~~status" + status)
-        sys.stdout.flush()
-        
+        status=str(condition["status"])        
         if status != "True":
-            logging.debug("skipped -- not ready for new revision (already in progress?)")
-            return "skip"
+            return "skipped -- not ready for new revision (already in progress?)"
     ###
 
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
@@ -250,7 +242,8 @@ def ytdl_api_info():
     cnt = redis_client.zscore(rkey, inst_ip)
     if cnt >=redeploy_at :
         logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
-        cloudrun_rollout_restart()
+        r=cloudrun_rollout_restart()
+        logging.debug("and cloudrun_rollout_restart says: " + r)
 
     return jsonify(result)
 
@@ -273,7 +266,7 @@ def ytdl_api_stats():
     
     return jsonify(report)
 
-@app.route("/api/rrtest")
+@app.route("/api/force-new-revision")
 def ytdl_api_rrtest():
     r=cloudrun_rollout_restart()
     return str(r)
