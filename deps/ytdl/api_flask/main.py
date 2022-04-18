@@ -151,7 +151,7 @@ def cloudrun_rollout_restart():
     reqJson=json.loads(res.text)
     ###
     for status in reqJson["status"]["conditions"]:
-        if status != "True":
+        if status != True:
             return "skipped -- not ready for new revision (already in progress?)"
     ###
 
@@ -163,7 +163,9 @@ def cloudrun_rollout_restart():
         'projectId':reqJson["metadata"]["namespace"], 
         'vpcConn':reqJson["spec"]["template"]["metadata"]["annotations"]["run.googleapis.com/vpc-access-connector"],
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
-        'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"]}
+        'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"],
+        'redeploy_at': str(redeploy_at)
+        }
 
     logging.debug(args)
     
@@ -182,7 +184,10 @@ def cloudrun_rollout_restart():
             "serviceAccountName": "{sa}",
             "containers": [{{
                 "image": "{image}",
-                "env": [{{"name": "dummy","value": "dummy"}}]}}]}}}}}}}}
+                "env": [
+                    {{"name": "dummy","value": "dummy"}},
+                    {{"name": "REDEPLOY_AT","value": "{redeploy_at}"}}
+                    ]}}]}}}}}}}}
     '''.format(**args)
 
     # logging.debug(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
@@ -229,11 +234,12 @@ def ytdl_api_info():
     }
     redis_client.zincrby(rkey, 1, inst_ip)
 
-    top_stat =redis_client.zrevrange(rkey, 0,-1, withscores=True)
-    top_ip=str(top_stat[0][0])
-    top_cnt=int(top_stat[0][1])
-    if top_cnt >=redeploy_at :
-        logging.warning( "redeploying -- " + top_ip + " with cnt=" + str(top_cnt)+ " exceeded "+ str(redeploy_at))
+    # top_stat =redis_client.zrevrange(rkey, 0,-1, withscores=True)
+    # top_ip=str(top_stat[0][0])
+    # top_cnt=int(top_stat[0][1])
+    cnt = redis_client.zscore(rkey, inst_ip)
+    if cnt >=redeploy_at :
+        logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
         cloudrun_rollout_restart()
 
     return jsonify(result)
