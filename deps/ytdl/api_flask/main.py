@@ -148,8 +148,7 @@ def cloudrun_rollout_restart():
 
     dt = time.time() - float(t0)
     if dt < cooldown:
-        logging.debug("Ability is not ready yet. dt=" + str(dt))
-        return
+        return "skipped -- in cooldown -- need: " + str(cooldown) + " has: "+str(dt)
 
     # req=run_v2.GetServiceRequest(name=SVC_NAME_FULL)
     # svc=client.get_service(request=req)
@@ -171,7 +170,7 @@ def cloudrun_rollout_restart():
     ###
 
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
-    logging.debug("revisionName" + revisionName)
+
     args = {
         'ServiceName':svcName, 
         'revisionName':revisionName,         
@@ -218,7 +217,7 @@ def cloudrun_rollout_restart():
     else:
         redis_client.set(rkey_last_f, time.time())
 
-    return res.text
+    return str(res.text)
 
 def toInt(num):
     return int(num)
@@ -259,7 +258,7 @@ def ytdl_api_info():
     if cnt >=redeploy_at :
         logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
         r=cloudrun_rollout_restart()
-        logging.debug("and cloudrun_rollout_restart says: " + r)
+        logging.debug("and cloudrun_rollout_restart says: " + str(r))
 
     return jsonify(result)
 
