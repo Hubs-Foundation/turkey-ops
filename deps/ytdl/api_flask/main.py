@@ -1,4 +1,4 @@
-import youtube_dl, sys, json, os, socket, requests, redis, logging, random, base64
+import youtube_dl, sys, json, os, socket, requests, redis, logging, random, base64, time
 # import google.auth, google.auth.transport.requests
 # from google.oauth2 import service_account
 from google.cloud import run_v2
@@ -138,6 +138,19 @@ def flatten_result(result):
 
 def cloudrun_rollout_restart():
 
+    rkey_last_f=rkey+":lastReset_time"
+    cooldown = 120 # seconds
+
+    t0=float(0)
+    t=redis_client.get(rkey_last_f)
+    if t is not None:
+        t0=float(t)
+
+    dt = time.time() - float(t0)
+    if dt < cooldown:
+        logging.debug("Ability is not ready yet. dt=" + str(dt))
+        return
+
     # req=run_v2.GetServiceRequest(name=SVC_NAME_FULL)
     # svc=client.get_service(request=req)
     # request = run_v2.UpdateServiceRequest(service=svc)
@@ -199,9 +212,12 @@ def cloudrun_rollout_restart():
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
         json=json.loads(knativeJsonStr))
 
-    logging.warning("cloudrun_rollout_restart.res.status_code: "+str(res.status_code))
     # logging.debug(" >>>>>> put-res.text"+res.text)
-    
+    if res.status_code !=200:
+        logging.warning("problem @ cloudrun_rollout_restart, res.status_code: "+str(res.status_code) + ", body: " + res.text)
+    else:
+        redis_client.set(rkey_last_f, time.time())
+
     return res.text
 
 def toInt(num):

@@ -26,7 +26,7 @@ def vuser(id):
 
 
 host = "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"
-userCnt = 1
+userCnt = 10
 print("running", userCnt, "users")
 
 resTime = []
