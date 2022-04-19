@@ -225,10 +225,10 @@ def toInt(num):
 def getGcpMetadata(url):
     try:
         val=requests.get(url, headers={"Metadata-Flavor":"Google"}).content.decode('utf8')
-        logging.info("getGcpMetadata -- got <"+ val[:99] + "> for "+url)
+        logging.info("getGcpMetadata -- received "+ str(len(val)) + "chars for "+url)
         return val
     except Exception as e:
-        logging.error("getGcpMetadata failed for url: "+url + "error="+str(e))
+        logging.error("getGcpMetadata -- failed for url: "+url + "error="+str(e))
     return "" 
 
 ################################################################################################## 

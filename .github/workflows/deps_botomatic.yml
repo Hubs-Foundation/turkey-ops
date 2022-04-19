@@ -1,0 +1,32 @@
+name: botomatic
+on:
+  push:
+    branches: [ master, dev ]
+    paths:
+    - 'tools/botomatic/*'
+    - '.github/workflows/deps_botomatic.yml'
+  workflow_dispatch:
+env:
+  containerName: botomatic
+  registryName: mozillareality
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: docker build + push          
+        run: |
+          cd ./tools/botomatic
+          tag="$registryName/$containerName:${GITHUB_RUN_NUMBER}"
+          echo "[info] tag: $tag"
+          docker build . -t $tag
+          echo ${{ secrets.DOCKER_HUB_PWD }} | sudo docker login --username $registryName --password-stdin             
+          sudo docker push $tag
+
+          echo "[info] pushing to gcr"   
+          echo "${{ secrets.GCP_HUBS_DEV_SA_JSON_b64 }}" | base64 -d > gcpsakey.json
+          gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}" && echo "[info] gcrtag: $gcrtag"          
+          gcloud auth activate-service-account hubs-dev-sa@hubs-dev-333333.iam.gserviceaccount.com --key-file=gcpsakey.json
+          gcloud auth configure-docker -q gcr.io
+          docker tag $tag $gcrtag && docker push $gcrtag
+        
