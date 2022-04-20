@@ -123,17 +123,17 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
 		metav1.ListOptions{LabelSelector: "Subdomain=" + hcCfg.Subdomain})
 	if len(nsList.Items) != 0 {
-		if strings.HasSuffix(r.Header.Get("X-Forwarded-UserEmail"), "@mozilla.com") {
-			result += "[warning] subdomain already used by hub_id " + nsList.Items[0].Name + ", but was overridden for @mozilla.com user"
-		} else {
-			internal.Logger.Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"result": "subdomain already exists",
-				"hub_id": hcCfg.HubId,
-			})
-			return
-		}
+		// if strings.HasSuffix(r.Header.Get("X-Forwarded-UserEmail"), "@mozilla.com") {
+		// 	result += "[warning] subdomain already used by hub_id " + nsList.Items[0].Name + ", but was overridden for @mozilla.com user"
+		// } else {
+		internal.Logger.Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "subdomain already exists",
+			"hub_id": hcCfg.HubId,
+		})
+		return
+		// }
 	}
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
