@@ -124,7 +124,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		metav1.ListOptions{LabelSelector: "Subdomain=" + hcCfg.Subdomain})
 	if len(nsList.Items) != 0 {
 		if strings.HasSuffix(r.Header.Get("X-Forwarded-UserEmail"), "@mozilla.com") {
-			result += "subdomain overridden for @mozilla.com user"
+			result += "[warning] subdomain already used by hub_id " + nsList.Items[0].Name + ", but was overridden for @mozilla.com user"
 		} else {
 			internal.Logger.Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
 			w.WriteHeader(http.StatusBadRequest)
