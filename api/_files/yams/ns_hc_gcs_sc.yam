@@ -26,9 +26,7 @@ stringData:
   DB_NAME: {{.DBname}}
   DB_HOST: pgbouncer.turkey-services
   DB_HOST_T: pgbouncer-t.turkey-services
-  GUARDIAN_KEY: strongSecret#1
   PERMS_KEY: {{.PermsKey}}
-  PHX_KEY: strongSecret#2
   SMTP_SERVER: {{.SmtpServer}}
   SMTP_PORT: "{{.SmtpPort}}"
   SMTP_USER: {{.SmtpUser}}
@@ -38,6 +36,9 @@ stringData:
   PGRST_JWT_SECRET: "{{.JWK}}"
   GCP_SA_HMAC_KEY: {{.GCP_SA_HMAC_KEY}}
   GCP_SA_HMAC_SECRET: {{.GCP_SA_HMAC_SECRET}}
+  GUARDIAN_KEY: {{.GuardianKey}}
+  PHX_KEY: {{.PhxKey}}
+  PORTAL_ACCESS_KEY: {{.PORTAL_ACCESS_KEY}}
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}  
 ---
@@ -54,6 +55,7 @@ metadata:
     haproxy.org/server-ssl: "true"
     haproxy.org/response-set-header: |
       access-control-allow-origin "https://{{.Subdomain}}.{{.Domain}}"
+    haproxy.org/path-rewrite: /api-internal(.*) /_drop_
 spec:
   rules:
   - host: {{.Subdomain}}.{{.Domain}}

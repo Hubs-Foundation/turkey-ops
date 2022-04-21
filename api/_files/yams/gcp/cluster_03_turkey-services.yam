@@ -35,6 +35,7 @@ stringData:
   PORTAL_SECRET_KEY_BASE: {{.COOKIE_SECRET}}
   GCP_SA_HMAC_KEY: {{.GCP_SA_HMAC_KEY}}
   GCP_SA_HMAC_SECRET: {{.GCP_SA_HMAC_SECRET}}  
+  PORTAL_ACCESS_KEY: {{.PORTAL_ACCESS_KEY}}
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
@@ -323,7 +324,12 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: GCP_SA_HMAC_SECRET          
+              key: GCP_SA_HMAC_SECRET        
+        - name: PORTAL_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PORTAL_ACCESS_KEY
         livenessProbe:
           httpGet:
             path: "http://turkeyapi.turkey-services/Healthz"
@@ -648,6 +654,11 @@ spec:
             secretKeyRef:
               name: configs
               key: PORTAL_SECRET_KEY_BASE
+        - name: PORTAL_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PORTAL_ACCESS_KEY              
         resources:
           requests:
             memory: 200Mi

@@ -47,11 +47,11 @@ type hcCfg struct {
 	SmtpPort           string `json:"smtpport"`
 	SmtpUser           string `json:"smtpuser"`
 	SmtpPass           string `json:"smtppass"`
-	GCP_SA_KEY_b64     string
-	ItaChan            string
+	GCP_SA_KEY_b64     string `json:"gcp_sa_key_b64"`
+	ItaChan            string `json:"itachan"`            //build channel for ita to track
 	GCP_SA_HMAC_KEY    string `json:"GCP_SA_HMAC_KEY"`    //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.GOOG1EGPHPZU7F3GUTJCVQWLTYCY747EUAVHHEHQBN4WXSMPXJU4488888888
 	GCP_SA_HMAC_SECRET string `json:"GCP_SA_HMAC_SECRET"` //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
-
+	PORTAL_ACCESS_KEY  string
 	//generated per instance
 	JWK         string `json:"jwk"` // encoded from PermsKey.public
 	GuardianKey string `json:"guardiankey"`
@@ -336,10 +336,11 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	cfg.ItaChan = internal.Cfg.Env
 	cfg.GCP_SA_HMAC_KEY = internal.Cfg.GCP_SA_HMAC_KEY
 	cfg.GCP_SA_HMAC_SECRET = internal.Cfg.GCP_SA_HMAC_SECRET
-
+	cfg.PORTAL_ACCESS_KEY = internal.Cfg.PORTAL_ACCESS_KEY
 	//produc the rest
-	cfg.GuardianKey = "strongSecret#1"
-	cfg.PhxKey = "strongSecret#2"
+	pwdSeed := int64(hash(cfg.Domain))
+	cfg.GuardianKey = internal.PwdGen(15, pwdSeed, "G~")
+	cfg.PhxKey = internal.PwdGen(15, pwdSeed, "P~")
 
 	return cfg, nil
 }

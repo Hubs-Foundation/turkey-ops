@@ -149,7 +149,7 @@ type clusterCfg struct {
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
 	GCP_SA_HMAC_KEY         string `json:"GCP_SA_HMAC_KEY"`         //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.GOOG1EGPHPZU7F3GUTJCVQWLTYCY747EUAVHHEHQBN4WXSMPXJU4488888888
 	GCP_SA_HMAC_SECRET      string `json:"GCP_SA_HMAC_SECRET"`      //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
-
+	PORTAL_ACCESS_KEY       string `json:"PORTAL_ACCESS_KEY"`       // api key for portal access
 	// this will just be Region ...
 	AWS_REGION string `json:"AWS_REGION"` //us-east-1
 	ItaChan    string `json:"itachan"`    //ita's listening channel (dev, beta, stable), falls back to Env / swaping staging for beta
@@ -283,6 +283,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
 		internal.Logger.Warn("GCP_SA_KEY_b64 unspecified -- using: " + cfg.GCP_SA_KEY_b64)
 	}
+	cfg.PORTAL_ACCESS_KEY = internal.PwdGen(15, pwdSeed, "P~")
 
 	return cfg, nil
 }

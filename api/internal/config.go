@@ -33,6 +33,7 @@ type Config struct {
 	SmtpPort           string
 	SmtpUser           string
 	SmtpPass           string
+	PORTAL_ACCESS_KEY  string `description:"api key for turkey portal access"`
 
 	DockerhubUser string
 	DockerhubPass string
@@ -84,6 +85,7 @@ func MakeCfg() {
 	Cfg.AwsRegion = os.Getenv("AWS_REGION")
 	Cfg.GCP_SA_HMAC_KEY = os.Getenv("GCP_SA_HMAC_KEY")
 	Cfg.GCP_SA_HMAC_SECRET = os.Getenv("GCP_SA_HMAC_SECRET")
+	Cfg.PORTAL_ACCESS_KEY = getEnv("PORTAL_ACCESS_KEY", "dummy_P@$$")
 
 	Cfg.PermsKey = os.Getenv("PERMS_KEY")
 
