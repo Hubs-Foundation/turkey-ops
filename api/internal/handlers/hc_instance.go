@@ -53,9 +53,10 @@ type hcCfg struct {
 	GCP_SA_HMAC_SECRET string `json:"GCP_SA_HMAC_SECRET"` //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
 	PORTAL_ACCESS_KEY  string
 	//generated per instance
-	JWK         string `json:"jwk"` // encoded from PermsKey.public
-	GuardianKey string `json:"guardiankey"`
-	PhxKey      string `json:"phxkey"`
+	JWK          string `json:"jwk"` // encoded from PermsKey.public
+	GuardianKey  string `json:"guardiankey"`
+	PhxKey       string `json:"phxkey"`
+	HEADER_AUTHZ string `json:"headerauthz"`
 }
 
 var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -341,7 +342,7 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	pwdSeed := int64(hash(cfg.Domain))
 	cfg.GuardianKey = internal.PwdGen(15, pwdSeed, "G~")
 	cfg.PhxKey = internal.PwdGen(15, pwdSeed, "P~")
-
+	cfg.HEADER_AUTHZ = internal.PwdGen(15, pwdSeed, "H~")
 	return cfg, nil
 }
 

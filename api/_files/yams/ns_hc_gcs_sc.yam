@@ -39,6 +39,7 @@ stringData:
   GUARDIAN_KEY: {{.GuardianKey}}
   PHX_KEY: {{.PhxKey}}
   PORTAL_ACCESS_KEY: {{.PORTAL_ACCESS_KEY}}
+  HEADER_AUTHZ: {{.HEADER_AUTHZ}}
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}  
 ---
@@ -285,7 +286,15 @@ spec:
         - name: turkeyCfg_IMG_PROXY
           value: http://nearspark.hc-{{.HubId}}
         - name: turkeyCfg_HEADER_AUTHZ
-          value: "duuuuuuuuuuuuuuuuuuuuuuuuumy"
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: HEADER_AUTHZ
+        - name: turkeyCfg_PORTAL_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PORTAL_ACCESS_KEY
         - name: turkeyCfg_YTDL_HOST
           value: "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"
         # - name: turkeyCfg_YTDL_HOST
