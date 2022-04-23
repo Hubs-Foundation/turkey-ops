@@ -52,6 +52,7 @@ type hcCfg struct {
 	GCP_SA_HMAC_KEY    string `json:"GCP_SA_HMAC_KEY"`    //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.GOOG1EGPHPZU7F3GUTJCVQWLTYCY747EUAVHHEHQBN4WXSMPXJU4488888888
 	GCP_SA_HMAC_SECRET string `json:"GCP_SA_HMAC_SECRET"` //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
 	PORTAL_ACCESS_KEY  string
+	SKETCHFAB_API_KEY  string
 	//generated per instance
 	JWK          string `json:"jwk"` // encoded from PermsKey.public
 	GuardianKey  string `json:"guardiankey"`
@@ -338,6 +339,7 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	cfg.GCP_SA_HMAC_KEY = internal.Cfg.GCP_SA_HMAC_KEY
 	cfg.GCP_SA_HMAC_SECRET = internal.Cfg.GCP_SA_HMAC_SECRET
 	cfg.PORTAL_ACCESS_KEY = internal.Cfg.PORTAL_ACCESS_KEY
+	cfg.SKETCHFAB_API_KEY = internal.Cfg.SKETCHFAB_API_KEY
 	//produc the rest
 	pwdSeed := int64(hash(cfg.Domain))
 	cfg.GuardianKey = internal.PwdGen(15, pwdSeed, "G~")

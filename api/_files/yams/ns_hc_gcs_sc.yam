@@ -40,6 +40,7 @@ stringData:
   PHX_KEY: {{.PhxKey}}
   PORTAL_ACCESS_KEY: {{.PORTAL_ACCESS_KEY}}
   HEADER_AUTHZ: {{.HEADER_AUTHZ}}
+  SKETCHFAB_API_KEY: {{.SKETCHFAB_API_KEY}}
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}  
 ---
@@ -281,6 +282,11 @@ spec:
             secretKeyRef:
               name: configs
               key: ADM_EMAIL
+        - name: turkeyCfg_SKETCHFAB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SKETCHFAB_API_KEY              
         # - name: turkeyCfg_ITA_HOST
         #   value: http://ita
         - name: turkeyCfg_IMG_PROXY

@@ -35,6 +35,8 @@ type Config struct {
 	SmtpPass           string
 	PORTAL_ACCESS_KEY  string `description:"api key for turkey portal access"`
 
+	SKETCHFAB_API_KEY string `description:"enables reticulum's sketchfab option"`
+
 	DockerhubUser string
 	DockerhubPass string
 
