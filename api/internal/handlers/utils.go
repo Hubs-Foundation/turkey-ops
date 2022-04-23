@@ -149,10 +149,11 @@ type clusterCfg struct {
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
 	GCP_SA_HMAC_KEY         string `json:"GCP_SA_HMAC_KEY"`         //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.GOOG1EGPHPZU7F3GUTJCVQWLTYCY747EUAVHHEHQBN4WXSMPXJU4488888888
 	GCP_SA_HMAC_SECRET      string `json:"GCP_SA_HMAC_SECRET"`      //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
-	PORTAL_ACCESS_KEY       string `json:"PORTAL_ACCESS_KEY"`       // api key for portal access
+	SKETCHFAB_API_KEY       string `json:"SKETCHFAB_API_KEY"`
 	// this will just be Region ...
 	AWS_REGION string `json:"AWS_REGION"` //us-east-1
-	ItaChan    string `json:"itachan"`    //ita's listening channel (dev, beta, stable), falls back to Env / swaping staging for beta
+	ItaChan    string `json:"itachan"`    //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
+	CLOUD      string `json:"cloud"`      //aws or gcp or azure or something else like nope or local etc
 
 	//optional inputs
 	DeploymentPrefix     string `json:"name"`                 //t-
@@ -161,11 +162,12 @@ type clusterCfg struct {
 	Options              string `json:"options"`              //additional options, dot(.)prefixed -- ie. ".dryrun"
 
 	//generated pre-infra-deploy
-	Stackname     string `json:"stackname"`
-	DB_PASS       string `json:"DB_PASS"`       //itjfHE8888
-	COOKIE_SECRET string `json:"COOKIE_SECRET"` //a-random-string-to-sign-auth-cookies
-	PERMS_KEY     string `json:"PERMS_KEY"`     //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
-	CLOUD         string `json:"cloud"`         //aws or gcp or azure or something else like nope or local etc
+	Stackname         string `json:"stackname"`
+	DB_PASS           string `json:"DB_PASS"`           //itjfHE8888
+	COOKIE_SECRET     string `json:"COOKIE_SECRET"`     //a-random-string-to-sign-auth-cookies
+	PERMS_KEY         string `json:"PERMS_KEY"`         //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
+	PORTAL_ACCESS_KEY string `json:"PORTAL_ACCESS_KEY"` // api key for portal access
+
 	//initiated pre-infra-deploy, generated post-infra-deploy
 	DB_HOST string `json:"DB_HOST"` //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
 	DB_CONN string `json:"DB_CONN"` //postgres://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
@@ -237,6 +239,10 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	if cfg.GCP_SA_HMAC_SECRET == "" {
 		internal.Logger.Warn("GCP_SA_HMAC_SECRET not supplied, falling back to local value")
 		cfg.GCP_SA_HMAC_SECRET = internal.Cfg.GCP_SA_HMAC_SECRET
+	}
+	if cfg.SKETCHFAB_API_KEY == "" {
+		internal.Logger.Warn("SKETCHFAB_API_KEY not supplied, falling back to local value")
+		cfg.SKETCHFAB_API_KEY = internal.Cfg.SKETCHFAB_API_KEY
 	}
 	if cfg.Env == "" {
 		cfg.Env = "dev"
