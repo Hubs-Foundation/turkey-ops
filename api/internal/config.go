@@ -96,6 +96,8 @@ func MakeCfg() {
 	Cfg.SmtpUser = os.Getenv("SMTP_USER")
 	Cfg.SmtpPass = os.Getenv("SMTP_PASS")
 
+	Cfg.SKETCHFAB_API_KEY = os.Getenv("SKETCHFAB_API_KEY")
+
 	Cfg.DockerhubUser = os.Getenv("DOCKERHUB_USER")
 	Cfg.DockerhubPass = os.Getenv("DOCKERHUB_PASS")
 
