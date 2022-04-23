@@ -110,13 +110,21 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Error("failed to get ns_hc yam file because: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "error @ getting k8s chart file",
+			"result": "error @ getting k8s chart file: " + err.Error(),
 			"hub_id": hcCfg.HubId,
 		})
 		return
 	}
 
-	renderedYamls, _ := internal.K8s_render_yams([]string{string(yamBytes)}, hcCfg)
+	renderedYamls, err := internal.K8s_render_yams([]string{string(yamBytes)}, hcCfg)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ rendering k8s chart file: " + err.Error(),
+			"hub_id": hcCfg.HubId,
+		})
+		return
+	}
 	k8sChartYaml := renderedYamls[0]
 
 	// #3 pre-deployment checks
