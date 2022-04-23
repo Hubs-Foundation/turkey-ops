@@ -2,10 +2,6 @@ var express = require('express');
 const sharp = require("sharp");
 var app = express();
 
-app.get('/', function (req, res) {
-  res.send('welcome to home page!');
-});
-
 app.get('/thumbnail', function (req, res) {
   console.log(req.query)
   const queryStringParameters = req.query || {};
@@ -19,9 +15,6 @@ app.get('/thumbnail', function (req, res) {
     background,
     withoutEnlargement
   } = queryStringParameters;
-  console.log('queryStringParameters: ')
-  console.log(queryStringParameters)
-
   
   let base64url = req.url;
 
@@ -57,12 +50,6 @@ app.get('/thumbnail', function (req, res) {
       "Content-Type": `image/${info.format}`,
       "Cache-Control": "max-age=86400"
     };
-    // callback(null, {
-    //   statusCode: 200,
-    //   body: data.toString("base64"),
-    //   isBase64Encoded: true,
-    //   headers
-    // });
     res.set({
       statusCode: 200,
       body: data.toString("base64"),
