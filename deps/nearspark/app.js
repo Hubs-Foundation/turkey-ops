@@ -2,7 +2,7 @@ var express = require('express');
 const sharp = require("sharp");
 var app = express();
 
-app.get('/thumbnail', function (req, res) {
+app.get('/thumbnail..', function (req, res) {
   console.log(req.query)
   const queryStringParameters = req.query || {};
   const {
