@@ -1,8 +1,9 @@
+const { request } = require('express');
 var express = require('express');
 const sharp = require("sharp");
 var app = express();
 
-app.get('/thumbnail/..', function (req, res) {
+function thumbnailHandler (req, res) {
   console.log(req.query)
   const queryStringParameters = req.query || {};
   const {
@@ -16,14 +17,6 @@ app.get('/thumbnail/..', function (req, res) {
     withoutEnlargement
   } = queryStringParameters;
   
-  let base64url = req.url;
-
-  if (base64url.includes(".")) {
-    base64url = base64url.substring(0, base64url.indexOf("."));
-  }
-  const url = decodeURIComponent(
-    new Buffer.from(base64url, "base64").toString()
-  );
   const sharpFit = fit || "cover";
   let sharpPosition = sharp.position.centre;
   if (position) {
@@ -57,7 +50,29 @@ app.get('/thumbnail/..', function (req, res) {
       headers
     })
   });
-});
+}
+
+app.get('/thumbnail', thumbnailHandler)
+app.get(
+  '/thumbnail/:b64link', 
+  (req, res) => {
+    base64url = req.url.replace("/thumbnail/", "")
+    if (base64url.includes(".")) {
+      base64url = base64url.substring(0, base64url.indexOf("."));
+    }   
+    const url = decodeURIComponent(
+      new Buffer.from(base64url, "base64").toString()
+    )
+    request.get(
+      { url, encoding: null }, 
+      (_, __, body) => {
+        req.body = body
+        thumbnailHandler(req, res)
+      }
+    )
+  }
+)
+
 
 app.listen(5000, function () {
   console.log('listening on :5000');
