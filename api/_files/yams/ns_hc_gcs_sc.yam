@@ -310,7 +310,7 @@ spec:
         # - name: turkeyCfg_ITA_HOST
         #   value: http://ita
         - name: turkeyCfg_IMG_PROXY
-          value: http://nearspark.hc-{{.HubId}}
+          value: nearspark.hc-{{.HubId}}
         - name: turkeyCfg_HEADER_AUTHZ
           valueFrom:
             secretKeyRef:
