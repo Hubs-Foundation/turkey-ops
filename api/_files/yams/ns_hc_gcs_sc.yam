@@ -131,7 +131,24 @@ spec:
           service:
             name: spoke
             port: 
-              number: 8080                          
+              number: 8080
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkey-nearspark
+  namespace: hc-{{.HubId}}
+  annotations:
+    kubernetes.io/ingress.class: haproxy          
+  - host: {{.Subdomain}}-nearspark.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nearspark
+            port: 
+              number: 5000              
 ---
 ########################################################################
 ###################### reticulum #######################################
