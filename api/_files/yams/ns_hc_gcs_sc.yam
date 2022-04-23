@@ -482,7 +482,7 @@ spec:
           - name: turkeyCfg_postgrest_server
             value: 
           - name: turkeyCfg_thumbnail_server
-            value: notyet
+            value: https://{{.Subdomain}}-nearspark.{{.Domain}}
           - name: turkeyCfg_base_assets_path
             value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
           - name: turkeyCfg_non_cors_proxy_domains
