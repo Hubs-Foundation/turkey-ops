@@ -1,6 +1,6 @@
 
 
-name: nearspark
+name: nearsbark
 on:
   push:
     branches: [ master ]
