@@ -1,0 +1,19 @@
+
+name: nearsbark
+on:
+  push:
+    branches: [ master ]
+    paths:
+    - 'deps/nearsbark/**'
+    - '.github/workflows/deps_nearsbark.yml'
+  workflow_dispatch:
+
+jobs:
+  turkeyGitops:
+    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
+    with:
+      codePath: deps/nearsbark
+      registry: mozillareality
+      dockerfile: Dockerfile
+    secrets:
+      DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
