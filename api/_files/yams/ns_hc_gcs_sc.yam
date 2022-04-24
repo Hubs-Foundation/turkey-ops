@@ -18,7 +18,7 @@ metadata:
   name: configs
   namespace: hc-{{.HubId}}
 stringData:
-  NODE_COOKIE: foobar
+  NODE_COOKIE: {{.NODE_COOKIE}}
   SUB_DOMAIN: {{.Subdomain}}
   DOMAIN: {{.Domain}}
   DB_USER: postgres
