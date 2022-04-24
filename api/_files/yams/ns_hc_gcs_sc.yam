@@ -81,7 +81,7 @@ spec:
             port: 
               number: 4000
       - path: /http
-        pathType: ImplementationSpecific
+        pathType: ImplementationSpecific  # haproxy's "Begin with"
         backend:
           service:
             name: ret
@@ -139,14 +139,15 @@ metadata:
   name: turkey-nearspark
   namespace: hc-{{.HubId}}
   annotations:
-    kubernetes.io/ingress.class: haproxy      
+    kubernetes.io/ingress.class: haproxy    
+    haproxy.org/path-rewrite: /nearspark/(.*) /\1              # strip /nearspark  
 spec:
   rules:        
-  - host: {{.Subdomain}}-nearspark.{{.Domain}}
+  - host: {{.Subdomain}}-cors.{{.Domain}}
     http:
       paths:
-      - path: /
-        pathType: Prefix
+      - path: /nearspark
+        pathType: ImplementationSpecific
         backend:
           service:
             name: nearspark
@@ -485,7 +486,7 @@ spec:
           - name: turkeyCfg_postgrest_server
             value: 
           - name: turkeyCfg_thumbnail_server
-            value: {{.Subdomain}}-nearspark.{{.Domain}}
+            value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
           - name: turkeyCfg_base_assets_path
             value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
           - name: turkeyCfg_non_cors_proxy_domains
