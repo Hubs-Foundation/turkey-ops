@@ -4,8 +4,8 @@ on:
   push:
     branches: [ master ]
     paths:
-    - 'deps/nearspark/**'
-    - '.github/workflows/deps_nearspark.yml'
+    # - 'deps/nearspark/**'
+    - '.github/workflows/deps_nearspark_gcr.yml'
   workflow_dispatch:
 env:
   containerName: nearspark
