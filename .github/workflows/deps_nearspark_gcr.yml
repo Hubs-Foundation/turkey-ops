@@ -30,4 +30,6 @@ jobs:
         gcrtag="gcr.io/hubs-dev-333333/$containerName:latest" && echo "[info] gcrtag: $gcrtag"          
         gcloud auth activate-service-account hubs-dev-sa@hubs-dev-333333.iam.gserviceaccount.com --key-file=gcpsakey.json
         gcloud auth configure-docker -q gcr.io
-        docker tag $tag $gcrtag && docker push $gcrtag      
+        docker pull $tag
+        docker tag $tag $gcrtag
+        docker push $gcrtag      
