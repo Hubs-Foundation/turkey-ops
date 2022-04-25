@@ -413,7 +413,7 @@ spec:
           mountPath: /storage
           mountPropagation: Bidirectional
         - name: config
-          mountPath: /ret          
+          mountPath: /home/ret
         securityContext:
           privileged: true
           capabilities:
