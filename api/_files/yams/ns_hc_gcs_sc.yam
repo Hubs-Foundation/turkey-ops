@@ -322,7 +322,7 @@ data:
     font_src = ""
     form_action = ""
     frame_src = ""
-    img_src = ""
+    img_src = "nearspark.reticulum.io"
     manifest_src = ""
     media_src = ""
     script_src = ""
@@ -699,7 +699,8 @@ spec:
           - name: turkeyCfg_postgrest_server
             value: 
           - name: turkeyCfg_thumbnail_server
-            value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
+            # value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
+            value: nearspark.reticulum.io
           - name: turkeyCfg_base_assets_path
             value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
           - name: turkeyCfg_non_cors_proxy_domains

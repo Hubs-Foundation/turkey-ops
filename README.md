@@ -1,5 +1,10 @@
 # turkey-ops
-disclaimer: super early pre requirement signoff version a.k.a just commit history will be sqashed, mess codes will be cleaned up/refactored, branching policy/gitops/deployment channel will be established etc.
+disclaimer:
+super early 1 person hacking away repo a.k.a messy commit history will be sqashed, mess codes will be refactored, branching policy/gitops/deployment channel will be formally established ... at some point in future
+
+---
+outdated docs
+---
 
 ## folders
 ### .github/workflows
