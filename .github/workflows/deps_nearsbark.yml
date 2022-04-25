@@ -21,10 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: dockerhub -> gcr
+      needs: turkeyGitops
       run: |      
         echo "[info] pushing to gcr"   
         echo "${{ secrets.GCP_HUBS_DEV_SA_JSON_b64 }}" | base64 -d > gcpsakey.json
-        tag="$registryName/$containerName:${GITHUB_RUN_NUMBER}""
+        tag="$registryName/$containerName:${GITHUB_RUN_NUMBER}"
         gcrtag="gcr.io/hubs-dev-333333/$containerName:${GITHUB_RUN_NUMBER}_$ytdlVer" && echo "[info] gcrtag: $gcrtag"          
         gcloud auth activate-service-account hubs-dev-sa@hubs-dev-333333.iam.gserviceaccount.com --key-file=gcpsakey.json
         gcloud auth configure-docker -q gcr.io
