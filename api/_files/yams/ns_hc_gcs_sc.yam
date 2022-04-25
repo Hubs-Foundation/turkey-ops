@@ -411,7 +411,7 @@ spec:
         - name: fuse
           mountPath: /storage
           mountPropagation: Bidirectional
-        - name: ret-config
+        - name: config
           mountPath: /ret          
         securityContext:
           privileged: true
