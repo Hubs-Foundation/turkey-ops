@@ -1,7 +1,7 @@
 name: turkeyapi
 on:
   push:
-    branches: [ master ]
+    branches: 
     paths:
     - 'api/**'
     - '.github/workflows/turkeyapi.yml'
