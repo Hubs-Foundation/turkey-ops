@@ -1,11 +1,11 @@
 
-name: nearsbark
+name: nearsparku
 on:
   push:
     branches: [ master ]
     paths:
-    - 'deps/nearsbark/**'
-    - '.github/workflows/deps_nearsbark.yml'
+    - 'deps/nearspark/**'
+    - '.github/workflows/deps_nearspark.yml'
   workflow_dispatch:
 
 jobs:
