@@ -175,7 +175,7 @@ metadata:
   name: ret-config
   namespace: hc-{{.HubId}}
 data:
-  config.toml: |
+  config.toml.template: |
     [peerage]
     dns_name = "<POD_DNS>"
     app_name = "ret"
