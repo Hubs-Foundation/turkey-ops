@@ -19,10 +19,10 @@ func main() {
 		internal.Cfg.K8ss_local.StartWatching_HcNs()
 	}
 	//-----------------------------------
-	cron := internal.NewCron("cron-10m", "10m")
-	cron.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
+	cron_10m := internal.NewCron("cron-10m", "10m")
+	cron_10m.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
 
-	cron.Start()
+	cron_10m.Start()
 
 	router := http.NewServeMux()
 

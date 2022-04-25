@@ -366,6 +366,19 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Error("bad hcCfg: " + err.Error())
 		return
 	}
+	if hcCfg.HubId == "" {
+		internal.Logger.Error("missing hcCfg.HubId")
+		return
+	}
+
+	if hcCfg.Subdomain == "" {
+		ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "hc-"+hcCfg.HubId, metav1.GetOptions{})
+		if err != nil {
+			internal.Logger.Error("failed to get namespace for hubid " + hcCfg.HubId + "because: " + err.Error())
+			return
+		}
+		hcCfg.Subdomain = ns.Labels["Subdomain"]
+	}
 
 	go func() {
 		hcCfg.DBname = "ret_" + hcCfg.HubId
@@ -403,6 +416,14 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
+	}()
+
+	go func() {
+		err := internal.Cfg.Gcps.DeleteObjects("turkeyfs", hcCfg.Subdomain+"."+internal.Cfg.Domain)
+		if err != nil {
+			internal.Logger.Error("delete ns failed: " + err.Error())
+			return
+		}
 	}()
 
 	//return
