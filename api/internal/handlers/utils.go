@@ -23,6 +23,11 @@ import (
 	"time"
 )
 
+func pointerOfInt32(i int) *int32 {
+	int32i := int32(i)
+	return &int32i
+}
+
 // var KeepAlive = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 // })

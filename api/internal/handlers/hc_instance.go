@@ -406,7 +406,19 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		nsName := "hc-" + hcCfg.HubId
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
-
+		// //scale down deployments
+		// ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).List(context.Background(), metav1.ListOptions{})
+		// if err != nil {
+		// 	internal.Logger.Error("failed to get deployments for namespace" + nsName + " because:" + err.Error())
+		// } else {
+		// 	for _, d := range ds.Items {
+		// 		d.Spec.Replicas = pointerOfInt32(0)
+		// 		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), &d, metav1.UpdateOptions{})
+		// 		if err != nil {
+		// 			internal.Logger.Error("failed to scale down <ns: " + nsName + ", deployment: " + d.Name + ">: " + err.Error())
+		// 		}
+		// 	}
+		// }
 		//delete ns
 		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
 			nsName,

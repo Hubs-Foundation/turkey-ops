@@ -132,8 +132,3 @@ func wakeupHcNs(ns string) {
 	}
 
 }
-
-func pointerOfInt32(i int) *int32 {
-	int32i := int32(i)
-	return &int32i
-}

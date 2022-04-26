@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -131,16 +132,17 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 				Logger.Warn("potential downgrade/rollback: new tag is lexicographically smaller than current")
 			}
 			Logger.Sugar().Info("updating " + img + ": " + info.containerTag + " --> " + newtag)
+
 			err := u.deployNewContainer(img, newtag, info)
 			if err != nil {
 				Logger.Error("deployNewContainer failed: " + err.Error())
 				continue
 			}
-			// u.loadContainers()
 			u.Containers[img] = turkeyContainerInfo{
 				parentDeploymentName: u.Containers[img].parentDeploymentName,
 				containerTag:         newtag,
 			}
+
 		}
 	}
 }
@@ -151,6 +153,19 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 	if err != nil {
 		Logger.Error("failed to get deployments <" + containerInfo.parentDeploymentName + "> in ns <" + cfg.PodNS + ">, err: " + err.Error())
 		return err
+	}
+	timeoutSec := 300
+	for d.Status.Replicas != d.Status.AvailableReplicas ||
+		d.Status.Replicas != d.Status.ReadyReplicas ||
+		d.Status.Replicas != d.Status.UpdatedReplicas {
+		Logger.Sugar().Debugf("waiting for %v -- currently: Replicas=%v, Available=%v, Ready=%v, Updated=%v",
+			d.Name, d.Status.Replicas, d.Status.AvailableReplicas, d.Status.ReadyReplicas, d.Status.UpdatedReplicas)
+		time.Sleep(3 * time.Second)
+		timeoutSec -= 3
+		d, _ = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), containerInfo.parentDeploymentName, metav1.GetOptions{})
+		if timeoutSec < 1 {
+			return errors.New("timeout while waiting for deployment <" + d.Name + ">")
+		}
 	}
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
@@ -163,6 +178,5 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 			return nil
 		}
 	}
-
 	return errors.New("did not find repo name: " + repo + ", failed to deploy newTag: " + newTag)
 }
