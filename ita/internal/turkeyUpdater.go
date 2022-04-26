@@ -167,14 +167,16 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 			return errors.New("timeout while waiting for deployment <" + d.Name + ">")
 		}
 	}
+	Logger.Sugar().Debugf("d.Spec.Template.Spec.Containers: %v", d.Spec.Template.Spec.Containers)
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
 		if imgNameTagArr[0] == repo {
 			d.Spec.Template.Spec.Containers[idx].Image = repo + ":" + newTag
-			_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
+			d_new, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 			if err != nil {
 				return err
 			}
+			Logger.Sugar().Debugf("d_new: %v", d_new)
 			return nil
 		}
 	}
