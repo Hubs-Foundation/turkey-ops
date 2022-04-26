@@ -167,7 +167,6 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 			return errors.New("timeout while waiting for deployment <" + d.Name + ">")
 		}
 	}
-	Logger.Sugar().Debugf("d.Spec.Template.Spec.Containers: %v", d.Spec.Template.Spec.Containers)
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
 		if imgNameTagArr[0] == repo {
@@ -176,7 +175,7 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 			if err != nil {
 				return err
 			}
-			Logger.Sugar().Debugf("d_new: %v", d_new)
+			Logger.Sugar().Debugf("d_new.Spec.Template.Spec.Containers[0]: %v", d_new.Spec.Template.Spec.Containers[0])
 			return nil
 		}
 	}
