@@ -80,6 +80,7 @@ resource "google_container_cluster" "gke" {
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
   cluster_autoscaling {
     enabled = true
+    machine_type = "n1-highmem-2"
     resource_limits{
       resource_type = "memory"
       minimum = 16
@@ -90,6 +91,8 @@ resource "google_container_cluster" "gke" {
       minimum = 4
       maximum = 16
     }
+    autoscaling_profile = "OPTIMIZE_UTILIZATION"
+    preemptible  = true
   }
 }
 
