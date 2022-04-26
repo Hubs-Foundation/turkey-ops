@@ -600,13 +600,6 @@ spec:
               fieldPath: metadata.namespace
         - name: RET_MODE
           value: RET_MODE==will-not-start-turkey-updater
-        resources:
-          requests:
-            memory: 20Mi
-            cpu: 0.01
-          limits:
-            memory: 2Gi
-            cpu: 1
       # - name: ytdl
       #   image: mozillareality/ytdl:6_2021.6.6
       #   ports:
