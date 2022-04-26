@@ -548,7 +548,7 @@ spec:
           value: "{{.StorageLimit}}"
         startupProbe:
           httpGet:
-            path: /
+            path: https://localhost/
             port: 4000
           failureThreshold: 30
           periodSeconds: 10
