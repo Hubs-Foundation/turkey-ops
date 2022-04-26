@@ -911,8 +911,8 @@ spec:
               fieldPath: metadata.namespace
         - name: POD_DEPLOYMENT_NAME
           value: ita
-        - name: CHANNEL
-          value: stable
+        # - name: CHANNEL
+        #   value: stable
         resources:
           requests:
             memory: 50Mi
