@@ -548,13 +548,14 @@ spec:
           value: "{{.StorageLimit}}"
         startupProbe:
           httpGet:
-            path: https://localhost/
+            path: /
             port: 4000
+            scheme: HTTPS
           failureThreshold: 30
           periodSeconds: 10
         livenessProbe:
           httpGet:
-            path: https://localhost/health
+            path: /health
             port: 4000
             scheme: HTTPS
           initialDelaySeconds: 30
