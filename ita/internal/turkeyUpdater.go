@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"errors"
+	"math/rand"
 	"reflect"
 	"strconv"
 	"strings"
@@ -107,7 +108,7 @@ func (u *TurkeyUpdater) startWatchingPublisher() (chan struct{}, error) {
 				u.handleEvents(newObj, "update")
 			},
 			DeleteFunc: func(obj interface{}) {
-				Logger.Sugar().Warnf("cfgmap label deleted ??? %s", obj)
+				Logger.Sugar().Warnf("cfgmap label deleted ??? %s -- did someone do it manually?", obj)
 				// u.handleEvents(obj)
 			},
 		},
@@ -118,6 +119,9 @@ func (u *TurkeyUpdater) startWatchingPublisher() (chan struct{}, error) {
 }
 
 func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
+
+	time.Sleep(time.Duration(rand.Intn(300)) * time.Second)
+
 	cfgmap, ok := obj.(*corev1.ConfigMap)
 	if !ok {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
@@ -159,7 +163,7 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 	}
 	d, err = k8s_waitForDeployment(d, 300)
 	if err != nil {
-
+		return err
 	}
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
@@ -190,6 +194,6 @@ func k8s_waitForDeployment(d *appsv1.Deployment, timeout int) (*appsv1.Deploymen
 			return d, errors.New("timeout while waiting for deployment <" + d.Name + ">")
 		}
 	}
-	time.Sleep(5 * time.Second)
+	time.Sleep(5 * time.Second) // time for k8s master services to sync, should be more than enough, or we'll get pending pods stuck forever
 	return d, nil
 }

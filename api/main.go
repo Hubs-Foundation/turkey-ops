@@ -19,7 +19,7 @@ func main() {
 		internal.Cfg.K8ss_local.StartWatching_HcNs()
 	}
 	//-----------------------------------
-	cron := internal.NewCron("cron_10m", "10m")
+	cron := internal.NewCron("cron", "30m")
 	cron.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
 	cron.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
 
