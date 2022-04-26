@@ -93,7 +93,7 @@ var Tu_channel = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		//change of container.spec.env.CHANNEL should reboot the pod anyway but just in case?
 		cfg.TurkeyUpdater = NewTurkeyUpdater()
-		_, err = cfg.TurkeyUpdater.Start(5 * time.Minute)
+		_, err = cfg.TurkeyUpdater.Start(1 * time.Minute)
 		if err != nil {
 			Logger.Error(err.Error())
 			http.Error(w, "faile to restart TurkeyUpdater", http.StatusInternalServerError)

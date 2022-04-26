@@ -183,12 +183,13 @@ func k8s_waitForDeployment(d *appsv1.Deployment, timeout int) (*appsv1.Deploymen
 		d.Status.Replicas != d.Status.UpdatedReplicas {
 		Logger.Sugar().Debugf("waiting for %v -- currently: Replicas=%v, Available=%v, Ready=%v, Updated=%v",
 			d.Name, d.Status.Replicas, d.Status.AvailableReplicas, d.Status.ReadyReplicas, d.Status.UpdatedReplicas)
-		time.Sleep(3 * time.Second)
-		timeoutSec -= 3
+		time.Sleep(5 * time.Second)
+		timeoutSec -= 5
 		d, _ = cfg.K8sClientSet.AppsV1().Deployments(d.Namespace).Get(context.Background(), d.Name, metav1.GetOptions{})
 		if timeoutSec < 1 {
 			return d, errors.New("timeout while waiting for deployment <" + d.Name + ">")
 		}
 	}
+	time.Sleep(5 * time.Second)
 	return d, nil
 }

@@ -82,7 +82,7 @@ func MakeCfg() {
 	}
 
 	cfg.TurkeyUpdater = NewTurkeyUpdater()
-	_, err = cfg.TurkeyUpdater.Start(15 * time.Minute)
+	_, err = cfg.TurkeyUpdater.Start(5 * time.Minute)
 	if err != nil {
 		Logger.Error(err.Error())
 	}
