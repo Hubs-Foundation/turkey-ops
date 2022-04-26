@@ -125,7 +125,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 		newtag, ok := cfgmap.Labels[img]
 		if ok {
 			if info.containerTag == newtag {
-				Logger.Sugar().Info("NOT updating ... same tag: " + newtag)
+				Logger.Sugar().Info("NOT updating " + img + "... same tag: " + newtag)
 				continue
 			}
 			if info.containerTag > newtag {
