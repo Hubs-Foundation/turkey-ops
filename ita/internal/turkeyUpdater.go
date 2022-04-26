@@ -161,10 +161,11 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		Logger.Error("failed to get deployments <" + containerInfo.parentDeploymentName + "> in ns <" + cfg.PodNS + ">, err: " + err.Error())
 		return err
 	}
-	d, err = k8s_waitForDeployment(d, 300)
+	d, err = k8s_waitForDeployment(d, 180)
 	if err != nil {
 		return err
 	}
+	err = k8s_waitForPods(d.Namespace, 180)
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
 		if imgNameTagArr[0] == repo {
@@ -194,6 +195,26 @@ func k8s_waitForDeployment(d *appsv1.Deployment, timeout int) (*appsv1.Deploymen
 			return d, errors.New("timeout while waiting for deployment <" + d.Name + ">")
 		}
 	}
+
 	time.Sleep(5 * time.Second) // time for k8s master services to sync, should be more than enough, or we'll get pending pods stuck forever
 	return d, nil
+}
+
+func k8s_waitForPods(namespace string, timeout int) error {
+	timeoutSec := timeout
+	pods, err := cfg.K8sClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, pod := range pods.Items {
+		for pod.Status.Phase != corev1.PodRunning {
+			Logger.Sugar().Debugf("waiting for %v / %v", pod.Namespace, pod.Name)
+			time.Sleep(5 * time.Second)
+			timeoutSec -= 5
+		}
+		if timeoutSec < 1 {
+			return errors.New("timeout while waiting for pod: " + pod.Name + " in ns: " + namespace)
+		}
+	}
+	return nil
 }

@@ -3,8 +3,10 @@ on:
   push:
     branches: [ master, dev ]
     paths:
-    - 'tools/botomatic/*'
+    - 'tools/botomatic/'
     - '.github/workflows/deps_botomatic.yml'
+    paths-ignore:
+    - 'tools/botomatic/testcase1.sh'
   workflow_dispatch:
 env:
   containerName: botomatic

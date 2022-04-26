@@ -563,8 +563,8 @@ spec:
           periodSeconds: 30
         resources:
           requests:
-            memory: 200Mi
-            cpu: 0.01
+            memory: 250Mi
+            cpu: 0.02
           limits:
             memory: 2Gi
             cpu: 1
@@ -1002,7 +1002,7 @@ spec:
               key: GCP_SA_HMAC_SECRET                
         resources:
           requests:
-            memory: 20Mi
+            memory: 25Mi
             cpu: 0.01
           limits:
             memory: 2Gi
