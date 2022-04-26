@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -154,18 +155,9 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		Logger.Error("failed to get deployments <" + containerInfo.parentDeploymentName + "> in ns <" + cfg.PodNS + ">, err: " + err.Error())
 		return err
 	}
-	timeoutSec := 300
-	for d.Status.Replicas != d.Status.AvailableReplicas ||
-		d.Status.Replicas != d.Status.ReadyReplicas ||
-		d.Status.Replicas != d.Status.UpdatedReplicas {
-		Logger.Sugar().Debugf("waiting for %v -- currently: Replicas=%v, Available=%v, Ready=%v, Updated=%v",
-			d.Name, d.Status.Replicas, d.Status.AvailableReplicas, d.Status.ReadyReplicas, d.Status.UpdatedReplicas)
-		time.Sleep(3 * time.Second)
-		timeoutSec -= 3
-		d, _ = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), containerInfo.parentDeploymentName, metav1.GetOptions{})
-		if timeoutSec < 1 {
-			return errors.New("timeout while waiting for deployment <" + d.Name + ">")
-		}
+	d, err = k8s_waitForDeployment(d, 300)
+	if err != nil {
+
 	}
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
@@ -180,4 +172,21 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		}
 	}
 	return errors.New("did not find repo name: " + repo + ", failed to deploy newTag: " + newTag)
+}
+
+func k8s_waitForDeployment(d *appsv1.Deployment, timeout int) (*appsv1.Deployment, error) {
+	timeoutSec := timeout
+	for d.Status.Replicas != d.Status.AvailableReplicas ||
+		d.Status.Replicas != d.Status.ReadyReplicas ||
+		d.Status.Replicas != d.Status.UpdatedReplicas {
+		Logger.Sugar().Debugf("waiting for %v -- currently: Replicas=%v, Available=%v, Ready=%v, Updated=%v",
+			d.Name, d.Status.Replicas, d.Status.AvailableReplicas, d.Status.ReadyReplicas, d.Status.UpdatedReplicas)
+		time.Sleep(3 * time.Second)
+		timeoutSec -= 3
+		d, _ = cfg.K8sClientSet.AppsV1().Deployments(d.Namespace).Get(context.Background(), d.Name, metav1.GetOptions{})
+		if timeoutSec < 1 {
+			return d, errors.New("timeout while waiting for deployment <" + d.Name + ">")
+		}
+	}
+	return d, nil
 }
