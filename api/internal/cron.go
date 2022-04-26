@@ -119,6 +119,31 @@ func Cronjob_publishTurkeyBuildReport() {
 
 }
 
+func Cronjob_cleanupFailedPods() {
+	nsList, err := Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		Logger.Error(err.Error())
+		return
+	}
+	for _, ns := range nsList.Items {
+		failedPods, err := NewK8sSvs_local().ClientSet.CoreV1().Pods(ns.Name).List(context.Background(), metav1.ListOptions{FieldSelector: "'status.phase=Failed"})
+		if err != nil {
+			Logger.Error(err.Error())
+			return
+		}
+		failedPodsCnt := len(failedPods.Items)
+		if failedPodsCnt > 0 {
+			Logger.Sugar().Infof("deleting %v failed pods in ns: %v", failedPodsCnt, ns.Name)
+		}
+		for _, failedPod := range failedPods.Items {
+			err := NewK8sSvs_local().ClientSet.CoreV1().Pods(ns.Name).Delete(context.Background(), failedPod.Name, metav1.DeleteOptions{})
+			if err != nil {
+				Logger.Error(err.Error())
+			}
+		}
+	}
+}
+
 func publishToConfigmap_label(channel string, repo_tag_map map[string]string) error {
 	cfgmap, err := Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(Cfg.PodNS).Get(context.Background(), "hubsbuilds-"+channel, metav1.GetOptions{})
 	if err != nil {
