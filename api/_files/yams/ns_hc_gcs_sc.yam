@@ -672,6 +672,8 @@ kind: Deployment
 metadata:
   name: hubs
   namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 spec:
   replicas: 1 
   selector:
@@ -762,6 +764,8 @@ kind: Deployment
 metadata:
   name: spoke
   namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 spec:
   replicas: 1 
   selector:
@@ -849,6 +853,8 @@ spec:
 # metadata:
 #   name: nearspark
 #   namespace: hc-{{.HubId}}
+#   annotations:
+#     cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 # spec:
 #   replicas: 1 
 #   selector:
@@ -893,6 +899,8 @@ kind: Deployment
 metadata:
   name: ita
   namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   labels:
     CHANNEL: {{.ItaChan}}
 spec:
@@ -966,6 +974,8 @@ kind: Deployment
 metadata:
   name: speelycaptor
   namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 spec:
   replicas: 1
   selector:
@@ -1025,6 +1035,8 @@ kind: Deployment
 metadata:
   name: photomnemonic
   namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 spec:
   replicas: 1
   selector:
