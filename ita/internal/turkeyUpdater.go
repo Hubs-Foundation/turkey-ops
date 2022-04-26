@@ -62,7 +62,9 @@ func (u *TurkeyUpdater) loadContainers() error {
 	return nil
 }
 
-func (u *TurkeyUpdater) Start() (chan struct{}, error) {
+func (u *TurkeyUpdater) Start(delay time.Duration) (chan struct{}, error) {
+	time.Sleep(delay)
+
 	if u.stopCh != nil {
 		close(u.stopCh)
 		Logger.Info("restarting for channel: " + u.Channel)

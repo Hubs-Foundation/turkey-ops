@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"os"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -81,7 +82,7 @@ func MakeCfg() {
 	}
 
 	cfg.TurkeyUpdater = NewTurkeyUpdater()
-	_, err = cfg.TurkeyUpdater.Start()
+	_, err = cfg.TurkeyUpdater.Start(15 * time.Minute)
 	if err != nil {
 		Logger.Error(err.Error())
 	}

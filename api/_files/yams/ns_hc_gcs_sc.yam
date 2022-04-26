@@ -564,10 +564,10 @@ spec:
         resources:
           requests:
             memory: 200Mi
-            cpu: 0.05
+            cpu: 0.01
           limits:
-            memory: 1Gi
-            cpu: 0.5
+            memory: 2Gi
+            cpu: 1
       - name: postgrest
         image: mozillareality/postgrest:v8.0.0
         ports:
@@ -602,11 +602,11 @@ spec:
           value: RET_MODE==will-not-start-turkey-updater
         resources:
           requests:
-            memory: 50Mi
-            cpu: 0.05
+            memory: 20Mi
+            cpu: 0.01
           limits:
-            memory: 200Mi
-            cpu: 0.2              
+            memory: 2Gi
+            cpu: 1
       # - name: ytdl
       #   image: mozillareality/ytdl:6_2021.6.6
       #   ports:
@@ -639,13 +639,13 @@ spec:
           value: /var/gcsfuse
         - name: GCS_DIR
           value: {{.Subdomain}}.{{.Domain}}
-        resources:
-          requests:
-            memory: 50Mi
-            cpu: 0.05
-          limits:
-            memory: 4Gi
-            cpu: 2
+        # resources:
+        #   requests:
+        #     memory: 20Mi
+        #     cpu: 0.01
+        #   limits:
+        #     memory: 1Gi
+        #     cpu: 0.5
         volumeMounts:
         - name: fuse
           mountPath: /var/gcsfuse
@@ -692,56 +692,56 @@ spec:
         app: hubs
     spec:
       containers:
-        - name: hubs
-          image: mozillareality/hubs:stable-latest
-          imagePullPolicy: Always
-          env:
-          - name: SUB_DOMAIN
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: SUB_DOMAIN
-          - name: DOMAIN
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DOMAIN
-          - name: turkeyCfg_postgrest_server
-            value: 
-          - name: turkeyCfg_thumbnail_server
-            # value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
-            value: nearspark.reticulum.io
-          - name: turkeyCfg_base_assets_path
-            value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
-          - name: turkeyCfg_non_cors_proxy_domains
-            value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
-          - name: turkeyCfg_reticulum_server
-            value: {{.Subdomain}}.{{.Domain}}
-          - name: turkeyCfg_cors_proxy_server
-            value: {{.Subdomain}}-cors.{{.Domain}}
-          - name: turkeyCfg_ga_tracking_id
-            value: 
-          - name: turkeyCfg_shortlink_domain
-            value: {{.Subdomain}}.{{.Domain}}
-          - name: turkeyCfg_ita_server
-            value: 
-          - name: turkeyCfg_sentry_dsn
-            value: 
-          livenessProbe:
-            httpGet:
-              path: https://localhost/healthz
-              port: 8080
-              scheme: HTTPS
-            initialDelaySeconds: 20
-            timeoutSeconds: 1
-            periodSeconds: 120
-          resources:
-            requests:
-              memory: 20Mi
-              cpu: 0.01
-            limits:
-              memory: 1Gi
-              cpu: 0.5
+      - name: hubs
+        image: mozillareality/hubs:stable-latest
+        imagePullPolicy: Always
+        env:
+        - name: SUB_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SUB_DOMAIN
+        - name: DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DOMAIN
+        - name: turkeyCfg_postgrest_server
+          value: 
+        - name: turkeyCfg_thumbnail_server
+          # value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
+          value: nearspark.reticulum.io
+        - name: turkeyCfg_base_assets_path
+          value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
+        - name: turkeyCfg_non_cors_proxy_domains
+          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+        - name: turkeyCfg_reticulum_server
+          value: {{.Subdomain}}.{{.Domain}}
+        - name: turkeyCfg_cors_proxy_server
+          value: {{.Subdomain}}-cors.{{.Domain}}
+        - name: turkeyCfg_ga_tracking_id
+          value: 
+        - name: turkeyCfg_shortlink_domain
+          value: {{.Subdomain}}.{{.Domain}}
+        - name: turkeyCfg_ita_server
+          value: 
+        - name: turkeyCfg_sentry_dsn
+          value: 
+        livenessProbe:
+          httpGet:
+            path: https://localhost/healthz
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 0.01
+          limits:
+            memory: 2Gi
+            cpu: 1
 ---
 apiVersion: v1
 kind: Service
@@ -829,8 +829,8 @@ spec:
               memory: 20Mi
               cpu: 0.01
             limits:
-              memory: 1Gi
-              cpu: 0.5
+              memory: 2Gi
+              cpu: 1
 ---
 apiVersion: v1
 kind: Service
@@ -934,8 +934,8 @@ spec:
             memory: 20Mi
             cpu: 0.01
           limits:
-            memory: 200Mi
-            cpu: 0.05
+            memory: 2Gi
+            cpu: 1
         livenessProbe:
           httpGet:
             path: http://localhost/healthz
@@ -1009,11 +1009,11 @@ spec:
               key: GCP_SA_HMAC_SECRET                
         resources:
           requests:
-            memory: 50Mi
+            memory: 20Mi
             cpu: 0.01
           limits:
-            memory: 500Mi
-            cpu: 0.5
+            memory: 2Gi
+            cpu: 1
 ---
 apiVersion: v1
 kind: Service
@@ -1056,10 +1056,10 @@ spec:
         resources:
           requests:
             memory: 20Mi
-            cpu: 0.05
+            cpu: 0.01
           limits:
-            memory: 500Mi
-            cpu: 0.5
+            memory: 2Gi
+            cpu: 1
 ---
 apiVersion: v1
 kind: Service
