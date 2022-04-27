@@ -19,12 +19,12 @@ func main() {
 		internal.Cfg.K8ss_local.StartWatching_HcNs()
 	}
 	//-----------------------------------
-	cron_5m := internal.NewCron("cron", "5m")
+	cron_5m := internal.NewCron("cron_5m", "5m")
 	cron_5m.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
 	cron_5m.Start()
-	cron_60m := internal.NewCron("cron", "60m")
-	cron_60m.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
-	cron_60m.Start()
+	cron_30m := internal.NewCron("cron_30m", "30m")
+	cron_30m.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
+	cron_30m.Start()
 
 	router := http.NewServeMux()
 
