@@ -140,7 +140,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
 	}
 	Logger.Sugar().Debugf("...received on <"+cfgmap.Name+"."+eventType+">: %v", cfgmap.Labels)
-	Logger.Sugar().Debugf(".........................current u.containers : %v", u.containers)
+	Logger.Sugar().Debugf("...current u.containers : %v", u.containers)
 
 	rand.Seed(int64(cfg.HostnameHash))
 	waitSec := rand.Intn(300) + 30
@@ -159,7 +159,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 			}
 			Logger.Sugar().Info("updating " + img + ": " + info.containerTag + " --> " + newtag)
 
-			err := u.deployNewContainer(img, newtag, info)
+			err := u.tryDeployNewContainer(img, newtag, info, 6)
 			if err != nil {
 				Logger.Error("deployNewContainer failed: " + err.Error())
 				continue
@@ -173,6 +173,16 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	}
 }
 
+func (u *TurkeyUpdater) tryDeployNewContainer(img, newtag string, info turkeyContainerInfo, maxRetry int) error {
+	err := u.deployNewContainer(img, newtag, info)
+	for err != nil && maxRetry > 0 {
+		time.Sleep(10 * time.Second)
+		err = u.deployNewContainer(img, newtag, info)
+		maxRetry -= 1
+	}
+	return err
+}
+
 func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo turkeyContainerInfo) error {
 
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), containerInfo.parentDeploymentName, metav1.GetOptions{})
@@ -180,14 +190,17 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		Logger.Error("failed to get deployments <" + containerInfo.parentDeploymentName + "> in ns <" + cfg.PodNS + ">, err: " + err.Error())
 		return err
 	}
-	d, err = k8s_waitForDeployment(d, 180)
-	if err != nil {
-		return err
-	}
+
 	err = k8s_waitForPods(d.Namespace, 180)
 	if err != nil {
 		return err
 	}
+
+	d, err = k8s_waitForDeployment(d, 180)
+	if err != nil {
+		return err
+	}
+
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
 		if imgNameTagArr[0] == repo {
