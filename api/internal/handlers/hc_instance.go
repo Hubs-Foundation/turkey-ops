@@ -53,12 +53,23 @@ type hcCfg struct {
 	GCP_SA_HMAC_SECRET string `json:"GCP_SA_HMAC_SECRET"` //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
 	PORTAL_ACCESS_KEY  string
 	SKETCHFAB_API_KEY  string
-	//generated per instance
+	//generated on the fly
 	JWK          string `json:"jwk"` // encoded from PermsKey.public
 	GuardianKey  string `json:"guardiankey"`
 	PhxKey       string `json:"phxkey"`
 	HEADER_AUTHZ string `json:"headerauthz"`
 	NODE_COOKIE  string `json:"NODE_COOKIE"`
+
+	Img_ret           string
+	Img_postgrest     string
+	Img_ita           string
+	Img_gcsfuse       string
+	Img_hubs          string
+	Img_spoke         string
+	Img_speelycaptor  string
+	Img_photomnemonic string
+	// Img_nearspark string
+	// Img_ytdl string
 }
 
 var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -345,17 +356,63 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	cfg.SmtpUser = internal.Cfg.SmtpUser
 	cfg.SmtpPass = internal.Cfg.SmtpPass
 	cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
-	cfg.ItaChan = internal.Cfg.Env
+	// cfg.ItaChan = internal.Cfg.Env
+	if internal.Cfg.Env == "dev" {
+		cfg.ItaChan = "dev"
+	} else if internal.Cfg.Env == "staging" {
+		cfg.ItaChan = "beta"
+	} else {
+		cfg.ItaChan = "stable"
+	}
 	cfg.GCP_SA_HMAC_KEY = internal.Cfg.GCP_SA_HMAC_KEY
 	cfg.GCP_SA_HMAC_SECRET = internal.Cfg.GCP_SA_HMAC_SECRET
 	cfg.PORTAL_ACCESS_KEY = internal.Cfg.PORTAL_ACCESS_KEY
 	cfg.SKETCHFAB_API_KEY = internal.Cfg.SKETCHFAB_API_KEY
-	//produc the rest
+	//produce the rest
 	pwdSeed := int64(hash(cfg.Domain))
 	cfg.GuardianKey = internal.PwdGen(15, pwdSeed, "G~")
 	cfg.PhxKey = internal.PwdGen(15, pwdSeed, "P~")
 	cfg.HEADER_AUTHZ = internal.PwdGen(15, pwdSeed, "H~")
 	cfg.NODE_COOKIE = internal.PwdGen(15, pwdSeed, "N~")
+
+	hubsbuildsCM, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Get(context.Background(), "hubsbuilds-"+cfg.ItaChan, metav1.GetOptions{})
+	if err != nil {
+		internal.Logger.Error(err.Error())
+	}
+	imgRepo := internal.Cfg.ImgRepo
+	cfg.Img_ret = "stable-latest"
+	if hubsbuildsCM.Labels[imgRepo+"/ret"] != "" {
+		cfg.Img_ret = hubsbuildsCM.Labels[imgRepo+"/ret"]
+	}
+	cfg.Img_postgrest = "stable-latest"
+	if hubsbuildsCM.Labels[imgRepo+"/postgrest"] != "" {
+		cfg.Img_postgrest = hubsbuildsCM.Labels[imgRepo+"/ret"]
+	}
+	cfg.Img_ita = "stable-latest"
+	if hubsbuildsCM.Labels[imgRepo+"/ita"] != "" {
+		cfg.Img_ita = hubsbuildsCM.Labels[imgRepo+"/ret"]
+	}
+	cfg.Img_gcsfuse = "stable-latest"
+	if hubsbuildsCM.Labels[imgRepo+"/gcsfuse"] != "" {
+		cfg.Img_gcsfuse = hubsbuildsCM.Labels[imgRepo+"/ret"]
+	}
+	cfg.Img_hubs = "stable-latest"
+	if hubsbuildsCM.Labels[imgRepo+"/hubs"] != "" {
+		cfg.Img_hubs = hubsbuildsCM.Labels[imgRepo+"/ret"]
+	}
+	cfg.Img_spoke = "stable-latest"
+	if hubsbuildsCM.Labels[imgRepo+"/spoke"] != "" {
+		cfg.Img_spoke = hubsbuildsCM.Labels[imgRepo+"/ret"]
+	}
+	cfg.Img_speelycaptor = "stable-latest"
+	if hubsbuildsCM.Labels[imgRepo+"/speelycaptor"] != "" {
+		cfg.Img_speelycaptor = hubsbuildsCM.Labels[imgRepo+"/ret"]
+	}
+	cfg.Img_photomnemonic = "stable-latest"
+	if hubsbuildsCM.Labels[imgRepo+"/photomnemonic"] != "" {
+		cfg.Img_photomnemonic = hubsbuildsCM.Labels[imgRepo+"/ret"]
+	}
+
 	return cfg, nil
 }
 

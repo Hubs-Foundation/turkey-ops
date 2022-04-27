@@ -46,12 +46,16 @@ type Config struct {
 	Awss       *AwsSvs
 	Gcps       *GcpSvs
 	K8ss_local *K8sSvs
+
+	ImgRepo string
 }
 
 var Cfg *Config
 
 func MakeCfg() {
 	Cfg = &Config{}
+
+	Cfg.ImgRepo = "mozillareality"
 
 	Cfg.AuthProxyUrl = os.Getenv("AUTH_PROXY_URL")
 

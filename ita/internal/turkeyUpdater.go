@@ -161,7 +161,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 
 			err := u.tryDeployNewContainer(img, newtag, info, 6)
 			if err != nil {
-				Logger.Error("deployNewContainer failed: " + err.Error())
+				Logger.Error("tryDeployNewContainer failed: " + err.Error())
 				continue
 			}
 			u.containers[img] = turkeyContainerInfo{
