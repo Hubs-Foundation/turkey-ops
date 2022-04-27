@@ -601,7 +601,7 @@ spec:
         - name: RET_MODE
           value: RET_MODE==will-not-start-turkey-updater
       # - name: ytdl
-      #   image: mozillareality/ytdl:{{.Img_ytdl}}
+      #   image: mozillareality/ytdl:stable-latest
       #   ports:
       #   - containerPort: 8080
       #   imagePullPolicy: IfNotPresent
@@ -867,7 +867,7 @@ spec:
 #     spec:
 #       containers:
 #       - name: nearspark
-#         image: mozillareality/nearspark:{{.Img_nearspark}}
+#         image: mozillareality/nearspark:stable-latest
 #         ports:
 #         - containerPort: 5000
 #         imagePullPolicy: IfNotPresent
