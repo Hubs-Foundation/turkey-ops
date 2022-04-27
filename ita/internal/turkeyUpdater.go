@@ -135,13 +135,14 @@ func (u *TurkeyUpdater) startWatchingPublisher(channel string) (chan struct{}, e
 
 func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 
-	time.Sleep(time.Duration(rand.Intn(300)) * time.Second) // so some namespaces will pull the new container images first and have them cached locally -- less likely for us to get rate limited
-
 	cfgmap, ok := obj.(*corev1.ConfigMap)
 	if !ok {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
 	}
 	Logger.Sugar().Debugf("received on <"+cfgmap.Name+"."+eventType+">, configmap.labels : %v", cfgmap.Labels)
+	waitSec := rand.Intn(300)
+	Logger.Sugar().Debugf("deployment starting in %v secs", waitSec)
+	time.Sleep(time.Duration(waitSec)) // so some namespaces will pull the new container images first and have them cached locally -- less likely for us to get rate limited
 
 	for img, info := range u.containers {
 		newtag, ok := cfgmap.Labels[img]
