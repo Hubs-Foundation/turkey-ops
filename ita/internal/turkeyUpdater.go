@@ -210,11 +210,13 @@ func k8s_waitForPods(namespace string, timeout int) error {
 		return err
 	}
 	for _, pod := range pods.Items {
-		for pod.Status.Phase != corev1.PodPending {
+		podStatusPhase := pod.Status.Phase
+		for podStatusPhase == corev1.PodPending {
 			Logger.Sugar().Debugf("waiting for pending pod %v / %v", pod.Namespace, pod.Name)
 			time.Sleep(5 * time.Second)
 			timeoutSec -= 5
-			pods, err = cfg.K8sClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
+			pod, err := cfg.K8sClientSet.CoreV1().Pods(namespace).Get(context.Background(), pod.Name, metav1.GetOptions{})
+			podStatusPhase = pod.Status.Phase
 			if err != nil {
 				return err
 			}
