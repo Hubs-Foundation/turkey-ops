@@ -631,7 +631,7 @@ spec:
         - name: MNT_DIR
           value: /var/gcsfuse
         - name: GCS_DIR
-          value: {{.Subdomain}}.{{.Domain}}
+          value: hc-{{.HubId}}.{{.Domain}}
         # resources:
         #   requests:
         #     memory: 20Mi
