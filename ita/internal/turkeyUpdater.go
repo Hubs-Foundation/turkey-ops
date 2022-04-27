@@ -3,10 +3,12 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -15,11 +17,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-type TurkeyUpdater struct {
-	Channel    string
-	Containers map[string]turkeyContainerInfo
-	stopCh     chan struct{}
+var mu sync.Mutex
 
+type TurkeyUpdater struct {
+	containers            map[string]turkeyContainerInfo
+	stopCh                chan struct{}
+	channel               string
 	publisherNS           string
 	publisherCfgMapPrefix string //cfgMap's name will be prefix + channel, ie. hubsbuilds-beta
 }
@@ -30,7 +33,6 @@ type turkeyContainerInfo struct {
 
 func NewTurkeyUpdater() *TurkeyUpdater {
 	return &TurkeyUpdater{
-		Channel:               cfg.ListeningChannel,
 		publisherNS:           "turkey-services",
 		publisherCfgMapPrefix: "hubsbuilds-",
 	}
@@ -38,7 +40,7 @@ func NewTurkeyUpdater() *TurkeyUpdater {
 
 func (u *TurkeyUpdater) loadContainers() error {
 
-	u.Containers = make(map[string]turkeyContainerInfo)
+	u.containers = make(map[string]turkeyContainerInfo)
 
 	dList, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -53,46 +55,59 @@ func (u *TurkeyUpdater) loadContainers() error {
 			if len(imgNameTagArr) < 2 {
 				return errors.New("problem -- bad Image Name: " + c.Image)
 			}
-			u.Containers[imgNameTagArr[0]] = turkeyContainerInfo{
+			u.containers[imgNameTagArr[0]] = turkeyContainerInfo{
 				containerTag:         imgNameTagArr[1],
 				parentDeploymentName: d.Name,
 			}
 		}
 	}
-	Logger.Sugar().Debugf("servicing ("+strconv.Itoa(len(u.Containers))+") Containers (repo:{tag:parentDeployment}): %v", u.Containers)
+	Logger.Sugar().Debugf("servicing ("+strconv.Itoa(len(u.containers))+") Containers (repo:{tag:parentDeployment}): %v", u.containers)
 	return nil
 }
 
-func (u *TurkeyUpdater) Start(delay time.Duration) (chan struct{}, error) {
-	time.Sleep(delay)
+func (u *TurkeyUpdater) Channel() string {
+	return u.channel
+}
+func (u *TurkeyUpdater) Containers() string {
+	return fmt.Sprint(u.containers)
+}
 
-	if u.stopCh != nil {
-		close(u.stopCh)
-		Logger.Info("restarting for channel: " + u.Channel)
-	} else {
-		Logger.Info("starting for channel: " + u.Channel)
-	}
+func (u *TurkeyUpdater) Start(channel string) error {
+	mu.Lock()
+	defer mu.Unlock()
 
 	err := u.loadContainers()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	stop, err := u.startWatchingPublisher()
+	if u.stopCh != nil {
+		close(u.stopCh)
+		Logger.Info("restarting with channel: " + channel)
+	} else {
+		Logger.Info("starting with channel: " + channel)
+	}
+
+	if _, ok := cfg.SupportedChannels[channel]; !ok {
+		Logger.Sugar().Warnf("bad channel %v, exiting without start", channel)
+		return nil
+	}
+
+	u.stopCh, err = u.startWatchingPublisher(channel)
 	if err != nil {
 		Logger.Error("failed to startWatchingPublisher: " + err.Error())
 	}
-	return stop, nil
+	return nil
 }
 
-func (u *TurkeyUpdater) startWatchingPublisher() (chan struct{}, error) {
+func (u *TurkeyUpdater) startWatchingPublisher(channel string) (chan struct{}, error) {
 
 	watchlist := cache.NewFilteredListWatchFromClient(
 		cfg.K8sClientSet.CoreV1().RESTClient(),
 		"configmaps",
 		u.publisherNS,
 		func(options *metav1.ListOptions) {
-			options.FieldSelector = "metadata.name=" + u.publisherCfgMapPrefix + u.Channel
+			options.FieldSelector = "metadata.name=" + u.publisherCfgMapPrefix + channel
 		},
 	)
 
@@ -120,7 +135,7 @@ func (u *TurkeyUpdater) startWatchingPublisher() (chan struct{}, error) {
 
 func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 
-	time.Sleep(time.Duration(rand.Intn(300)) * time.Second)
+	time.Sleep(time.Duration(rand.Intn(300)) * time.Second) // so some namespaces will pull the new container images first and have them cached locally -- less likely for us to get rate limited
 
 	cfgmap, ok := obj.(*corev1.ConfigMap)
 	if !ok {
@@ -128,7 +143,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	}
 	Logger.Sugar().Debugf("received on <"+cfgmap.Name+"."+eventType+">, configmap.labels : %v", cfgmap.Labels)
 
-	for img, info := range u.Containers {
+	for img, info := range u.containers {
 		newtag, ok := cfgmap.Labels[img]
 		if ok {
 			if info.containerTag == newtag {
@@ -145,8 +160,8 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 				Logger.Error("deployNewContainer failed: " + err.Error())
 				continue
 			}
-			u.Containers[img] = turkeyContainerInfo{
-				parentDeploymentName: u.Containers[img].parentDeploymentName,
+			u.containers[img] = turkeyContainerInfo{
+				parentDeploymentName: u.containers[img].parentDeploymentName,
 				containerTag:         newtag,
 			}
 

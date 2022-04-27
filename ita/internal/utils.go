@@ -1,10 +1,12 @@
 package internal
 
 import (
+	"context"
 	"os"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var Logger *zap.Logger
@@ -24,4 +26,29 @@ func InitLogger() {
 	defer Logger.Sync()
 
 	Atom.SetLevel(zap.DebugLevel)
+}
+
+var listeningChannelLabelName = "CHANNEL"
+
+func Get_listeningChannelLabel() (string, error) {
+	//do we have channel labled on deployment?
+	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return d.Labels[listeningChannelLabelName], nil
+}
+
+func Set_listeningChannelLabel(channel string) error {
+	//do we have channel labled on deployment?
+	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	d.Labels["CHANNEL"] = channel
+	_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
