@@ -911,7 +911,7 @@ spec:
       serviceAccountName: ita-sa
       containers:
       - name: ita
-        image: mozillareality/ita:dev-43
+        image: mozillareality/ita:dev-45
         imagePullPolicy: Always
         env:
         - name: POD_NS

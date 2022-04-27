@@ -139,7 +139,8 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	if !ok {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
 	}
-	Logger.Sugar().Debugf("received on <"+cfgmap.Name+"."+eventType+">, configmap.labels : %v", cfgmap.Labels)
+	Logger.Sugar().Debugf("...received on <"+cfgmap.Name+"."+eventType+">: %v", cfgmap.Labels)
+	Logger.Sugar().Debugf(".........................current u.containers : %v", u.containers)
 
 	rand.Seed(int64(cfg.HostnameHash))
 	waitSec := rand.Intn(300) + 30
