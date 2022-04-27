@@ -386,31 +386,31 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	}
 	cfg.Img_postgrest = "stable-latest"
 	if hubsbuildsCM.Labels[imgRepo+"/postgrest"] != "" {
-		cfg.Img_postgrest = hubsbuildsCM.Labels[imgRepo+"/ret"]
+		cfg.Img_postgrest = hubsbuildsCM.Labels[imgRepo+"/postgrest"]
 	}
 	cfg.Img_ita = "stable-latest"
 	if hubsbuildsCM.Labels[imgRepo+"/ita"] != "" {
-		cfg.Img_ita = hubsbuildsCM.Labels[imgRepo+"/ret"]
+		cfg.Img_ita = hubsbuildsCM.Labels[imgRepo+"/ita"]
 	}
 	cfg.Img_gcsfuse = "stable-latest"
 	if hubsbuildsCM.Labels[imgRepo+"/gcsfuse"] != "" {
-		cfg.Img_gcsfuse = hubsbuildsCM.Labels[imgRepo+"/ret"]
+		cfg.Img_gcsfuse = hubsbuildsCM.Labels[imgRepo+"/gcsfuse"]
 	}
 	cfg.Img_hubs = "stable-latest"
 	if hubsbuildsCM.Labels[imgRepo+"/hubs"] != "" {
-		cfg.Img_hubs = hubsbuildsCM.Labels[imgRepo+"/ret"]
+		cfg.Img_hubs = hubsbuildsCM.Labels[imgRepo+"/hubs"]
 	}
 	cfg.Img_spoke = "stable-latest"
 	if hubsbuildsCM.Labels[imgRepo+"/spoke"] != "" {
-		cfg.Img_spoke = hubsbuildsCM.Labels[imgRepo+"/ret"]
+		cfg.Img_spoke = hubsbuildsCM.Labels[imgRepo+"/spoke"]
 	}
 	cfg.Img_speelycaptor = "stable-latest"
 	if hubsbuildsCM.Labels[imgRepo+"/speelycaptor"] != "" {
-		cfg.Img_speelycaptor = hubsbuildsCM.Labels[imgRepo+"/ret"]
+		cfg.Img_speelycaptor = hubsbuildsCM.Labels[imgRepo+"/speelycaptor"]
 	}
 	cfg.Img_photomnemonic = "stable-latest"
 	if hubsbuildsCM.Labels[imgRepo+"/photomnemonic"] != "" {
-		cfg.Img_photomnemonic = hubsbuildsCM.Labels[imgRepo+"/ret"]
+		cfg.Img_photomnemonic = hubsbuildsCM.Labels[imgRepo+"/photomnemonic"]
 	}
 
 	return cfg, nil
