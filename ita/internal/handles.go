@@ -60,12 +60,16 @@ var Ita_cfg_ret_ps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 // 	"beta":   true,
 // 	"stable": true,
 // }
-var Tu_channel = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// if r.URL.Path != "/tu_channel" {
-	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-	// 	return
-	// }
-	if r.Method != "POST" && r.URL.Path == "/tu_channel" && len(r.URL.Query()["channel"]) == 1 {
+var Updater = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/updater" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	if r.Method == "POST" {
+		if len(r.URL.Query()["channel"]) != 1 {
+			http.Error(w, "missing: channel", http.StatusBadRequest)
+			return
+		}
 		channel := r.URL.Query()["channel"][0]
 		_, ok := cfg.SupportedChannels[channel]
 		if !ok {
@@ -79,10 +83,10 @@ var Tu_channel = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		return
 	}
-	if r.Method != "GET" && r.URL.Path == "/tu_channel" {
-		fmt.Fprint(w, cfg.TurkeyUpdater.Channel())
+	if r.Method == "GET" {
+		fmt.Fprint(w, cfg.TurkeyUpdater.Channel(), " --> ", cfg.TurkeyUpdater.Containers())
 		return
 	}
-	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 
 })
