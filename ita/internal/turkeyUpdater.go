@@ -141,6 +141,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	}
 	Logger.Sugar().Debugf("received on <"+cfgmap.Name+"."+eventType+">, configmap.labels : %v", cfgmap.Labels)
 
+	rand.Seed(int64(cfg.HostnameHash))
 	waitSec := rand.Intn(300)
 	Logger.Sugar().Debugf("deployment starting in %v secs", waitSec)
 	time.Sleep(time.Duration(waitSec) * time.Second) // so some namespaces will pull the new container images first and have them cached locally -- less likely for us to get rate limited

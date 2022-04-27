@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"hash/fnv"
 	"os"
 
 	"go.uber.org/zap"
@@ -51,4 +52,10 @@ func Set_listeningChannelLabel(channel string) error {
 		return err
 	}
 	return nil
+}
+
+func hash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
 }

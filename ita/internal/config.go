@@ -21,6 +21,8 @@ type Config struct {
 	K8sClientSet *kubernetes.Clientset
 
 	TurkeyUpdater *TurkeyUpdater
+
+	HostnameHash uint32
 }
 
 func MakeCfg() {
@@ -30,7 +32,14 @@ func MakeCfg() {
 		"beta":   true,
 		"stable": true,
 	}
-	var err error
+	Hostname, err := os.Hostname()
+	if err != nil {
+		Logger.Warn("failed to get Hostname")
+	} else {
+		Logger.Debug("Hostname: " + Hostname)
+	}
+	cfg.HostnameHash = hash(Hostname)
+
 	cfg.K8sCfg, err = rest.InClusterConfig()
 	if err != nil {
 		Logger.Error(err.Error())
