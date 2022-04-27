@@ -3,10 +3,13 @@ on:
   push:
     branches: [ master, dev ]
     paths:
-    - 'tools/botomatic/'
+    - 'tools/botomatic/app.js'
+    - 'tools/botomatic/bot-recording.json'
+    - 'tools/botomatic/bot-recording.mp3'
+    - 'tools/botomatic/Dockerfile'
+    - 'tools/botomatic/package.json'
+    - 'tools/botomatic/run.js'
     - '.github/workflows/deps_botomatic.yml'
-    paths-ignore:
-    - 'tools/botomatic/testcase1.sh'
   workflow_dispatch:
 env:
   containerName: botomatic

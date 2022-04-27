@@ -207,8 +207,8 @@ func k8s_waitForPods(namespace string, timeout int) error {
 		return err
 	}
 	for _, pod := range pods.Items {
-		for pod.Status.Phase != corev1.PodRunning {
-			Logger.Sugar().Debugf("waiting for %v / %v", pod.Namespace, pod.Name)
+		for pod.Status.Phase != corev1.PodPending {
+			Logger.Sugar().Debugf("waiting for pending pod %v / %v", pod.Namespace, pod.Name)
 			time.Sleep(5 * time.Second)
 			timeoutSec -= 5
 		}
