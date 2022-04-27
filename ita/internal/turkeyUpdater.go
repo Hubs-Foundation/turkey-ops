@@ -166,6 +166,9 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		return err
 	}
 	err = k8s_waitForPods(d.Namespace, 180)
+	if err != nil {
+		return err
+	}
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
 		if imgNameTagArr[0] == repo {
