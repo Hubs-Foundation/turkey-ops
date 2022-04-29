@@ -1,10 +1,10 @@
-name: turkeyapi
+name: turkeyorch
 on:
   push:
     branches: 
     paths:
-    - 'api/**'
-    - '.github/workflows/turkeyapi.yml'
+    - 'orch/**'
+    - '.github/workflows/turkeyorch.yml'
   workflow_dispatch:
 
 jobs:

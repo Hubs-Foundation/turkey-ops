@@ -31,11 +31,11 @@ stringData:
   SMTP_PORT: "{{.SMTP_PORT}}"
   SMTP_USER: {{.SMTP_USER}}
   SMTP_PASS: {{.SMTP_PASS}}
-  PORTAL_DATABASE_URL: ecto://postgres:{{.DB_PASS}}@{{.DB_HOST}}/portal
-  PORTAL_SECRET_KEY_BASE: {{.COOKIE_SECRET}}
+  DASHBOARD_DATABASE_URL: ecto://postgres:{{.DB_PASS}}@{{.DB_HOST}}/dashboard
+  DASHBOARD_SECRET_KEY_BASE: {{.COOKIE_SECRET}}
   GCP_SA_HMAC_KEY: {{.GCP_SA_HMAC_KEY}}
   GCP_SA_HMAC_SECRET: {{.GCP_SA_HMAC_SECRET}}  
-  PORTAL_ACCESS_KEY: {{.PORTAL_ACCESS_KEY}}
+  DASHBOARD_ACCESS_KEY: {{.DASHBOARD_ACCESS_KEY}}
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
@@ -156,12 +156,12 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: turkeyapi
+  name: turkeyorch
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
     haproxy.org/request-set-header: |
-      backend http://turkeyapi:888/
+      backend http://turkeyorch:888/
 spec:
   rules:
   - host: api.{{.Domain}}
@@ -178,7 +178,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: turkeyapi
+            name: turkeyorch
             port: 
               number: 888              
 ---
@@ -204,23 +204,23 @@ type: kubernetes.io/dockerconfigjson
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: turkeyapi
+  name: turkeyorch
   namespace: turkey-services
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: turkeyapi
+      app: turkeyorch
   minReadySeconds: 2
   template:
     metadata:
       labels:
-        app: turkeyapi
+        app: turkeyorch
     spec:
       serviceAccountName: api-sa
       containers:
-      - name: turkey-orc
-        image: mozillareality/turkeyapi:stable-latest
+      - name: turkeyorch
+        image: mozillareality/turkeyorch:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: ENV
@@ -325,14 +325,14 @@ spec:
             secretKeyRef:
               name: configs
               key: GCP_SA_HMAC_SECRET        
-        - name: PORTAL_ACCESS_KEY
+        - name: DASHBOARD_ACCESS_KEY
           valueFrom:
             secretKeyRef:
               name: configs
-              key: PORTAL_ACCESS_KEY
+              key: DASHBOARD_ACCESS_KEY
         livenessProbe:
           httpGet:
-            path: "http://turkeyapi.turkey-services/Healthz"
+            path: "http://turkeyorch.turkey-services/Healthz"
             port: 888
           initialDelaySeconds: 20
           timeoutSeconds: 1
@@ -350,7 +350,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: turkeyapi
+  name: turkeyorch
   namespace: turkey-services
 spec:
   ports:
@@ -358,7 +358,7 @@ spec:
     port: 888
     targetPort: 888
   selector:
-    app: turkeyapi
+    app: turkeyorch
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -591,12 +591,12 @@ subjects:
     name: system:serviceaccounts
 ---
 ####################################################################################
-####################################### portal #######################################
+####################################### dashboard #######################################
 ####################################################################################  
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: turkeyportal
+  name: turkeydashboard
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
@@ -609,37 +609,37 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: turkeyportal
+            name: turkeydashboard
             port: 
               number: 4000
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: turkeyportal
+  name: turkeydashboard
   namespace: turkey-services
   labels:
-    app: turkeyportal
+    app: turkeydashboard
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: turkeyportal
+      app: turkeydashboard
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: turkeyportal
+        app: turkeydashboard
     spec:
       # terminationGracePeriodSeconds: 3
       containers:
-      - name: turkeyportal
-        image: mozillareality/turkeyportal:stable-latest
+      - name: turkeydashboard
+        image: mozillareality/turkeydashboard:stable-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: PHX_HOST
-          value: portal.{{.Domain}}
+          value: dashboard.{{.Domain}}
         - name: PHX_SERVER
           value: string
         - name: RELEASE_NAME
@@ -648,17 +648,17 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: PORTAL_DATABASE_URL      #ecto://USER:PASS@HOST/DATABASE
+              key: DASHBOARD_DATABASE_URL      #ecto://USER:PASS@HOST/DATABASE
         - name: SECRET_KEY_BASE
           valueFrom:
             secretKeyRef:
               name: configs
-              key: PORTAL_SECRET_KEY_BASE
-        - name: PORTAL_ACCESS_KEY
+              key: DASHBOARD_SECRET_KEY_BASE
+        - name: DASHBOARD_ACCESS_KEY
           valueFrom:
             secretKeyRef:
               name: configs
-              key: PORTAL_ACCESS_KEY              
+              key: DASHBOARD_ACCESS_KEY              
         resources:
           requests:
             memory: 200Mi
@@ -670,14 +670,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: turkeyportal
+  name: turkeydashboard
   namespace: turkey-services
   labels:
-    app: turkeyportal
+    app: turkeydashboard
 spec:
   type: ClusterIP
   selector:
-    app: turkeyportal
+    app: turkeydashboard
   ports:
   - name: http
     port: 4000
