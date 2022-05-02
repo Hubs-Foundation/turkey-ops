@@ -167,11 +167,11 @@ type clusterCfg struct {
 	Options              string `json:"options"`              //additional options, dot(.)prefixed -- ie. ".dryrun"
 
 	//generated pre-infra-deploy
-	Stackname         string `json:"stackname"`
-	DB_PASS           string `json:"DB_PASS"`           //itjfHE8888
-	COOKIE_SECRET     string `json:"COOKIE_SECRET"`     //a-random-string-to-sign-auth-cookies
-	PERMS_KEY         string `json:"PERMS_KEY"`         //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
-	PORTAL_ACCESS_KEY string `json:"PORTAL_ACCESS_KEY"` // api key for portal access
+	Stackname            string `json:"stackname"`
+	DB_PASS              string `json:"DB_PASS"`              //itjfHE8888
+	COOKIE_SECRET        string `json:"COOKIE_SECRET"`        //a-random-string-to-sign-auth-cookies
+	PERMS_KEY            string `json:"PERMS_KEY"`            //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
+	DASHBOARD_ACCESS_KEY string `json:"DASHBOARD_ACCESS_KEY"` // api key for DASHBOARD access
 
 	//initiated pre-infra-deploy, generated post-infra-deploy
 	DB_HOST string `json:"DB_HOST"` //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
@@ -294,7 +294,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
 		internal.Logger.Warn("GCP_SA_KEY_b64 unspecified -- using: " + cfg.GCP_SA_KEY_b64)
 	}
-	cfg.PORTAL_ACCESS_KEY = internal.PwdGen(15, pwdSeed, "P~")
+	cfg.DASHBOARD_ACCESS_KEY = internal.PwdGen(15, pwdSeed, "P~")
 
 	return cfg, nil
 }
