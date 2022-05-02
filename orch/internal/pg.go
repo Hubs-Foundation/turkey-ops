@@ -9,7 +9,7 @@ import (
 var PgxPool *pgxpool.Pool
 
 func MakePgxPool() {
-	p, err := pgxpool.Connect(context.Background(), Cfg.DBconn)
+	p, err := pgxpool.Connect(context.Background(), Cfg.DBconn+"/dashboard")
 	if err != nil {
 		Logger.Error("Unable to connect to database: " + err.Error())
 	}
