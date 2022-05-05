@@ -177,7 +177,7 @@ metadata:
 data:
   config.toml.template: |
     [peerage]
-    dns_name = "<POD_DNS>"
+    dns_name = "ret.<POD_NS>.svc.cluster.local"
     app_name = "ret"
 
     [ret."Elixir.Ret"]
@@ -433,7 +433,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        - name: POD_NS
+        - name: turkeyCfg_POD_NS
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
