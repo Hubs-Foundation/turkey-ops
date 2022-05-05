@@ -36,6 +36,7 @@ stringData:
   GCP_SA_HMAC_KEY: {{.GCP_SA_HMAC_KEY}}
   GCP_SA_HMAC_SECRET: {{.GCP_SA_HMAC_SECRET}}  
   DASHBOARD_ACCESS_KEY: {{.DASHBOARD_ACCESS_KEY}}
+  SKETCHFAB_API_KEY: {{.SKETCHFAB_API_KEY}}
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
@@ -330,6 +331,11 @@ spec:
             secretKeyRef:
               name: configs
               key: DASHBOARD_ACCESS_KEY
+        - name: SKETCHFAB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SKETCHFAB_API_KEY              
         livenessProbe:
           httpGet:
             path: "http://turkeyorch.turkey-services/Healthz"
