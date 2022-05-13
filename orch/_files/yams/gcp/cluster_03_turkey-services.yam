@@ -50,6 +50,7 @@ metadata:
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
 spec:
   rules:
   - host: auth.{{.Domain}}
@@ -161,8 +162,9 @@ metadata:
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
     haproxy.org/request-set-header: |
-      backend http://turkeyorch:888/
+      backend https://turkeyorch:888/
 spec:
   rules:
   - host: orch.{{.Domain}}
@@ -338,7 +340,7 @@ spec:
               key: SKETCHFAB_API_KEY              
         livenessProbe:
           httpGet:
-            path: "http://turkeyorch.turkey-services/Healthz"
+            path: "https://turkeyorch.turkey-services/Healthz"
             port: 888
           initialDelaySeconds: 20
           timeoutSeconds: 1
