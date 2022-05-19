@@ -29,7 +29,7 @@ var (
 	Healthy    int32
 )
 
-func StartServer(router *http.ServeMux, port int) {
+func StartServer(router *http.ServeMux, port int, isHttps bool) {
 	flag.StringVar(&listenAddr, "listen-addr", ":"+strconv.Itoa(port), "server listen address")
 	flag.Parse()
 
@@ -48,7 +48,9 @@ func StartServer(router *http.ServeMux, port int) {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 0 * time.Second,
 		IdleTimeout:  3600 * time.Second,
-		TLSConfig: &tls.Config{
+	}
+	if isHttps {
+		server.TLSConfig = &tls.Config{
 			MinVersion: tls.VersionTLS12,
 			CipherSuites: []uint16{
 				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
@@ -58,7 +60,7 @@ func StartServer(router *http.ServeMux, port int) {
 				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
 				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
 			},
-		},
+		}
 	}
 
 	done := make(chan bool)
@@ -83,7 +85,12 @@ func StartServer(router *http.ServeMux, port int) {
 	Logger.Debug("Server is ready to handle requests at: " + listenAddr)
 	atomic.StoreInt32(&Healthy, 1)
 
-	if err := server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
+	if isHttps {
+		if err := server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
+			Logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
+		}
+	}
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		Logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
 	}
 	<-done
