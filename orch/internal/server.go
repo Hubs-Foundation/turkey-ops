@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/binary"
-	"flag"
 	"net/http"
 	"os"
 	"os/signal"
@@ -43,19 +42,17 @@ func NewServer(router *http.ServeMux, port int, isHttps bool) *Server {
 func StartNewServer(router *http.ServeMux, port int, isHttps bool) *Server {
 	var server = &Server{
 		router:       router,
-		port:         port,
+		listenAddr:   ":" + strconv.Itoa(port),
 		isHttps:      isHttps,
 		requestIDKey: 0,
 	}
 
-	go server.Start()
+	server.Start()
 
 	return server
 }
 
 func (s *Server) Start() {
-	flag.StringVar(&s.listenAddr, "listen-addr", ":"+strconv.Itoa(s.port), "server listen address")
-	flag.Parse()
 
 	Logger.Debug("Server is starting...")
 
@@ -113,9 +110,10 @@ func (s *Server) Start() {
 		if err := server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
 			Logger.Sugar().Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
 		}
-	}
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		Logger.Sugar().Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
+	} else {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			Logger.Sugar().Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
+		}
 	}
 	<-done
 	Logger.Debug("Server stopped")
