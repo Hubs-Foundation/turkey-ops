@@ -20,17 +20,41 @@ import (
 
 type key int
 
-const (
-	requestIDKey key = 0
-)
+var Healthy int32
 
-var (
-	listenAddr string
-	Healthy    int32
-)
+type Server struct {
+	port         int
+	isHttps      bool
+	router       *http.ServeMux
+	listenAddr   string
+	requestIDKey key
+}
 
-func StartServer(router *http.ServeMux, port int, isHttps bool) {
-	flag.StringVar(&listenAddr, "listen-addr", ":"+strconv.Itoa(port), "server listen address")
+func NewServer(router *http.ServeMux, port int, isHttps bool) *Server {
+	var server = &Server{
+		router:       router,
+		port:         port,
+		isHttps:      isHttps,
+		requestIDKey: 0,
+	}
+	return server
+}
+
+func StartNewServer(router *http.ServeMux, port int, isHttps bool) *Server {
+	var server = &Server{
+		router:       router,
+		port:         port,
+		isHttps:      isHttps,
+		requestIDKey: 0,
+	}
+
+	go server.Start()
+
+	return server
+}
+
+func (s *Server) Start() {
+	flag.StringVar(&s.listenAddr, "listen-addr", ":"+strconv.Itoa(s.port), "server listen address")
 	flag.Parse()
 
 	Logger.Debug("Server is starting...")
@@ -43,13 +67,13 @@ func StartServer(router *http.ServeMux, port int, isHttps bool) {
 	}
 
 	server := &http.Server{
-		Addr:         listenAddr,
-		Handler:      tracing(nextRequestID)(logging()(router)),
+		Addr:         s.listenAddr,
+		Handler:      s.tracing(nextRequestID)(s.logging()(s.router)),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 0 * time.Second,
 		IdleTimeout:  3600 * time.Second,
 	}
-	if isHttps {
+	if s.isHttps {
 		server.TLSConfig = &tls.Config{
 			MinVersion: tls.VersionTLS12,
 			CipherSuites: []uint16{
@@ -82,38 +106,38 @@ func StartServer(router *http.ServeMux, port int, isHttps bool) {
 		}
 		close(done)
 	}()
-	Logger.Debug("Server is ready to handle requests at: " + listenAddr)
+	Logger.Debug("Server is ready to handle requests at: " + s.listenAddr)
 	atomic.StoreInt32(&Healthy, 1)
 
-	if isHttps {
+	if s.isHttps {
 		if err := server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
-			Logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
+			Logger.Sugar().Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
 		}
 	}
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		Logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
+		Logger.Sugar().Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
 	}
 	<-done
 	Logger.Debug("Server stopped")
 }
-func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
+func (s *Server) tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestID := r.Header.Get("X-Request-Id")
 			if requestID == "" {
 				requestID = nextRequestID()
 			}
-			ctx := context.WithValue(r.Context(), requestIDKey, requestID)
+			ctx := context.WithValue(r.Context(), s.requestIDKey, requestID)
 			w.Header().Set("X-Request-Id", requestID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
-func logging() func(http.Handler) http.Handler {
+func (s *Server) logging() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
-				requestID, ok := r.Context().Value(requestIDKey).(string)
+				requestID, ok := r.Context().Value(s.requestIDKey).(string)
 				if !ok {
 					requestID = "unknown"
 				}

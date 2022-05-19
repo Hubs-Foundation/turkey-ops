@@ -58,8 +58,8 @@ func main() {
 	if err != nil {
 		internal.GetLogger().Panic("bad port: " + err.Error())
 	}
-	go internal.StartServer(router, port, false)
-	internal.StartServer(router, port+1, true)
+	go internal.StartNewServer(router, port, false)
+	internal.StartNewServer(router, port+1, true)
 
 }
 
