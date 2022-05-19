@@ -1,7 +1,7 @@
 name: turkeyauth
 on:
   push:
-    branches: [ master ]
+    branches: 
     paths:
     - 'auth/**'
     - '.github/workflows/turkeyauth.yml'

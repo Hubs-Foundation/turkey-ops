@@ -37,7 +37,8 @@ func main() {
 	//get: curl localhost:9001/zaplvl
 	//set: curl -X PUT -d 'level=debug' localhost:9001/zaplvl
 
-	internal.StartServer(router, 9001)
+	go internal.StartNewServer(router, 9001, false)
+	internal.StartNewServer(router, 9002, true)
 }
 
 // func privateEndpoint(requiredRole string) func(http.Handler) http.Handler {

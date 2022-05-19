@@ -50,6 +50,7 @@ metadata:
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
 spec:
   rules:
   - host: auth.{{.Domain}}
@@ -61,7 +62,7 @@ spec:
           service:
             name: turkeyauth
             port: 
-              number: 9001
+              number: 9002
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -150,6 +151,9 @@ spec:
   - name: http
     port: 9001
     targetPort: 9001
+  - name: https
+    port: 9002
+    targetPort: 9002
 ---
 ####################################################################################
 ######################################### orch ######################################
@@ -161,8 +165,9 @@ metadata:
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
     haproxy.org/request-set-header: |
-      backend http://turkeyorch:888/
+      backend https://turkeyorch:889/
 spec:
   rules:
   - host: orch.{{.Domain}}
@@ -174,14 +179,14 @@ spec:
           service:
             name: turkeyauth
             port: 
-              number: 9001
+              number: 9002
       - path: /webhooks
         pathType: Prefix
         backend:
           service:
             name: turkeyorch
             port: 
-              number: 888              
+              number: 889
 ---
 apiVersion: v1
 kind: Secret
@@ -338,8 +343,8 @@ spec:
               key: SKETCHFAB_API_KEY              
         livenessProbe:
           httpGet:
-            path: "http://turkeyorch.turkey-services/Healthz"
-            port: 888
+            path: "https://localhost/Healthz"
+            port: 889
           initialDelaySeconds: 20
           timeoutSeconds: 1
           periodSeconds: 120
@@ -363,6 +368,9 @@ spec:
   - name: http
     port: 888
     targetPort: 888
+  - name: http
+    port: 889
+    targetPort: 889    
   selector:
     app: turkeyorch
 ---

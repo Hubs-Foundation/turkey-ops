@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -46,6 +47,7 @@ func (p *proxyman) new(target string) (*httputil.ReverseProxy, error) {
 	}
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
 	proxy.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		// Proxy: http.ProxyFromEnvironment,
 		// DialContext: (&net.Dialer{
 		// 	Timeout:   900 * time.Second,
