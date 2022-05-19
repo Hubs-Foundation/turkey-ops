@@ -110,7 +110,7 @@ resource "google_container_node_pool" "gke_nodes" {
       env = "{{.Stackname}}"
     }
     preemptible  = true
-    machine_type = "n1-highmem-2"
+    machine_type = "e2-standard-4"
     # local_ssd_count = 1
     tags         = ["gke-node", "{{.Stackname}}"]
     metadata = {
