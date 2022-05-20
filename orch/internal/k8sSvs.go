@@ -146,7 +146,14 @@ func Ssa_k8sChartYaml(ssa_userId, k8sChartYaml string, cfg *rest.Config) error {
 				Force:        &force,
 			})
 		// Logger.Sugar().Debugf("ssaResult: %v", ssaResult.Object)
-		Logger.Sugar().Debugf("ssaResult: %v", func() string { jsonBytes, _ := json.Marshal(ssaResult.Object); return string(jsonBytes) })
+		jsonBytes, err := json.Marshal(ssaResult.Object)
+		if err != nil {
+			Logger.Sugar().Debugf("err=%v", err)
+		}
+		Logger.Sugar().Debugf("ssa-result: %v", jsonBytes)
+		Logger.Sugar().Debugf("ssa-result: " + string(jsonBytes))
+
+		// Logger.Sugar().Debugf("ssaResult: %v", func() string { jsonBytes, _ := json.Marshal(ssaResult.Object); return string(jsonBytes) })
 
 		if err != nil {
 			return err
