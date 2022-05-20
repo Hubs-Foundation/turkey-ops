@@ -368,7 +368,7 @@ spec:
   - name: http
     port: 888
     targetPort: 888
-  - name: http
+  - name: https
     port: 889
     targetPort: 889    
   selector:
