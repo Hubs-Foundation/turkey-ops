@@ -28,7 +28,7 @@ func main() {
 
 	router := http.NewServeMux()
 
-	router.Handle("/Healthz", handlers.Healthz())
+	router.Handle("/_healthz", handlers.Healthz())
 
 	router.Handle("/console", handlers.Console)
 	// router.Handle("/console", requireRole("foobar")(handlers.Console))

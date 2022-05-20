@@ -127,6 +127,11 @@ spec:
             secretKeyRef:
               name: configs
               key: OAUTH_CLIENT_SECRET_FXA
+        livenessProbe:
+          httpGet:
+            path: "localhost/_healthz"
+            port: 9002
+            scheme: HTTPS
         resources:
           requests:
             memory: 200Mi
@@ -343,8 +348,9 @@ spec:
               key: SKETCHFAB_API_KEY              
         livenessProbe:
           httpGet:
-            path: "https://localhost/Healthz"
+            path: "localhost/_healthz"
             port: 889
+            scheme: HTTPS
           initialDelaySeconds: 20
           timeoutSeconds: 1
           periodSeconds: 120

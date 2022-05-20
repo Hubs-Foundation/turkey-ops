@@ -40,10 +40,11 @@ chmod 600 GCP_SA_KEY.json
 export GOOGLE_APPLICATION_CREDENTIALS="GCP_SA_KEY.json"
 
 get_kubectl
+kubectl -n ingress patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */3 * *"}}'
+
 if ! need_new_cert; then echo "good cert, exit in 15 min"; sleep 900; exit 0; fi
 echo "getting new cert"
 if ! get_new_cert; then echo "ERROR failed to get new cert, exit in 15 min"; sleep 900; exit 1; fi
 if ! save_cert; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
 
 kubectl -n ingress rollout restart deployment haproxy
-kubectl -n ingress patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */3 * *"}}'
