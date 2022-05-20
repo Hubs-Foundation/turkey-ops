@@ -1,7 +1,7 @@
 name: turkeyorch
 on:
   push:
-    branches: 
+    branches:  
     paths:
     - 'orch/**'
     - '.github/workflows/turkeyorch.yml'

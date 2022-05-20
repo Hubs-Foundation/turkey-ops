@@ -82,13 +82,13 @@ resource "google_container_cluster" "gke" {
     enabled = true
     resource_limits{
       resource_type = "memory"
-      minimum = 16
-      maximum = 64
+      minimum = 24
+      maximum = 128
     }
     resource_limits{
       resource_type = "cpu"
-      minimum = 4
-      maximum = 16
+      minimum = 12
+      maximum = 64
     }
     autoscaling_profile = "OPTIMIZE_UTILIZATION"
   }
@@ -142,7 +142,7 @@ resource "google_sql_database_instance" "pgsql" {
   region           = "{{.Region}}"
   deletion_protection = false
   settings {
-    tier = "db-custom-1-6656"
+    tier = "db-custom-2-13312"
     ip_configuration {
       ipv4_enabled    = true
       private_network = google_compute_network.vpc.id

@@ -417,6 +417,8 @@ spec:
         imagePullPolicy: IfNotPresent
         name: pgbouncer
         env:
+        - name: MAX_CLIENT_CONN
+          value: 10000
         - name: DB_USER
           valueFrom:
             secretKeyRef:
@@ -474,6 +476,8 @@ spec:
         imagePullPolicy: IfNotPresent
         name: pgbouncer-t
         env:
+        - name: MAX_CLIENT_CONN
+          value: 10000
         - name: DB_USER
           valueFrom:
             secretKeyRef:
