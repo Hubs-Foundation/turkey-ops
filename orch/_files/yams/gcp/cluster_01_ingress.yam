@@ -251,9 +251,10 @@ metadata:
   name: certbotbot
   namespace: ingress
 spec:
-  schedule: "*/10 * * * *" # every 10 minutes initially, certbotbot will update this to a much longer interval after a successful run
+  schedule: "*/10 * * * *" # every 10 minutes initially, certbotbot will update this to a much longer interval after the initial run
   jobTemplate:
     spec:
+      backoffLimit: 1
       template:
         spec:
           serviceAccountName: certbotbot
