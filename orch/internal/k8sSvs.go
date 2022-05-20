@@ -139,12 +139,13 @@ func Ssa_k8sChartYaml(ssa_userId, k8sChartYaml string, cfg *rest.Config) error {
 
 		force := true
 		// Create or Update the object with SSA // types.ApplyPatchType indicates SSA. // FieldManager specifies the field owner ID.
-		_, err = dr.Patch(context.TODO(),
+		ssaResult, err := dr.Patch(context.TODO(),
 			obj.GetName(), types.ApplyPatchType, data,
 			metav1.PatchOptions{
 				FieldManager: "ssa_userid-" + ssa_userId,
 				Force:        &force,
 			})
+		Logger.Sugar().Debugf("ssaResult: %v", ssaResult.Object)
 		if err != nil {
 			return err
 		}
