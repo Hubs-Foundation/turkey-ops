@@ -82,6 +82,11 @@ func (s *Server) Start() {
 				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
 			},
 		}
+		// haproxy has problem with h2+tls
+		// (http2: server: error reading preface from client ... read: connection reset by peer)
+		// disabling h2 here for now
+		// TODO: figure it out, probably need new haproxy version
+		server.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler))
 	}
 
 	done := make(chan bool)
