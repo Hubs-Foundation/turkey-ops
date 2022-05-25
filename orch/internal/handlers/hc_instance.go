@@ -598,7 +598,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	internal.Logger.Error("~~~~~~ TODO: call ret/update-subdomain-script")
 
 	ns := "hc-" + HubId
-	//update secret and ingress
+	//update secret
 	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(ns).Get(context.Background(), "configs", metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -607,11 +607,12 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	oldSubdomain := string(secret_configs.Data["SUB_DOMAIN"])
 	internal.Logger.Sugar().Debugf("hc_patch_subdomain -- from <%v> to <%v>", oldSubdomain, Subdomain)
 
-	secret_configs.StringData["SUB_DOMAIN"] = Subdomain
+	secret_configs.StringData = map[string]string{"SUB_DOMAIN": Subdomain}
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(ns).Update(context.Background(), secret_configs, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
+	// update ingress
 	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(ns).Get(context.Background(), "turkey-https", metav1.GetOptions{})
 	if err != nil {
 		return err
