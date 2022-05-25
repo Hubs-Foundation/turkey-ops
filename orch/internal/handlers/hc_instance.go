@@ -623,6 +623,10 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		internal.Logger.Debug("newHost: " + newHost)
 		ingress.Spec.Rules[i].Host = newHost
 	}
+	ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
+		ingress.Annotations["haproxy.org/response-set-header"],
+		`//`+oldSubdomain+`.`,
+		`//`+Subdomain+`.`, 1)
 	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(ns).Update(context.Background(), ingress, metav1.UpdateOptions{})
 	if err != nil {
 		return err
