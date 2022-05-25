@@ -617,9 +617,11 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	if err != nil {
 		return err
 	}
-	for _, rule := range ingress.Spec.Rules {
+	for i, rule := range ingress.Spec.Rules {
 		hostArr := strings.SplitN(rule.Host, ".", 2)
-		rule.Host = strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
+		newHost := strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
+		internal.Logger.Debug("newHost: " + newHost)
+		ingress.Spec.Rules[i].Host = newHost
 	}
 	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(ns).Update(context.Background(), ingress, metav1.UpdateOptions{})
 	if err != nil {
