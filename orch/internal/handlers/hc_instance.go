@@ -618,8 +618,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		return err
 	}
 	for _, rule := range ingress.Spec.Rules {
-		hostArr := strings.SplitN(rule.Host, ".", 1)
-		internal.Logger.Sugar().Debugf("hostArr: ", hostArr)
+		hostArr := strings.SplitN(rule.Host, ".", 2)
 		rule.Host = strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
 	}
 	//rolling restart affect deployments -- reticulum, hubs, and spoke
