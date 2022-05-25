@@ -603,6 +603,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	if err != nil {
 		return err
 	}
+	internal.Logger.Debug(`string(secret_configs.Data["SUB_DOMAIN"])` + string(secret_configs.Data["SUB_DOMAIN"]))
 	oldSubdomainBytes, err := base64.StdEncoding.DecodeString(string(secret_configs.Data["SUB_DOMAIN"]))
 	if err != nil {
 		return err
