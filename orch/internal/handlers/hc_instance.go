@@ -627,7 +627,9 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		if err != nil {
 			return err
 		}
-		d.Annotations["turkeyorch-reboot-id"] = string(internal.NewUUID()) // touch annotation to trigger a restart ... https://github.com/kubernetes/kubectl/blob/release-1.16/pkg/polymorphichelpers/objectrestarter.go#L32
+		// touch annotation to trigger a restart ... https://github.com/kubernetes/kubectl/blob/release-1.16/pkg/polymorphichelpers/objectrestarter.go#L32
+		d.Spec.Template.ObjectMeta.Annotations = map[string]string{"turkeyorch-reboot-id": base64.RawURLEncoding.EncodeToString(internal.NewUUID())}
+
 		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
 			return err
