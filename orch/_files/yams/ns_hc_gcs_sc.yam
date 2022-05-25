@@ -698,27 +698,27 @@ spec:
             secretKeyRef:
               name: configs
               key: DOMAIN
-        - name: turkeyCfg_postgrest_server
-          value: 
-        - name: turkeyCfg_thumbnail_server
-          # value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
-          value: nearspark.reticulum.io
-        - name: turkeyCfg_base_assets_path
-          value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
-        - name: turkeyCfg_non_cors_proxy_domains
-          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
-        - name: turkeyCfg_reticulum_server
-          value: {{.Subdomain}}.{{.Domain}}
-        - name: turkeyCfg_cors_proxy_server
-          value: {{.Subdomain}}-cors.{{.Domain}}
-        - name: turkeyCfg_ga_tracking_id
-          value: 
-        - name: turkeyCfg_shortlink_domain
-          value: {{.Subdomain}}.{{.Domain}}
-        - name: turkeyCfg_ita_server
-          value: 
-        - name: turkeyCfg_sentry_dsn
-          value: 
+        # - name: turkeyCfg_postgrest_server
+        #   value: 
+        # - name: turkeyCfg_thumbnail_server
+        #   # value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
+        #   value: nearspark.reticulum.io
+        # - name: turkeyCfg_base_assets_path
+        #   value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
+        # - name: turkeyCfg_non_cors_proxy_domains
+        #   value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+        # - name: turkeyCfg_reticulum_server
+        #   value: {{.Subdomain}}.{{.Domain}}
+        # - name: turkeyCfg_cors_proxy_server
+        #   value: {{.Subdomain}}-cors.{{.Domain}}
+        # - name: turkeyCfg_ga_tracking_id
+        #   value: 
+        # - name: turkeyCfg_shortlink_domain
+        #   value: {{.Subdomain}}.{{.Domain}}
+        # - name: turkeyCfg_ita_server
+        #   value: 
+        # - name: turkeyCfg_sentry_dsn
+        #   value: 
         livenessProbe:
           httpGet:
             path: https://localhost/healthz
@@ -790,24 +790,25 @@ spec:
               secretKeyRef:
                 name: configs
                 key: DOMAIN
-          - name: turkeyCfg_base_assets_path
-            value: https://{{.Subdomain}}-assets.{{.Domain}}/spoke/
-          - name: turkeyCfg_cors_proxy_server
-            value: {{.Subdomain}}-cors.{{.Domain}}
-          - name: turkeyCfg_ga_tracking_id
-            value: 
-          - name: turkeyCfg_hubs_server
-            value: {{.Subdomain}}.{{.Domain}}
-          - name: turkeyCfg_is_moz
-            value: "false"
-          - name: turkeyCfg_non_cors_proxy_domains
-            value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
-          - name: turkeyCfg_reticulum_server
-            value: {{.Subdomain}}.{{.Domain}}
-          - name: turkeyCfg_sentry_dsn
-            value: 
-          - name: turkeyCfg_thumbnail_server
-            value: nearspark.hc-{{.HubId}}:5000
+          # - name: turkeyCfg_base_assets_path
+          #   value: https://{{.Subdomain}}-assets.{{.Domain}}/spoke/
+          # - name: turkeyCfg_cors_proxy_server
+          #   value: {{.Subdomain}}-cors.{{.Domain}}
+          # - name: turkeyCfg_ga_tracking_id
+          #   value: 
+          # - name: turkeyCfg_hubs_server
+          #   value: {{.Subdomain}}.{{.Domain}}
+          # - name: turkeyCfg_is_moz
+          #   value: "false"
+          # - name: turkeyCfg_non_cors_proxy_domains
+          #   value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+          # - name: turkeyCfg_reticulum_server
+          #   value: {{.Subdomain}}.{{.Domain}}
+          # - name: turkeyCfg_sentry_dsn
+          #   value: 
+          # - name: turkeyCfg_thumbnail_server
+          #   # value: nearspark.hc-{{.HubId}}:5000
+          #   value: nearspark.reticulum.io
           livenessProbe:
             httpGet:
               path: https://localhost/healthz
