@@ -87,13 +87,45 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	case "DELETE":
 		hc_delete(w, r)
 	case "PATCH":
-		status := r.URL.Query().Get("status")
-		if status == "down" || status == "up" {
-			hc_switch(w, r)
+		cfg, err := getHcCfg(r)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest)+":"+err.Error(), http.StatusBadRequest)
 			return
 		}
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
+		//
+		status := r.URL.Query().Get("status")
+		if status == "down" || status == "up" {
+			err := hc_switch(cfg.HubId, status)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"error":  err.Error(),
+					"hub_id": cfg.HubId,
+				})
+			}
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"new_status": status,
+				"hub_id":     cfg.HubId,
+			})
+			return
+		}
+
+		if cfg.Subdomain != "" {
+			err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"error":  err.Error(),
+					"hub_id": cfg.HubId,
+				})
+			}
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"new_subdomain": cfg.Subdomain,
+				"hub_id":        cfg.HubId,
+			})
+			return
+		}
+
 	}
 
 })
@@ -523,29 +555,20 @@ func pg_kick_all(cfg hcCfg) error {
 	return nil
 }
 
-func hc_switch(w http.ResponseWriter, r *http.Request) {
+func hc_switch(HubId, status string) error {
 
-	// sess := internal.GetSession(r.Cookie)
-
-	cfg, err := getHcCfg(r)
-	if err != nil {
-		internal.Logger.Error("bad hcCfg: " + err.Error())
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	ns := "hc-" + cfg.HubId
+	ns := "hc-" + HubId
 
 	//acquire lock
 	locker, err := internal.NewK8Locker(internal.NewK8sSvs_local().Cfg, ns)
 	if err != nil {
-		internal.Logger.Error("faild to acquire locker, try again later ... err: " + err.Error())
-		return
+		internal.Logger.Error("faild to acquire locker ... err: " + err.Error())
+		return err
 	}
 
 	locker.Lock()
 
 	Replicas := 0
-	status := r.URL.Query().Get("status")
 	if status == "up" {
 		// todo -- read tier, find out desired replica counts for each deployments (hubs, ret, spoke, ita, nearspark ... probably just ret)
 		//			or, (possible?) just set them to 1 and let hpa taken care of the rest
@@ -555,7 +578,7 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		internal.Logger.Error("wakeupHcNs - failed to list deployments: " + err.Error())
-		return
+		return err
 	}
 
 	for _, d := range ds.Items {
@@ -563,9 +586,53 @@ func hc_switch(w http.ResponseWriter, r *http.Request) {
 		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
 			internal.Logger.Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
-			return
+			return err
 		}
 	}
 	locker.Unlock()
+	return nil
+}
 
+func hc_patch_subdomain(HubId, Subdomain string) error {
+	//call ret/update-subdomain-script
+	internal.Logger.Error("~~~~~~ TODO: call ret/update-subdomain-script")
+
+	ns := "hc-" + HubId
+	//update secret and ingress
+	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(ns).Get(context.Background(), "configs", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	oldSubdomainBytes, err := base64.StdEncoding.DecodeString(string(secret_configs.Data["SUB_DOMAIN"]))
+	if err != nil {
+		return err
+	}
+	oldSubdomain := string(oldSubdomainBytes)
+
+	secret_configs.StringData["SUB_DOMAIN"] = Subdomain
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(ns).Update(context.Background(), secret_configs, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(ns).Get(context.Background(), "turkey-https", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	for _, rule := range ingress.Spec.Rules {
+		hostArr := strings.SplitN(rule.Host, ".", 1)
+		rule.Host = strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
+	}
+	//rolling restart affect deployments -- reticulum, hubs, and spoke
+	for _, dName := range []string{"reticulum", "hubs", "spoke"} {
+		d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Get(context.Background(), dName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		d.Annotations["turkeyorch-reboot-id"] = string(internal.NewUUID()) // touch annotation to trigger a restart ... https://github.com/kubernetes/kubectl/blob/release-1.16/pkg/polymorphichelpers/objectrestarter.go#L32
+		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), d, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

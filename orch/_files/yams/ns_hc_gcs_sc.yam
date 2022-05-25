@@ -3,7 +3,6 @@ kind: Namespace
 metadata:
   name: hc-{{.HubId}}
   labels:
-    Subdomain: {{.Subdomain}}
     Tier: {{.Tier}}
     CcuLimit: "{{.CcuLimit}}"
     StorageLimit: "{{.StorageLimit}}"
@@ -132,27 +131,27 @@ spec:
             name: spoke
             port: 
               number: 8080
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: turkey-nearspark
-  namespace: hc-{{.HubId}}
-  annotations:
-    kubernetes.io/ingress.class: haproxy    
-    haproxy.org/path-rewrite: /nearspark/(.*) /\1              # strip /nearspark  
-spec:
-  rules:        
-  - host: {{.Subdomain}}-cors.{{.Domain}}
-    http:
-      paths:
-      - path: /nearspark
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: nearspark
-            port: 
-              number: 5000              
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: turkey-nearspark
+#   namespace: hc-{{.HubId}}
+#   annotations:
+#     kubernetes.io/ingress.class: haproxy    
+#     haproxy.org/path-rewrite: /nearspark/(.*) /\1              # strip /nearspark  
+# spec:
+#   rules:        
+#   - host: {{.Subdomain}}-cors.{{.Domain}}
+#     http:
+#       paths:
+#       - path: /nearspark
+#         pathType: ImplementationSpecific
+#         backend:
+#           service:
+#             name: nearspark
+#             port: 
+#               number: 5000              
 ---
 ########################################################################
 ###################### reticulum #######################################
