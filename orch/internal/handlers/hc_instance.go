@@ -571,7 +571,7 @@ func hc_switch(HubId, status string) error {
 	Replicas := 0
 	if status == "up" {
 		// todo -- read tier, find out desired replica counts for each deployments (hubs, ret, spoke, ita, nearspark ... probably just ret)
-		//			or, (possible?) just set them to 1 and let hpa taken care of the rest
+		//			or, (possible?) just set them to 1 and let hpa take care of the rest
 		Replicas = 1
 	}
 
@@ -596,6 +596,8 @@ func hc_switch(HubId, status string) error {
 func hc_patch_subdomain(HubId, Subdomain string) error {
 	//call ret/update-subdomain-script
 	internal.Logger.Error("~~~~~~ TODO: call ret/update-subdomain-script")
+
+	hc_switch(HubId, "down")
 
 	ns := "hc-" + HubId
 	//update secret
@@ -627,19 +629,23 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	if err != nil {
 		return err
 	}
-	//rolling restart affect deployments -- reticulum, hubs, and spoke
-	for _, dName := range []string{"reticulum", "hubs", "spoke"} {
-		d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Get(context.Background(), dName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		// touch annotation to trigger a restart ... https://github.com/kubernetes/kubectl/blob/release-1.16/pkg/polymorphichelpers/objectrestarter.go#L32
-		d.Spec.Template.ObjectMeta.Annotations = map[string]string{"turkeyorch-reboot-id": base64.RawURLEncoding.EncodeToString(internal.NewUUID())}
 
-		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), d, metav1.UpdateOptions{})
-		if err != nil {
-			return err
-		}
-	}
+	hc_switch(HubId, "up")
+
+	// //rolling restart affect deployments -- reticulum, hubs, and spoke
+	// for _, dName := range []string{"reticulum", "hubs", "spoke"} {
+	// 	d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Get(context.Background(), dName, metav1.GetOptions{})
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	// touch annotation to trigger a restart ... https://github.com/kubernetes/kubectl/blob/release-1.16/pkg/polymorphichelpers/objectrestarter.go#L32
+	// 	d.Spec.Template.ObjectMeta.Annotations = map[string]string{"turkeyorch-reboot-id": base64.RawURLEncoding.EncodeToString(internal.NewUUID())}
+
+	// 	_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), d, metav1.UpdateOptions{})
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+
 	return nil
 }
