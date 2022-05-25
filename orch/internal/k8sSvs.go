@@ -255,6 +255,7 @@ type k8Locker struct {
 	name        string
 	clientID    string
 	retryWait   time.Duration
+	maxWait     time.Duration
 	ttl         time.Duration
 }
 
@@ -287,15 +288,20 @@ func NewK8Locker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
 		namespace:   namespace,
 		clientID:    uuid.New().String(),
 		retryWait:   500 * time.Millisecond,
+		maxWait:     30 * time.Second,
 		leaseClient: leaseClient,
 	}, nil
 }
 
 // Lock will block until the client is the holder of the Lease resource
 func (l *k8Locker) Lock() {
+	ttl := l.maxWait
 
 	// block until we get a lock
 	for {
+		if ttl < 0 {
+			panic(fmt.Sprintf("timeout while trying to get a lease for lock: %v", l))
+		}
 		// get the Lease
 		lease, err := l.leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
 		if err != nil {
@@ -306,6 +312,7 @@ func (l *k8Locker) Lock() {
 			if lease.Spec.LeaseDurationSeconds == nil {
 				// The lock is already held and has no expiry
 				time.Sleep(l.retryWait)
+				ttl -= l.retryWait
 				continue
 			}
 
@@ -315,6 +322,7 @@ func (l *k8Locker) Lock() {
 			if acquireTime.Add(leaseDuration).After(time.Now()) {
 				// The lock is already held and hasn't expired yet
 				time.Sleep(l.retryWait)
+				ttl -= l.retryWait
 				continue
 			}
 		}
@@ -343,6 +351,7 @@ func (l *k8Locker) Lock() {
 
 		// Another client beat us to the lock
 		time.Sleep(l.retryWait)
+		ttl -= l.retryWait
 	}
 }
 

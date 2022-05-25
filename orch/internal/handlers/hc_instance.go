@@ -597,8 +597,6 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	//call ret/update-subdomain-script
 	internal.Logger.Error("~~~~~~ TODO: call ret/update-subdomain-script")
 
-	hc_switch(HubId, "down")
-
 	ns := "hc-" + HubId
 	//update secret
 	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(ns).Get(context.Background(), "configs", metav1.GetOptions{})
@@ -630,8 +628,6 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		return err
 	}
 
-	hc_switch(HubId, "up")
-
 	// //rolling restart affect deployments -- reticulum, hubs, and spoke
 	// for _, dName := range []string{"reticulum", "hubs", "spoke"} {
 	// 	d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Get(context.Background(), dName, metav1.GetOptions{})
@@ -646,6 +642,18 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	// 		return err
 	// 	}
 	// }
+
+	// ^^^ rolling restart seems to sometimes cause haproxy to take a long time to refresh backend pods
+	pods, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, pod := range pods.Items {
+		err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(ns).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
