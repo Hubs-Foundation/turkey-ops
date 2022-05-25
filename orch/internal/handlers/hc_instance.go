@@ -621,6 +621,10 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		hostArr := strings.SplitN(rule.Host, ".", 2)
 		rule.Host = strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
 	}
+	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(ns).Update(context.Background(), ingress, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
 	//rolling restart affect deployments -- reticulum, hubs, and spoke
 	for _, dName := range []string{"reticulum", "hubs", "spoke"} {
 		d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Get(context.Background(), dName, metav1.GetOptions{})
