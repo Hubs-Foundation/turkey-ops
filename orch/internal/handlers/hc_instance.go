@@ -603,12 +603,9 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	if err != nil {
 		return err
 	}
-	internal.Logger.Debug(`string(secret_configs.Data["SUB_DOMAIN"])` + string(secret_configs.Data["SUB_DOMAIN"]))
-	oldSubdomainBytes, err := base64.StdEncoding.DecodeString(string(secret_configs.Data["SUB_DOMAIN"]))
-	if err != nil {
-		return err
-	}
-	oldSubdomain := string(oldSubdomainBytes)
+
+	oldSubdomain := string(secret_configs.Data["SUB_DOMAIN"])
+	internal.Logger.Sugar().Debugf("hc_patch_subdomain -- from <%v> to <%v>", oldSubdomain, Subdomain)
 
 	secret_configs.StringData["SUB_DOMAIN"] = Subdomain
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(ns).Update(context.Background(), secret_configs, metav1.UpdateOptions{})
