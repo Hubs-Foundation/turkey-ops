@@ -126,7 +126,7 @@ func Cronjob_cleanupFailedPods() {
 		return
 	}
 	for _, ns := range nsList.Items {
-		failedPods, err := NewK8sSvs_local().ClientSet.CoreV1().Pods(ns.Name).List(context.Background(), metav1.ListOptions{FieldSelector: "'status.phase=Failed"})
+		failedPods, err := NewK8sSvs_local().ClientSet.CoreV1().Pods(ns.Name).List(context.Background(), metav1.ListOptions{FieldSelector: "status.phase=Failed"})
 		if err != nil {
 			Logger.Error(err.Error())
 			return
