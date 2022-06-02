@@ -23,8 +23,12 @@ func Proxy() http.Handler {
 
 		Logger.Sugar().Debugf("request dump: %v", r)
 
+		Logger.Debug("r.Host: " + r.Host)
+		Logger.Debug("r.URL.Host: " + r.URL.Host)
+
 		r.URL.Host = strings.Replace(r.URL.Host, "stream.", "dialog.", 1)
 		host_in := strings.Split(r.URL.Host, ".")[0]
+		Logger.Debug("host_in: " + host_in)
 
 		urlStr := decode_b32l(host_in)
 		Logger.Debug("urlStr: " + urlStr)
