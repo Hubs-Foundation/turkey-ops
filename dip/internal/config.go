@@ -3,9 +3,7 @@ package internal
 import (
 	"crypto"
 	"crypto/rsa"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"os"
 	"strings"
 	"time"
@@ -54,26 +52,10 @@ func MakeCfg() {
 	cfg.TurkeyDomain = os.Getenv("turkeyDomain")
 	rootDomain := rootDomain(cfg.TurkeyDomain)
 	if rootDomain == "" {
-		Logger.Error("bad turkeyDomain env var: " + cfg.TurkeyDomain + "falling back to <myhubs.net>")
+		Logger.Error("bad turkeyDomain env var: <" + cfg.TurkeyDomain + "> falling back to <myhubs.net>")
 		rootDomain = "myhubs.net"
 	}
-	cfg.Domain = rootDomain
-	cfg.AuthHost = rootDomain
-	cfg.TrustedClients = os.Getenv("trustedClients")
-	cfg.Secret = []byte("dummy-SecretString-replace-me-with-env-var-later")
-	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
-	cfg.CookieName = "_turkeyauthcookie"
-	cfg.JwtCookieName = "_turkeyauthtoken"
 
-	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
-	// cfg.LogoutRedirect = "https://api." + cfg.TurkeyDomain + "/console"
-	cfg.LogoutRedirect = "https://hubs.mozilla.com"
-
-	cfg.PermsKey_pub = cfg.PermsKey.Public()
-	//log out pem encoded public key
-	pubKeyBytes := x509.MarshalPKCS1PublicKey(&cfg.PermsKey.PublicKey)
-	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
-	Logger.Sugar().Infof("PermsKey_pub: %v", strings.ReplaceAll(string(pemBytes), "\n", `\\n`))
 }
 
 func rootDomain(fullDomain string) string {
