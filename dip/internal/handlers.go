@@ -26,11 +26,10 @@ func Proxy() http.Handler {
 		Logger.Debug("r.Host: " + r.Host)
 		Logger.Debug("r.URL.Host: " + r.URL.Host)
 
-		r.URL.Host = strings.Replace(r.URL.Host, "stream.", "dialog.", 1)
-		host_in := strings.Split(r.URL.Host, ".")[0]
+		host_in := strings.Split(r.Host, ".")[0]
 		Logger.Debug("host_in: " + host_in)
 
-		urlStr := decode_b32l(host_in)
+		urlStr := decode_b32l(host_in) + strings.Split(r.Host, ":")[1]
 		Logger.Debug("urlStr: " + urlStr)
 
 		backendUrl, err := url.Parse(urlStr)
