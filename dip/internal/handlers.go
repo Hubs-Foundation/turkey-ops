@@ -29,7 +29,7 @@ func Proxy() http.Handler {
 		host_in := strings.Split(r.Host, ".")[0]
 		Logger.Debug("host_in: " + host_in)
 
-		urlStr := decode_b32l(host_in) + strings.Split(r.Host, ":")[1]
+		urlStr := "https://" + decode_b32l(host_in) + ":" + strings.Split(r.Host, ":")[1]
 		Logger.Debug("urlStr: " + urlStr)
 
 		backendUrl, err := url.Parse(urlStr)
