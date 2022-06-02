@@ -232,6 +232,27 @@ subjects:
 ########################################################################
 ######################   dip   ######################################
 ########################################################################  
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dip
+  namespace: turkey-stream
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
+spec:
+  rules:
+  - host: "*.stream.gtan1.myhubs.net"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dip
+            port: 
+              number: 9002
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:

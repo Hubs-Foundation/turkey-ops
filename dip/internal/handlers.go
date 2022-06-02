@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"fmt"
+	"encoding/base32"
 	"net/http"
 	"net/url"
 	"strings"
@@ -24,8 +24,11 @@ func Proxy() http.Handler {
 		Logger.Sugar().Debugf("request dump: %v", r)
 
 		r.URL.Host = strings.Replace(r.URL.Host, "stream.", "dialog.", 1)
+		host_in := strings.Split(r.URL.Host, ".")[0]
 
-		urlStr := fmt.Sprintf("%v", r.URL)
+		urlStr := decode_b32l(host_in)
+		Logger.Debug("urlStr: " + urlStr)
+
 		backendUrl, err := url.Parse(urlStr)
 		if err != nil {
 			Logger.Sugar().Errorf("bad r.Headers[backend], (%v) because %v", urlStr, err.Error())
@@ -33,10 +36,6 @@ func Proxy() http.Handler {
 			return
 		}
 
-		if r.URL.Path == "/" { //no direct calls, i can't tell host but i can tell path
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
 		if r.Header.Get("x-turkeyauth-proxied") != "" {
 			Logger.Error("omg authn proxy's looping, why???")
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -55,4 +54,17 @@ func Proxy() http.Handler {
 
 		proxy.ServeHTTP(w, r)
 	})
+}
+
+var b32l = base32.NewEncoding("abcdefghijklmnopqrstuvwxyz234567")
+
+func decode_b32l(s string) string {
+	if i := len(s) % 4; i != 0 {
+		s += strings.Repeat("=", 4-i)
+	}
+	slice, err := b32l.DecodeString(s)
+	if err != nil {
+		Logger.Error(err.Error())
+	}
+	return string(slice)
 }
