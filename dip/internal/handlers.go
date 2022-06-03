@@ -59,7 +59,7 @@ func Proxy() http.Handler {
 	})
 }
 
-var b32l = base32.NewEncoding("abcdefghijklmnopqrstuvwxyz234567")
+var b32l = base32.NewEncoding("abcdefghijklmnopqrstuvwxyz234567").WithPadding(-1)
 
 func decode_b32l(s string) string {
 	if i := len(s) % 4; i != 0 {
