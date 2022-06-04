@@ -23,13 +23,31 @@ func Proxy() http.Handler {
 
 		Logger.Sugar().Debugf("request dump: %v", r)
 
-		Logger.Debug("r.Host: " + r.Host)
-		Logger.Debug("r.URL.Host: " + r.URL.Host)
+		dialogPvtIp_retCap_b32 := strings.Split(r.Host, ".")[0]
+		dialogPvtIp_retCap, err := decode_b32l(dialogPvtIp_retCap_b32)
+		if err != nil {
+			Logger.Debug("decode_b32l(dialogPvtIp_retCap_b32) failed: " + err.Error())
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+		dialogPvtIp_retCap_arr := strings.Split(dialogPvtIp_retCap, "|")
+		if len(dialogPvtIp_retCap_arr) > 2 {
+			Logger.Debug("unexpected dialogPvtIp_retCap: " + dialogPvtIp_retCap)
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
 
-		host_in := strings.Split(r.Host, ".")[0]
-		Logger.Debug("host_in: " + host_in)
+		dialogPvtIp := dialogPvtIp_retCap_arr[0]
 
-		urlStr := "https://" + decode_b32l(host_in) + ":" + strings.Split(r.Host, ":")[1]
+		retCap := ""
+		if len(dialogPvtIp_retCap_arr[1]) == 2 {
+			retCap = dialogPvtIp_retCap_arr[1]
+		}
+
+		// host_in := strings.Split(r.Host, ".")[0]
+		// Logger.Debug("host_in: " + host_in)
+
+		urlStr := "https://" + dialogPvtIp + ":" + strings.Split(r.Host, ":")[1]
 		Logger.Debug("urlStr: " + urlStr)
 
 		backendUrl, err := url.Parse(urlStr)
@@ -54,6 +72,7 @@ func Proxy() http.Handler {
 		}
 
 		r.Header.Set("x-turkey-proxied", "1")
+		r.Header.Set("x-retcap", retCap)
 
 		proxy.ServeHTTP(w, r)
 	})
@@ -61,13 +80,13 @@ func Proxy() http.Handler {
 
 var b32l = base32.NewEncoding("abcdefghijklmnopqrstuvwxyz234567").WithPadding(-1)
 
-func decode_b32l(s string) string {
+func decode_b32l(s string) (string, error) {
 	if i := len(s) % 4; i != 0 {
 		s += strings.Repeat("=", 4-i)
 	}
 	slice, err := b32l.DecodeString(s)
 	if err != nil {
-		Logger.Error(err.Error())
+		return "", err
 	}
-	return string(slice)
+	return string(slice), nil
 }
