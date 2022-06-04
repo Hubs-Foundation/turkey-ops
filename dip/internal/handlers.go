@@ -39,6 +39,7 @@ func Proxy() http.Handler {
 		}
 
 		dialogPvtIp := dialogPvtIp_retCap_arr[0]
+		//TODO -- watch dialog pods, track their private ips to screen this
 
 		retCap := ""
 		if len(dialogPvtIp_retCap_arr[1]) == 2 {
@@ -73,7 +74,7 @@ func Proxy() http.Handler {
 		}
 
 		r.Header.Set("x-turkey-proxied", "1")
-		r.Header.Set("x-retcap", retCap)
+		r.Header.Set("x-ret-max-room-size", retCap)
 
 		proxy.ServeHTTP(w, r)
 	})
