@@ -25,6 +25,7 @@ func Proxy() http.Handler {
 
 		dialogPvtIp_retCap_b32 := strings.Split(r.Host, ".")[0]
 		dialogPvtIp_retCap, err := decode_b32l(dialogPvtIp_retCap_b32)
+		Logger.Sugar().Debugf("dialogPvtIp_retCap_b32: %v, dialogPvtIp_retCap: %v", dialogPvtIp_retCap_b32, dialogPvtIp_retCap)
 		if err != nil {
 			Logger.Debug("decode_b32l(dialogPvtIp_retCap_b32) failed: " + err.Error())
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
