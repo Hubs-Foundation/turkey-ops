@@ -42,7 +42,7 @@ func Proxy() http.Handler {
 		//TODO -- watch dialog pods, track their private ips to screen this
 
 		retCap := ""
-		if len(dialogPvtIp_retCap_arr[1]) == 2 {
+		if len(dialogPvtIp_retCap_arr) == 2 {
 			retCap = dialogPvtIp_retCap_arr[1]
 		}
 
