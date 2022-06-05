@@ -74,7 +74,7 @@ func Proxy() http.Handler {
 		}
 
 		r.Header.Set("x-turkey-proxied", "1")
-		r.Header.Set("x-ret-max-room-size", retCap)
+		r.Header.Set("x-ret-room-size", retCap)
 
 		proxy.ServeHTTP(w, r)
 	})
