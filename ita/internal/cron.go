@@ -106,7 +106,7 @@ func Cronjob_pauseJob(interval time.Duration) {
 			pauseReqBody, _ := json.Marshal(map[string]string{
 				"hub_id": strings.TrimPrefix(cfg.PodNS, "hc-"),
 			})
-			pauseReq, err := http.NewRequest("GET", "https://orch.turkey-services/hc_instance?status=down", bytes.NewBuffer(pauseReqBody))
+			pauseReq, err := http.NewRequest("GET", "https://"+cfg.turkeyorchHost+"/hc_instance?status=down", bytes.NewBuffer(pauseReqBody))
 			if err != nil {
 				Logger.Error("pauseReq err: " + err.Error())
 				return

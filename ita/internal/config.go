@@ -16,7 +16,8 @@ type Config struct {
 	Domain            string `turkey domain`
 	Tier              string
 
-	RetApiKey string
+	RetApiKey      string
+	turkeyorchHost string
 
 	SupportedChannels map[string]bool
 
@@ -59,6 +60,7 @@ func MakeCfg() {
 	cfg.Domain = os.Getenv("DOMAIN")
 	cfg.Tier = getEnv("TIER", "free")
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
+	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services.svc.cluster.local:889")
 
 	cfg.PodNS = os.Getenv("POD_NS")
 	if cfg.PodNS == "" {
