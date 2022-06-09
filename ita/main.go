@@ -12,9 +12,12 @@ func main() {
 
 	internal.InitLogger()
 	internal.MakeCfg()
+	internal.Databag = make(map[string]interface{})
 
-	// cron := internal.NewCron("dummy-1h", "1h")
-	// cron.Load("dummy", internal.Cronjob_dummy)
+	if internal.GetCfg().Tier == "free" {
+		cron_15s := internal.NewCron("pauseJob-15s", "15s")
+		cron_15s.Load("pauseJob", internal.Cronjob_pauseJob)
+	}
 
 	router := http.NewServeMux()
 	//legacy ita endpoints

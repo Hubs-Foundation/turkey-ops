@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"encoding/json"
+	"net/http"
 	"time"
 )
 
@@ -63,6 +65,34 @@ func (c *Cron) Start() {
 
 func Cronjob_dummy() {
 	Logger.Debug("hello from Cronjob_dummy")
+}
+
+func Cronjob_pauseJob() {
+	Logger.Debug("hello from Cronjob_pauseJob")
+	//get ret_ccu
+	retCcuReq, err := http.NewRequest("GET", "https://ret."+cfg.PodNS+":4000/api-internal/v1/presence", nil)
+	retCcuReq.Header.Add("x-ret-dashboard-access-key", cfg.RetApiKey)
+	if err != nil {
+		Logger.Error("retCcuReq err: " + err.Error())
+		return
+	}
+	client := &http.Client{Timeout: 10 * time.Second} // todo reuse it
+	resp, err := client.Do(retCcuReq)
+	if err != nil {
+		Logger.Error("retCcuReq err: " + err.Error())
+		return
+	}
+	decoder := json.NewDecoder(resp.Body)
+
+	var retCcuResp map[string]int
+	err = decoder.Decode(&retCcuResp)
+	if err != nil {
+		Logger.Error("retCcuReq err: " + err.Error())
+	}
+
+	Logger.Sugar().Debugf("retCcu: %v", retCcuResp["count"])
+	// resp, err := http.Client{Timeout:5*time.Millisecond, }
+
 }
 
 // func Cronjob_updateDeployment(deploymentName string) {

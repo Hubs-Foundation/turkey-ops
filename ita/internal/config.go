@@ -14,6 +14,9 @@ type Config struct {
 	PodNS             string
 	PodDeploymentName string
 	Domain            string `turkey domain`
+	Tier              string
+
+	RetApiKey string
 
 	SupportedChannels map[string]bool
 
@@ -23,6 +26,10 @@ type Config struct {
 	TurkeyUpdater *TurkeyUpdater
 
 	HostnameHash uint32
+}
+
+func GetCfg() *Config {
+	return cfg
 }
 
 func MakeCfg() {
@@ -50,6 +57,9 @@ func MakeCfg() {
 	}
 
 	cfg.Domain = os.Getenv("DOMAIN")
+	cfg.Tier = getEnv("TIER", "free")
+	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
+
 	cfg.PodNS = os.Getenv("POD_NS")
 	if cfg.PodNS == "" {
 		Logger.Error("POD_NS not set")
