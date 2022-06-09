@@ -12,7 +12,6 @@ func main() {
 
 	internal.InitLogger()
 	internal.MakeCfg()
-	internal.Databag = make(map[string]interface{})
 
 	if internal.GetCfg().Tier == "free" {
 		cron_15s := internal.NewCron("pauseJob-15s", "15s")

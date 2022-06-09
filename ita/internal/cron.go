@@ -1,31 +1,33 @@
 package internal
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 )
 
 type Cron struct {
 	Name      string
-	Interval  string
+	Interval  time.Duration
 	IsRunning bool
-	Jobs      map[string]func()
+	Jobs      map[string]func(interval time.Duration)
 }
 
-var defaultCronInterval = "10m"
+var defaultCronInterval = 10 * time.Minute
 
-func NewCron(name, interval string) *Cron {
+func NewCron(name string, interval time.Duration) *Cron {
 	return &Cron{
 		Name:      name,
 		Interval:  interval,
 		IsRunning: false,
-		Jobs:      make(map[string]func()),
+		Jobs:      make(map[string]func(interval time.Duration)),
 	}
 }
 
-func (c *Cron) Load(name string, job func()) {
+func (c *Cron) Load(name string, job func(interval time.Duration)) {
 	c.Jobs[name] = job
 }
 
@@ -39,36 +41,33 @@ func (c *Cron) Start() {
 		return
 	}
 	// cron, non-stop, no way to stop it really ... add wrapper in future in case we need to stop it
-	if c.Interval == "" {
-		Logger.Warn("empty envVar CRON_INTERVAL, falling back to default: " + defaultCronInterval)
+	if c.Interval <= time.Second {
+		Logger.Sugar().Warnf("c.Interval too small -- will use default: %v", defaultCronInterval)
 		c.Interval = defaultCronInterval
 	}
-	interval, err := time.ParseDuration(c.Interval)
-	if err != nil {
-		Logger.Warn("bad CRON_INTERVAL: " + c.Interval + " -- falling back to default: " + defaultCronInterval)
-		c.Interval = defaultCronInterval
-		interval, _ = time.ParseDuration(defaultCronInterval)
-	}
-	Logger.Info("starting cron jobs, interval = " + interval.String())
+	Logger.Info("starting cron jobs, interval = " + c.Interval.String())
 	go func() {
-		time.Sleep(interval)
-		t := time.Tick(interval)
+		time.Sleep(c.Interval)
+		t := time.Tick(c.Interval)
 		for next := range t {
-			Logger.Debug("Cron job: <" + c.Name + "," + c.Interval + "> tick @ " + next.String())
+			Logger.Debug("Cron job: <" + c.Name + "," + c.Interval.String() + "> tick @ " + next.String())
 			for name, job := range c.Jobs {
 				Logger.Debug("running: " + name)
-				job()
+				job(c.Interval)
 			}
 		}
 	}()
 	c.IsRunning = true
 }
 
-func Cronjob_dummy() {
-	Logger.Debug("hello from Cronjob_dummy")
+func Cronjob_dummy(interval string) {
+	Logger.Debug("hello from Cronjob_dummy, interval=" + interval)
 }
 
-func Cronjob_pauseJob() {
+var pauseJob_idle time.Duration
+var pauseJob_idleMax = 30 * time.Minute
+
+func Cronjob_pauseJob(interval time.Duration) {
 	Logger.Debug("hello from Cronjob_pauseJob")
 	//get ret_ccu
 	retCcuReq, err := http.NewRequest("GET", "https://ret."+cfg.PodNS+":4000/api-internal/v1/presence", nil)
@@ -77,11 +76,11 @@ func Cronjob_pauseJob() {
 		Logger.Error("retCcuReq err: " + err.Error())
 		return
 	}
-	client := &http.Client{
+	httpClient := &http.Client{
 		Timeout:   10 * time.Second,
 		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 	} // todo: make one in utils? and reuse that
-	resp, err := client.Do(retCcuReq)
+	resp, err := httpClient.Do(retCcuReq)
 	if err != nil {
 		Logger.Error("retCcuReq err: " + err.Error())
 		return
@@ -93,9 +92,32 @@ func Cronjob_pauseJob() {
 	if err != nil {
 		Logger.Error("retCcuReq err: " + err.Error())
 	}
-
-	Logger.Sugar().Debugf("retCcu: %v", retCcuResp["count"])
+	retccu := retCcuResp["count"]
+	Logger.Sugar().Debugf("retCcu: %v", retccu)
 	// resp, err := http.Client{Timeout:5*time.Millisecond, }
+
+	if retccu != 0 {
+		pauseJob_idle = 0
+	} else {
+		pauseJob_idle += interval
+		Logger.Sugar().Debugf("updated pauseJob_idle: %v, time to pause: %v", pauseJob_idle, (pauseJob_idleMax - pauseJob_idle))
+		if pauseJob_idle >= pauseJob_idleMax {
+			//pause it
+			pauseReqBody, _ := json.Marshal(map[string]string{
+				"hub_id": strings.TrimPrefix(cfg.PodNS, "hc-"),
+			})
+			pauseReq, err := http.NewRequest("GET", "https://orch.turkey-services/hc_instance?status=down", bytes.NewBuffer(pauseReqBody))
+			if err != nil {
+				Logger.Error("pauseReq err: " + err.Error())
+				return
+			}
+			_, err = httpClient.Do(pauseReq)
+			if err != nil {
+				Logger.Error("pauseReq err: " + err.Error())
+				return
+			}
+		}
+	}
 
 }
 

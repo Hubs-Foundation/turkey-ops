@@ -12,7 +12,6 @@ import (
 
 var Logger *zap.Logger
 var Atom zap.AtomicLevel
-var Databag map[string]interface{}
 
 func InitLogger() {
 	Atom = zap.NewAtomicLevel()
