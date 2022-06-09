@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -76,7 +77,10 @@ func Cronjob_pauseJob() {
 		Logger.Error("retCcuReq err: " + err.Error())
 		return
 	}
-	client := &http.Client{Timeout: 10 * time.Second} // todo reuse it
+	client := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	} // todo: make one in utils? and reuse that
 	resp, err := client.Do(retCcuReq)
 	if err != nil {
 		Logger.Error("retCcuReq err: " + err.Error())
