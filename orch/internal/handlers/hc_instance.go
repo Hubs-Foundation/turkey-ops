@@ -173,23 +173,23 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	k8sChartYaml := renderedYamls[0]
 
 	// #3 pre-deployment checks
-	result := "created."
-	// is subdomain available?
-	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
-		metav1.ListOptions{LabelSelector: "Subdomain=" + hcCfg.Subdomain})
-	if len(nsList.Items) != 0 {
-		// if strings.HasSuffix(r.Header.Get("X-Forwarded-UserEmail"), "@mozilla.com") {
-		// 	result += "[warning] subdomain already used by hub_id " + nsList.Items[0].Name + ", but was overridden for @mozilla.com user"
-		// } else {
-		internal.Logger.Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "subdomain already exists",
-			"hub_id": hcCfg.HubId,
-		})
-		return
-		// }
-	}
+	// // result := "created."
+	// // is subdomain available?
+	// nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
+	// 	metav1.ListOptions{LabelSelector: "Subdomain=" + hcCfg.Subdomain})
+	// if len(nsList.Items) != 0 {
+	// 	// if strings.HasSuffix(r.Header.Get("X-Forwarded-UserEmail"), "@mozilla.com") {
+	// 	// 	result += "[warning] subdomain already used by hub_id " + nsList.Items[0].Name + ", but was overridden for @mozilla.com user"
+	// 	// } else {
+	// 	internal.Logger.Error("error @ k8s pre-deployment checks: subdomain already exists: " + hcCfg.Subdomain)
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	json.NewEncoder(w).Encode(map[string]interface{}{
+	// 		"result": "subdomain already exists",
+	// 		"hub_id": hcCfg.HubId,
+	// 	})
+	// 	return
+	// 	// }
+	// }
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
 	internal.Logger.Debug("&#128640; --- deployment started for: " + hcCfg.HubId)
@@ -228,7 +228,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"result":        result,
+		"result":        "done",
 		"useremail":     hcCfg.UserEmail,
 		"hub_id":        hcCfg.HubId,
 		"subdomain":     hcCfg.Subdomain,
