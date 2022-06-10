@@ -2,8 +2,13 @@ package internal
 
 import (
 	"context"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
 	"hash/fnv"
+	"net/http"
 	"os"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -58,4 +63,46 @@ func hash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return h.Sum32()
+}
+
+//internal request only, tls.insecureSkipVerify
+var _httpClient = &http.Client{
+	Timeout:   10 * time.Second,
+	Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+}
+
+func getRetCcu() (int, error) {
+	retCcuReq, err := http.NewRequest("GET", "https://ret."+cfg.PodNS+":4000/api-internal/v1/presence", nil)
+	retCcuReq.Header.Add("x-ret-dashboard-access-key", cfg.RetApiKey)
+	if err != nil {
+		return -1, err
+	}
+
+	resp, err := _httpClient.Do(retCcuReq)
+	if err != nil {
+		return -1, err
+
+	}
+	decoder := json.NewDecoder(resp.Body)
+
+	var retCcuResp map[string]int
+	err = decoder.Decode(&retCcuResp)
+	if err != nil {
+		Logger.Error("retCcuReq err: " + err.Error())
+	}
+	return retCcuResp["count"], nil
+}
+
+func waitRetCcu() error {
+	timeout := 6 * time.Hour
+	wait := 30 * time.Second
+	timeWaited := 0 * time.Second
+	for retCcu, _ := getRetCcu(); retCcu != 0; {
+		time.Sleep(30 * time.Second)
+		timeWaited += wait
+		if timeWaited > timeout {
+			return errors.New("timeout")
+		}
+	}
+	return nil
 }

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -69,29 +68,12 @@ var pauseJob_idleCnt time.Duration
 func Cronjob_pauseJob(interval time.Duration) {
 	Logger.Debug("hello from Cronjob_pauseJob")
 	//get ret_ccu
-	retCcuReq, err := http.NewRequest("GET", "https://ret."+cfg.PodNS+":4000/api-internal/v1/presence", nil)
-	retCcuReq.Header.Add("x-ret-dashboard-access-key", cfg.RetApiKey)
-	if err != nil {
-		Logger.Error("retCcuReq err: " + err.Error())
-		return
-	}
-	httpClient := &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
-	} // todo: make one in utils? and reuse that
-	resp, err := httpClient.Do(retCcuReq)
-	if err != nil {
-		Logger.Error("retCcuReq err: " + err.Error())
-		return
-	}
-	decoder := json.NewDecoder(resp.Body)
 
-	var retCcuResp map[string]int
-	err = decoder.Decode(&retCcuResp)
+	retccu, err := getRetCcu()
 	if err != nil {
 		Logger.Error("retCcuReq err: " + err.Error())
+		return
 	}
-	retccu := retCcuResp["count"]
 	Logger.Sugar().Debugf("retCcu: %v", retccu)
 	// resp, err := http.Client{Timeout:5*time.Millisecond, }
 
@@ -110,7 +92,7 @@ func Cronjob_pauseJob(interval time.Duration) {
 				Logger.Error("pauseReq err: " + err.Error())
 				return
 			}
-			_, err = httpClient.Do(pauseReq)
+			_, err = _httpClient.Do(pauseReq)
 			if err != nil {
 				Logger.Error("pauseReq err: " + err.Error())
 				return
