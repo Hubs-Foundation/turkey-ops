@@ -62,11 +62,13 @@ func MakeCfg() {
 	cfg.Domain = os.Getenv("DOMAIN")
 	cfg.Tier = getEnv("TIER", "free")
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
-	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services.svc.cluster.local:889")
+	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {
 		cfg.FreeTierIdleMax = 30 * time.Minute
 	}
+	Logger.Sugar().Infof("cfg.turkeyorchHost: %v", cfg.turkeyorchHost)
+	Logger.Sugar().Infof("cfg.FreeTierIdleMax: %v", cfg.FreeTierIdleMax)
 
 	cfg.PodNS = os.Getenv("POD_NS")
 	if cfg.PodNS == "" {

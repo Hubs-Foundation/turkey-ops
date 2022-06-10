@@ -30,7 +30,8 @@ func main() {
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 
-	internal.StartServer(router, 6000)
+	go internal.StartNewServer(router, 6000, false)
+	internal.StartNewServer(router, 6001, true)
 
 }
 

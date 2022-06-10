@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -191,12 +190,16 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		return err
 	}
 
-	err = k8s_waitForPods(d.Namespace, 180)
+	pods, err := cfg.K8sClientSet.CoreV1().Pods(d.Namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	err = k8s_waitForPods(pods, 180*time.Second)
 	if err != nil {
 		return err
 	}
 
-	d, err = k8s_waitForDeployment(d, 180)
+	d, err = k8s_waitForDeployment(d, 180*time.Second)
 	if err != nil {
 		return err
 	}
@@ -214,48 +217,4 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		}
 	}
 	return errors.New("did not find repo name: " + repo + ", failed to deploy newTag: " + newTag)
-}
-
-func k8s_waitForDeployment(d *appsv1.Deployment, timeout int) (*appsv1.Deployment, error) {
-	timeoutSec := timeout
-	for d.Status.Replicas != d.Status.AvailableReplicas ||
-		d.Status.Replicas != d.Status.ReadyReplicas ||
-		d.Status.Replicas != d.Status.UpdatedReplicas {
-		Logger.Sugar().Debugf("waiting for %v -- currently: Replicas=%v, Available=%v, Ready=%v, Updated=%v",
-			d.Name, d.Status.Replicas, d.Status.AvailableReplicas, d.Status.ReadyReplicas, d.Status.UpdatedReplicas)
-		time.Sleep(5 * time.Second)
-		timeoutSec -= 5
-		d, _ = cfg.K8sClientSet.AppsV1().Deployments(d.Namespace).Get(context.Background(), d.Name, metav1.GetOptions{})
-		if timeoutSec < 1 {
-			return d, errors.New("timeout while waiting for deployment <" + d.Name + ">")
-		}
-	}
-
-	time.Sleep(5 * time.Second) // time for k8s master services to sync, should be more than enough, or we'll get pending pods stuck forever
-	return d, nil
-}
-
-func k8s_waitForPods(namespace string, timeout int) error {
-	timeoutSec := timeout
-	pods, err := cfg.K8sClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, pod := range pods.Items {
-		podStatusPhase := pod.Status.Phase
-		for podStatusPhase == corev1.PodPending {
-			Logger.Sugar().Debugf("waiting for pending pod %v / %v", pod.Namespace, pod.Name)
-			time.Sleep(5 * time.Second)
-			timeoutSec -= 5
-			pod, err := cfg.K8sClientSet.CoreV1().Pods(namespace).Get(context.Background(), pod.Name, metav1.GetOptions{})
-			podStatusPhase = pod.Status.Phase
-			if err != nil {
-				return err
-			}
-		}
-		if timeoutSec < 1 {
-			return errors.New("timeout while waiting for pod: " + pod.Name + " in ns: " + namespace)
-		}
-	}
-	return nil
 }

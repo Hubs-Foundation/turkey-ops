@@ -922,6 +922,11 @@ spec:
           value: ita
         # - name: CHANNEL
         #   value: stable
+        - name: RET_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DASHBOARD_ACCESS_KEY
         resources:
           requests:
             memory: 20Mi

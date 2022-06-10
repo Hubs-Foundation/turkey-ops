@@ -2,8 +2,9 @@ package internal
 
 import (
 	"context"
-	"flag"
-	"fmt"
+	"crypto/tls"
+	"encoding/base64"
+	"encoding/binary"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,31 +13,81 @@ import (
 	"time"
 )
 
-// type key int
-// const requestIDKey key = 0
-const requestIDKey int = 0
+// func Start(router *http.ServeMux, port int) {
+// 	startServer(router, port)
+// }
 
-var reqIdKey struct{}
+type key int
 
-var listenAddr string
 var Healthy int32
 
-func StartServer(router *http.ServeMux, port int) {
-	flag.StringVar(&listenAddr, "listen-addr", ":"+strconv.Itoa(port), "server listen address")
-	flag.Parse()
+type Server struct {
+	port         int
+	isHttps      bool
+	router       *http.ServeMux
+	listenAddr   string
+	requestIDKey key
+}
 
-	Logger.Info("Server is starting...")
+func NewServer(router *http.ServeMux, port int, isHttps bool) *Server {
+	var server = &Server{
+		router:       router,
+		port:         port,
+		isHttps:      isHttps,
+		requestIDKey: 0,
+	}
+	return server
+}
+
+func StartNewServer(router *http.ServeMux, port int, isHttps bool) *Server {
+	var server = &Server{
+		router:       router,
+		listenAddr:   ":" + strconv.Itoa(port),
+		isHttps:      isHttps,
+		requestIDKey: 0,
+	}
+
+	server.Start()
+
+	return server
+}
+
+func (s *Server) Start() {
+
+	Logger.Debug("Server is starting...")
 
 	nextRequestID := func() string {
-		return fmt.Sprintf("%d", time.Now().UnixNano())
+		// return fmt.Sprintf("%d", time.Now().UnixNano())
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, uint64(time.Now().UnixNano()))
+		return base64.RawStdEncoding.EncodeToString(b)
 	}
 
 	server := &http.Server{
-		Addr:         listenAddr,
-		Handler:      proxyMods()(tracing(nextRequestID)(logging()(router))),
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  15 * time.Second,
+		Addr:         s.listenAddr,
+		Handler:      s.tracing(nextRequestID)(s.logging()(s.router)),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 0 * time.Second,
+		IdleTimeout:  3600 * time.Second,
+	}
+	if s.isHttps {
+		server.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+			},
+		}
+
+		// haproxy has problem with h2+tls
+		// (http2: server: error reading preface from client ... read: connection reset by peer)
+		// disabling h2 here for now
+		// TODO: figure it out, probably need new haproxy version
+		server.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler))
 	}
 
 	done := make(chan bool)
@@ -45,10 +96,11 @@ func StartServer(router *http.ServeMux, port int) {
 
 	go func() {
 		<-quit
-		Logger.Info("Server is shutting down...")
+		Logger.Debug("Server is shutting down...")
 		atomic.StoreInt32(&Healthy, 0)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(),
+			1*time.Second) //default = 30 or longer probably i guess depends on the thing
 		defer cancel()
 
 		server.SetKeepAlivesEnabled(false)
@@ -57,56 +109,44 @@ func StartServer(router *http.ServeMux, port int) {
 		}
 		close(done)
 	}()
-	Logger.Info("Server is ready to handle requests at" + listenAddr)
+	Logger.Debug("Server is ready to handle requests at: " + s.listenAddr)
 	atomic.StoreInt32(&Healthy, 1)
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		Logger.Sugar().Fatalf("Could not listen on %s: %v\n", listenAddr, err)
+
+	if s.isHttps {
+		if err := server.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
+			Logger.Sugar().Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
+		}
+	} else {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			Logger.Sugar().Fatalf("Could not listen on %s: %v\n", s.listenAddr, err)
+		}
 	}
 	<-done
-	Logger.Info("Server stopped")
+	Logger.Debug("Server stopped")
 }
-
-func logging() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer func() {
-				requestID, ok := r.Context().Value(reqIdKey).(string)
-				if !ok {
-					requestID = "unknown"
-				}
-				_ = requestID
-				Logger.Debug("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
-			}()
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-func tracing(nextRequestID func() string) func(http.Handler) http.Handler {
+func (s *Server) tracing(nextRequestID func() string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestID := r.Header.Get("X-Request-Id")
 			if requestID == "" {
 				requestID = nextRequestID()
 			}
-			ctx := context.WithValue(r.Context(), reqIdKey, requestID)
+			ctx := context.WithValue(r.Context(), s.requestIDKey, requestID)
 			w.Header().Set("X-Request-Id", requestID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
-
-func proxyMods() func(http.Handler) http.Handler {
+func (s *Server) logging() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// logger.Debug("r.Host in: " + r.Host)
-			if _, ok := r.Header["X-Forwarded-Host"]; ok {
-				r.Host = r.Header.Get("X-Forwarded-Host")
-			}
-			if _, ok := r.Header["X-Forwarded-Method"]; ok {
-				r.Method = r.Header.Get("X-Forwarded-Method")
-			}
-			// logger.Debug("r.Host out: " + r.Host)
+			defer func() {
+				requestID, ok := r.Context().Value(s.requestIDKey).(string)
+				if !ok {
+					requestID = "unknown"
+				}
+				Logger.Debug("(" + requestID + "):" + r.Method + "@" + r.URL.Path + " <- " + r.RemoteAddr)
+			}()
 			next.ServeHTTP(w, r)
 		})
 	}

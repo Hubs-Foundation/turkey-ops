@@ -11,7 +11,7 @@ run printf "subjectAltName=DNS:turkeyorch,DNS:*.turkeyorch,DNS:turkeyorch.turkey
 run openssl x509 -req -extfile f -days 36500 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out cert.pem
 
 from alpine:latest
-run apk add curl jq
+run apk add curl
 WORKDIR /app
 COPY --from=buildEnv /app/. /app/.
 run curl \

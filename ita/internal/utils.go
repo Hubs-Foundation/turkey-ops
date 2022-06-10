@@ -12,6 +12,8 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -102,6 +104,54 @@ func waitRetCcu() error {
 		timeWaited += wait
 		if timeWaited > timeout {
 			return errors.New("timeout")
+		}
+	}
+	return nil
+}
+
+func k8s_waitForDeployment(d *appsv1.Deployment, timeout time.Duration) (*appsv1.Deployment, error) {
+	timeoutSec := timeout
+	wait := 5 * time.Second
+	for k8s_isDeploymentRunning(d) {
+		Logger.Sugar().Debugf("waiting for %v -- currently: Replicas=%v, Available=%v, Ready=%v, Updated=%v",
+			d.Name, d.Status.Replicas, d.Status.AvailableReplicas, d.Status.ReadyReplicas, d.Status.UpdatedReplicas)
+		time.Sleep(wait)
+		timeoutSec -= wait
+		if timeoutSec < 0 {
+			return d, errors.New("timeout while waiting for deployment <" + d.Name + ">")
+		}
+	}
+	time.Sleep(wait) // time for k8s master services to sync, should be more than enough, or we'll get pending pods stuck forever
+	return d, nil
+}
+
+func k8s_isDeploymentRunning(d *appsv1.Deployment) bool {
+	d, _ = cfg.K8sClientSet.AppsV1().Deployments(d.Namespace).Get(context.Background(), d.Name, metav1.GetOptions{})
+	if d.Status.Replicas != d.Status.AvailableReplicas ||
+		d.Status.Replicas != d.Status.ReadyReplicas ||
+		d.Status.Replicas != d.Status.UpdatedReplicas {
+		return true
+	}
+	return false
+}
+
+func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
+	timeoutSec := timeout
+	wait := 5 * time.Second
+	for _, pod := range pods.Items {
+		podStatusPhase := pod.Status.Phase
+		for podStatusPhase == corev1.PodPending {
+			Logger.Sugar().Debugf("waiting for pending pod %v / %v", pod.Namespace, pod.Name)
+			time.Sleep(wait)
+			timeoutSec -= wait
+			pod, err := cfg.K8sClientSet.CoreV1().Pods(pod.Namespace).Get(context.Background(), pod.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			podStatusPhase = pod.Status.Phase
+			if timeoutSec < 0*time.Second {
+				return errors.New("timeout while waiting for pod: " + pod.Name + " in ns: " + pod.Namespace)
+			}
 		}
 	}
 	return nil
