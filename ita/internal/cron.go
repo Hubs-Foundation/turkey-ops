@@ -64,8 +64,7 @@ func Cronjob_dummy(interval string) {
 	Logger.Debug("hello from Cronjob_dummy, interval=" + interval)
 }
 
-var pauseJob_idle time.Duration
-var pauseJob_idleMax = 30 * time.Minute
+var pauseJob_idleCnt time.Duration
 
 func Cronjob_pauseJob(interval time.Duration) {
 	Logger.Debug("hello from Cronjob_pauseJob")
@@ -97,11 +96,11 @@ func Cronjob_pauseJob(interval time.Duration) {
 	// resp, err := http.Client{Timeout:5*time.Millisecond, }
 
 	if retccu != 0 {
-		pauseJob_idle = 0
+		pauseJob_idleCnt = 0
 	} else {
-		pauseJob_idle += interval
-		Logger.Sugar().Debugf("updated pauseJob_idle: %v, time to pause: %v", pauseJob_idle, (pauseJob_idleMax - pauseJob_idle))
-		if pauseJob_idle >= pauseJob_idleMax {
+		pauseJob_idleCnt += interval
+		Logger.Sugar().Debugf("updated pauseJob_idle: %v, time to pause: %v", pauseJob_idleCnt, (cfg.FreeTierIdleMax - pauseJob_idleCnt))
+		if pauseJob_idleCnt >= cfg.FreeTierIdleMax {
 			//pause it
 			pauseReqBody, _ := json.Marshal(map[string]string{
 				"hub_id": strings.TrimPrefix(cfg.PodNS, "hc-"),

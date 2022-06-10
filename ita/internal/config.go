@@ -2,6 +2,7 @@ package internal
 
 import (
 	"os"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -13,8 +14,9 @@ var cfg *Config
 type Config struct {
 	PodNS             string
 	PodDeploymentName string
-	Domain            string `turkey domain`
+	Domain            string //turkey domain
 	Tier              string
+	FreeTierIdleMax   time.Duration
 
 	RetApiKey      string
 	turkeyorchHost string
@@ -61,6 +63,10 @@ func MakeCfg() {
 	cfg.Tier = getEnv("TIER", "free")
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
 	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services.svc.cluster.local:889")
+	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
+	if err != nil {
+		cfg.FreeTierIdleMax = 30 * time.Minute
+	}
 
 	cfg.PodNS = os.Getenv("POD_NS")
 	if cfg.PodNS == "" {
