@@ -238,7 +238,8 @@ func runTf(cfg clusterCfg, verb string) error {
 		return err
 	}
 
-	tf_bin := wd + "/_files/tf/terraform"
+	// tf_bin := wd + "/_files/tf/terraform"
+	tf_bin := "terraform"
 	tfdir := wd + "/_files/tf/" + cfg.Stackname
 	os.Mkdir(tfdir, os.ModePerm)
 
