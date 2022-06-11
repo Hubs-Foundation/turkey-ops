@@ -19,13 +19,15 @@ import (
 var mu sync.Mutex
 
 type TurkeyUpdater struct {
-	containers            map[string]turkeyContainerInfo
+	// containers            map[string]turkeyContainerInfo
+	containers            []turkeyContainerInfo
 	stopCh                chan struct{}
 	channel               string
 	publisherNS           string
 	publisherCfgMapPrefix string //cfgMap's name will be prefix + channel, ie. hubsbuilds-beta
 }
 type turkeyContainerInfo struct {
+	containerRepo        string
 	containerTag         string
 	parentDeploymentName string
 }
@@ -38,9 +40,6 @@ func NewTurkeyUpdater() *TurkeyUpdater {
 }
 
 func (u *TurkeyUpdater) loadContainers() error {
-
-	u.containers = make(map[string]turkeyContainerInfo)
-
 	dList, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		Logger.Error("failed to list deployments for ns: " + cfg.PodNS + ", err: " + err.Error())
@@ -54,10 +53,11 @@ func (u *TurkeyUpdater) loadContainers() error {
 			if len(imgNameTagArr) < 2 {
 				return errors.New("problem -- bad Image Name: " + c.Image)
 			}
-			u.containers[imgNameTagArr[0]] = turkeyContainerInfo{
+			u.containers = append(u.containers, turkeyContainerInfo{
+				containerRepo:        imgNameTagArr[0],
 				containerTag:         imgNameTagArr[1],
 				parentDeploymentName: d.Name,
-			}
+			})
 		}
 	}
 	Logger.Sugar().Debugf("servicing ("+strconv.Itoa(len(u.containers))+") Containers (repo:{tag:parentDeployment}): %v", u.containers)
@@ -146,7 +146,8 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	Logger.Sugar().Debugf("deployment starting in %v secs", waitSec)
 	time.Sleep(time.Duration(waitSec) * time.Second) // so some namespaces will pull the new container images first and have them cached locally -- less likely for us to get rate limited
 
-	for img, info := range u.containers {
+	for i, info := range u.containers {
+		img := info.containerRepo
 		newtag, ok := cfgmap.Labels[img]
 		if ok {
 			if info.containerTag == newtag {
@@ -163,8 +164,8 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 				Logger.Error("tryDeployNewContainer failed: " + err.Error())
 				continue
 			}
-			u.containers[img] = turkeyContainerInfo{
-				parentDeploymentName: u.containers[img].parentDeploymentName,
+			u.containers[i] = turkeyContainerInfo{
+				parentDeploymentName: u.containers[i].parentDeploymentName,
 				containerTag:         newtag,
 			}
 

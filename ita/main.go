@@ -28,8 +28,9 @@ func main() {
 	router.Handle("/updater", internal.Updater)
 	//utility endpoints
 	router.Handle("/healthz", internal.Healthz())
-	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
+	router.Handle("/hub_status", internal.HubInfraStatus())
 
+	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
 
