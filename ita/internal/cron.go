@@ -65,7 +65,7 @@ func Cronjob_dummy(interval string) {
 
 var pauseJob_idleCnt time.Duration
 
-func Cronjob_pauseJob(interval time.Duration) {
+func Cronjob_pauseHC(interval time.Duration) {
 	Logger.Debug("hello from Cronjob_pauseJob")
 	//get ret_ccu
 

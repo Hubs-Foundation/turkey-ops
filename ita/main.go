@@ -16,7 +16,7 @@ func main() {
 
 	if internal.GetCfg().Tier == "free" {
 		cron_15s := internal.NewCron("pauseJob-15s", 15*time.Second)
-		cron_15s.Load("pauseJob", internal.Cronjob_pauseJob)
+		cron_15s.Load("pauseJob", internal.Cronjob_pauseHC)
 		cron_15s.Start()
 	}
 

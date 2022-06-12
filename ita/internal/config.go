@@ -2,6 +2,7 @@ package internal
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -60,7 +61,7 @@ func MakeCfg() {
 	}
 
 	cfg.Domain = os.Getenv("DOMAIN")
-	cfg.Tier = getEnv("TIER", "free")
+
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
 	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
@@ -74,6 +75,12 @@ func MakeCfg() {
 	if cfg.PodNS == "" {
 		Logger.Error("POD_NS not set")
 	}
+	if strings.HasPrefix(cfg.PodNS, "hc-") {
+		cfg.Tier = getEnv("TIER", "free")
+	} else {
+		cfg.Tier = "N/A"
+	}
+
 	val, retMode := os.LookupEnv("RET_MODE")
 	if retMode {
 		Logger.Info("RET_MODE: " + val)

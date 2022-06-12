@@ -920,6 +920,8 @@ spec:
               fieldPath: metadata.namespace
         - name: POD_DEPLOYMENT_NAME
           value: ita
+        - name: TIER
+          value: {{.Tier}}
         # - name: CHANNEL
         #   value: stable
         - name: RET_API_KEY
