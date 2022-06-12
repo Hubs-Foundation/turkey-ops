@@ -71,10 +71,10 @@ todo(internal only): <br>
 
 // todo: put strict rate limit on this endpoint and add caching to deflect/protect against ddos
 var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/global_404_fallback" || r.Method != "GET" {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
+	// if r.URL.Path != "/global_404_fallback" || r.Method != "GET" {
+	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	// 	return
+	// }
 	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
 
 	nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
@@ -88,7 +88,7 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	notes := internal.HC_NS_TABLE.Get(nsName)
 
 	// high frequency pokes == bounce
-	coolDown := 15 * time.Minute
+	coolDown := 5 * time.Minute
 	if time.Since(notes.Lastchecked) < coolDown {
 		internal.Logger.Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
