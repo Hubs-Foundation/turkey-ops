@@ -20,6 +20,8 @@ metadata:
 data:
   backend-config-snippet: |
     option forwardfor
+    acl no-backend nbsrv() lt 1
+    redirect prefix https://orch.{{.Domain}}/ if no-backend
   ssl-redirect: "true"
   syslog-server: 'address:stdout, format: raw, facility:daemon'
 ---

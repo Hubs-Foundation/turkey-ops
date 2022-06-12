@@ -70,14 +70,16 @@ todo(internal only): <br>
 `
 
 // todo: put strict rate limit on this endpoint and add caching to deflect/protect against ddos
-var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// if r.URL.Path != "/global_404_fallback" || r.Method != "GET" {
 	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	// 	return
 	// }
 	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
 
-	nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
+	// nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
+	originUrl := r.Header.Get("Referer")
+	nsName := "hc-" + strings.Split(originUrl, ".")[0]
 
 	// not requesting a hubs cloud namespace == bounce
 	if !internal.HC_NS_TABLE.Has(nsName) {
@@ -92,7 +94,7 @@ var Global_404_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r 
 	if time.Since(notes.Lastchecked) < coolDown {
 		internal.Logger.Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, g404_std_RespMsg)
+		fmt.Fprint(w, g404_std_RespMsg+originUrl)
 		return
 	}
 

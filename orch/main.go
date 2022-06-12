@@ -41,9 +41,9 @@ func main() {
 	// router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
 	// router.Handle("/hc_del", handlers.Hc_del)
 
-	router.Handle("/hc_launch_fallback", handlers.HC_launch_fallback)
-	router.Handle("/global_404_fallback", handlers.Global_404_launch_fallback)
-	router.Handle("/", handlers.Global_404_launch_fallback)
+	// router.Handle("/hc_launch_fallback", handlers.HC_launch_fallback)
+	// router.Handle("/global_404_fallback", handlers.Global_404_launch_fallback)
+	router.Handle("/turkey-return-center", handlers.TurkeyReturnCenter)
 
 	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
 	// router.Handle("/webhooks/ghaturkey", handlers.GhaTurkey)

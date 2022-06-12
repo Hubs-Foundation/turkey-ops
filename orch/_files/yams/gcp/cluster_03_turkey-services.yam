@@ -195,16 +195,13 @@ spec:
             name: turkeyorch
             port: 
               number: 889
-  # - host: "*.{{.Domain}}"   #global <NOSRV> catch?
-  #   http:
-  #     path:
-  #     - path: /
-  #       pathType: Prefix
-  #       backend:
-  #         service:
-  #           name: turkeyorch
-  #           port:
-  #             number: 9002
+      - path: /turkey-return-center
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyorch
+            port: 
+              number: 889
 ---
 apiVersion: v1
 kind: Secret
