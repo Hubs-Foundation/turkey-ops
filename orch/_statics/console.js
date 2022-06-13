@@ -1,13 +1,13 @@
 
-window.addEventListener("load", streamLogs);
-function streamLogs(){
-  var source = new EventSource("/LogStream");
-  divLogBoard=document.getElementById("divLogBoard");
-  source.onmessage = function (event) {
-    divLogBoard.innerHTML+=event.data +"<br>";
-    divLogBoard.scrollTop = divLogBoard.scrollHeight;
-  }
-}
+// window.addEventListener("load", streamLogs);
+// function streamLogs(){
+//   var source = new EventSource("/LogStream");
+//   divLogBoard=document.getElementById("divLogBoard");
+//   source.onmessage = function (event) {
+//     divLogBoard.innerHTML+=event.data +"<br>";
+//     divLogBoard.scrollTop = divLogBoard.scrollHeight;
+//   }
+// }
 
 document.getElementById("login_google").addEventListener("click", login_google);
 function login_google() {
