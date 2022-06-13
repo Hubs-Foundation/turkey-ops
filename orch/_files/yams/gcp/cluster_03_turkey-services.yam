@@ -169,7 +169,35 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: turkeyorch
+  name: turkeyorch-public
+  namespace: turkey-services
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
+spec:
+  rules:
+  - host: orch.{{.Domain}}
+    http:
+      paths:
+      - path: /webhooks
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyorch
+            port: 
+              number: 889
+      - path: /turkey-return-center
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyorch
+            port: 
+              number: 889
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkeyorch-private
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
@@ -188,20 +216,6 @@ spec:
             name: turkeyauth
             port: 
               number: 9002
-      - path: /webhooks
-        pathType: Prefix
-        backend:
-          service:
-            name: turkeyorch
-            port: 
-              number: 889
-      - path: /turkey-return-center
-        pathType: Prefix
-        backend:
-          service:
-            name: turkeyorch
-            port: 
-              number: 889
 ---
 apiVersion: v1
 kind: Secret

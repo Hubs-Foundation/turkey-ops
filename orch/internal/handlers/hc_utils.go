@@ -75,16 +75,22 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	// 	return
 	// }
+	goods := r.URL.Query().Get("goods")
+	if !strings.HasSuffix(goods, internal.Cfg.Domain) {
+		internal.Logger.Sugar().Debugf("TurkeyReturnCenter bounce / !strings.HasSuffix(goods (%v), internal.Cfg.Domain(%v)) ", goods, internal.Cfg.Domain)
+		http.Error(w, "huh?", http.StatusOK)
+		return
+	}
+
 	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
 
 	// nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
-	originUrl := r.Header.Get("Referer")
-	nsName := "hc-" + strings.Split(originUrl, ".")[0]
+	nsName := "hc-" + strings.Split(goods, ".")[0]
 
 	// not requesting a hubs cloud namespace == bounce
 	if !internal.HC_NS_TABLE.Has(nsName) {
-		internal.Logger.Debug("404 bounc / !internal.HC_NS_TABLE.Has for: " + nsName)
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		internal.Logger.Debug("TurkeyReturnCenter bounce / !internal.HC_NS_TABLE.Has for: " + nsName)
+		http.Error(w, "hi", http.StatusOK)
 		return
 	}
 	notes := internal.HC_NS_TABLE.Get(nsName)
@@ -94,7 +100,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	if time.Since(notes.Lastchecked) < coolDown {
 		internal.Logger.Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, g404_std_RespMsg+originUrl)
+		fmt.Fprint(w, g404_std_RespMsg+"--> "+goods)
 		return
 	}
 
