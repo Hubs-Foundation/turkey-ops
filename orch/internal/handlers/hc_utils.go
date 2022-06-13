@@ -56,15 +56,21 @@ var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 })
 
-var g404_std_RespMsg = `
+var trc_ok_RespMsg = `
 <h1> your hubs infra's starting up </h1>
-disclaimer: this page is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
+disclaimer: this page is still wip ... <b>/trc</b> ... <br>
 todo(internal only): <br>
 1. a better looking page here <br>
 `
-var g404_err_RespMsg = `
+var trc_cd_RespMsg = `
+<h1> too soon </h1>
+disclaimer: this page is still wip ... <b>/trc</b> ... <br>
+todo(internal only): <br>
+1. a better looking page here <br>
+`
+var trc_err_RespMsg = `
 <h1> your hubs infra's dead ... <br> but don't worry because some engineers on our end's getting a pagerduty for it </h1>
-disclaimer: this page is still wip ... <b>/Global_404_launch_fallback</b> ... <br>
+disclaimer: this page is still wip ... <b>/trc</b> ... <br>
 todo(internal only): <br>
 1. a better looking page here <br>
 `
@@ -97,10 +103,11 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 	// high frequency pokes == bounce
 	coolDown := 5 * time.Minute
-	if time.Since(notes.Lastchecked) < coolDown {
+	waitReq := coolDown - time.Since(notes.Lastchecked)
+	if waitReq > 0 {
 		internal.Logger.Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, "too soon <br> --> "+goods)
+		fmt.Fprint(w, fmt.Sprintf("%v <br> --> %v (try again in %v)", trc_cd_RespMsg, goods, waitReq.String()))
 		return
 	}
 
@@ -116,7 +123,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	internal.Logger.Debug("wakeupHcNs launched for nsName: " + nsName)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, g404_std_RespMsg+"--> "+goods)
+	fmt.Fprint(w, trc_ok_RespMsg+"--> "+goods)
 
 })
 
