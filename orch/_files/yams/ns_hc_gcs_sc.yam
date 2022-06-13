@@ -3,10 +3,7 @@ kind: Namespace
 metadata:
   name: hc-{{.HubId}}
   labels:
-    Tier: {{.Tier}}
-    CcuLimit: "{{.CcuLimit}}"
-    StorageLimit: "{{.StorageLimit}}"
-    HC: "_"
+    HC: "1"
 ---
 ########################################################################
 ###################### configs #########################################
