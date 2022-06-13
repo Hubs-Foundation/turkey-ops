@@ -47,7 +47,7 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 		"namespaces",
 		"",
 		func(options *metav1.ListOptions) {
-			options.LabelSelector = "TurkeyId"
+			options.LabelSelector = "HC"
 		},
 	)
 	_, controller := cache.NewInformer(
