@@ -84,6 +84,7 @@ func Cronjob_pauseHC(interval time.Duration) {
 		Logger.Sugar().Debugf("updated pauseJob_idle: %v, time to pause: %v", pauseJob_idleCnt, (cfg.FreeTierIdleMax - pauseJob_idleCnt))
 		if pauseJob_idleCnt >= cfg.FreeTierIdleMax {
 			//pause it
+			Logger.Info("Cronjob_pauseHC --- pausing -- " + cfg.PodNS)
 			pauseReqBody, _ := json.Marshal(map[string]string{
 				"hub_id": strings.TrimPrefix(cfg.PodNS, "hc-"),
 			})
