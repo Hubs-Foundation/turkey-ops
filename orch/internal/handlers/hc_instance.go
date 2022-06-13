@@ -265,7 +265,7 @@ func hc_get(w http.ResponseWriter, r *http.Request) {
 	//list ns
 	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
 		metav1.ListOptions{
-			LabelSelector: "subdomain=" + cfg.Subdomain,
+			LabelSelector: "hub_id" + cfg.HubId,
 		})
 	if err != nil {
 		internal.Logger.Error(err.Error())
@@ -280,13 +280,11 @@ func hc_get(w http.ResponseWriter, r *http.Request) {
 
 func getHcCfg(r *http.Request) (hcCfg, error) {
 	var cfg hcCfg
-	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		internal.Logger.Error("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
-	//make cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
 		internal.Logger.Error("bad hcCfg: " + string(rBodyBytes))
@@ -297,14 +295,11 @@ func getHcCfg(r *http.Request) (hcCfg, error) {
 
 func makeHcCfg(r *http.Request) (hcCfg, error) {
 	var cfg hcCfg
-
-	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		internal.Logger.Error("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
-	//make cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
 		internal.Logger.Error("bad hcCfg: " + string(rBodyBytes))
