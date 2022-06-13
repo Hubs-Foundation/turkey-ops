@@ -100,7 +100,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	if time.Since(notes.Lastchecked) < coolDown {
 		internal.Logger.Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, g404_std_RespMsg+"--> "+goods)
+		fmt.Fprint(w, "too soon <br> --> "+goods)
 		return
 	}
 
@@ -116,7 +116,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	internal.Logger.Debug("wakeupHcNs launched for nsName: " + nsName)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, g404_std_RespMsg)
+	fmt.Fprint(w, g404_std_RespMsg+"--> "+goods)
 
 })
 
