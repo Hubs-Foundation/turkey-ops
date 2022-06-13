@@ -107,7 +107,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	if waitReq > 0 {
 		internal.Logger.Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, fmt.Sprintf(`%v <br> -->  <a href="%v">%v</a> (try again in %v)`, trc_cd_RespMsg, goods, goods, waitReq.String()))
+		fmt.Fprint(w, fmt.Sprintf(`%v <br> -->  <a href=https://"%v">%v</a> (try again in %v)`, trc_cd_RespMsg, goods, goods, waitReq.String()))
 		return
 	}
 
@@ -123,7 +123,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	internal.Logger.Debug("wakeupHcNs launched for nsName: " + nsName)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, fmt.Sprintf(`%v <br> -->  <a href="%v">%v</a> (try again in %v)`, trc_ok_RespMsg, goods, goods, waitReq.String()))
+	fmt.Fprint(w, fmt.Sprintf(`%v <br> -->  <a href=https://"%v">%v</a>`, trc_ok_RespMsg, goods, goods))
 })
 
 func wakeupHcNs(ns string) {
