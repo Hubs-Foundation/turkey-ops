@@ -145,6 +145,9 @@ func Ssa_k8sChartYaml(ssa_userId, k8sChartYaml string, cfg *rest.Config) error {
 				FieldManager: "ssa_userid-" + ssa_userId,
 				Force:        &force,
 			})
+		if err != nil {
+			return err
+		}
 		// Logger.Sugar().Debugf("ssaResult: %v", ssaResult.Object)
 		jsonBytes, err := json.Marshal(ssaResult.Object)
 		if err != nil {
