@@ -84,7 +84,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	goods := r.URL.Query().Get("goods")
 	if !strings.HasSuffix(goods, internal.Cfg.Domain) {
 		internal.Logger.Sugar().Debugf("TurkeyReturnCenter bounce / !strings.HasSuffix(goods (%v), internal.Cfg.Domain(%v)) ", goods, internal.Cfg.Domain)
-		http.Error(w, "huh?", http.StatusOK)
+		http.Error(w, "huh?", http.StatusNotFound)
 		return
 	}
 
@@ -96,17 +96,24 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	// not requesting a hubs cloud namespace == bounce
 	if !internal.HC_NS_TABLE.Has(nsName) {
 		internal.Logger.Debug("TurkeyReturnCenter bounce / !internal.HC_NS_TABLE.Has for: " + nsName)
-		http.Error(w, "hi", http.StatusOK)
+		http.Error(w, "hi?", http.StatusNotFound)
 		return
 	}
-	notes := internal.HC_NS_TABLE.Get(nsName)
 
+	w.WriteHeader(http.StatusServiceUnavailable)
+
+	notes := internal.HC_NS_TABLE.Get(nsName)
 	// high frequency pokes == bounce
 	coolDown := 5 * time.Minute
 	waitReq := coolDown - time.Since(notes.Lastchecked)
 	if waitReq > 0 {
 		internal.Logger.Debug("on coolDown bounc for: " + nsName)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set(
+			"Retry-After",
+			fmt.Sprintf("%f", waitReq.Seconds()),
+		)
+
 		fmt.Fprint(w, fmt.Sprintf(`%v <br> -->  <a href=https://%v>%v</a> (try again in %v)`, trc_cd_RespMsg, goods, goods, waitReq.String()))
 		return
 	}
@@ -116,7 +123,6 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	//todo: test HPA (horizontal pod autoscaler)'s min settings instead of
 
 	//just scale it back up to 1 for now
-
 	go wakeupHcNs(nsName)
 	internal.HC_NS_TABLE.Set(nsName, internal.HcNsNotes{Lastchecked: time.Now()})
 
