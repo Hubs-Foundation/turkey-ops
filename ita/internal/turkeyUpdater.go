@@ -165,6 +165,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 				continue
 			}
 			u.containers[i] = turkeyContainerInfo{
+				containerRepo:        img,
 				parentDeploymentName: u.containers[i].parentDeploymentName,
 				containerTag:         newtag,
 			}
