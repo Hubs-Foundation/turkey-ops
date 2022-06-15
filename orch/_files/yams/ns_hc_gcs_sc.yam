@@ -15,7 +15,7 @@ metadata:
   namespace: hc-{{.HubId}}
 stringData:
   NODE_COOKIE: {{.NODE_COOKIE}}
-  SUB_DOMAIN: {{.Subdomain}}
+  SUB_DOMAIN: "{{.Subdomain}}"
   DOMAIN: {{.Domain}}
   DB_USER: postgres
   DB_PASS: {{.DBpass}}
