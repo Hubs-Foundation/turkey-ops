@@ -16,7 +16,6 @@
 # entrypoint bash entrypoint.sh
 
 FROM alpine
-workdir goofys
 RUN apk add fuse
 RUN wget https://github.com/kahing/goofys/releases/latest/download/goofys > goofys && chmod +x goofys
 copy entrypoint.sh entrypoint.sh
