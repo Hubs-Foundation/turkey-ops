@@ -28,6 +28,8 @@ RUN apt-get update && \
     apt-get -y install --no-install-recommends \
             # gcsfuse dependencies \
             fuse \
+            # why not including this, how many MB it saves?
+            ca-certificates \
             # finally, clean up to make image smaller \
             && apt-get clean
 # catfs is required to run goofys with cache
