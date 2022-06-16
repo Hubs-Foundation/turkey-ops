@@ -80,6 +80,7 @@ func MakeCfg() {
 	} else {
 		cfg.Tier = "N/A"
 	}
+	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
 
 	val, retMode := os.LookupEnv("RET_MODE")
 	if retMode {

@@ -21,7 +21,7 @@ data:
   backend-config-snippet: |
     option forwardfor 
     acl no-backend nbsrv() lt 1 
-    http-request redirect location "https://orch.gtan.myhubs.net/turkey-return-center/?goods=%[hdr(host)]" if no-backend
+    http-request redirect location "https://orch.{{.Domain}}/turkey-return-center/?goods=%[hdr(host)]" if no-backend
   ssl-redirect: "true"
   syslog-server: 'address:stdout, format: raw, facility:daemon'
 ---
