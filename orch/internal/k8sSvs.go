@@ -47,7 +47,7 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 		"namespaces",
 		"",
 		func(options *metav1.ListOptions) {
-			options.LabelSelector = "hub_id"
+			options.LabelSelector = "hub_id,subdomain"
 		},
 	)
 	_, controller := cache.NewInformer(
@@ -58,17 +58,17 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 			AddFunc: func(obj interface{}) {
 				GetLogger().Sugar().Debugf("added: %v", obj)
 				ns := obj.(*corev1.Namespace)
-				HC_NS_TABLE.Set(ns.Name, HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
+				HC_NS_TABLE.Set(ns.Labels["subdomain"], HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				GetLogger().Sugar().Debugf("updated: %v", newObj)
 				ns := newObj.(*corev1.Namespace)
-				HC_NS_TABLE.Set(ns.Name, HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
+				HC_NS_TABLE.Set(ns.Labels["subdomain"], HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
 			},
 			DeleteFunc: func(obj interface{}) {
 				GetLogger().Sugar().Debugf("deleted: %v", obj)
 				ns := obj.(*corev1.Namespace)
-				HC_NS_TABLE.Del(ns.Name)
+				HC_NS_TABLE.Del(ns.Labels["subdomain"])
 			},
 		},
 	)

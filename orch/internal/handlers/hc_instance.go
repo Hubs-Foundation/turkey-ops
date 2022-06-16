@@ -569,9 +569,9 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	//call ret/update-subdomain-script
 	internal.Logger.Error("~~~~~~ TODO: call ret/update-subdomain-script")
 
-	ns := "hc-" + HubId
+	nsName := "hc-" + HubId
 	//update secret
-	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(ns).Get(context.Background(), "configs", metav1.GetOptions{})
+	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(nsName).Get(context.Background(), "configs", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -580,12 +580,12 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	internal.Logger.Sugar().Debugf("hc_patch_subdomain -- from <%v> to <%v>", oldSubdomain, Subdomain)
 
 	secret_configs.StringData = map[string]string{"SUB_DOMAIN": Subdomain}
-	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(ns).Update(context.Background(), secret_configs, metav1.UpdateOptions{})
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(nsName).Update(context.Background(), secret_configs, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
 	// update ingress
-	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(ns).Get(context.Background(), "turkey-https", metav1.GetOptions{})
+	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), "turkey-https", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -599,7 +599,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		ingress.Annotations["haproxy.org/response-set-header"],
 		`//`+oldSubdomain+`.`,
 		`//`+Subdomain+`.`, 1)
-	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(ns).Update(context.Background(), ingress, metav1.UpdateOptions{})
+	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), ingress, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -620,15 +620,25 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	// }
 
 	// ^^^ rolling restart seems to sometimes cause haproxy to take a long time to refresh backend pods
-	pods, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(ns).List(context.Background(), metav1.ListOptions{})
+	pods, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(nsName).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for _, pod := range pods.Items {
-		err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(ns).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+		err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(nsName).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
 		}
+	}
+	// finally update ns label
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ns.Labels["subdomain"] = Subdomain
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
 	}
 
 	return nil
