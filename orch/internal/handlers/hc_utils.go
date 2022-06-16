@@ -91,23 +91,24 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
 
 	// nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
-	nsName := "hc-" + strings.Split(goods, ".")[0]
-
+	// nsName := "hc-" + strings.Split(goods, ".")[0]
+	subdomain := strings.Split(goods, ".")[0]
+	nsName := "hc-" + subdomain
 	// not requesting a hubs cloud namespace == bounce
-	if !internal.HC_NS_TABLE.Has(nsName) {
-		internal.Logger.Debug("TurkeyReturnCenter bounce / !internal.HC_NS_TABLE.Has for: " + nsName)
+	if !internal.HC_NS_TABLE.Has(subdomain) {
+		internal.Logger.Debug("TurkeyReturnCenter bounce / !internal.HC_NS_TABLE.Has for: " + subdomain)
 		http.Error(w, "hi?", http.StatusNotFound)
 		return
 	}
 
 	w.WriteHeader(http.StatusServiceUnavailable)
 
-	notes := internal.HC_NS_TABLE.Get(nsName)
+	notes := internal.HC_NS_TABLE.Get(subdomain)
 	// high frequency pokes == bounce
 	coolDown := 5 * time.Minute
 	waitReq := coolDown - time.Since(notes.Lastchecked)
 	if waitReq > 0 {
-		internal.Logger.Debug("on coolDown bounc for: " + nsName)
+		internal.Logger.Debug("on coolDown bounc for: " + subdomain)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set(
 			"Retry-After",
