@@ -85,8 +85,10 @@ func MakeCfg() {
 	val, retMode := os.LookupEnv("RET_MODE")
 	if retMode {
 		Logger.Info("RET_MODE: " + val)
-		return
+		return //RET_MODE==will-not-start: { turkey-updater, pauseJob }
 	}
+
+	//start turkey-updater
 
 	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
 
@@ -104,6 +106,13 @@ func MakeCfg() {
 	err = cfg.TurkeyUpdater.Start(listeningChannel)
 	if err != nil {
 		Logger.Error(err.Error())
+	}
+
+	//start pauseJob
+	if cfg.Tier == "free" {
+		cron_15s := NewCron("pauseJob-15s", 15*time.Second)
+		cron_15s.Load("pauseJob", Cronjob_pauseHC)
+		cron_15s.Start()
 	}
 
 }
