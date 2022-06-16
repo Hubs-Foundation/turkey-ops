@@ -28,7 +28,7 @@ RUN apt-get update && \
     apt-get -y install --no-install-recommends \
             # gcsfuse dependencies \
             fuse \
-            # why not including this, how many MB it saves?
+            # why is this not included, to save a few kB ???
             ca-certificates \
             # finally, clean up to make image smaller \
             && apt-get clean
