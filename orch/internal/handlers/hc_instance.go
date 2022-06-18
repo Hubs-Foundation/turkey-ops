@@ -36,7 +36,7 @@ type hcCfg struct {
 	Subdomain    string `json:"subdomain"`     // fallback to HubId
 
 	//optional inputs
-	Options string `json:"options"` //additional options, underscore(_)prefixed -- ie. "_ebs"
+	Options string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain               string `json:"domain"`
@@ -146,6 +146,9 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	fileOption := "_gcs_sc"
 	if os.Getenv("CLOUD") == "aws" {
 		fileOption = "_s3fs"
+	}
+	if hcCfg.Options != "" {
+		fileOption = hcCfg.Options
 	}
 	internal.Logger.Debug(" >>>>>> selected option: " + fileOption)
 
