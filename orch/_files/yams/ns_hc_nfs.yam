@@ -415,11 +415,10 @@ spec:
         - name: config
           mountPath: /home/ret
         securityContext:
-          privileged: true
-          capabilities:
-            add:
-            - SYS_ADMIN          
+          privileged: true       
         image: mozillareality/ret:{{.Img_ret}}
+        command: ["/bin/sh","-c"]
+        args: [apk add coreutils && bash /run.sh]        
         ports:
         - containerPort: 9100
         imagePullPolicy: IfNotPresent
