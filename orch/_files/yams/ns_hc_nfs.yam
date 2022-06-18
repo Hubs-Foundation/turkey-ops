@@ -1059,7 +1059,7 @@ kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: nfs
-  namespace: hc-12345678
+  namespace: hc-{{.HubId}}
 spec:
   serviceName: "nfs"
   selector:
@@ -1085,7 +1085,7 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: nfs
-      namespace: hc-12345678
+      namespace: hc-{{.HubId}}
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
@@ -1096,7 +1096,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: nfs
-  namespace: hc-12345678
+  namespace: hc-{{.HubId}}
 spec:
   selector:
     app: nfs
