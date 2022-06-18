@@ -399,10 +399,10 @@ spec:
         app: reticulum
     spec:
       volumes:
-        - name: nfs
-          nfs:
-            server: nfs.hc-12345678.svc.cluster.local
-            path: /
+      - name: nfs
+        nfs:
+          server: nfs.hc-{{.HubId}}.svc.cluster.local
+          path: /
       - name: config
         configMap:
           name: ret-config        
