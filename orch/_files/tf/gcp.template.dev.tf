@@ -1,29 +1,10 @@
+
 terraform {  
     backend "gcs" {    
         bucket  = "turkeycfg"
         prefix  = "tf-backend/{{.Stackname}}"
     }
 }
-
-# variable "project_id"{
-#   description = "gcp project id"
-#   default = "missing"  
-# }
-
-# variable "stack_name" {
-#   description = "deployment id"
-#   default = "missing"
-# }
-
-# variable "region" {
-#   description = "region"
-#   default = "us-east1"
-# }
-
-# provider "google" {
-#   project = "{{.ProjectId}}"
-#   region  = "{{.Region}}"
-# }
 
 provider "google-beta" {
   project = "{{.ProjectId}}"
@@ -78,26 +59,27 @@ resource "google_container_cluster" "gke" {
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
-  cluster_autoscaling {
-    enabled = true
-    resource_limits{
-      resource_type = "memory"
-      minimum = 24
-      maximum = 128
-    }
-    resource_limits{
-      resource_type = "cpu"
-      minimum = 12
-      maximum = 64
-    }
-    autoscaling_profile = "OPTIMIZE_UTILIZATION"
-  }
+  # cluster_autoscaling {
+  #   enabled = true
+  #   resource_limits{
+  #     resource_type = "memory"
+  #     minimum = 24
+  #     maximum = 128
+  #   }
+  #   resource_limits{
+  #     resource_type = "cpu"
+  #     minimum = 12
+  #     maximum = 64
+  #   }
+  #   autoscaling_profile = "OPTIMIZE_UTILIZATION"
+  # }
+  ### ^ preferring node_pool autoscaling 
 }
 
-resource "google_container_node_pool" "gke_nodes" {
+resource "google_container_node_pool" "stream_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-node-pool"
-  location   = "{{.Region}}"
+  location   = "{{.Region}}-a"
   cluster    = google_container_cluster.gke.name
   node_count = 1
   node_config {
@@ -106,18 +88,54 @@ resource "google_container_node_pool" "gke_nodes" {
       "https://www.googleapis.com/auth/monitoring",
     ]
     labels = {
-      app = "turkey"
-      env = "{{.Stackname}}"
+      env = "{{.Env}}"
+      stackname="{{.Stackname}}"
+      turkey-role = "stream"
     }
     preemptible  = true
-    machine_type = "e2-highmem-4"
+    machine_type = "e2-highcpu-8" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
     # local_ssd_count = 1
-    tags         = ["gke-node", "{{.Stackname}}"]
+    tags         = ["turkey","{{.Env}}","stream","{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
     }
+    autoscaling{
+      min_node_count = 1
+      max_node_count = 2
+    }
   }
 }
+
+resource "google_container_node_pool" "app_nodes" {
+  provider = google-beta
+  name       = "${google_container_cluster.gke.name}-node-pool"
+  location   = "{{.Region}}-a"
+  cluster    = google_container_cluster.gke.name
+  node_count = 1
+  node_config {
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
+    ]
+    labels = {
+      env = "{{.Env}}"
+      stackname="{{.Stackname}}"
+      turkey-role = "app"
+    }
+    preemptible  = true
+    machine_type = "e2-highmem-4" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
+    # local_ssd_count = 1
+    tags         = ["turkey","{{.Env}}","app","{{.Stackname}}"]
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+    autoscaling{
+      min_node_count = 2
+      max_node_count = 8
+    }
+  }
+}
+
 
 ################## pgsql
 resource "google_compute_global_address" "private_ip_address" {
