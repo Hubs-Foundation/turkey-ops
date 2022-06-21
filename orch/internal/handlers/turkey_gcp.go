@@ -250,12 +250,13 @@ func runTf(cfg clusterCfg, verb string) error {
 	}
 	f, _ := os.Create(tfFile)
 	defer f.Close()
-	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass string }{
+	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass, Env string }{
 		ProjectId: internal.Cfg.Gcps.ProjectId,
 		Stackname: cfg.Stackname,
 		Region:    cfg.Region,
 		DbUser:    "postgres",
 		DbPass:    cfg.DB_PASS,
+		Env:       cfg.Env,
 	})
 	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
 	if err != nil {
