@@ -260,12 +260,10 @@ func runTf(cfg clusterCfg, verb string) error {
 		Env:       cfg.Env,
 	})
 
-	tfBytes, _ := ioutil.ReadFile(tfFile)
-	internal.Logger.Debug("cat $tfFile: " + string(tfBytes))
-
 	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
 	if err != nil {
-		return err
+		tfBytes, _ := ioutil.ReadFile(tfFile)
+		return errors.New(err.Error() + "...cat $tfFile: " + string(tfBytes))
 	}
 	// err = runCmd(tf_bin, "-chdir="+tfdir, "plan",
 	// 	"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_id="+cfg.Stackname, "-var", "region="+cfg.Region,
