@@ -334,7 +334,7 @@ data:
     [ret."Elixir.RetWeb.HealthController"]
 
     [ret."Elixir.RetWeb.PageController"]
-    skip_cache = true
+    skip_cache = false
     extra_avatar_headers = ""
     extra_index_headers = ""
     extra_room_headers = ""
