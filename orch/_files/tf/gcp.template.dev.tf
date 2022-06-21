@@ -11,6 +11,24 @@ provider "google-beta" {
   region  = "{{.Region}}"
 }
 
+variable "location" {
+  type= string
+  {{if eq {{.Env}} "dev"}}
+  default   = "{{.Region}}-a"
+  {{else}}
+  default   = "{{.Region}}"
+  {{end}}
+}
+
+variable "use_spot_for_nonfree"{
+  type=bool
+  {{if eq {{.Env}} "dev"}}
+  default   = true
+  {{else}}
+  default   = false
+  {{end}}  
+}
+
 ################## network
 resource "google_compute_network" "vpc" {
   provider = google-beta
@@ -53,33 +71,32 @@ resource "google_compute_firewall" "stream" {
 resource "google_container_cluster" "gke" {
   provider = google-beta
   name     = "{{.Stackname}}"
-  location = "{{.Region}}"
+  location = var.location
   remove_default_node_pool = true
   initial_node_count       = 1
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
-  # cluster_autoscaling {
-  #   enabled = true
-  #   resource_limits{
-  #     resource_type = "memory"
-  #     minimum = 24
-  #     maximum = 128
-  #   }
-  #   resource_limits{
-  #     resource_type = "cpu"
-  #     minimum = 12
-  #     maximum = 64
-  #   }
-  #   autoscaling_profile = "OPTIMIZE_UTILIZATION"
-  # }
-  ### ^ preferring node_pool autoscaling 
+  cluster_autoscaling { # this is node auto-provisioning, not "cluster autoscaler", more info--https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
+    enabled = true
+    resource_limits{
+      resource_type = "memory"
+      minimum = 24
+      maximum = 128
+    }
+    resource_limits{
+      resource_type = "cpu"
+      minimum = 12
+      maximum = 64
+    }
+    autoscaling_profile = "OPTIMIZE_UTILIZATION"
+  }
 }
 
 resource "google_container_node_pool" "stream_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-node-pool"
-  location   = "{{.Region}}-a"
+  location   = var.location
   cluster    = google_container_cluster.gke.name
   node_count = 1
   node_config {
@@ -92,14 +109,14 @@ resource "google_container_node_pool" "stream_nodes" {
       stackname="{{.Stackname}}"
       turkey-role = "stream"
     }
-    preemptible  = true
+    preemptible  = var.use_spot_for_nonfree
     machine_type = "e2-highcpu-8" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","stream","{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
     }
-    autoscaling{
+    autoscaling{ # this is "cluster autoscaler"
       min_node_count = 1
       max_node_count = 2
     }
@@ -109,7 +126,7 @@ resource "google_container_node_pool" "stream_nodes" {
 resource "google_container_node_pool" "app_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-node-pool"
-  location   = "{{.Region}}-a"
+  location   = var.location
   cluster    = google_container_cluster.gke.name
   node_count = 1
   node_config {
@@ -122,20 +139,47 @@ resource "google_container_node_pool" "app_nodes" {
       stackname="{{.Stackname}}"
       turkey-role = "app"
     }
-    preemptible  = true
-    machine_type = "e2-highmem-4" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
-    # local_ssd_count = 1
+    preemptible  = var.use_spot_for_nonfree
+    machine_type = "e2-highmem-4" # ret uses (1m/ 6m+18Mi/ccu@30ccu, 6m/10Mi@60, 12m/7Mi@110ccu), uses less than 1G ram per 1core cpu on load
     tags         = ["turkey","{{.Env}}","app","{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
     }
     autoscaling{
-      min_node_count = 2
+      min_node_count = 1
       max_node_count = 8
     }
   }
 }
 
+resource "google_container_node_pool" "spot_nodes" {
+  provider = google-beta
+  name       = "${google_container_cluster.gke.name}-node-pool"
+  location   = var.location
+  cluster    = google_container_cluster.gke.name
+  node_count = 1
+  node_config {
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
+    ]
+    labels = {
+      env = "{{.Env}}"
+      stackname="{{.Stackname}}"
+      turkey-role = "spot"
+    }
+    preemptible  = true
+    machine_type = "e2-highmem-4" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
+    tags         = ["turkey","{{.Env}}","spot","{{.Stackname}}"]
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+    autoscaling{
+      min_node_count = 1
+      max_node_count = 8
+    }
+  }
+}
 
 ################## pgsql
 resource "google_compute_global_address" "private_ip_address" {
