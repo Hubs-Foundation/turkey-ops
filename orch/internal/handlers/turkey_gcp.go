@@ -250,6 +250,7 @@ func runTf(cfg clusterCfg, verb string) error {
 	}
 	f, _ := os.Create(tfFile)
 	defer f.Close()
+
 	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass, Env string }{
 		ProjectId: internal.Cfg.Gcps.ProjectId,
 		Stackname: cfg.Stackname,
@@ -258,6 +259,10 @@ func runTf(cfg clusterCfg, verb string) error {
 		DbPass:    cfg.DB_PASS,
 		Env:       cfg.Env,
 	})
+
+	tfBytes, _ := ioutil.ReadFile(tfFile)
+	internal.Logger.Debug("cat $tfFile: " + string(tfBytes))
+
 	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
 	if err != nil {
 		return err

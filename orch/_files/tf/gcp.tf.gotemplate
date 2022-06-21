@@ -13,20 +13,20 @@ provider "google-beta" {
 
 variable "location" {
   type= string
-  {{if eq {{.Env}} "dev"}}
+  {{ if eq {{.Env}} "dev" }}
   default   = "{{.Region}}-a"
-  {{else}}
+  {{ else }}
   default   = "{{.Region}}"
-  {{end}}
+  {{ end }}
 }
 
 variable "use_spot_for_nonfree"{
   type=bool
-  {{if eq {{.Env}} "dev"}}
+  {{ if eq {{.Env}} "dev" }}
   default   = true
-  {{else}}
+  {{ else }}
   default   = false
-  {{end}}  
+  {{ end }}  
 }
 
 ################## network
