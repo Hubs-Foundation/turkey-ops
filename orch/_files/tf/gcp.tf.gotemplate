@@ -116,10 +116,10 @@ resource "google_container_node_pool" "stream_nodes" {
     metadata = {
       disable-legacy-endpoints = "true"
     }
-    autoscaling{ # this is "cluster autoscaler"
-      min_node_count = 1
-      max_node_count = 2
-    }
+  }
+  autoscaling { # this is "cluster autoscaler"
+    min_node_count = 1
+    max_node_count = 2
   }
 }
 
@@ -147,10 +147,10 @@ resource "google_container_node_pool" "app_nodes" {
     metadata = {
       disable-legacy-endpoints = "true"
     }
-    autoscaling{
-      min_node_count = 1
-      max_node_count = 8
-    }
+  }
+  autoscaling { # this is "cluster autoscaler"
+    min_node_count = 1
+    max_node_count = 2
   }
 }
 
@@ -176,10 +176,10 @@ resource "google_container_node_pool" "spot_nodes" {  # same as app_nodes, but u
     metadata = {
       disable-legacy-endpoints = "true"
     }
-    autoscaling{
-      min_node_count = 1
-      max_node_count = 8
-    }
+  }
+  autoscaling { # this is "cluster autoscaler"
+    min_node_count = 1
+    max_node_count = 2
   }
 }
 
