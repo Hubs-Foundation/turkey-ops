@@ -102,8 +102,8 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 func Logout() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Clear cookie
-		// http.SetCookie(w, ClearCookie(r, cfg.CookieName))
 		http.SetCookie(w, ClearCookie(r, cfg.JwtCookieName))
+		http.SetCookie(w, ClearCookie(r, cfg.CookieName))
 
 		if cfg.LogoutRedirect != "" {
 			Logger.Debug("logout redirect to: " + cfg.LogoutRedirect)

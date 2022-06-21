@@ -13,7 +13,7 @@ provider "google-beta" {
 
 variable "location" {
   type= string
-  {{ if eq {{.Env}} "dev" }}
+  {{ if eq .Env "dev" }}
   default   = "{{.Region}}-a"
   {{ else }}
   default   = "{{.Region}}"
@@ -22,7 +22,7 @@ variable "location" {
 
 variable "use_spot_for_nonfree"{
   type=bool
-  {{ if eq {{.Env}} "dev" }}
+  {{ if eq .Env "dev" }}
   default   = true
   {{ else }}
   default   = false
