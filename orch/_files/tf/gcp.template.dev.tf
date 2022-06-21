@@ -140,7 +140,9 @@ resource "google_container_node_pool" "app_nodes" {
       turkey-role = "app"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = "e2-highmem-4" # ret uses (1m/ 6m+18Mi/ccu@30ccu, 6m/10Mi@60, 12m/7Mi@110ccu), uses less than 1G ram per 1core cpu on load
+    machine_type = "e2-standard-4"  # ret uses:
+                                    #   10m/250Mi@idle, 150m+500Mi/ccu@25ccu, 380m/650Mi@60, 1300m/800Mi@110ccu
+                                    #   aka. ram bound at low ccu, cpu bound at high ccu
     tags         = ["turkey","{{.Env}}","app","{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
@@ -152,7 +154,7 @@ resource "google_container_node_pool" "app_nodes" {
   }
 }
 
-resource "google_container_node_pool" "spot_nodes" {
+resource "google_container_node_pool" "spot_nodes" {  # same as app_nodes, but uses spot instances for free tiers
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-node-pool"
   location   = var.location
@@ -169,7 +171,7 @@ resource "google_container_node_pool" "spot_nodes" {
       turkey-role = "spot"
     }
     preemptible  = true
-    machine_type = "e2-highmem-4" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
+    machine_type = "e2-standard-4"
     tags         = ["turkey","{{.Env}}","spot","{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
