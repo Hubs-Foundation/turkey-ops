@@ -1072,7 +1072,7 @@ spec:
     spec:
       containers:
         - name: nfs
-          image: tanfarming/nfs:5
+          image: mozillareality/nfs:stable-latest
           env:
             - name: MNT_DIR
               value: /var/nfs
