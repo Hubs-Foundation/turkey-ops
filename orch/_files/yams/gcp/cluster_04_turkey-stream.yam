@@ -60,7 +60,7 @@ spec:
       hostNetwork: true
       containers:
       - name: dialog
-        image: mozillareality/dialog:stable-latest
+        image: mozillareality/dialog:{{.ItaChan}}-latest
         imagePullPolicy: Always
         ports:        
         - hostPort: 4443
@@ -127,7 +127,7 @@ spec:
       hostNetwork: true
       containers:
       - name: coturn
-        image: mozillareality/coturn:stable-latest
+        image: mozillareality/coturn:{{.ItaChan}}-latest
         imagePullPolicy: Always
         ports:
         - hostPort: 5349
@@ -191,7 +191,7 @@ spec:
     spec:
       serviceAccountName: ita-sa
       containers:
-      - image: mozillareality/ita:stable-latest
+      - image: mozillareality/ita:{{.ItaChan}}-latest
         imagePullPolicy: Always
         name: ita
         env:
@@ -273,7 +273,7 @@ spec:
     spec:
       containers:
       - name: dip
-        image: mozillareality/dip:stable-latest
+        image: mozillareality/dip:{{.ItaChan}}-latest
         imagePullPolicy: Always
         env:
         - name: dummy

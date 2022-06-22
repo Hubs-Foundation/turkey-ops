@@ -86,7 +86,7 @@ spec:
       # terminationGracePeriodSeconds: 3
       containers:
       - name: turkeyauth
-        image: mozillareality/turkeyauth:stable-latest
+        image: mozillareality/turkeyauth:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: ENV
@@ -255,7 +255,7 @@ spec:
       serviceAccountName: api-sa
       containers:
       - name: turkeyorch
-        image: mozillareality/turkeyorch:stable-latest
+        image: mozillareality/turkeyorch:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: ENV
@@ -443,7 +443,7 @@ spec:
         app: pgbouncer
     spec:
       containers:
-      - image: mozillareality/pgbouncer:stable-latest
+      - image: mozillareality/pgbouncer:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent
         name: pgbouncer
         env:
@@ -502,7 +502,7 @@ spec:
         app: pgbouncer-t
     spec:
       containers:
-      - image: mozillareality/pgbouncer:stable-latest
+      - image: mozillareality/pgbouncer:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent
         name: pgbouncer-t
         env:
@@ -570,7 +570,7 @@ spec:
     spec:
       serviceAccountName: ita-sa
       containers:
-      - image: mozillareality/ita:stable-latest
+      - image: mozillareality/ita:{{.ItaChan}}-latest
         imagePullPolicy: Always
         name: ita
         env:
@@ -693,7 +693,7 @@ spec:
       # terminationGracePeriodSeconds: 3
       containers:
       - name: turkeydashboard
-        image: mozillareality/turkeydashboard:stable-latest
+        image: mozillareality/turkeydashboard:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: turkeyDomain

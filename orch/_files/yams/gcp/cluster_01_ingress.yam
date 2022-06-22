@@ -278,7 +278,7 @@ spec:
           serviceAccountName: certbotbot
           containers:
           - name: certbotbot
-            image: mozillareality/certbotbot_route53:stable-latest
+            image: mozillareality/certbotbot_route53:{{.ItaChan}}-latest
             imagePullPolicy: Always
             env:
             - name: DOMAIN

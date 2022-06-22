@@ -254,8 +254,14 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		internal.Logger.Warn("Env unspecified -- using dev")
 	}
 	if cfg.ItaChan == "" {
-		cfg.ItaChan = strings.Replace(cfg.Env, "staging", "beta", 1)
-		internal.Logger.Warn("ItaChan unspecified -- fallinb back to Env (swaping staging for beta): " + cfg.ItaChan)
+		cfg.ItaChan = cfg.Env
+		if cfg.ItaChan == "staging" {
+			cfg.ItaChan = "beta"
+		}
+		if cfg.ItaChan == "prod" {
+			cfg.ItaChan = "stable"
+		}
+		internal.Logger.Warn("ItaChan unspecified -- fallinb back to Env (swaping staging/prod for beta/stable): " + cfg.ItaChan)
 	}
 
 	//optional inputs

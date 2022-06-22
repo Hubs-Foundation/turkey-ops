@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: skooner
-        image: mozillareality/skooner:stable
+        image: mozillareality/skooner:{{.ItaChan}}
         ports:
         - containerPort: 4654
         # livenessProbe:
