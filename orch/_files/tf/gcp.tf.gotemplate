@@ -95,7 +95,7 @@ resource "google_container_cluster" "gke" {
 
 resource "google_container_node_pool" "stream_nodes" {
   provider = google-beta
-  name       = "${google_container_cluster.gke.name}-stream_nodes"
+  name       = "${google_container_cluster.gke.name}-stream"
   location   = var.location
   cluster    = google_container_cluster.gke.name
   node_count = 1
@@ -125,7 +125,7 @@ resource "google_container_node_pool" "stream_nodes" {
 
 resource "google_container_node_pool" "app_nodes" {
   provider = google-beta
-  name       = "${google_container_cluster.gke.name}-app_nodes"
+  name       = "${google_container_cluster.gke.name}-app"
   location   = var.location
   cluster    = google_container_cluster.gke.name
   node_count = 1
@@ -156,7 +156,7 @@ resource "google_container_node_pool" "app_nodes" {
 
 # resource "google_container_node_pool" "spot_nodes" {  # same as app_nodes, but uses spot instances for free tiers
 #   provider = google-beta
-#   name       = "${google_container_cluster.gke.name}-node-pool"
+#   name       = "${google_container_cluster.gke.name}-spot"
 #   location   = var.location
 #   cluster    = google_container_cluster.gke.name
 #   node_count = 1
