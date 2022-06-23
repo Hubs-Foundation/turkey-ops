@@ -1083,8 +1083,7 @@ spec:
             mountPath: /var/nfs         
   volumeClaimTemplates:
   - metadata:
-      name: nfs
-      namespace: hc-{{.HubId}}
+      name: hc-{{.HubId}}
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
