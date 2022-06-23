@@ -13,8 +13,7 @@ kind: Secret
 metadata:
   name: configs
   namespace: turkey-services
-stringData:
-  AUTH_PUBLIC_KEY: {{.PERMS_KEY_PUB}}
+stringData:  
   DB_USER: postgres
   OAUTH_CLIENT_ID_GOOGLE: secret
   OAUTH_CLIENT_SECRET_GOOGLE: secret
@@ -39,6 +38,7 @@ stringData:
   DASHBOARD_ACCESS_KEY: {{.DASHBOARD_ACCESS_KEY}}
   SKETCHFAB_API_KEY: {{.SKETCHFAB_API_KEY}}
 data:
+  AUTH_PUBLIC_KEY: {{.PERMS_KEY_PUB_b64}}
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
 ####################################################################################

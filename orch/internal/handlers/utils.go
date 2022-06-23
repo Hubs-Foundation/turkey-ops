@@ -171,7 +171,7 @@ type clusterCfg struct {
 	DB_PASS              string `json:"DB_PASS"`       //itjfHE8888
 	COOKIE_SECRET        string `json:"COOKIE_SECRET"` //a-random-string-to-sign-auth-cookies
 	PERMS_KEY            string `json:"PERMS_KEY"`     //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
-	PERMS_KEY_PUB        string `json:"PERMS_KEY_PUB"`
+	PERMS_KEY_PUB_b64    string `json:"PERMS_KEY_PUB_b64"`
 	DASHBOARD_ACCESS_KEY string `json:"DASHBOARD_ACCESS_KEY"` // api key for DASHBOARD access
 
 	//initiated pre-infra-deploy, generated post-infra-deploy
@@ -295,7 +295,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	pubKeyBytes := x509.MarshalPKCS1PublicKey(&pubKey)
 	pubKey_pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
 	// cfg.PERMS_KEY_PUB = strings.ReplaceAll(string(pubKey_pemBytes), "\n", `\\n`)
-	cfg.PERMS_KEY_PUB = string(pubKey_pemBytes)
+	cfg.PERMS_KEY_PUB_b64 = base64.StdEncoding.EncodeToString(pubKey_pemBytes) //string(pubKey_pemBytes)
 	if cfg.CLOUD == "" {
 		internal.Logger.Warn("cfg.CLOUD unspecified, falling back to (because it probably is): gcp")
 		cfg.CLOUD = "gcp"
