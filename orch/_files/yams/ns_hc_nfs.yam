@@ -561,8 +561,8 @@ spec:
           periodSeconds: 30
         resources:
           requests:
-            memory: 250Mi
-            cpu: 0.02
+            memory: 200Mi
+            cpu: 0.05
           limits:
             memory: 2Gi
             cpu: 1
@@ -590,7 +590,7 @@ spec:
               key: PGRST_JWT_SECRET
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: POD_NS
           valueFrom:
@@ -647,7 +647,7 @@ spec:
       containers:
       - name: hubs
         image: mozillareality/hubs:{{.Img_hubs}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: SUB_DOMAIN
           valueFrom:
@@ -739,7 +739,7 @@ spec:
       containers:
         - name: spoke
           image: mozillareality/spoke:{{.Img_spoke}}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
           - name: SUB_DOMAIN
             valueFrom:
@@ -873,7 +873,7 @@ spec:
       containers:
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: POD_NS
           valueFrom:
@@ -967,7 +967,7 @@ spec:
     spec:
       containers:
       - image: mozillareality/speelycaptor:{{.Img_speelycaptor}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: speelycaptor
         env:
         - name: scratchBucketId
@@ -1027,9 +1027,9 @@ spec:
         app: photomnemonic
     spec:
       containers:
-      - image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
-        imagePullPolicy: Always
-        name: photomnemonic
+      - name: photomnemonic
+        image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
+        imagePullPolicy: IfNotPresent        
         resources:
           requests:
             memory: 20Mi
@@ -1073,6 +1073,14 @@ spec:
       containers:
         - name: nfs
           image: mozillareality/nfs:stable-latest
+          imagePullPolicy: IfNotPresent        
+          resources:
+            requests:
+              memory: 20Mi
+              cpu: 0.01
+            limits:
+              memory: 2Gi
+              cpu: 1          
           env:
             - name: MNT_DIR
               value: /var/nfs
