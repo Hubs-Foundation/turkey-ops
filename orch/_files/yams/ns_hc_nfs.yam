@@ -1079,7 +1079,7 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
-          - name: nfs
+          - name: hc-{{.HubId}}
             mountPath: /var/nfs         
   volumeClaimTemplates:
   - metadata:
