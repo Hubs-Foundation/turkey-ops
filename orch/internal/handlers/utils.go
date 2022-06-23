@@ -168,9 +168,10 @@ type clusterCfg struct {
 
 	//generated pre-infra-deploy
 	Stackname            string `json:"stackname"`
-	DB_PASS              string `json:"DB_PASS"`              //itjfHE8888
-	COOKIE_SECRET        string `json:"COOKIE_SECRET"`        //a-random-string-to-sign-auth-cookies
-	PERMS_KEY            string `json:"PERMS_KEY"`            //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
+	DB_PASS              string `json:"DB_PASS"`       //itjfHE8888
+	COOKIE_SECRET        string `json:"COOKIE_SECRET"` //a-random-string-to-sign-auth-cookies
+	PERMS_KEY            string `json:"PERMS_KEY"`     //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
+	PERMS_KEY_PUB        string `json:"PERMS_KEY_PUB"`
 	DASHBOARD_ACCESS_KEY string `json:"DASHBOARD_ACCESS_KEY"` // api key for DASHBOARD access
 
 	//initiated pre-infra-deploy, generated post-infra-deploy
@@ -289,8 +290,12 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	var pvtKey, _ = rsa.GenerateKey(rand.Reader, 2048)
 	pvtKeyBytes := x509.MarshalPKCS1PrivateKey(pvtKey)
 	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: pvtKeyBytes})
-	pemString := string(pemBytes)
-	cfg.PERMS_KEY = strings.ReplaceAll(pemString, "\n", `\\n`)
+	cfg.PERMS_KEY = strings.ReplaceAll(string(pemBytes), "\n", `\\n`)
+	pubKey := pvtKey.PublicKey
+	pubKeyBytes := x509.MarshalPKCS1PublicKey(&pubKey)
+	pubKey_pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
+	// cfg.PERMS_KEY_PUB = strings.ReplaceAll(string(pubKey_pemBytes), "\n", `\\n`)
+	cfg.PERMS_KEY_PUB = string(pubKey_pemBytes)
 	if cfg.CLOUD == "" {
 		internal.Logger.Warn("cfg.CLOUD unspecified, falling back to (because it probably is): gcp")
 		cfg.CLOUD = "gcp"
