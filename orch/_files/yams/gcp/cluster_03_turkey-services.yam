@@ -14,6 +14,7 @@ metadata:
   name: configs
   namespace: turkey-services
 stringData:
+  AUTH_PUBLIC_KEY: {{.PERMS_KEY_PUB}}
   DB_USER: postgres
   OAUTH_CLIENT_ID_GOOGLE: secret
   OAUTH_CLIENT_SECRET_GOOGLE: secret
@@ -696,6 +697,11 @@ spec:
         image: mozillareality/turkeydashboard:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent        
         env:
+        - name: AUTH_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AUTH_PUBLIC_KEY
         - name: turkeyDomain
           value: {{.Domain}}        
         - name: PHX_HOST
