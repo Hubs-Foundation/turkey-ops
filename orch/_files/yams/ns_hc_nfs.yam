@@ -1054,6 +1054,16 @@ spec:
 ########################################################################
 ######################   nfs   ###############################
 ########################################################################
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: hc-{{.HubId}}
+  namespace: hc-{{.HubId}}
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes: [ "ReadWriteOnce" ]
+---
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
