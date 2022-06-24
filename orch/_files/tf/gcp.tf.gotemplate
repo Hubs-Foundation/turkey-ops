@@ -119,7 +119,7 @@ resource "google_container_node_pool" "stream_nodes" {
   }
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 1
-    max_node_count = 2
+    max_node_count = 3
   }
 }
 
@@ -150,7 +150,7 @@ resource "google_container_node_pool" "app_nodes" {
   }
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 1
-    max_node_count = 2
+    max_node_count = 4
   }
 }
 
@@ -171,7 +171,7 @@ resource "google_container_node_pool" "service_nodes" {
       turkey-role = "service"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = "e2-highcpu-8" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
+    machine_type = "e2-standard-4"
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","service","{{.Stackname}}"]
     metadata = {
@@ -180,7 +180,7 @@ resource "google_container_node_pool" "service_nodes" {
   }
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 1
-    max_node_count = 2
+    max_node_count = 4
   }
 }
 
