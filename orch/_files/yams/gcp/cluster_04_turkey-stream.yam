@@ -42,16 +42,16 @@ stringData:
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
- name: dialog-hpa
+  name: dialog-hpa
   namespace: turkey-stream
 spec:
- scaleTargetRef:
-   apiVersion: apps/v1
-   kind: Deployment
-   name: dialog
- minReplicas: 2
- maxReplicas: 99
- targetCPUUtilizationPercentage: 50
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dialog
+  minReplicas: 2
+  maxReplicas: 99
+  targetCPUUtilizationPercentage: 50
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -271,16 +271,16 @@ spec:
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
- name: dip-hpa
+  name: dip-hpa
   namespace: turkey-stream
 spec:
- scaleTargetRef:
-   apiVersion: apps/v1
-   kind: Deployment
-   name: dip
- minReplicas: 2
- maxReplicas: 99
- targetCPUUtilizationPercentage: 50
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dip
+  minReplicas: 2
+  maxReplicas: 99
+  targetCPUUtilizationPercentage: 50
 ---
 apiVersion: apps/v1
 kind: Deployment
