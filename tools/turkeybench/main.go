@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	turkeyDomain      = "dev0.myhubs.net"
+	turkeyDomain      = "dev11.myhubs.net"
 	_turkeyauthcookie = "0BMxAoZ4TF7RQ9TJMecK2nwLRVOD-8xUptC-sYk0PFg=|1656121438|gtan@mozilla.com"
 	useremail         = "gtan@mozilla.com"
 	stepWait          = 250 * time.Millisecond

@@ -38,7 +38,7 @@ spec:
     name: haproxy
   minReplicas: 2
   maxReplicas: 99
-  targetCPUUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 75
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -82,8 +82,8 @@ spec:
               - NET_BIND_SERVICE
         resources:
           requests:
-            memory: 250Mi
-            cpu: 0.25
+            memory: 500Mi
+            cpu: 0.5
           limits:
             memory: 4Gi
             cpu: 2

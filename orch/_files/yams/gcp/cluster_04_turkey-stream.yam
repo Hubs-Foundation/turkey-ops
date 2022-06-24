@@ -51,7 +51,7 @@ spec:
     name: dialog
   minReplicas: 2
   maxReplicas: 99
-  targetCPUUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -280,7 +280,7 @@ spec:
     name: dip
   minReplicas: 2
   maxReplicas: 99
-  targetCPUUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -308,11 +308,11 @@ spec:
           value: dummy
         resources:
           requests:
-            memory: 200Mi
-            cpu: 0.1
+            memory: 500Mi
+            cpu: 0.5
           limits:
-            memory: 2Gi
-            cpu: 1
+            memory: 4Gi
+            cpu: 2
 ---
 apiVersion: v1
 kind: Service
