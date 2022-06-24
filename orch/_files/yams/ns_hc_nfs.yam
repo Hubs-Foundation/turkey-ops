@@ -562,7 +562,7 @@ spec:
         resources:
           requests:
             memory: 200Mi
-            cpu: 0.05
+            cpu: 0.1
           limits:
             memory: 2Gi
             cpu: 1
@@ -629,7 +629,7 @@ metadata:
   annotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 spec:
-  replicas: 1 
+  replicas: 2
   selector:
     matchLabels:
       app: hubs
@@ -986,7 +986,7 @@ spec:
               key: GCP_SA_HMAC_SECRET                
         resources:
           requests:
-            memory: 25Mi
+            memory: 20Mi
             cpu: 0.01
           limits:
             memory: 2Gi

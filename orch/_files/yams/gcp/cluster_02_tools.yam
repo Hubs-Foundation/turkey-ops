@@ -14,7 +14,7 @@ metadata:
   name: skooner
   namespace: tools
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       k8s-app: skooner
