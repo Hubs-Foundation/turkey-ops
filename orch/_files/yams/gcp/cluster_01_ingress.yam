@@ -46,16 +46,16 @@ metadata:
   name: haproxy
   namespace: ingress
   labels:
-    k8s-app: haproxy
+    app: haproxy
 spec:
   replicas: 1
   selector:
     matchLabels:
-      k8s-app: haproxy
+      app: haproxy
   template:
     metadata:
       labels:
-        k8s-app: haproxy
+        app: haproxy
         name: haproxy
     spec:
       # hostNetwork: true
@@ -143,7 +143,7 @@ spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
   selector:
-    k8s-app: haproxy
+    app: haproxy
   ports:
   - name: http
     port: 80
@@ -165,7 +165,7 @@ metadata:
   namespace: ingress
 spec:
   selector:
-    k8s-app: haproxy
+    app: haproxy
   ports:
   - name: haproxy
     port: 1024

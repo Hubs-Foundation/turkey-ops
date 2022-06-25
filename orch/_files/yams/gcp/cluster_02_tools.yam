@@ -17,11 +17,11 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      k8s-app: skooner
+      app: skooner
   template:
     metadata:
       labels:
-        k8s-app: skooner
+        app: skooner
     spec:
       containers:
       - name: skooner
@@ -53,7 +53,7 @@ spec:
     - port: 80
       targetPort: 4654
   selector:
-    k8s-app: skooner
+    app: skooner
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
