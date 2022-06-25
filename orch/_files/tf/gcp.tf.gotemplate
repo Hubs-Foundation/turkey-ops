@@ -11,23 +11,43 @@ provider "google-beta" {
   region  = "{{.Region}}"
 }
 
+{{ if eq .Env "dev" }}
 variable "location" {
   type= string
-  {{ if eq .Env "dev" }}
   default   = "{{.Region}}-b"
-  {{ else }}
-  default   = "{{.Region}}"
-  {{ end }}
 }
-
 variable "use_spot_for_nonfree"{
   type=bool
-  {{ if eq .Env "dev" }}
   default   = true
-  {{ else }}
-  default   = false
-  {{ end }}  
 }
+variable "vmType" {
+  type = map
+  default = {
+    "stream"  = "e2-highcpu-4"
+    "hub" = "e2-highmem-4"
+    "service" = "e2-standard-4"
+    "spot" = "e2-standard-4"
+  }
+}
+{{ else }}
+variable "location" {
+  type= string
+  default   = "{{.Region}}"
+}
+variable "use_spot_for_nonfree"{
+  type=bool
+  default   = false
+}
+variable "vmType" {
+  type = map
+  default = {
+    "stream"  = "e2-highcpu-8"
+    "hub" = "e2-highmem-8"
+    "service" = "e2-standard-8"
+    "spot" = "e2-standard-4"
+  }
+}
+{{ end }}
 
 ################## network
 resource "google_compute_network" "vpc" {
@@ -116,7 +136,7 @@ resource "google_container_node_pool" "stream_nodes" {
       turkey = "stream"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = "e2-highcpu-8" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
+    machine_type = "e2-highcpu-4" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","stream","{{.Stackname}}"]
     metadata = {
@@ -124,8 +144,8 @@ resource "google_container_node_pool" "stream_nodes" {
     }
   }
   autoscaling { # this is "cluster autoscaler"
-    min_node_count = 1
-    max_node_count = 3
+    min_node_count = 2
+    max_node_count = 32
   }
 }
 
@@ -146,7 +166,7 @@ resource "google_container_node_pool" "hub_nodes" {
       turkey = "hub"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = "e2-standard-4"  # ret uses:
+    machine_type = "e2-highmem-4"  # ret uses:
                                     #   10m/250Mi@idle, 150m+500Mi/ccu@25ccu, 380m/650Mi@60, 1300m/800Mi@110ccu
                                     #   aka. ram bound at low ccu, cpu bound at high ccu
     tags         = ["turkey","{{.Env}}","hub","{{.Stackname}}"]
@@ -155,8 +175,8 @@ resource "google_container_node_pool" "hub_nodes" {
     }
   }
   autoscaling { # this is "cluster autoscaler"
-    min_node_count = 1
-    max_node_count = 4
+    min_node_count = 2
+    max_node_count = 64
   }
 }
 
@@ -185,12 +205,12 @@ resource "google_container_node_pool" "service_nodes" {
     }
   }
   autoscaling { # this is "cluster autoscaler"
-    min_node_count = 1
-    max_node_count = 4
+    min_node_count = 2
+    max_node_count = 8
   }
 }
 
-resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers ?)
+resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers hub probably)
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-spot"
   location   = var.location
@@ -214,8 +234,8 @@ resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooli
     }
   }
   autoscaling { # this is "cluster autoscaler"
-    min_node_count = 1
-    max_node_count = 2
+    min_node_count = 2
+    max_node_count = 8
   }
 }
 
