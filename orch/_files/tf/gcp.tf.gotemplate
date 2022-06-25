@@ -23,10 +23,10 @@ variable "use_spot_for_nonfree"{
 variable "vmType" {
   type = map
   default = {
-    "stream"  = "e2-highcpu-2"
-    "hub" = "e2-highmem-2"
-    "service" = "e2-standard-2"
-    "spot" = "e2-standard-2"
+    "stream"  = "1xCPU-1GB"
+    "hub" = "1xCPU-2GB"
+    "service" = "2xCPU-4GB"
+    "spot" = "2xCPU-4GB"
   }
 }
 {{ else }}
@@ -38,16 +38,7 @@ variable "use_spot_for_nonfree"{
   type=bool
   default   = false
 }
-variable "vmType" {
-  type = map
-  default = {
-    "stream"  = "e2-highcpu-8"
-    "hub" = "e2-highmem-8"
-    "service" = "e2-standard-8"
-    "spot" = "e2-standard-4"
-  }
-}
-{{ end }}
+{{ end }} 
 
 ################## network
 resource "google_compute_network" "vpc" {
@@ -97,20 +88,20 @@ resource "google_container_cluster" "gke" {
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
-  # cluster_autoscaling { # this is node auto-provisioning, not "cluster autoscaler", more info--https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
-  #   enabled = true
-  #   resource_limits{
-  #     resource_type = "memory"
-  #     minimum = 24
-  #     maximum = 128
-  #   }
-  #   resource_limits{
-  #     resource_type = "cpu"
-  #     minimum = 12
-  #     maximum = 64
-  #   }
-  #   autoscaling_profile = "OPTIMIZE_UTILIZATION"
-  # }
+  cluster_autoscaling { # this is node auto-provisioning, not "cluster autoscaler", more info--https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
+    enabled = true
+    resource_limits{
+      resource_type = "memory"
+      minimum = 24
+      maximum = 128
+    }
+    resource_limits{
+      resource_type = "cpu"
+      minimum = 12
+      maximum = 64
+    }
+    autoscaling_profile = "OPTIMIZE_UTILIZATION"
+  }
   logging_config {
     enable_components = []
   }
@@ -136,7 +127,7 @@ resource "google_container_node_pool" "stream_nodes" {
       turkey = "stream"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = var.vmType["stream"] # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
+    machine_type = "e2-highcpu-4" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","stream","{{.Stackname}}"]
     metadata = {
@@ -145,7 +136,7 @@ resource "google_container_node_pool" "stream_nodes" {
   }
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 2
-    max_node_count = 32
+    max_node_count = 8
   }
 }
 
@@ -166,7 +157,7 @@ resource "google_container_node_pool" "hub_nodes" {
       turkey = "hub"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = var.vmType["hub"]  # ret uses:
+    machine_type = "e2-highmem-4"  # ret uses:
                                     #   10m/250Mi@idle, 150m+500Mi/ccu@25ccu, 380m/650Mi@60, 1300m/800Mi@110ccu
                                     #   aka. ram bound at low ccu, cpu bound at high ccu
     tags         = ["turkey","{{.Env}}","hub","{{.Stackname}}"]
@@ -176,7 +167,7 @@ resource "google_container_node_pool" "hub_nodes" {
   }
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 2
-    max_node_count = 64
+    max_node_count = 8
   }
 }
 
@@ -197,7 +188,7 @@ resource "google_container_node_pool" "service_nodes" {
       turkey = "service"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = var.vmType["service"]
+    machine_type = "e2-standard-4"
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","service","{{.Stackname}}"]
     metadata = {
@@ -210,7 +201,7 @@ resource "google_container_node_pool" "service_nodes" {
   }
 }
 
-resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers hub probably)
+resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers ?)
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-spot"
   location   = var.location
@@ -227,7 +218,7 @@ resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooli
       turkey = "spot"
     }
     preemptible  = true
-    machine_type = var.vmType["spot"]
+    machine_type = "e2-standard-4"
     tags         = ["turkey","{{.Env}}","spot","{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"

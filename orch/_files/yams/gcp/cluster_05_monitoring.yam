@@ -418,8 +418,6 @@ spec:
       labels:
         app: node-exporter
     spec:
-      nodeSelector:
-        turkey: spot
       containers:
       - args:
         - --path.sysfs=/host/sys
@@ -499,6 +497,8 @@ spec:
         app.kubernetes.io/version: 2.3.0
     spec:
       automountServiceAccountToken: true
+      nodeSelector:
+        turkey: spot
       containers:
       - image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.3.0
         livenessProbe:
@@ -533,8 +533,6 @@ spec:
           requests:
             cpu: 100m
             memory: 200Mi
-      nodeSelector:
-        turkey: spot
       serviceAccountName: kube-state-metrics
 ---
 apiVersion: v1
@@ -916,8 +914,8 @@ spec:
       securityContext:
         runAsUser: 0
         runAsGroup: 0
-      nodeSelector:
-        turkey: spot
+      # nodeSelector:
+      #   turkey: spot
       containers:
       - name: promtail
         securityContext:
