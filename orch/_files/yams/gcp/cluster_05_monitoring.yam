@@ -23,6 +23,8 @@ spec:
       labels:
         app: grafana
     spec:
+      nodeSelector:
+        turkey: spot
       containers:
       - name: grafana
         image: grafana/grafana:8.4.3
@@ -134,36 +136,38 @@ spec:
         app: prometheus
     spec:
       serviceAccountName: prometheus
+      nodeSelector:
+        turkey: spot
       containers:
-        - name: prometheus
-          image: prom/prometheus:v2.33.3
-          imagePullPolicy: IfNotPresent
-          args:
-            - '--storage.tsdb.retention.time=24h'
-            - '--config.file=/etc/prometheus/prometheus.yml'
-          ports:
-            - containerPort: 9090
-              name: http
-          livenessProbe:
-            httpGet:
-              path: /-/healthy
-              port: 9090
-          readinessProbe:
-            httpGet:
-              path: /-/ready
-              port: 9090
-          resources:
-            requests:
-              cpu: 100m
-              memory: 512Mi
-            limits:
-              cpu: 200m
-              memory: 1Gi
-          volumeMounts:
-            - name: config
-              mountPath: /etc/prometheus
-            - name: data-volume
-              mountPath: /prometheus/data
+      - name: prometheus
+        image: prom/prometheus:v2.33.3
+        imagePullPolicy: IfNotPresent
+        args:
+          - '--storage.tsdb.retention.time=24h'
+          - '--config.file=/etc/prometheus/prometheus.yml'
+        ports:
+          - containerPort: 9090
+            name: http
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9090
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 200m
+            memory: 1Gi
+        volumeMounts:
+          - name: config
+            mountPath: /etc/prometheus
+          - name: data-volume
+            mountPath: /prometheus/data
       volumes:
         - name: config
           configMap:
@@ -414,6 +418,8 @@ spec:
       labels:
         app: node-exporter
     spec:
+      nodeSelector:
+        turkey: spot
       containers:
       - args:
         - --path.sysfs=/host/sys
@@ -422,7 +428,7 @@ spec:
         - --no-collector.hwmon
         - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/pods/.+)($|/)
         - --collector.netclass.ignored-devices=^(veth.*)$
-        name: node-exporter
+        name: node-exporter        
         image: prom/node-exporter:v1.3.1
         ports:
           - containerPort: 9100
@@ -501,7 +507,7 @@ spec:
             port: 8080
           initialDelaySeconds: 5
           timeoutSeconds: 5
-        name: kube-state-metrics
+        name: kube-state-metrics          
         ports:
         - containerPort: 8080
           name: http-metrics
@@ -520,8 +526,15 @@ spec:
             - ALL
           readOnlyRootFilesystem: true
           runAsUser: 65534
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 200Mi
       nodeSelector:
-        kubernetes.io/os: linux
+        turkey: spot
       serviceAccountName: kube-state-metrics
 ---
 apiVersion: v1
@@ -713,33 +726,42 @@ spec:
         runAsGroup: 10001
         runAsNonRoot: true
         runAsUser: 10001
+      nodeSelector:
+        turkey: spot
       containers:
-        - name: loki
-          image: grafana/loki:main-da9b4c9
-          imagePullPolicy: IfNotPresent
-          args:
-            - "-config.file=/etc/loki/loki.yaml"
-          volumeMounts:
-            - name: config
-              mountPath: "/etc/loki"
-            - name: storage
-              mountPath: "/data"
-          ports:
-            - name: http-metrics
-              containerPort: 3100
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /ready
-              port: http-metrics
-            initialDelaySeconds: 45
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: http-metrics
-            initialDelaySeconds: 45
-          securityContext:
-            readOnlyRootFilesystem: true
+      - name: loki
+        image: grafana/loki:main-da9b4c9
+        imagePullPolicy: IfNotPresent
+        args:
+          - "-config.file=/etc/loki/loki.yaml"
+        volumeMounts:
+          - name: config
+            mountPath: "/etc/loki"
+          - name: storage
+            mountPath: "/data"
+        ports:
+          - name: http-metrics
+            containerPort: 3100
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        securityContext:
+          readOnlyRootFilesystem: true
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 200Mi
       terminationGracePeriodSeconds: 4800
       volumes:
         - name: config
@@ -894,56 +916,58 @@ spec:
       securityContext:
         runAsUser: 0
         runAsGroup: 0
+      nodeSelector:
+        turkey: spot
       containers:
-        - name: promtail
-          securityContext:
-            privileged: true
-            # readOnlyRootFilesystem: true
-            # capabilities:
-            #   drop:
-            #     - ALL
-            # allowPrivilegeEscalation: false        
-          image: grafana/promtail:main-0e51896
-          imagePullPolicy: IfNotPresent          
-          args:
-          - -config.file=/etc/promtail/promtail.yaml
-          env:
-          - name: HOSTNAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-          ports:
-            - name: http-metrics
-              containerPort: 3101
-              protocol: TCP                
-          resources:
-            limits:
-              cpu: 200m
-              memory: 128Mi
-            requests:
-              cpu: 100m
-              memory: 128Mi
-          livenessProbe:
-            httpGet:
-              path: /ready
-              port: http-metrics
-            initialDelaySeconds: 45
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: http-metrics
-            initialDelaySeconds: 45
-          volumeMounts:
-          - name: config
-            mountPath: /etc/promtail
-          - name: run
-            mountPath: /run/promtail
-          - name: docker
-            mountPath: /var/lib/docker/containers
-            readOnly: true
-          - name: pods
-            mountPath: /var/log/pods
-            readOnly: true
+      - name: promtail
+        securityContext:
+          privileged: true
+          # readOnlyRootFilesystem: true
+          # capabilities:
+          #   drop:
+          #     - ALL
+          # allowPrivilegeEscalation: false        
+        image: grafana/promtail:main-0e51896
+        imagePullPolicy: IfNotPresent          
+        args:
+        - -config.file=/etc/promtail/promtail.yaml
+        env:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        ports:
+          - name: http-metrics
+            containerPort: 3101
+            protocol: TCP                
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http-metrics
+          initialDelaySeconds: 45
+        volumeMounts:
+        - name: config
+          mountPath: /etc/promtail
+        - name: run
+          mountPath: /run/promtail
+        - name: docker
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: pods
+          mountPath: /var/log/pods
+          readOnly: true
       terminationGracePeriodSeconds: 4800
       volumes:
         - name: config

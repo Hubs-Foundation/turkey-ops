@@ -113,7 +113,7 @@ resource "google_container_node_pool" "stream_nodes" {
     labels = {
       env = "{{.Env}}"
       stackname="{{.Stackname}}"
-      turkey-role = "stream"
+      turkey = "stream"
     }
     preemptible  = var.use_spot_for_nonfree
     machine_type = "e2-highcpu-8" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
@@ -129,9 +129,9 @@ resource "google_container_node_pool" "stream_nodes" {
   }
 }
 
-resource "google_container_node_pool" "app_nodes" {
+resource "google_container_node_pool" "hub_nodes" {
   provider = google-beta
-  name       = "${google_container_cluster.gke.name}-app"
+  name       = "${google_container_cluster.gke.name}-hub"
   location   = var.location
   cluster    = google_container_cluster.gke.name
   node_count = 1
@@ -143,13 +143,13 @@ resource "google_container_node_pool" "app_nodes" {
     labels = {
       env = "{{.Env}}"
       stackname="{{.Stackname}}"
-      turkey-role = "app"
+      turkey = "hub"
     }
     preemptible  = var.use_spot_for_nonfree
     machine_type = "e2-standard-4"  # ret uses:
                                     #   10m/250Mi@idle, 150m+500Mi/ccu@25ccu, 380m/650Mi@60, 1300m/800Mi@110ccu
                                     #   aka. ram bound at low ccu, cpu bound at high ccu
-    tags         = ["turkey","{{.Env}}","app","{{.Stackname}}"]
+    tags         = ["turkey","{{.Env}}","hub","{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
     }
@@ -174,7 +174,7 @@ resource "google_container_node_pool" "service_nodes" {
     labels = {
       env = "{{.Env}}"
       stackname="{{.Stackname}}"
-      turkey-role = "service"
+      turkey = "service"
     }
     preemptible  = var.use_spot_for_nonfree
     machine_type = "e2-standard-4"
@@ -190,34 +190,34 @@ resource "google_container_node_pool" "service_nodes" {
   }
 }
 
-# resource "google_container_node_pool" "spot_nodes" {  # same as app_nodes, but uses spot instances for free tiers
-#   provider = google-beta
-#   name       = "${google_container_cluster.gke.name}-spot"
-#   location   = var.location
-#   cluster    = google_container_cluster.gke.name
-#   node_count = 1
-#   node_config {
-#     oauth_scopes = [
-#       "https://www.googleapis.com/auth/logging.write",
-#       "https://www.googleapis.com/auth/monitoring",
-#     ]
-#     labels = {
-#       env = "{{.Env}}"
-#       stackname="{{.Stackname}}"
-#       turkey-role = "spot"
-#     }
-#     preemptible  = true
-#     machine_type = "e2-standard-4"
-#     tags         = ["turkey","{{.Env}}","spot","{{.Stackname}}"]
-#     metadata = {
-#       disable-legacy-endpoints = "true"
-#     }
-#   }
-#   autoscaling { # this is "cluster autoscaler"
-#     min_node_count = 1
-#     max_node_count = 2
-#   }
-# }
+resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers ?)
+  provider = google-beta
+  name       = "${google_container_cluster.gke.name}-spot"
+  location   = var.location
+  cluster    = google_container_cluster.gke.name
+  node_count = 1
+  node_config {
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
+    ]
+    labels = {
+      env = "{{.Env}}"
+      stackname="{{.Stackname}}"
+      turkey = "spot"
+    }
+    preemptible  = true
+    machine_type = "e2-standard-4"
+    tags         = ["turkey","{{.Env}}","spot","{{.Stackname}}"]
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+  }
+  autoscaling { # this is "cluster autoscaler"
+    min_node_count = 1
+    max_node_count = 2
+  }
+}
 
 ################## pgsql
 resource "google_compute_global_address" "private_ip_address" {

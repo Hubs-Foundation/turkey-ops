@@ -398,6 +398,8 @@ spec:
       labels:
         app: reticulum
     spec:
+      nodeSelector:
+        turkey: hub
       volumes:
       - name: fuse 
         emptyDir: {}
@@ -681,6 +683,8 @@ spec:
       labels:
         app: hubs
     spec:
+      nodeSelector:
+        turkey: hub
       containers:
       - name: hubs
         image: mozillareality/hubs:{{.Img_hubs}}
@@ -773,55 +777,57 @@ spec:
       labels:
         app: spoke
     spec:
+      nodeSelector:
+        turkey: hub
       containers:
-        - name: spoke
-          image: mozillareality/spoke:{{.Img_spoke}}
-          imagePullPolicy: Always
-          env:
-          - name: SUB_DOMAIN
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: SUB_DOMAIN
-          - name: DOMAIN
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DOMAIN
-          # - name: turkeyCfg_base_assets_path
-          #   value: https://{{.Subdomain}}-assets.{{.Domain}}/spoke/
-          # - name: turkeyCfg_cors_proxy_server
-          #   value: {{.Subdomain}}-cors.{{.Domain}}
-          # - name: turkeyCfg_ga_tracking_id
-          #   value: 
-          # - name: turkeyCfg_hubs_server
-          #   value: {{.Subdomain}}.{{.Domain}}
-          # - name: turkeyCfg_is_moz
-          #   value: "false"
-          # - name: turkeyCfg_non_cors_proxy_domains
-          #   value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
-          # - name: turkeyCfg_reticulum_server
-          #   value: {{.Subdomain}}.{{.Domain}}
-          # - name: turkeyCfg_sentry_dsn
-          #   value: 
-          # - name: turkeyCfg_thumbnail_server
-          #   # value: nearspark.hc-{{.HubId}}:5000
-          #   value: nearspark.reticulum.io
-          livenessProbe:
-            httpGet:
-              path: https://localhost/healthz
-              port: 8080
-              scheme: HTTPS
-            initialDelaySeconds: 20
-            timeoutSeconds: 1
-            periodSeconds: 120
-          resources:
-            requests:
-              memory: 20Mi
-              cpu: 0.01
-            limits:
-              memory: 2Gi
-              cpu: 1
+      - name: spoke
+        image: mozillareality/spoke:{{.Img_spoke}}
+        imagePullPolicy: Always
+        env:
+        - name: SUB_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SUB_DOMAIN
+        - name: DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DOMAIN
+        # - name: turkeyCfg_base_assets_path
+        #   value: https://{{.Subdomain}}-assets.{{.Domain}}/spoke/
+        # - name: turkeyCfg_cors_proxy_server
+        #   value: {{.Subdomain}}-cors.{{.Domain}}
+        # - name: turkeyCfg_ga_tracking_id
+        #   value: 
+        # - name: turkeyCfg_hubs_server
+        #   value: {{.Subdomain}}.{{.Domain}}
+        # - name: turkeyCfg_is_moz
+        #   value: "false"
+        # - name: turkeyCfg_non_cors_proxy_domains
+        #   value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+        # - name: turkeyCfg_reticulum_server
+        #   value: {{.Subdomain}}.{{.Domain}}
+        # - name: turkeyCfg_sentry_dsn
+        #   value: 
+        # - name: turkeyCfg_thumbnail_server
+        #   # value: nearspark.hc-{{.HubId}}:5000
+        #   value: nearspark.reticulum.io
+        livenessProbe:
+          httpGet:
+            path: https://localhost/healthz
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 0.01
+          limits:
+            memory: 2Gi
+            cpu: 1
 ---
 apiVersion: v1
 kind: Service
@@ -863,6 +869,8 @@ spec:
 #       labels:
 #         app: nearspark
 #     spec:
+#       nodeSelector:
+#         turkey: hub
 #       containers:
 #       - name: nearspark
 #         image: mozillareality/nearspark:stable-latest
@@ -907,6 +915,8 @@ spec:
         app: ita
     spec:
       serviceAccountName: ita-sa
+      nodeSelector:
+        turkey: hub
       containers:
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
@@ -1002,6 +1012,8 @@ spec:
       labels:
         app: speelycaptor
     spec:
+      nodeSelector:
+        turkey: hub
       containers:
       - image: mozillareality/speelycaptor:{{.Img_speelycaptor}}
         imagePullPolicy: Always
@@ -1063,6 +1075,8 @@ spec:
       labels:
         app: photomnemonic
     spec:
+      nodeSelector:
+        turkey: hub
       containers:
       - image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
         imagePullPolicy: Always

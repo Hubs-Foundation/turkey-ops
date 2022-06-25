@@ -23,6 +23,8 @@ spec:
       labels:
         app: skooner
     spec:
+      nodeSelector:
+        turkey: spot
       containers:
       - name: skooner
         image: mozillareality/skooner:{{.ItaChan}}

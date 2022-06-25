@@ -99,6 +99,8 @@ spec:
         app: turkeyauth
     spec:
       # terminationGracePeriodSeconds: 3
+      nodeSelector:
+        turkey: service
       containers:
       - name: turkeyauth
         image: mozillareality/turkeyauth:{{.ItaChan}}-latest
@@ -282,6 +284,8 @@ spec:
         app: turkeyorch
     spec:
       serviceAccountName: api-sa
+      nodeSelector:
+        turkey: service
       containers:
       - name: turkeyorch
         image: mozillareality/turkeyorch:{{.ItaChan}}-latest
@@ -485,6 +489,8 @@ spec:
       labels:
         app: pgbouncer
     spec:
+      nodeSelector:
+        turkey: service
       containers:
       - image: mozillareality/pgbouncer:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent
@@ -558,6 +564,8 @@ spec:
       labels:
         app: pgbouncer-t
     spec:
+      nodeSelector:
+        turkey: service
       containers:
       - image: mozillareality/pgbouncer:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent
@@ -626,6 +634,8 @@ spec:
         CHANNEL: stable
     spec:
       serviceAccountName: ita-sa
+      nodeSelector:
+        turkey: service
       containers:
       - image: mozillareality/ita:{{.ItaChan}}-latest
         imagePullPolicy: Always
@@ -762,6 +772,8 @@ spec:
         app: turkeydashboard
     spec:
       # terminationGracePeriodSeconds: 3
+      nodeSelector:
+        turkey: service
       containers:
       - name: turkeydashboard
         image: mozillareality/turkeydashboard:{{.ItaChan}}-latest

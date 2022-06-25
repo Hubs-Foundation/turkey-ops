@@ -72,6 +72,8 @@ spec:
         app: dialog
     spec:
       hostNetwork: true
+      nodeSelector:
+        turkey: stream
       containers:
       - name: dialog
         image: mozillareality/dialog:{{.ItaChan}}-latest
@@ -139,6 +141,8 @@ spec:
         app: coturn
     spec:
       hostNetwork: true
+      nodeSelector:
+        turkey: stream
       containers:
       - name: coturn
         image: mozillareality/coturn:{{.ItaChan}}-latest
@@ -204,6 +208,8 @@ spec:
         app: ita
     spec:
       serviceAccountName: ita-sa
+      nodeSelector:
+        turkey: service
       containers:
       - image: mozillareality/ita:{{.ItaChan}}-latest
         imagePullPolicy: Always
@@ -299,6 +305,8 @@ spec:
       labels:
         app: dip
     spec:
+      nodeSelector:
+        turkey: service
       containers:
       - name: dip
         image: mozillareality/dip:{{.ItaChan}}-latest

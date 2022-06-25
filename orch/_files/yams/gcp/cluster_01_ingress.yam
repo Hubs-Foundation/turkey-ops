@@ -61,6 +61,8 @@ spec:
       # hostNetwork: true
       serviceAccountName: haproxy
       terminationGracePeriodSeconds: 60
+      nodeSelector:
+        turkey: service
       containers:
       - name: haproxy
         image: mozillareality/haproxy:1.7.0
@@ -294,6 +296,8 @@ spec:
       template:
         spec:
           serviceAccountName: certbotbot
+          nodeSelector:
+            turkey: service
           containers:
           - name: certbotbot
             image: mozillareality/certbotbot_route53:{{.ItaChan}}-latest
