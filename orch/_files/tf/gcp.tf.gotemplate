@@ -136,7 +136,7 @@ resource "google_container_node_pool" "stream_nodes" {
       turkey = "stream"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = "e2-highcpu-4" # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
+    machine_type = var.vmType["stream"] # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","stream","{{.Stackname}}"]
     metadata = {
@@ -166,7 +166,7 @@ resource "google_container_node_pool" "hub_nodes" {
       turkey = "hub"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = "e2-highmem-4"  # ret uses:
+    machine_type = var.vmType["hub"]  # ret uses:
                                     #   10m/250Mi@idle, 150m+500Mi/ccu@25ccu, 380m/650Mi@60, 1300m/800Mi@110ccu
                                     #   aka. ram bound at low ccu, cpu bound at high ccu
     tags         = ["turkey","{{.Env}}","hub","{{.Stackname}}"]
@@ -197,7 +197,7 @@ resource "google_container_node_pool" "service_nodes" {
       turkey = "service"
     }
     preemptible  = var.use_spot_for_nonfree
-    machine_type = "e2-standard-4"
+    machine_type = var.vmType["service"]
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","service","{{.Stackname}}"]
     metadata = {
@@ -227,7 +227,7 @@ resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooli
       turkey = "spot"
     }
     preemptible  = true
-    machine_type = "e2-standard-4"
+    machine_type = var.vmType["spot"]
     tags         = ["turkey","{{.Env}}","spot","{{.Stackname}}"]
     metadata = {
       disable-legacy-endpoints = "true"
