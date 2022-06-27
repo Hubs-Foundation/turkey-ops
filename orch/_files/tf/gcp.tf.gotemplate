@@ -16,10 +16,6 @@ variable "location" {
   type= string
   default   = "{{.Region}}-b"
 }
-variable "use_spot_for_nonfree"{
-  type=bool
-  default   = true
-}
 variable "vmType" {
   type = map
   default = {
@@ -33,10 +29,6 @@ variable "vmType" {
 variable "location" {
   type= string
   default   = "{{.Region}}"
-}
-variable "use_spot_for_nonfree"{
-  type=bool
-  default   = false
 }
 variable "vmType" {
   type = map
@@ -118,7 +110,7 @@ resource "google_container_cluster" "gke" {
     enable_components = []
   }  
 }
-
+{{ if ne .Env "dev" }}
 resource "google_container_node_pool" "stream_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-stream"
@@ -135,7 +127,7 @@ resource "google_container_node_pool" "stream_nodes" {
       stackname="{{.Stackname}}"
       turkey = "stream"
     }
-    preemptible  = var.use_spot_for_nonfree
+    preemptible  = false
     machine_type = var.vmType["stream"] # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","stream","{{.Stackname}}"]
@@ -165,7 +157,7 @@ resource "google_container_node_pool" "hub_nodes" {
       stackname="{{.Stackname}}"
       turkey = "hub"
     }
-    preemptible  = var.use_spot_for_nonfree
+    preemptible  = false
     machine_type = var.vmType["hub"]  # ret uses:
                                     #   10m/250Mi@idle, 150m+500Mi/ccu@25ccu, 380m/650Mi@60, 1300m/800Mi@110ccu
                                     #   aka. ram bound at low ccu, cpu bound at high ccu
@@ -196,7 +188,7 @@ resource "google_container_node_pool" "service_nodes" {
       stackname="{{.Stackname}}"
       turkey = "service"
     }
-    preemptible  = var.use_spot_for_nonfree
+    preemptible  = false
     machine_type = var.vmType["service"]
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","service","{{.Stackname}}"]
@@ -209,6 +201,7 @@ resource "google_container_node_pool" "service_nodes" {
     max_node_count = 8
   }
 }
+{{ end }}
 
 resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers hub probably)
   provider = google-beta

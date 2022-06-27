@@ -61,8 +61,10 @@ spec:
       # hostNetwork: true
       serviceAccountName: haproxy
       terminationGracePeriodSeconds: 60
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
+      {{ end }}
       containers:
       - name: haproxy
         image: mozillareality/haproxy:1.7.0
@@ -296,8 +298,10 @@ spec:
       template:
         spec:
           serviceAccountName: certbotbot
+          {{ if ne .Env "dev" }}
           nodeSelector:
             turkey: service
+          {{ end }}
           containers:
           - name: certbotbot
             image: mozillareality/certbotbot_route53:{{.ItaChan}}-latest

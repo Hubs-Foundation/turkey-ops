@@ -99,8 +99,10 @@ spec:
         app: turkeyauth
     spec:
       # terminationGracePeriodSeconds: 3
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
+      {{ end }}
       containers:
       - name: turkeyauth
         image: mozillareality/turkeyauth:{{.ItaChan}}-latest
@@ -284,8 +286,10 @@ spec:
         app: turkeyorch
     spec:
       serviceAccountName: api-sa
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
+      {{ end }}
       containers:
       - name: turkeyorch
         image: mozillareality/turkeyorch:{{.ItaChan}}-latest
@@ -489,8 +493,10 @@ spec:
       labels:
         app: pgbouncer
     spec:
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
+      {{ end }}
       containers:
       - image: mozillareality/pgbouncer:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent
@@ -564,8 +570,10 @@ spec:
       labels:
         app: pgbouncer-t
     spec:
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
+      {{ end }}
       containers:
       - image: mozillareality/pgbouncer:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent
@@ -634,8 +642,10 @@ spec:
         CHANNEL: stable
     spec:
       serviceAccountName: ita-sa
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
+      {{ end }}
       containers:
       - image: mozillareality/ita:{{.ItaChan}}-latest
         imagePullPolicy: Always
@@ -772,8 +782,10 @@ spec:
         app: turkeydashboard
     spec:
       # terminationGracePeriodSeconds: 3
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
+      {{ end }}
       containers:
       - name: turkeydashboard
         image: mozillareality/turkeydashboard:{{.ItaChan}}-latest

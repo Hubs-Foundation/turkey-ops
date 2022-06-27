@@ -23,8 +23,10 @@ spec:
       labels:
         app: skooner
     spec:
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: spot
+      {{ end }}
       containers:
       - name: skooner
         image: mozillareality/skooner:{{.ItaChan}}

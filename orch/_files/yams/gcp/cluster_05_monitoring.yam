@@ -18,7 +18,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: data-prome
+  name: data-prom
   namespace: monitoring
 spec:
   accessModes:
@@ -59,8 +59,16 @@ spec:
       labels:
         app: grafana
     spec:
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: spot
+      {{ end }}
+      securityContext:
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        runAsNonRoot: true
       containers:
       - name: grafana
         image: grafana/grafana:8.4.3
@@ -173,8 +181,15 @@ spec:
         app: prometheus
     spec:
       serviceAccountName: prometheus
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: spot
+      {{ end }}
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        runAsNonRoot: true
       containers:
       - name: prometheus
         image: prom/prometheus:v2.33.3
@@ -456,8 +471,6 @@ spec:
       labels:
         app: node-exporter
     spec:
-      # nodeSelector:
-      #   turkey: spot
       containers:
       - args:
         - --path.sysfs=/host/sys
@@ -537,8 +550,10 @@ spec:
         app.kubernetes.io/version: 2.3.0
     spec:
       automountServiceAccountToken: true
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: spot
+      {{ end }}
       containers:
       - image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.3.0
         livenessProbe:
@@ -760,12 +775,14 @@ spec:
     spec:
       serviceAccountName: loki
       securityContext:
-        fsGroup: 10001
-        runAsGroup: 10001
-        runAsNonRoot: true
         runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        runAsNonRoot: true
+      {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: spot
+      {{ end }}
       containers:
       - name: loki
         image: grafana/loki:main-da9b4c9
@@ -955,8 +972,6 @@ spec:
       securityContext:
         runAsUser: 0
         runAsGroup: 0
-      # nodeSelector:
-      #   turkey: spot
       containers:
       - name: promtail
         securityContext:
