@@ -229,9 +229,9 @@ resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooli
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 2
     {{ if ne .Env "dev" }}
-    max_node_count = 8
-    {{else}}
     max_node_count = 256
+    {{else}}
+    max_node_count = 8
     {{end}}
   }
 }
