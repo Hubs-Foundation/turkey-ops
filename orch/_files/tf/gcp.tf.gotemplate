@@ -11,21 +11,7 @@ provider "google-beta" {
   region  = "{{.Region}}"
 }
 
-{{ if eq .Env "dev" }}
-variable "location" {
-  type= string
-  default   = "{{.Region}}-b"
-}
-variable "vmType" {
-  type = map
-  default = {
-    "stream"  = "e2-highcpu-4"
-    "hub" = "e2-highmem-4"
-    "service" = "e2-standard-4"
-    "spot" = "e2-standard-4"
-  }
-}
-{{ else }}
+{{ if ne .Env "dev" }}
 variable "location" {
   type= string
   default   = "{{.Region}}"
@@ -36,6 +22,20 @@ variable "vmType" {
     "stream"  = "e2-highcpu-8"
     "hub" = "e2-highmem-8"
     "service" = "e2-standard-8"
+    "spot" = "e2-standard-8"
+  }
+}
+{{ else }}
+variable "location" {
+  type= string
+  default   = "{{.Region}}-b"
+}
+variable "vmType" {
+  type = map
+  default = {
+    "stream"  = "e2-highcpu-4"
+    "hub" = "e2-highmem-4"
+    "service" = "e2-standard-4"
     "spot" = "e2-standard-4"
   }
 }
@@ -168,7 +168,7 @@ resource "google_container_node_pool" "hub_nodes" {
   }
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 2
-    max_node_count = 64
+    max_node_count = 128
   }
 }
 
@@ -198,7 +198,7 @@ resource "google_container_node_pool" "service_nodes" {
   }
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 2
-    max_node_count = 8
+    max_node_count = 32
   }
 }
 {{ end }}
@@ -228,7 +228,11 @@ resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooli
   }
   autoscaling { # this is "cluster autoscaler"
     min_node_count = 2
+    {{ if ne .Env "dev" }}
     max_node_count = 8
+    {{else}}
+    max_node_count = 256
+    {{end}}
   }
 }
 
