@@ -818,7 +818,11 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: DASHBOARD_ACCESS_KEY              
+              key: DASHBOARD_ACCESS_KEY
+        - name: BASIC_AUTH_USERNAME
+          value: dev
+        - name: BASIC_AUTH_PASSWORD
+          value: ducksducksducks
         resources:
           requests:
             memory: 250Mi
