@@ -82,11 +82,11 @@ spec:
         - containerPort: 3000
         resources:
           requests:
-            cpu: 100m
-            memory: "512Mi"
+            cpu: 2
+            memory: "4Gi"
           limits:
-            cpu: 200m
-            memory: "1Gi"
+            cpu: 1
+            memory: "2Gi"
         volumeMounts:
           - name: grafana-storage
             mountPath: /var/lib/grafana
@@ -210,11 +210,11 @@ spec:
             port: 9090
         resources:
           requests:
-            cpu: 100m
-            memory: 512Mi
+            cpu: 1
+            memory: 2Gi
           limits:
-            cpu: 200m
-            memory: 1Gi
+            cpu: 4
+            memory: 8Gi
         volumeMounts:
           - name: config
             mountPath: /etc/prometheus
@@ -812,11 +812,11 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           limits:
+            cpu: 2
+            memory: 4Gi
+          requests:
             cpu: 500m
             memory: 1Gi
-          requests:
-            cpu: 100m
-            memory: 200Mi
       terminationGracePeriodSeconds: 4800
       volumes:
         - name: config
@@ -996,11 +996,11 @@ spec:
             protocol: TCP                
         resources:
           limits:
+            cpu: 1
+            memory: 2Gi
+          requests:
             cpu: 500m
             memory: 1Gi
-          requests:
-            cpu: 100m
-            memory: 200Mi
         livenessProbe:
           httpGet:
             path: /ready
