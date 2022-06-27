@@ -398,12 +398,12 @@ spec:
       labels:
         app: reticulum
     spec:
-      {{ if ne .Env "dev" }}
-      nodeSelector:
-        {{ if eq .Tier "free"}}
-        turkey: hub
-        {{ end }}  
-      {{ end }}  
+      # {{ if ne .Env "dev" }}
+      # nodeSelector:
+      #   {{ if eq .Tier "free"}}
+      #   turkey: hub
+      #   {{ end }}  
+      # {{ end }}  
       volumes:
       - name: fuse 
         emptyDir: {}
@@ -687,12 +687,12 @@ spec:
       labels:
         app: hubs
     spec:
-      {{ if ne .Env "dev" }}
-      nodeSelector:
-        {{ if eq .Tier "free"}}
-        turkey: hub
-        {{ end }}  
-      {{ end }}  
+      # {{ if ne .Env "dev" }}
+      # nodeSelector:
+      #   {{ if eq .Tier "free"}}
+      #   turkey: hub
+      #   {{ end }}  
+      # {{ end }}  
       containers:
       - name: hubs
         image: mozillareality/hubs:{{.Img_hubs}}
@@ -785,12 +785,12 @@ spec:
       labels:
         app: spoke
     spec:
-      {{ if ne .Env "dev" }}
-      nodeSelector:
-        {{ if eq .Tier "free"}}
-        turkey: hub
-        {{ end }}  
-      {{ end }}  
+      # {{ if ne .Env "dev" }}
+      # nodeSelector:
+      #   {{ if eq .Tier "free"}}
+      #   turkey: hub
+      #   {{ end }}  
+      # {{ end }}  
       containers:
       - name: spoke
         image: mozillareality/spoke:{{.Img_spoke}}
@@ -931,12 +931,12 @@ spec:
         app: ita
     spec:
       serviceAccountName: ita-sa
-      {{ if ne .Env "dev" }}
-      nodeSelector:
-        {{ if eq .Tier "free"}}
-        turkey: hub
-        {{ end }}  
-      {{ end }}  
+      # {{ if ne .Env "dev" }}
+      # nodeSelector:
+      #   {{ if eq .Tier "free"}}
+      #   turkey: hub
+      #   {{ end }}  
+      # {{ end }}  
       containers:
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
@@ -1032,12 +1032,12 @@ spec:
       labels:
         app: speelycaptor
     spec:
-      {{ if ne .Env "dev" }}
-      nodeSelector:
-        {{ if eq .Tier "free"}}
-        turkey: hub
-        {{ end }}  
-      {{ end }}  
+      # {{ if ne .Env "dev" }}
+      # nodeSelector:
+      #   {{ if eq .Tier "free"}}
+      #   turkey: hub
+      #   {{ end }}  
+      # {{ end }}  
       containers:
       - image: mozillareality/speelycaptor:{{.Img_speelycaptor}}
         imagePullPolicy: Always
@@ -1099,12 +1099,12 @@ spec:
       labels:
         app: photomnemonic
     spec:
-      {{ if ne .Env "dev" }}
-      nodeSelector:
-        {{ if eq .Tier "free"}}
-        turkey: hub
-        {{ end }}  
-      {{ end }}  
+      # {{ if ne .Env "dev" }}
+      # nodeSelector:
+      #   {{ if eq .Tier "free"}}
+      #   turkey: hub
+      #   {{ end }}  
+      # {{ end }}  
       containers:
       - image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
         imagePullPolicy: Always
