@@ -97,20 +97,20 @@ resource "google_container_cluster" "gke" {
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
-  # cluster_autoscaling { # this is node auto-provisioning, not "cluster autoscaler", more info--https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
-  #   enabled = true
-  #   resource_limits{
-  #     resource_type = "memory"
-  #     minimum = 24
-  #     maximum = 128
-  #   }
-  #   resource_limits{
-  #     resource_type = "cpu"
-  #     minimum = 12
-  #     maximum = 64
-  #   }
-  #   autoscaling_profile = "OPTIMIZE_UTILIZATION"
-  # }
+  cluster_autoscaling { # this is node auto-provisioning, not "cluster autoscaler", more info--https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
+    enabled = false
+    # resource_limits{
+    #   resource_type = "memory"
+    #   minimum = 24
+    #   maximum = 128
+    # }
+    # resource_limits{
+    #   resource_type = "cpu"
+    #   minimum = 12
+    #   maximum = 64
+    # }
+    # autoscaling_profile = "OPTIMIZE_UTILIZATION"
+  }
   logging_config {
     enable_components = []
   }

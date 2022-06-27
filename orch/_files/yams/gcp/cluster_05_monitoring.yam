@@ -3,6 +3,42 @@ kind: Namespace
 metadata:
   name: monitoring
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-grafana
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # $0.040 per GB per Month as of 6/27/2022
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-prome
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 90Gi  # $0.040 per GB per Month as of 6/27/2022
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-loki
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 90Gi  # $0.040 per GB per Month as of 6/27/2022
+---
 ########################################################################################################################
 ################################################ grafana ###############################################################
 ########################################################################################################################
@@ -51,7 +87,8 @@ spec:
             readOnly: false
       volumes:
         - name: grafana-storage
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: data-grafana
         - name: grafana-datastore
           configMap:
             name: grafana-datasource
@@ -143,7 +180,7 @@ spec:
         image: prom/prometheus:v2.33.3
         imagePullPolicy: IfNotPresent
         args:
-          - '--storage.tsdb.retention.time=24h'
+          - '--storage.tsdb.retention.time=90d'
           - '--config.file=/etc/prometheus/prometheus.yml'
         ports:
           - containerPort: 9090
@@ -173,7 +210,8 @@ spec:
           configMap:
             name: prometheus
         - name: data-volume
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: data-prom
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -211,7 +249,7 @@ data:
 
       - job_name: 'haproxy'
         static_configs:
-        - targets: [haproxy.ingress.svc.cluster.local:1024]        
+        - targets: [haproxy-stats.ingress.svc.cluster.local:1024]        
 
       - job_name: 'node-exporter'
         kubernetes_sd_configs:
@@ -418,6 +456,8 @@ spec:
       labels:
         app: node-exporter
     spec:
+      # nodeSelector:
+      #   turkey: spot
       containers:
       - args:
         - --path.sysfs=/host/sys
@@ -766,7 +806,8 @@ spec:
           configMap:
             name: loki
         - name: storage
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: data-loki
 ---
 apiVersion: v1
 kind: Service
