@@ -34,6 +34,7 @@ type hcCfg struct {
 	CcuLimit     string `json:"ccu_limit"`     // fallback to 20
 	StorageLimit string `json:"storage_limit"` // fallback to 0.5
 	Subdomain    string `json:"subdomain"`     // fallback to HubId
+	NodePool     string `json:"subdomain"`     // default == spot
 
 	//optional inputs
 	Options string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
@@ -344,6 +345,7 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	if cfg.Subdomain == "" {
 		cfg.Subdomain = cfg.HubId
 	}
+
 	// cfg.DBname = "ret_" + strings.ReplaceAll(cfg.Subdomain, "-", "_")
 	cfg.DBname = "ret_" + cfg.HubId
 
@@ -399,6 +401,12 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	cfg.DASHBOARD_ACCESS_KEY = internal.Cfg.DASHBOARD_ACCESS_KEY
 	cfg.SKETCHFAB_API_KEY = internal.Cfg.SKETCHFAB_API_KEY
 	//produce the rest
+	if cfg.Tier == "free" {
+		cfg.NodePool = "spot"
+	} else {
+		cfg.NodePool = "hub"
+	}
+
 	pwdSeed := int64(hash(cfg.Domain))
 	cfg.GuardianKey = internal.PwdGen(15, pwdSeed, "G~")
 	cfg.PhxKey = internal.PwdGen(15, pwdSeed, "P~")
