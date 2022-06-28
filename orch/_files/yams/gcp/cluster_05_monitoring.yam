@@ -183,7 +183,7 @@ spec:
       serviceAccountName: prometheus
       {{ if ne .Env "dev" }}
       nodeSelector:
-        turkey: spot
+        turkey: service
       {{ end }}
       securityContext:
         runAsUser: 10001
@@ -781,7 +781,7 @@ spec:
         runAsNonRoot: true
       {{ if ne .Env "dev" }}
       nodeSelector:
-        turkey: spot
+        turkey: service
       {{ end }}
       containers:
       - name: loki

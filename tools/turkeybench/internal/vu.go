@@ -65,15 +65,15 @@ func (vu *Vuser) Create() {
 		panic("failed @ creation")
 	}
 	vu.TCreate = time.Since(tStart)
-	fmt.Printf("\n[%v] -- [tCreate: %v]", vu.Id, vu.TCreate)
+	fmt.Printf("\n%v[%v] -- [tCreate: %v]", time.Now(), vu.Id, vu.TCreate)
 	//wait for ret
 	tStart = time.Now()
-	timeout := time.Now().Add(15 * time.Minute)
+	timeout := time.Now().Add(30 * time.Minute)
 	retReq, _ := http.NewRequest("GET", "https://"+vu.HubId+"."+vu.turkeyDomain+"/?skipadmin", nil)
 	// fmt.Printf("\nreq: %v", retReq.URL)
 	resp, err = _httpClient.Do(retReq)
 	for err != nil || resp.StatusCode != http.StatusOK {
-		time.Sleep(5 * time.Second)
+		time.Sleep(5 * time.Minute)
 		ttl := time.Until(timeout)
 		// if resp != nil {
 		// 	// bodyBytes, _ := io.ReadAll(resp.Body)
@@ -85,13 +85,14 @@ func (vu *Vuser) Create() {
 		if ttl < 0 {
 			fmt.Printf("\n---[waiting-for-ret]:err: timeout -- hubId %v", vu.HubId)
 			vu.TReady = -1
+			break
 		}
 		resp, err = _httpClient.Do(retReq)
 	}
 	if vu.TReady != -1 {
 		vu.TReady = time.Since(tStart)
 	}
-	fmt.Printf("\n [%v] [tReady: %v] @ %v", vu.Id, vu.TReady, vu.Url)
+	fmt.Printf("\n %v[%v] [tReady: %v] @ %v", time.Now(), vu.Id, vu.TReady, vu.Url)
 }
 
 func (vu *Vuser) Delete() {
@@ -117,6 +118,7 @@ func (vu *Vuser) Delete() {
 }
 
 func (vu *Vuser) Load(ttl time.Duration) {
+	return
 	fmt.Printf("\n[%v] loading (just time.Sleep for now...)", vu.Id)
 	wait := 1 * time.Minute
 	for ttl > 0 {
@@ -128,5 +130,5 @@ func (vu *Vuser) Load(ttl time.Duration) {
 }
 
 func (vu *Vuser) ToString() string {
-	return fmt.Sprintf(`\n{ vu.Id: %v, vu.HubId: %v, vu.tCreate: %v, vu.tReady: %v}`, vu.Id, vu.HubId, vu.TCreate, vu.TReady)
+	return fmt.Sprintf(`{ vu.Id: %v, vu.HubId: %v, vu.tCreate: %v, vu.tReady: %v}`, vu.Id, vu.HubId, vu.TCreate, vu.TReady)
 }
