@@ -12,9 +12,10 @@ import (
 	"github.com/google/uuid"
 )
 
+//naFfSCreQagnbhL9pgcDC2ZfxY2IzrXLSrsEXMsYUp0=|1656465179|gtan@mozilla.com
 var (
 	turkeyDomain      = "gtan.myhubs.net"
-	_turkeyauthcookie = "RahyHXcnssof4VbDOwei8I6iVSDOKX90I9vF5Liy6E0=|1656424001|gtan@mozilla.com"
+	_turkeyauthcookie = "naFfSCreQagnbhL9pgcDC2ZfxY2IzrXLSrsEXMsYUp0=|1656465179|gtan@mozilla.com"
 	useremail         = "gtan@mozilla.com"
 	stepWait          = 1 * time.Millisecond
 )
@@ -25,7 +26,7 @@ var (
 
 func main() {
 	vuBag := []*internal.Vuser{}
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 30; i++ {
 		vuBag = append(vuBag, internal.NewVuser(strconv.Itoa(i),
 			turkeyDomain, _turkeyauthcookie, useremail,
 			"turkeybench"+strings.ReplaceAll(uuid.New().String(), "-", ""),

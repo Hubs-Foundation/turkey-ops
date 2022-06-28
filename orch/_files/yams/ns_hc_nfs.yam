@@ -546,21 +546,31 @@ spec:
           value: "http://speelycaptor:5000"
         - name: turkeyCfg_STORAGE_QUOTA_GB
           value: "{{.StorageLimit}}"
-        startupProbe:
-          httpGet:
-            path: /
-            port: 4000
-            scheme: HTTPS
-          failureThreshold: 30
-          periodSeconds: 10
+        # startupProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 4000
+        #     scheme: HTTPS
+        #   failureThreshold: 30
+        #   periodSeconds: 10
         livenessProbe:
           httpGet:
-            path: /health
+            path: /api/v1/meta
             port: 4000
             scheme: HTTPS
           initialDelaySeconds: 30
           timeoutSeconds: 3
           periodSeconds: 30
+        readinessProbe:
+            initialDelaySeconds: 10
+            httpGet:
+              path: /?skipadmin
+              port: 4000
+              scheme: HTTPS
+            timeoutSeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 60
         resources:
           requests:
             memory: 200Mi
