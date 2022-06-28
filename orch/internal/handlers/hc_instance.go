@@ -401,7 +401,7 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	cfg.DASHBOARD_ACCESS_KEY = internal.Cfg.DASHBOARD_ACCESS_KEY
 	cfg.SKETCHFAB_API_KEY = internal.Cfg.SKETCHFAB_API_KEY
 	//produce the rest
-	if cfg.Tier == "free" {
+	if cfg.Tier == "free" || internal.Cfg.Env == "dev" {
 		cfg.NodePool = "spot"
 	} else {
 		cfg.NodePool = "hub"

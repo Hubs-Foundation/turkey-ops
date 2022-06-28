@@ -520,9 +520,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: SKETCHFAB_API_KEY              
-        # - name: turkeyCfg_ITA_HOST
-        #   value: http://ita
+              key: SKETCHFAB_API_KEY
         - name: turkeyCfg_IMG_PROXY
           value: nearspark.hc-{{.HubId}}
         - name: turkeyCfg_HEADER_AUTHZ
@@ -537,8 +535,6 @@ spec:
               key: DASHBOARD_ACCESS_KEY
         - name: turkeyCfg_YTDL_HOST
           value: "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"
-        # - name: turkeyCfg_YTDL_HOST
-        #   value: "http://ytdl.turkey-services"
         - name: turkeyCfg_PHOTOMNEMONIC
           value: "http://photomnemonic:5000"  
         - name: turkeyCfg_SPEELYCAPTOR
@@ -559,7 +555,17 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 30
           timeoutSeconds: 3
-          periodSeconds: 30
+        #   periodSeconds: 30
+        # readinessProbe:
+        #     initialDelaySeconds: 10
+        #     httpGet:
+        #       path: ???????????????????????
+        #       port: 4000
+        #       scheme: HTTP
+        #     timeoutSeconds: 5
+        #     periodSeconds: 5
+        #     successThreshold: 1
+        #     failureThreshold: 60
         resources:
           requests:
             memory: 250Mi
@@ -700,27 +706,6 @@ spec:
             secretKeyRef:
               name: configs
               key: DOMAIN
-        # - name: turkeyCfg_postgrest_server
-        #   value: 
-        # - name: turkeyCfg_thumbnail_server
-        #   # value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
-        #   value: nearspark.reticulum.io
-        # - name: turkeyCfg_base_assets_path
-        #   value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
-        # - name: turkeyCfg_non_cors_proxy_domains
-        #   value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
-        # - name: turkeyCfg_reticulum_server
-        #   value: {{.Subdomain}}.{{.Domain}}
-        # - name: turkeyCfg_cors_proxy_server
-        #   value: {{.Subdomain}}-cors.{{.Domain}}
-        # - name: turkeyCfg_ga_tracking_id
-        #   value: 
-        # - name: turkeyCfg_shortlink_domain
-        #   value: {{.Subdomain}}.{{.Domain}}
-        # - name: turkeyCfg_ita_server
-        #   value: 
-        # - name: turkeyCfg_sentry_dsn
-        #   value: 
         livenessProbe:
           httpGet:
             path: https://localhost/healthz
