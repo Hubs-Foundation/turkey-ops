@@ -42,6 +42,34 @@ data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
 ####################################################################################
+####################################### turkeyauthproxy ingress #######################################
+####################################################################################
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-private
+  namespace: turkey-services
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"    
+    haproxy.org/request-set-header: |
+      backend http://grafana.monitoring:3000/
+      AllowedEmailDomains mozilla.com,
+    haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
+spec:
+  rules:
+  - host: grafana.gtan.myhubs.net
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+---
+####################################################################################
 ####################################### auth #######################################
 ####################################################################################
 apiVersion: autoscaling/v1
@@ -237,6 +265,8 @@ metadata:
     haproxy.org/server-ssl: "true"
     haproxy.org/request-set-header: |
       backend https://turkeyorch:889/
+      AllowedEmailDomains mozilla.com,
+    haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
 spec:
   rules:
   - host: orch.{{.Domain}}
