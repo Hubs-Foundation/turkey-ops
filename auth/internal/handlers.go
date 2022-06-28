@@ -256,6 +256,7 @@ func AuthnProxy() http.Handler {
 
 		if strings.HasPrefix(r.URL.Path, "/turkeyauthproxy") {
 			r.URL.Path = strings.Replace(r.URL.Path, "/turkeyauthproxy", "", 1)
+			Logger.Sugar().Debugf(" path: %v", r)
 		}
 
 		backend, ok := r.Header["Backend"]
@@ -287,6 +288,17 @@ func AuthnProxy() http.Handler {
 			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
+
+		AllowedEmailDomains := r.Header.Get("AllowedEmailDomains")
+		if AllowedEmailDomains != "" {
+			emailDomain := strings.Split(email, "@")[1]
+			if !strings.Contains(AllowedEmailDomains, emailDomain+",") {
+				Logger.Sugar().Debugf("unauthorized email: %v, AllowedEmailDomains: %v >>> authRedirect", email, AllowedEmailDomains)
+				authRedirect(w, r, cfg.DefaultProvider)
+				return
+			}
+		}
+
 		Logger.Sugar().Debug("allowed. good cookie found for " + email)
 
 		proxy, err := Proxyman.Get(urlStr)
