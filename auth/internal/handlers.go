@@ -288,6 +288,7 @@ func AuthnProxy() http.Handler {
 			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
+		Logger.Sugar().Debug("allowed. good cookie found for " + email)
 
 		AllowedEmailDomains := r.Header.Get("AllowedEmailDomains")
 		if AllowedEmailDomains != "" {
@@ -299,9 +300,8 @@ func AuthnProxy() http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
+			Logger.Debug("good email domain too")
 		}
-
-		Logger.Sugar().Debug("allowed. good cookie found for " + email)
 
 		proxy, err := Proxyman.Get(urlStr)
 		if err != nil {
