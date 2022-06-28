@@ -262,10 +262,10 @@ func AuthnProxy() http.Handler {
 			return
 		}
 
-		if r.URL.Path == "/" { //no direct calls, i can't tell host but i can tell path
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
+		// if r.URL.Path == "/" { //no direct calls, i can't tell host but i can tell path
+		// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		// 	return
+		// }
 		if r.Header.Get("x-turkeyauth-proxied") != "" {
 			Logger.Error("omg authn proxy's looping, why???")
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)

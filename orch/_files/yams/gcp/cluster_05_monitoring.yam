@@ -205,9 +205,15 @@ spec:
             path: /-/healthy
             port: 9090
         readinessProbe:
-          httpGet:
-            path: /-/ready
-            port: 9090
+            initialDelaySeconds: 60
+            httpGet:
+              path: /-/ready
+              port: 9090
+              scheme: HTTP
+            timeoutSeconds: 1
+            periodSeconds: 60
+            successThreshold: 1
+            failureThreshold: 60
         resources:
           requests:
             cpu: 1
