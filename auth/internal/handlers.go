@@ -293,8 +293,10 @@ func AuthnProxy() http.Handler {
 		if AllowedEmailDomains != "" {
 			emailDomain := strings.Split(email, "@")[1]
 			if !strings.Contains(AllowedEmailDomains, emailDomain+",") {
-				Logger.Sugar().Debugf("unauthorized email: %v, AllowedEmailDomains: %v >>> authRedirect", email, AllowedEmailDomains)
-				authRedirect(w, r, cfg.DefaultProvider)
+				// Logger.Sugar().Debugf("unauthorized email: %v, AllowedEmailDomains: %v >>> authRedirect", email, AllowedEmailDomains)
+				// authRedirect(w, r, cfg.DefaultProvider)
+				// http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
 		}
