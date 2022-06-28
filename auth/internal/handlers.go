@@ -248,6 +248,16 @@ func AuthnProxy() http.Handler {
 
 		Logger.Sugar().Debugf("request dump: %v", r)
 
+		if r.URL.Path == "/" {
+			Logger.Debug("direct calls not allowed")
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		if strings.HasPrefix(r.URL.Path, "/turkeyauthproxy") {
+			r.URL.Path = strings.Replace(r.URL.Path, "/turkeyauthproxy", "", 1)
+		}
+
 		backend, ok := r.Header["Backend"]
 		if !ok || len(backend) != 1 {
 			Logger.Sugar().Debugf("bad r.Headers[backend]")
@@ -262,10 +272,6 @@ func AuthnProxy() http.Handler {
 			return
 		}
 
-		// if r.URL.Path == "/" { //no direct calls, i can't tell host but i can tell path
-		// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		// 	return
-		// }
 		if r.Header.Get("x-turkeyauth-proxied") != "" {
 			Logger.Error("omg authn proxy's looping, why???")
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -283,8 +289,6 @@ func AuthnProxy() http.Handler {
 		}
 		Logger.Sugar().Debug("allowed. good cookie found for " + email)
 
-		// proxy := httputil.NewSingleHostReverseProxy(backendUrl)
-		// proxy.Transport = &http.Transport{ResponseHeaderTimeout: 1 * time.Minute}
 		proxy, err := Proxyman.Get(urlStr)
 		if err != nil {
 			Logger.Error("get proxy failed: " + err.Error())

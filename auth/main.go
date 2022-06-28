@@ -18,6 +18,7 @@ func main() {
 
 	router := http.NewServeMux()
 	router.Handle("/", internal.AuthnProxy())
+	router.Handle("/turkeyauthproxy", internal.AuthnProxy())
 
 	router.Handle("/_healthz", internal.Healthz())
 	router.Handle("/login", internal.Login())
