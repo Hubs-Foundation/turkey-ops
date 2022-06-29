@@ -105,6 +105,7 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 				})
 			}
 			json.NewEncoder(w).Encode(map[string]interface{}{
+				"msg":        "status updated",
 				"new_status": status,
 				"hub_id":     cfg.HubId,
 			})
@@ -121,12 +122,16 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 				})
 			}
 			json.NewEncoder(w).Encode(map[string]interface{}{
+				"msg":           "subdomain updated",
 				"new_subdomain": cfg.Subdomain,
 				"hub_id":        cfg.HubId,
 			})
 			return
 		}
-
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"msg":    "",
+			"hub_id": cfg.HubId,
+		})
 	}
 
 })
