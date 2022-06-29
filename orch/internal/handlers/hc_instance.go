@@ -34,7 +34,7 @@ type hcCfg struct {
 	CcuLimit     string `json:"ccu_limit"`     // fallback to 20
 	StorageLimit string `json:"storage_limit"` // fallback to 0.5
 	Subdomain    string `json:"subdomain"`     // fallback to HubId
-	NodePool     string `json:"subdomain"`     // default == spot
+	NodePool     string `json:"nodepool"`      // default == spot
 
 	//optional inputs
 	Options string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
