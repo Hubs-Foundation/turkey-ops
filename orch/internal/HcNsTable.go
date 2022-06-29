@@ -7,12 +7,14 @@ import (
 
 //concurrent cached/map for hubs cloud namespace bookkeeping
 type HcNsTable struct {
-	hcNsTable map[string]HcNsNotes
+	hcNsTable                map[string]HcNsNotes
+	hcSubdomainNsLookupTable map[string]string
 }
 
 //singleton instance
 var HC_NS_TABLE = &HcNsTable{
-	hcNsTable: make(map[string]HcNsNotes),
+	hcNsTable:                make(map[string]HcNsNotes),
+	hcSubdomainNsLookupTable: make(map[string]string),
 }
 
 var mu sync.Mutex
@@ -29,11 +31,12 @@ func (t HcNsTable) Get(nsName string) HcNsNotes {
 	return t.hcNsTable[nsName]
 }
 
-func (t HcNsTable) Set(nsName string, value HcNsNotes) {
+func (t HcNsTable) Set(nsName string, notes HcNsNotes) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	t.hcNsTable[nsName] = value
+	t.hcNsTable[nsName] = notes
+	t.hcSubdomainNsLookupTable[notes.Labels["subdomain"]] = nsName
 }
 
 func (t HcNsTable) Del(nsName string) {
@@ -43,10 +46,17 @@ func (t HcNsTable) Del(nsName string) {
 	delete(t.hcNsTable, nsName)
 }
 
-func (t HcNsTable) Has(nsName string) bool {
+// func (t HcNsTable) HasSubdomain(subdomain string) bool {
+// 	mu.Lock()
+// 	defer mu.Unlock()
+
+// 	_, has := t.hcSubdomainNsLookupTable[subdomain]
+// 	return has
+// }
+
+func (t HcNsTable) GetNsName(subdomain string) string {
 	mu.Lock()
 	defer mu.Unlock()
 
-	_, has := t.hcNsTable[nsName]
-	return has
+	return t.hcSubdomainNsLookupTable[subdomain]
 }

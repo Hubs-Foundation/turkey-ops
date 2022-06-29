@@ -90,13 +90,12 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 	internal.Logger.Sugar().Debugf("dump headers: %v", r.Header)
 
-	// nsName := "hc-" + strings.Split(r.Header.Get("X-Forwarded-Host"), ".")[0]
-	// nsName := "hc-" + strings.Split(goods, ".")[0]
 	subdomain := strings.Split(goods, ".")[0]
-	nsName := "hc-" + subdomain
+
+	nsName := internal.HC_NS_TABLE.GetNsName(subdomain)
 	// not requesting a hubs cloud namespace == bounce
-	if !internal.HC_NS_TABLE.Has(subdomain) {
-		internal.Logger.Debug("TurkeyReturnCenter bounce / !internal.HC_NS_TABLE.Has for: " + subdomain)
+	if nsName == "" {
+		// internal.Logger.Debug("TurkeyReturnCenter bounce / internal.HC_NS_TABLE.GetNsName doesn't have a nsName for subdomain: " + subdomain)
 		http.Error(w, "hi?", http.StatusNotFound)
 		return
 	}
