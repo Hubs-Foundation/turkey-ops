@@ -58,7 +58,58 @@ metadata:
     haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
 spec:
   rules:
-  - host: grafana.gtan.myhubs.net
+  - host: grafana.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/request-set-header: |
+      backend http://skooner.tools:80/
+      AllowedEmailDomains mozilla.com,
+    haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
+  generation: 1
+  name: skooner
+  namespace: turkey-services
+spec:
+  rules:
+  - host: dash.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
+    haproxy.org/request-set-header: |
+      backend https://turkeyorch:889/
+      AllowedEmailDomains mozilla.com,
+    haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
+  generation: 1
+  name: turkeyorch-private
+  namespace: turkey-services
+spec:
+  rules:
+  - host: orch.{{.Domain}}
     http:
       paths:
       - path: /
@@ -254,31 +305,6 @@ spec:
             name: turkeyorch
             port: 
               number: 889
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: turkeyorch-private
-  namespace: turkey-services
-  annotations:
-    kubernetes.io/ingress.class: haproxy
-    haproxy.org/server-ssl: "true"
-    haproxy.org/request-set-header: |
-      backend https://turkeyorch:889/
-      AllowedEmailDomains mozilla.com,
-    haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
-spec:
-  rules:
-  - host: orch.{{.Domain}}
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: turkeyauth
-            port: 
-              number: 9002
 ---
 apiVersion: v1
 kind: Secret
