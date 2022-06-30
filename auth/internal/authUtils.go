@@ -34,8 +34,8 @@ func CheckCookie(r *http.Request) (string, error) {
 	//jwt cookie
 	claims, err := checkJwtCookie(r)
 	if err != nil {
-		if cfg.Env == "dev" { // (dev env only) or if you have a good authCookie ?
-			Logger.Warn("dev env + bad jwtCookie, falling back to authCookie -- which will allow other turkeyauth issued tokens as long as they are signed with the same cookieSecret")
+		if cfg.AllowAuthCookie { // (dev env only) or if you have a good authCookie ?
+			Logger.Sugar().Debugf("bad jwtCookie + AllowAuthCookie: falling back to authCookie. full Req Dump: %v", r)
 			return checkAuthCookie(r)
 		} else {
 			return "", err

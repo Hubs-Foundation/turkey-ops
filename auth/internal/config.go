@@ -19,10 +19,11 @@ var cfg *Config
 
 // Config holds the runtime application config
 type Config struct {
-	Env            string `description:"dev/staging/prod"`
-	TurkeyDomain   string `description:"turkey domain"`
-	Domain         string `description:"root domain"`
-	TrustedClients string `description:"ie. https://portal.myhubs.net"`
+	Env             string `description:"dev/staging/prod"`
+	TurkeyDomain    string `description:"turkey domain"`
+	Domain          string `description:"root domain"`
+	TrustedClients  string `description:"ie. https://portal.myhubs.net"`
+	AllowAuthCookie bool   `description: allow creation and verification of simple secret protected authCookie in addition to full jwt-signed-with-domain-name authToken`
 
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config                 func(s string) error `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
@@ -59,6 +60,12 @@ func MakeCfg() {
 	cfg.Env = os.Getenv("ENV")
 	if cfg.Env == "" {
 		cfg.Env = "dev"
+	}
+
+	if os.Getenv("ALLOW_AUTH_COOKIE") == "true" || cfg.Env == "dev" {
+		cfg.AllowAuthCookie = true
+	} else {
+		cfg.AllowAuthCookie = false
 	}
 
 	cfg.TurkeyDomain = os.Getenv("turkeyDomain")

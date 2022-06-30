@@ -191,7 +191,7 @@ func Oauth() http.Handler {
 		http.SetCookie(w, jwtCookie)
 
 		//dev only -- make an auth cookie too
-		if cfg.Env == "dev" {
+		if cfg.AllowAuthCookie {
 			http.SetCookie(w, MakeAuthCookie(r, user.Email))
 		}
 
