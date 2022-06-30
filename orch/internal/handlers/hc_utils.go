@@ -92,17 +92,17 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 	subdomain := strings.Split(goods, ".")[0]
 
-	nsName := internal.HC_NS_TABLE.GetNsName(subdomain)
+	nsName := internal.HC_NS_MAN.GetNsName(subdomain)
 	// not requesting a hubs cloud namespace == bounce
 	if nsName == "" {
-		// internal.Logger.Debug("TurkeyReturnCenter bounce / internal.HC_NS_TABLE.GetNsName doesn't have a nsName for subdomain: " + subdomain)
+		// internal.Logger.Debug("TurkeyReturnCenter bounce / internal.HC_NS_MAN.GetNsName doesn't have a nsName for subdomain: " + subdomain)
 		http.Error(w, "hi?", http.StatusNotFound)
 		return
 	}
 
 	w.WriteHeader(http.StatusServiceUnavailable)
 
-	notes := internal.HC_NS_TABLE.Get(subdomain)
+	notes := internal.HC_NS_MAN.Get(subdomain)
 	// high frequency pokes == bounce
 	coolDown := 5 * time.Minute
 	waitReq := coolDown - time.Since(notes.Lastchecked)
@@ -124,7 +124,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 	//just scale it back up to 1 for now
 	go wakeupHcNs(nsName)
-	internal.HC_NS_TABLE.Set(nsName, internal.HcNsNotes{Lastchecked: time.Now()})
+	internal.HC_NS_MAN.Set(nsName, internal.HcNsNotes{Lastchecked: time.Now()})
 
 	internal.Logger.Debug("wakeupHcNs launched for nsName: " + nsName)
 
