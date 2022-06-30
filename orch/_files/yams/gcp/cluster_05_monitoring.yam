@@ -216,11 +216,11 @@ spec:
             failureThreshold: 60
         resources:
           requests:
-            cpu: 1
-            memory: 2Gi
+            cpu: 1.5
+            memory: 3Gi
           limits:
-            cpu: 4
-            memory: 8Gi
+            cpu: 2
+            memory: 4Gi
         volumeMounts:
           - name: config
             mountPath: /etc/prometheus
@@ -495,7 +495,7 @@ spec:
             cpu: 250m
             memory: 180Mi
           requests:
-            cpu: 102m
+            cpu: 100m
             memory: 180Mi
         volumeMounts:
         - mountPath: /host/sys
@@ -589,8 +589,8 @@ spec:
           runAsUser: 65534
         resources:
           limits:
-            cpu: 500m
-            memory: 1Gi
+            cpu: 200m
+            memory: 400Mi
           requests:
             cpu: 100m
             memory: 200Mi
@@ -821,8 +821,8 @@ spec:
             cpu: 2
             memory: 4Gi
           requests:
-            cpu: 500m
-            memory: 1Gi
+            cpu: 1
+            memory: 2Gi
       terminationGracePeriodSeconds: 4800
       volumes:
         - name: config

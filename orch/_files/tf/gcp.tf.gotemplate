@@ -137,7 +137,7 @@ resource "google_container_node_pool" "stream_nodes" {
     }
   }
   autoscaling { # this is "cluster autoscaler"
-    min_node_count = 2
+    min_node_count = 1
     max_node_count = 32
   }
 }
@@ -168,7 +168,7 @@ resource "google_container_node_pool" "hub_nodes" {
     }
   }
   autoscaling { # this is "cluster autoscaler"
-    min_node_count = 2
+    min_node_count = 1
     max_node_count = 128
   }
 }
@@ -198,7 +198,7 @@ resource "google_container_node_pool" "service_nodes" {
     }
   }
   autoscaling { # this is "cluster autoscaler"
-    min_node_count = 2
+    min_node_count = 1
     max_node_count = 32
   }
 }
@@ -226,7 +226,7 @@ resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooli
     }
   }
   autoscaling { # this is "cluster autoscaler"
-    min_node_count = 2
+    min_node_count = 1
     max_node_count = 256
   }
 }

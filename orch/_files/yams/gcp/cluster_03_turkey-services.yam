@@ -184,8 +184,8 @@ spec:
           periodSeconds: 60            
         resources:
           requests:
-            memory: 250Mi
-            cpu: 0.25
+            memory: 1Gi
+            cpu: 0.5
           limits:
             memory: 2Gi
             cpu: 1
@@ -447,8 +447,8 @@ spec:
           periodSeconds: 60
         resources:
           requests:
-            memory: 250Mi
-            cpu: 0.25       
+            memory: 1Gi
+            cpu: 0.5       
           limits:
             memory: 2Gi
             cpu: 1
@@ -551,8 +551,8 @@ spec:
               key: DB_HOST          
         resources:
           requests:
-            memory: 250Mi
-            cpu: 0.25       
+            memory: 500Mi
+            cpu: 0.5
           limits:
             memory: 2Gi
             cpu: 1            
@@ -630,8 +630,8 @@ spec:
           value: transaction
         resources:
           requests:
-            memory: 250Mi
-            cpu: 0.25
+            memory: 500Mi
+            cpu: 0.5
           limits:
             memory: 2Gi
             cpu: 1                       
@@ -693,7 +693,7 @@ spec:
             cpu: 0.05
           limits:
             memory: 200Mi
-            cpu: 0.2
+            cpu: 0.1
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -855,8 +855,8 @@ spec:
           value: ducksducksducks
         resources:
           requests:
-            memory: 250Mi
-            cpu: 0.25
+            memory: 500Mi
+            cpu: 0.5
           limits:
             memory: 2Gi
             cpu: 1
