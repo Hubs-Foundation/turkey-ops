@@ -82,11 +82,11 @@ spec:
         - containerPort: 3000
         resources:
           requests:
-            cpu: 2
-            memory: "4Gi"
-          limits:
             cpu: 1
             memory: "2Gi"
+          limits:
+            cpu: 2
+            memory: "4Gi"
         volumeMounts:
           - name: grafana-storage
             mountPath: /var/lib/grafana
@@ -491,11 +491,11 @@ spec:
           - containerPort: 9100
             protocol: TCP
         resources:
-          limits:
-            cpu: 250m
-            memory: 180Mi
           requests:
             cpu: 100m
+            memory: 180Mi
+          limits:
+            cpu: 250m
             memory: 180Mi
         volumeMounts:
         - mountPath: /host/sys
@@ -588,12 +588,12 @@ spec:
           readOnlyRootFilesystem: true
           runAsUser: 65534
         resources:
-          limits:
-            cpu: 200m
-            memory: 400Mi
           requests:
             cpu: 100m
             memory: 200Mi
+          limits:
+            cpu: 200m
+            memory: 400Mi
       serviceAccountName: kube-state-metrics
 ---
 apiVersion: v1
@@ -817,12 +817,12 @@ spec:
         securityContext:
           readOnlyRootFilesystem: true
         resources:
-          limits:
-            cpu: 2
-            memory: 4Gi
           requests:
             cpu: 1
             memory: 2Gi
+          limits:
+            cpu: 2
+            memory: 4Gi
       terminationGracePeriodSeconds: 4800
       volumes:
         - name: config
@@ -1001,12 +1001,12 @@ spec:
             containerPort: 3101
             protocol: TCP                
         resources:
-          limits:
-            cpu: 1
-            memory: 2Gi
           requests:
             cpu: 500m
             memory: 1Gi
+          limits:
+            cpu: 1
+            memory: 2Gi
         livenessProbe:
           httpGet:
             path: /ready
