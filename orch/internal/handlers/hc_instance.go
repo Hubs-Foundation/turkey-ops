@@ -508,7 +508,7 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	go func() {
-		err := internal.Cfg.Gcps.DeleteObjects("turkeyfs", "hc-"+hcCfg.HubId+"."+internal.Cfg.Domain)
+		err := internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hcCfg.HubId+"."+internal.Cfg.Domain)
 		if err != nil {
 			internal.Logger.Error("delete ns failed: " + err.Error())
 			return

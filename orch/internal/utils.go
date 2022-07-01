@@ -197,41 +197,44 @@ func Copy(src, dst string) error {
 	return out.Close()
 }
 
-func RunCmd_sync(name string, arg ...string) error {
+func RunCmd_sync(name string, arg ...string) (error, []string) {
 
 	cmd := exec.Command(name, arg...)
+	var out []string
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return err, nil
 	}
 	stderr, _ := cmd.StderrPipe()
 
 	err = cmd.Start()
-	GetLogger().Debug("started: " + cmd.String())
+	GetLogger().Debug("RunCmd_sync: " + cmd.String())
 	if err != nil {
-		return err
+		return err, nil
 	}
 
-	// print the output of the subprocess
+	// collect outputs of the subprocess
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		m := scanner.Text()
-		GetLogger().Debug(m)
+		// GetLogger().Debug(m)
+		out = append(out, m)
 	}
 
 	scanner_err := bufio.NewScanner(stderr)
 	for scanner_err.Scan() {
 		m := scanner_err.Text()
-		GetLogger().Error(m)
+		out = append(out, m)
+		// GetLogger().Error(m)
 	}
 
 	err = cmd.Wait()
 	if err != nil {
-		return err
+		return err, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 func RootDomain(fullDomain string) string {

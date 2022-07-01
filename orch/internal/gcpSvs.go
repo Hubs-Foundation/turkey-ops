@@ -36,7 +36,7 @@ func NewGcpSvs() (*GcpSvs, error) {
 	}, nil
 }
 
-func (g *GcpSvs) DeleteObjects(bucketName, prefix string) error {
+func (g *GcpSvs) GCS_DeleteObjects(bucketName, prefix string) error {
 	GetLogger().Debug("deleting from bucket: " + bucketName + ", with prefix: " + prefix)
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
@@ -97,6 +97,27 @@ func (g *GcpSvs) GCS_ReadFile(bucketName, filename string) ([]byte, error) {
 		return nil, err
 	}
 	return bytes, nil
+}
+
+func (g *GcpSvs) GCS_List(bucketName, prefix string) ([]string, error) {
+	GetLogger().Debug("reading bucket: " + bucketName + ", prefix: " + prefix)
+	client, err := storage.NewClient(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	objItr := client.Bucket(bucketName).Objects(context.Background(), &storage.Query{Prefix: prefix})
+	var list []string
+	for {
+		attrs, err := objItr.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, attrs.Owner)
+	}
+	return list, nil
 }
 
 func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {

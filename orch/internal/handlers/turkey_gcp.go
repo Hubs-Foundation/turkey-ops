@@ -53,11 +53,12 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// ########## 2. run tf #########################################
-		err := runTf(cfg, "apply")
+		err, tfout := runTf(cfg, "apply")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
 		}
+		internal.Logger.Sugar().Debugf("%v", tfout)
 		internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "tf deployment completed")
 		// ########## 3. prepare for post Deployment setups:
 		// ###### get db info and complete clusterCfg (cfg)
@@ -108,8 +109,12 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 			dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"
 		}
 
-		//email the final manual steps to authenticated user
+		//upload clusterCfg
 		clusterCfgBytes, _ := json.Marshal(cfg)
+		internal.Cfg.Gcps.GCS_WriteFile("turkeycfg", "tf-backend/"+cfg.Stackname+"/cfg.json", string(clusterCfgBytes))
+
+		//email the final manual steps to authenticated user
+
 		authnUser := r.Header.Get("X-Forwarded-UserEmail")
 		err = smtp.SendMail(
 			internal.Cfg.SmtpServer+":"+internal.Cfg.SmtpPort,
@@ -126,8 +131,8 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 				"\r\n - gcloud container clusters get-credentials --region us-east1 "+cfg.Stackname+
 				"\r\n******get: cluster https cert******"+
 				"\r\n - kubectl -n ingress get secret letsencrypt -o yaml"+
-				"\r\n******clusterCfg dump******"+
-				"\r\n"+string(clusterCfgBytes)+
+				// "\r\n******clusterCfg dump******"+
+				// "\r\n"+string(clusterCfgBytes)+
 				"\r\n"),
 		)
 		if err != nil {
@@ -142,6 +147,131 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 		"stackName":    cfg.Stackname,
 		"statusUpdate": "GET@/tco_gcp_status",
 	})
+}
+
+func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
+
+	list, err := internal.Cfg.Gcps.GCS_List("turkeycfg", "tf-backend/")
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed: %v", err)
+	}
+
+	fmt.Fprintf(w, "%v", list)
+}
+func tcp_gcp_plan(w http.ResponseWriter, r *http.Request) {
+	// sess := internal.GetSession(r.Cookie)
+
+	// ######################################### 1. get cfg from r.body ########################################
+	cfg, err := turkey_makeCfg(r)
+	if err != nil {
+		internal.Logger.Error("ERROR @ turkey_makeCfg: " + err.Error())
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"stackName": cfg.Stackname,
+			"error":     "ERROR @ turkey_makeCfg: " + err.Error(),
+		})
+		return
+	}
+
+	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
+	internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] started")
+
+	// ######################################### 2. run tf #########################################
+	err, tfout := runTf(cfg, "plan")
+	if err != nil {
+		internal.Logger.Error("failed @runTf: " + err.Error())
+		return
+	}
+	internal.Logger.Sugar().Debugf("%v", tfout)
+	internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"stackName": cfg.Stackname,
+		"tf_plan":   strings.Join(tfout, "\n"),
+	})
+}
+
+func tcp_gcp_delete(w http.ResponseWriter, r *http.Request) {
+	// sess := internal.GetSession(r.Cookie)
+
+	// ######################################### 1. get cfg from r.body ########################################
+	cfg, err := turkey_makeCfg(r)
+	if err != nil {
+		internal.Logger.Error("ERROR @ turkey_makeCfg: " + err.Error())
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"stackName": cfg.Stackname,
+			"error":     "ERROR @ turkey_makeCfg: " + err.Error(),
+		})
+		return
+	}
+	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
+	internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] started")
+
+	go func() {
+		// ######################################### 2. run tf #########################################
+		err, tfout := runTf(cfg, "destroy")
+		if err != nil {
+			internal.Logger.Error("failed @runTf: " + err.Error())
+			return
+		}
+		internal.Logger.Sugar().Debugf("%v", tfout)
+		// ################# 3. delete the folder in GCS bucket for this stack
+		err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeycfg", "tf-backend/"+cfg.Stackname)
+		if err != nil {
+			internal.Logger.Error("failed @ delete tf-backend for " + cfg.Stackname + ": " + err.Error())
+		}
+		internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] completed")
+	}()
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"stackName":    cfg.Stackname,
+		"statusUpdate": "GET@/tco_gcp_status",
+	})
+}
+
+func runTf(cfg clusterCfg, verb string) (error, []string) {
+	wd, _ := os.Getwd()
+	// render the template.tf with cfg.Stackname into a Stackname named folder so that
+	// 1. we can run terraform from that folder
+	// 2. terraform will use a Stackname named folder in it's remote backend
+	tfTemplateFile := wd + "/_files/tf/gcp.tf.gotemplate"
+	if _, err := os.Stat(tfTemplateFile); errors.Is(err, os.ErrNotExist) {
+		return err, nil
+	}
+
+	// tf_bin := wd + "/_files/tf/terraform"
+	tf_bin := "terraform"
+	tfdir := wd + "/_files/tf/" + cfg.Stackname
+	os.Mkdir(tfdir, os.ModePerm)
+
+	tfFile := tfdir + "/rendered.tf"
+	t, err := template.ParseFiles(tfTemplateFile)
+	if err != nil {
+		return err, nil
+	}
+	f, _ := os.Create(tfFile)
+	defer f.Close()
+
+	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass, Env string }{
+		ProjectId: internal.Cfg.Gcps.ProjectId,
+		Stackname: cfg.Stackname,
+		Region:    cfg.Region,
+		DbUser:    "postgres",
+		DbPass:    cfg.DB_PASS,
+		Env:       cfg.Env,
+	})
+
+	err, out_init := internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
+	if err != nil {
+		tfBytes, _ := ioutil.ReadFile(tfFile)
+		return errors.New(err.Error() + "...cat $tfFile: " + string(tfBytes)), nil
+	}
+
+	err, out_verb := internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
+
+	if err != nil {
+		return err, nil
+	}
+	return nil, append(out_init, out_verb...)
 }
 
 func k8sSetups(cfg clusterCfg, k8sCfg *rest.Config, k8sYamls []string) (map[string]string, error) {
@@ -193,88 +323,4 @@ func collectAndRenderYams_localGcp(cfg clusterCfg) ([]string, error) {
 		return nil, err
 	}
 	return yamls, nil
-}
-
-func tcp_gcp_delete(w http.ResponseWriter, r *http.Request) {
-	// sess := internal.GetSession(r.Cookie)
-
-	// ######################################### 1. get cfg from r.body ########################################
-	cfg, err := turkey_makeCfg(r)
-	if err != nil {
-		internal.Logger.Error("ERROR @ turkey_makeCfg: " + err.Error())
-		return
-	}
-	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-	internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] started")
-
-	go func() {
-		// ######################################### 2. run tf #########################################
-		err := runTf(cfg, "destroy")
-		if err != nil {
-			internal.Logger.Error("failed @runTf: " + err.Error())
-			return
-		}
-		// ################# 3. delete the folder in GCS bucket for this stack
-		err = internal.Cfg.Gcps.DeleteObjects("turkeycfg", "tf-backend/"+cfg.Stackname)
-		if err != nil {
-			internal.Logger.Error("failed @ delete tf-backend for " + cfg.Stackname + ": " + err.Error())
-		}
-		internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] completed")
-	}()
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"stackName":    cfg.Stackname,
-		"statusUpdate": "GET@/tco_gcp_status",
-	})
-}
-
-func runTf(cfg clusterCfg, verb string) error {
-	wd, _ := os.Getwd()
-	// render the template.tf with cfg.Stackname into a Stackname named folder so that
-	// 1. we can run terraform from that folder
-	// 2. terraform will use a Stackname named folder in it's remote backend
-	tfTemplateFile := wd + "/_files/tf/gcp.tf.gotemplate"
-	if _, err := os.Stat(tfTemplateFile); errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-
-	// tf_bin := wd + "/_files/tf/terraform"
-	tf_bin := "terraform"
-	tfdir := wd + "/_files/tf/" + cfg.Stackname
-	os.Mkdir(tfdir, os.ModePerm)
-
-	tfFile := tfdir + "/rendered.tf"
-	t, err := template.ParseFiles(tfTemplateFile)
-	if err != nil {
-		return err
-	}
-	f, _ := os.Create(tfFile)
-	defer f.Close()
-
-	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass, Env string }{
-		ProjectId: internal.Cfg.Gcps.ProjectId,
-		Stackname: cfg.Stackname,
-		Region:    cfg.Region,
-		DbUser:    "postgres",
-		DbPass:    cfg.DB_PASS,
-		Env:       cfg.Env,
-	})
-
-	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
-	if err != nil {
-		tfBytes, _ := ioutil.ReadFile(tfFile)
-		return errors.New(err.Error() + "...cat $tfFile: " + string(tfBytes))
-	}
-	// err = runCmd(tf_bin, "-chdir="+tfdir, "plan",
-	// 	"-var", "project_id="+internal.Cfg.Gcps.ProjectId, "-var", "stack_id="+cfg.Stackname, "-var", "region="+cfg.Region,
-	// 	"-out="+cfg.Stackname+".tfplan")
-	// if err != nil {
-	// 	return err
-	// }
-	err = internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
-
-	if err != nil {
-		return err
-	}
-	return nil
 }
