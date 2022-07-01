@@ -218,15 +218,15 @@ func RunCmd_sync(name string, arg ...string) (error, []string) {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		m := scanner.Text()
-		// GetLogger().Debug(m)
+		GetLogger().Debug(m)
 		out = append(out, m)
 	}
 
 	scanner_err := bufio.NewScanner(stderr)
 	for scanner_err.Scan() {
 		m := scanner_err.Text()
+		GetLogger().Error(m)
 		out = append(out, m)
-		// GetLogger().Error(m)
 	}
 
 	err = cmd.Wait()

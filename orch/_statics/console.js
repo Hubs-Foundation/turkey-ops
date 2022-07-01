@@ -44,13 +44,17 @@ function hc_resume(){ orcReq("PATCH", "/hc_instance?status=up","cfg") }
 document.getElementById("turkeyAws").addEventListener("click", turkeyAws, false);
 function turkeyAws(){ orcReq("POST", "/tco_aws","cluster_cfg") }
 
-document.getElementById("turkeyGcp").addEventListener("click", turkeyGcp, false);
-function turkeyGcp(){ orcReq("POST", "/tco_gcp","cluster_cfg") }
+document.getElementById("turkeyGcp_deploy").addEventListener("click", turkeyGcp_deploy, false);
+function turkeyGcp_deploy(){ orcReq("POST", "/tco_gcp","cluster_cfg") }
 
 document.getElementById("turkeyGcp_del").addEventListener("click", turkeyGcp_del, false);
 function turkeyGcp_del(){ orcReq("DELETE", "/tco_gcp","cluster_cfg") }
 
+document.getElementById("turkeyGcp_get").addEventListener("click", turkeyGcp_get, false);
+function turkeyGcp_get(){ orcReq("GET", "/tco_gcp","cluster_cfg") }
 
+document.getElementById("turkeyGcp_update").addEventListener("click", turkeyGcp_update, false);
+function turkeyGcp_update(){ orcReq("PATCH", "/tco_gcp","cluster_cfg") }
 
 function orcReq(method, path, cfgBoxId) {
   cfg=document.getElementById(cfgBoxId).value

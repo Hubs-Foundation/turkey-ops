@@ -28,33 +28,25 @@ func main() {
 
 	router := http.NewServeMux()
 
+	//public endpoints
+	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
+
+	//private endpoints
 	router.Handle("/_healthz", handlers.Healthz())
-
 	router.Handle("/console", handlers.Console)
-	// router.Handle("/console", requireRole("foobar")(handlers.Console))
-
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
 
 	router.Handle("/hc_instance", handlers.HC_instance)
-	// router.Handle("/hc_deploy", handlers.Hc_deploy)
-	// router.Handle("/hc_deploy", requireRole("foobar")(handlers.Hc_deploy))
-	// router.Handle("/hc_del", handlers.Hc_del)
 
-	// router.Handle("/hc_launch_fallback", handlers.HC_launch_fallback)
-	// router.Handle("/global_404_fallback", handlers.Global_404_launch_fallback)
-	router.Handle("/turkey-return-center/", handlers.TurkeyReturnCenter)
 	router.Handle("/", handlers.TurkeyReturnCenter)
+	router.Handle("/turkey-return-center/", handlers.TurkeyReturnCenter)
 
-	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
-	// router.Handle("/webhooks/ghaturkey", handlers.GhaTurkey)
-
-	router.Handle("/ytdl/api/info", handlers.Ytdl)
-
-	router.Handle("/tco_aws", requireRole("foobar")(handlers.TurkeyAws))
-	router.Handle("/tco_gcp", requireRole("foobar")(handlers.TurkeyGcp))
+	router.Handle("/tco_aws", mozOnly()(handlers.TurkeyAws))
+	router.Handle("/tco_gcp", mozOnly()(handlers.TurkeyGcp))
 
 	router.Handle("/Dummy", handlers.Dummy)
+	router.Handle("/ytdl/api/info", handlers.Ytdl)
 
 	port, err := strconv.Atoi(internal.Cfg.Port)
 	if err != nil {
@@ -68,7 +60,7 @@ func main() {
 // scratchpad
 
 //todo: make a real rbac -- this just checks if the user's email got an @mozilla.com at the end
-func requireRole(role string) func(http.Handler) http.Handler {
+func mozOnly() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			email := r.Header.Get("X-Forwarded-UserEmail")

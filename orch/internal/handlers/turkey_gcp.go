@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"time"
 
 	"main/internal"
 
@@ -31,7 +32,10 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tcp_gcp_create(w, r)
 	case "DELETE":
 		tcp_gcp_delete(w, r)
-
+	case "GET":
+		tcp_gcp_get(w, r)
+	case "PATCH":
+		tcp_gcp_update(w, r)
 	default:
 		return
 		// fmt.Fprintf(w, "unexpected method: "+r.Method)
@@ -53,7 +57,7 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// ########## 2. run tf #########################################
-		err, tfout := runTf(cfg, "apply")
+		err, tfout := runTf(cfg, "apply", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
@@ -158,8 +162,7 @@ func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, "%v", list)
 }
-func tcp_gcp_plan(w http.ResponseWriter, r *http.Request) {
-	// sess := internal.GetSession(r.Cookie)
+func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {
 
 	// ######################################### 1. get cfg from r.body ########################################
 	cfg, err := turkey_makeCfg(r)
@@ -171,23 +174,53 @@ func tcp_gcp_plan(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
 	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-	internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] started")
 
-	// ######################################### 2. run tf #########################################
-	err, tfout := runTf(cfg, "plan")
+	tfplanFileName := cfg.Stackname + ".tf_plan"
+
+	if _, err := os.Stat(tfplanFileName); err != nil {
+		internal.Logger.Debug("[update] [" + cfg.Stackname + "] planning")
+		err, tfout := runTf(cfg, "plan", "-o "+tfplanFileName)
+		if err != nil {
+			internal.Logger.Error("failed @runTf: " + err.Error())
+			return
+		}
+		internal.Logger.Sugar().Debugf("%v", tfout)
+		internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
+		planOutStr := strings.Join(tfout, "\n")
+
+		go func() {
+			time.Sleep(31 * time.Minute)
+			os.Remove(tfplanFileName)
+		}()
+
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"stackName":   cfg.Stackname,
+			"stage":       "planning",
+			"instruction": "review the <tf_plan> and try again in 30min to apply",
+			"tf_plan":     planOutStr,
+		})
+		return
+	}
+
+	internal.Logger.Debug("[update] [" + cfg.Stackname + "] applying")
+	err, tfout := runTf(cfg, "apply", tfplanFileName, "--auto-approve")
 	if err != nil {
 		internal.Logger.Error("failed @runTf: " + err.Error())
 		return
 	}
 	internal.Logger.Sugar().Debugf("%v", tfout)
 	internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
+	planOutStr := strings.Join(tfout, "\n")
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"stackName": cfg.Stackname,
-		"tf_plan":   strings.Join(tfout, "\n"),
+		"stackName":   cfg.Stackname,
+		"stage":       "planning",
+		"instruction": "review the <tf_plan> and try again in 30min to apply",
+		"tf_plan":     planOutStr,
 	})
+	// ######################################### 2. run tf #########################################
+
 }
 
 func tcp_gcp_delete(w http.ResponseWriter, r *http.Request) {
@@ -208,7 +241,7 @@ func tcp_gcp_delete(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// ######################################### 2. run tf #########################################
-		err, tfout := runTf(cfg, "destroy")
+		err, tfout := runTf(cfg, "destroy", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
@@ -228,7 +261,7 @@ func tcp_gcp_delete(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func runTf(cfg clusterCfg, verb string) (error, []string) {
+func runTf(cfg clusterCfg, verb string, flags ...string) (error, []string) {
 	wd, _ := os.Getwd()
 	// render the template.tf with cfg.Stackname into a Stackname named folder so that
 	// 1. we can run terraform from that folder
@@ -266,8 +299,12 @@ func runTf(cfg clusterCfg, verb string) (error, []string) {
 		return errors.New(err.Error() + "...cat $tfFile: " + string(tfBytes)), nil
 	}
 
-	err, out_verb := internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, "-auto-approve")
-
+	args := []string{"-chdir=" + tfdir, verb}
+	for _, flag := range flags {
+		args = append(args, flag)
+	}
+	// err, out_verb := internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, flags)
+	err, out_verb := internal.RunCmd_sync(tf_bin, args...)
 	if err != nil {
 		return err, nil
 	}
