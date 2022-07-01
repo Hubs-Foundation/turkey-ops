@@ -284,11 +284,19 @@ resource "google_sql_database_instance" "pgsql" {
   region           = "{{.Region}}"
   deletion_protection = false
   settings {
+    {{ if ne .Env "dev" }}
+    tier = "db-custom-4-26624"
+    {{ else }}
     tier = "db-custom-2-13312"
+    {{ end }}
     ip_configuration {
       ipv4_enabled    = true
       private_network = google_compute_network.vpc.id
-    }    
+    }
+    database_flags {
+      name = "max_connection"
+      value = 2500
+    }
   }
 }
 resource "google_sql_user" "db_user" {
