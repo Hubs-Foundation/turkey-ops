@@ -160,7 +160,7 @@ func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Sugar().Errorf("failed: %v", err)
 	}
 
-	out := strings.Join(list, "\n")
+	out := strings.Join(list, ", ")
 	internal.Logger.Sugar().Debugf("\n%v", out)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
