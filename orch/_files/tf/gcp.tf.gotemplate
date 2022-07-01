@@ -21,7 +21,7 @@ variable "vmType" {
   default = {
     "stream"  = "e2-highcpu-2"
     "hub" = "e2-highmem-2"
-    "service" = "e2-standard-2"
+    "service" = "e2-standard-4"
     "spot" = "e2-standard-2"
   }
 }
