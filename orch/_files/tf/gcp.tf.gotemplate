@@ -19,10 +19,10 @@ variable "location" {
 variable "vmType" {
   type = map
   default = {
-    "stream"  = "e2-highcpu-8"
-    "hub" = "e2-highmem-8"
-    "service" = "e2-standard-8"
-    "spot" = "e2-standard-8"
+    "stream"  = "e2-highcpu-2"
+    "hub" = "e2-highmem-2"
+    "service" = "e2-standard-2"
+    "spot" = "e2-standard-2"
   }
 }
 {{ else }}

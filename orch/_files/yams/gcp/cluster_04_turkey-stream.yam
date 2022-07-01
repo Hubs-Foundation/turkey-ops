@@ -50,8 +50,8 @@ spec:
     kind: Deployment
     name: dialog
   minReplicas: 2
-  maxReplicas: 99
-  targetCPUUtilizationPercentage: 75
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -277,8 +277,8 @@ spec:
     kind: Deployment
     name: dip
   minReplicas: 2
-  maxReplicas: 99
-  targetCPUUtilizationPercentage: 75
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
 ---
 apiVersion: apps/v1
 kind: Deployment

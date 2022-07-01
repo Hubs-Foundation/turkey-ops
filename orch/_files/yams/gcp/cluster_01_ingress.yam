@@ -37,8 +37,8 @@ spec:
     kind: Deployment
     name: haproxy
   minReplicas: 2
-  maxReplicas: 99
-  targetCPUUtilizationPercentage: 75
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
 ---
 kind: Deployment
 apiVersion: apps/v1
