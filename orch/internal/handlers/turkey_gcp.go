@@ -180,7 +180,7 @@ func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {
 
 	if _, err := os.Stat(tfplanFileName); err != nil {
 		internal.Logger.Debug("[update] [" + cfg.Stackname + "] planning")
-		err, tfout := runTf(cfg, "plan", "-o "+tfplanFileName)
+		err, tfout := runTf(cfg, "plan", "-out "+tfplanFileName)
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
