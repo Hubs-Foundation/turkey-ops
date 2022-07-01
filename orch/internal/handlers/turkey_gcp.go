@@ -161,7 +161,7 @@ func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out := strings.Join(list, ", ")
-	internal.Logger.Sugar().Debugf("\n%v", out)
+	internal.Logger.Sugar().Debugf("%v", out)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"0": "turkeycfg/tf-backend/",
