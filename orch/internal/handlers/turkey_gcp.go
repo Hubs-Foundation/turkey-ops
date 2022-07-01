@@ -160,7 +160,13 @@ func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Sugar().Errorf("failed: %v", err)
 	}
 
-	fmt.Fprintf(w, "\n%v\n", strings.Join(list, "\n"))
+	out := strings.Join(list, "\n")
+	internal.Logger.Sugar().Debugf("\n%v", out)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"0": "turkeycfg/tf-backend/",
+		"1": out,
+	})
 }
 func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {
 
