@@ -115,7 +115,7 @@ func (g *GcpSvs) GCS_List(bucketName, prefix string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, attrs.Owner)
+		list = append(list, attrs.Name)
 	}
 	GetLogger().Sugar().Debugf("find %v items", len(list))
 	return list, nil
