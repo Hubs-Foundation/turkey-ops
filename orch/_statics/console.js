@@ -40,10 +40,6 @@ function hc_pause(){ orcReq("PATCH", "/hc_instance?status=down","cfg") }
 document.getElementById("hc_resume").addEventListener("click", hc_resume, false);
 function hc_resume(){ orcReq("PATCH", "/hc_instance?status=up","cfg") }
 
-
-document.getElementById("turkeyAws").addEventListener("click", turkeyAws, false);
-function turkeyAws(){ orcReq("POST", "/tco_aws","cluster_cfg") }
-
 document.getElementById("turkeyGcp_deploy").addEventListener("click", turkeyGcp_deploy, false);
 function turkeyGcp_deploy(){ orcReq("POST", "/tco_gcp","cluster_cfg") }
 
