@@ -86,7 +86,42 @@ spec:
   - host: dash.{{.Domain}}
     http:
       paths:
-      - path: /
+      - path: /login
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+      - path: /_oauth
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+      - path: /_fxa
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+      - path: /logout
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+      - path: /authn
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+      - path: /chk_cookie
         pathType: Prefix
         backend:
           service:

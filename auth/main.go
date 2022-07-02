@@ -17,26 +17,21 @@ func main() {
 	internal.InitProxyman()
 
 	router := http.NewServeMux()
-	router.Handle("/", internal.AuthnProxy())
-	router.Handle("/turkeyauthproxy", internal.AuthnProxy())
-
-	router.Handle("/_healthz", internal.Healthz())
+	//public
 	router.Handle("/login", internal.Login())
 	router.Handle("/_oauth", internal.Oauth())
 	router.Handle("/_fxa", internal.Oauth())
-
 	router.Handle("/logout", internal.Logout())
-	// router.Handle("/traefik-ip", internal.TraefikIp())
 	router.Handle("/authn", internal.Authn())
-
 	router.Handle("/chk_cookie", internal.ChkCookie())
 
+	//private
 	router.Handle("/gimmie_test_jwt_cookie", internalEndpoint()(internal.GimmieTestJwtCookie()))
-	//curl -d '{"email":"foo@bar.baz","uid":"1234"}' localhost:9001/gimmie_test_jwt_cookie
-
 	router.Handle("/zaplvl", internalEndpoint()(internal.Atom))
 	//get: curl localhost:9001/zaplvl
 	//set: curl -X PUT -d 'level=debug' localhost:9001/zaplvl
+	router.Handle("/turkeyauthproxy", internal.AuthnProxy())
+	router.Handle("/_healthz", internal.Healthz())
 
 	go internal.StartNewServer(router, 9001, false)
 	internal.StartNewServer(router, 9002, true)
