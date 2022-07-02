@@ -46,7 +46,7 @@
     <div class="tab-content">
       <div id="hubs_cloud" class="container tab-pane active"><br>
         <div class = "container">
-          <div class="row" id="console">
+          <div class="row" id="console">          
             <div class="col-sm-5">
               <p><b>manual:</b><br>
                 1. put configs in configBox<br>
@@ -78,13 +78,11 @@
           <div class="row" id="console">
             <div class="col-sm-5">
               <p><b>manual:</b><br>
-                1. put configs in configBox<br>
-                2. click a button:<br>
-                ---GCP---<br>
-                <button type="button" class="btn btn-primary btn-sm" id="turkeyGcp_deploy" >deploy</button>
+                <button type="button" class="btn btn-primary btn-sm" id="turkeyGcp_get" >load</button> and then update/delete
+                <br>or <button type="button" class="btn btn-primary btn-sm" id="turkeyGcp_deploy" >deploy new</button>
+                <br>
                 <button type="button" class="btn btn-danger btn-sm" id="turkeyGcp_del" >delete</button>
                 <br>
-                <button type="button" class="btn btn-primary btn-sm" id="turkeyGcp_get" >get</button>
                 <button type="button" class="btn btn-primary btn-sm" id="turkeyGcp_update" >update</button>
 
             </div>
@@ -96,6 +94,20 @@
   "region":"us-east1"
 }</textarea>   
             </div>
+            <table class="table table-sm table-bordered table-hover">
+              <thead>
+                <tr>
+                  <th scope="col">clusters</th>
+                  <th scope="col">actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>null</td>
+                  <td>null</td>
+                </tr>
+              </tbody>
+            </table>  
           </div>
         </div>   
       </div>
