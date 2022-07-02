@@ -105,12 +105,14 @@ func (g *GcpSvs) GCS_List(bucketName, prefix, delimiter string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	objItr := client.Bucket(bucketName).Objects(context.Background(),
-		&storage.Query{
-			Prefix:    prefix,
-			Delimiter: delimiter,
-		})
-	var list []string
+	query := &storage.Query{
+		Prefix:    prefix,
+		Delimiter: delimiter,
+	}
+	query.SetAttrSelection([]string{"Name"})
+	objItr := client.Bucket(bucketName).Objects(context.Background(), query)
+	// names := make(map[string]bool)
+	var res []string
 	for {
 		attrs, err := objItr.Next()
 		if err == iterator.Done {
@@ -119,10 +121,14 @@ func (g *GcpSvs) GCS_List(bucketName, prefix, delimiter string) ([]string, error
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, attrs.Name)
+		// names[strings.Split(attrs.Name, "/")[0]] = true
+		res = append(res, attrs.Name)
 	}
-	GetLogger().Sugar().Debugf("found %v items", len(list))
-	return list, nil
+	// for k, _ := range names {
+	// 	res = append(res, k)
+	// }
+	GetLogger().Sugar().Debugf("found %v items", len(res))
+	return res, nil
 }
 
 func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
