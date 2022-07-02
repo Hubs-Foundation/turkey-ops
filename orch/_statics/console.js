@@ -51,14 +51,14 @@ function turkeyGcp_get(){
   tableBody=document.getElementById("gcp_cluster_table");
   var xhr = new XMLHttpRequest(); res=""
   xhr.onreadystatechange = function() {if (this.readyState == 4) {
+    resJson = JSON.parse(this.responseText);
     console.log("this.responseText: ", this.responseText)
     console.log("resJson: ", resJson)
     console.log("resJson.clusters: ", resJson.clusters)
-    resJson = JSON.parse(this.responseText);
     tableBody.innerHTML=resJson.clusters.map(row => `<tr><td>${row}</td><td>[update],[delete]</td></tr>`).join('');
   }};
   xhr.open("GET", "/tco_gcp", true);
-  xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhr.send();
 
 }
