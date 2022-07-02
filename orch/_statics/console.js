@@ -60,7 +60,6 @@ function turkeyGcp_get(){
   xhr.open("GET", "/tco_gcp", true);
   // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhr.send();
-
 }
 
 document.getElementById("turkeyGcp_update").addEventListener("click", turkeyGcp_update, false);

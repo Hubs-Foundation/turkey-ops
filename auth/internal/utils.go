@@ -23,6 +23,12 @@ func InitLogger() {
 
 	defer Logger.Sync()
 
-	// Atom.SetLevel(zap.InfoLevel)
-	Atom.SetLevel(zap.WarnLevel)
+	if os.Getenv("LOG_LEVEL") == "warn" {
+		Atom.SetLevel(zap.WarnLevel)
+	} else if os.Getenv("LOG_LEVEL") == "info" {
+		Atom.SetLevel(zap.InfoLevel)
+	} else {
+		Atom.SetLevel(zap.DebugLevel)
+	}
+
 }

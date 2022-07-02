@@ -23,7 +23,7 @@ type Config struct {
 	TurkeyDomain    string `description:"turkey domain"`
 	Domain          string `description:"root domain"`
 	TrustedClients  string `description:"ie. https://portal.myhubs.net"`
-	AllowAuthCookie bool   `description: allow creation and verification of simple secret protected authCookie in addition to full jwt-signed-with-domain-name authToken`
+	AllowAuthCookie bool   `description:"allow creation and verification of simple secret protected authCookie in addition to full jwt-signed-with-domain-name authToken"`
 
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config                 func(s string) error `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
