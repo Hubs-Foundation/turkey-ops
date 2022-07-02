@@ -173,8 +173,8 @@ func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 
 	internal.Logger.Sugar().Debugf("%v", clusterList)
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"clusters": fmt.Sprintf("%v", clusterList),
+	json.NewEncoder(w).Encode(map[string][]string{
+		"clusters": clusterList,
 	})
 }
 func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {
