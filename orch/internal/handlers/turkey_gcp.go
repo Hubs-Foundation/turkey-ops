@@ -155,7 +155,7 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 
-	list, err := internal.Cfg.Gcps.GCS_List("turkeycfg", "tf-backend/", "/")
+	list, err := internal.Cfg.Gcps.GCS_List("turkeycfg", "tf-backend", "/")
 	if err != nil {
 		internal.Logger.Sugar().Errorf("failed: %v", err)
 	}
