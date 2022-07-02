@@ -102,7 +102,7 @@ tbody.onmouseover = function (e) {
       //     data.push(cells[i].innerHTML);
       // }
       clusterName=cells[0]
-      document.getElementById(cfgBoxId).value = `
+      document.getElementById("cluster_cfg").value = `
       {
         "stackname":"` + clustername + `"
       }`
