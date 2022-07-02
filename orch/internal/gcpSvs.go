@@ -106,8 +106,8 @@ func (g *GcpSvs) GCS_List(bucketName, prefix, delimiter string) ([]string, error
 		return nil, err
 	}
 	query := &storage.Query{
-		Prefix:    prefix,
-		Delimiter: delimiter,
+		Prefix: prefix,
+		// Delimiter: delimiter,
 	}
 	query.SetAttrSelection([]string{"Name"})
 	objItr := client.Bucket(bucketName).Objects(context.Background(), query)
