@@ -99,13 +99,17 @@ func (g *GcpSvs) GCS_ReadFile(bucketName, filename string) ([]byte, error) {
 	return bytes, nil
 }
 
-func (g *GcpSvs) GCS_List(bucketName, prefix string) ([]string, error) {
+func (g *GcpSvs) GCS_List(bucketName, prefix, delimiter string) ([]string, error) {
 	GetLogger().Debug("reading bucket: " + bucketName + ", prefix: " + prefix)
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	objItr := client.Bucket(bucketName).Objects(context.Background(), &storage.Query{Prefix: prefix})
+	objItr := client.Bucket(bucketName).Objects(context.Background(),
+		&storage.Query{
+			Prefix:    prefix,
+			Delimiter: delimiter,
+		})
 	var list []string
 	for {
 		attrs, err := objItr.Next()
@@ -117,7 +121,7 @@ func (g *GcpSvs) GCS_List(bucketName, prefix string) ([]string, error) {
 		}
 		list = append(list, attrs.Name)
 	}
-	GetLogger().Sugar().Debugf("find %v items", len(list))
+	GetLogger().Sugar().Debugf("found %v items", len(list))
 	return list, nil
 }
 
