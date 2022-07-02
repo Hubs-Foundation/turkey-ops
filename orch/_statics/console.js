@@ -87,7 +87,7 @@ function getDomain()
 }
 //-------------------------
 
-var table = document.getElementsByTagName("table")[0];
+var table = document.getElementById("gcp_cluster_table");
 var tbody = table.getElementsByTagName("tbody")[0];
 tbody.onmouseover = function (e) {
   e = e || window.event;
