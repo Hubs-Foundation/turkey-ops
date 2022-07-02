@@ -101,10 +101,10 @@ tbody.onmouseover = function (e) {
       // for (var i = 0; i < cells.length; i++) {
       //     data.push(cells[i].innerHTML);
       // }
-      clusterName=cells[0]
+      var clusterName=cells[0]
       document.getElementById("cluster_cfg").value = `
       {
-        "stackname":"` + clustername + `"
+        "stackname":"` + clusterName + `"
       }`
   }
 };
