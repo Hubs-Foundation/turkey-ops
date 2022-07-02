@@ -48,14 +48,14 @@ function turkeyGcp_del(){ orcReq("DELETE", "/tco_gcp","cluster_cfg") }
 
 document.getElementById("turkeyGcp_get").addEventListener("click", turkeyGcp_get, false);
 function turkeyGcp_get(){ 
-  tableBody=document.getElementById("gcp_cluster_table");
+  tbody=document.getElementById("gcp_cluster_table").getElementsByTagName("tbody")[0];
   var xhr = new XMLHttpRequest(); res=""
   xhr.onreadystatechange = function() {if (this.readyState == 4) {
     resJson = JSON.parse(this.responseText);
     console.log("this.responseText: ", this.responseText)
     console.log("resJson: ", resJson)
     console.log("resJson.clusters: ", resJson.clusters)
-    tableBody.innerHTML=resJson.clusters.map(row => `<tr><td>${row}</td><td>[update],[delete]</td></tr>`).join('');
+    tbody.innerHTML=resJson.clusters.map(row => `<tr><td>${row}</td><td>[update],[delete]</td></tr>`).join('');
   }};
   xhr.open("GET", "/tco_gcp", true);
   // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -85,3 +85,49 @@ function getDomain()
     hostName = window.location.hostname
     return hostName.substring(hostName.lastIndexOf(".", hostName.lastIndexOf(".") - 1) + 1);
 }
+//-------------------------
+
+var table = document.getElementsByTagName("table")[0];
+var tbody = table.getElementsByTagName("tbody")[0];
+tbody.onmouseover = function (e) {
+  e = e || window.event;
+  // var data = [];
+  var target = e.srcElement || e.target;
+  while (target && target.nodeName !== "TR") {
+      target = target.parentNode;
+  }
+  if (target) {
+      var cells = target.getElementsByTagName("td");
+      // for (var i = 0; i < cells.length; i++) {
+      //     data.push(cells[i].innerHTML);
+      // }
+      clusterName=cells[0]
+      document.getElementById(cfgBoxId).value = `
+      {
+        "stackname":"` + clustername + `"
+      }`
+  }
+};
+
+// tbody.onclick = function (e) {
+//     e = e || window.event;
+//     var data = [];
+//     var target = e.srcElement || e.target;
+//     while (target && target.nodeName !== "TR") {
+//         target = target.parentNode;
+//     }
+//     if (target) {
+//         var cells = target.getElementsByTagName("td");
+//         for (var i = 0; i < cells.length; i++) {
+//             data.push(cells[i].innerHTML);
+//         }
+//     }
+//     alert(data);
+// };
+
+
+
+
+
+
+
