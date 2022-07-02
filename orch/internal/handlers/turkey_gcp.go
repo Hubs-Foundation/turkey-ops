@@ -154,17 +154,27 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 }
 
 func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
-
-	list, err := internal.Cfg.Gcps.GCS_List("turkeycfg", "tf-backend/", "/")
+	bktPrefix := "tf-backend/"
+	rawList, err := internal.Cfg.Gcps.GCS_List("turkeycfg", bktPrefix)
 	if err != nil {
 		internal.Logger.Sugar().Errorf("failed: %v", err)
 	}
+	clusterNames := make(map[string]bool)
+	for _, ele := range rawList {
+		arr := strings.Split(ele, "/")
+		if len(arr) > 2 {
+			clusterNames[arr[1]] = true
+		}
+	}
+	var clusterList []string
+	for k, _ := range clusterNames {
+		clusterList = append(clusterList, k)
+	}
 
-	out := strings.Join(list, ", ")
-	internal.Logger.Sugar().Debugf("%v", out)
+	internal.Logger.Sugar().Debugf("%v", clusterList)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"clusters": fmt.Sprintf("%v", out),
+		"clusters": fmt.Sprintf("%v", clusterList),
 	})
 }
 func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {

@@ -99,7 +99,7 @@ func (g *GcpSvs) GCS_ReadFile(bucketName, filename string) ([]byte, error) {
 	return bytes, nil
 }
 
-func (g *GcpSvs) GCS_List(bucketName, prefix, delimiter string) ([]string, error) {
+func (g *GcpSvs) GCS_List(bucketName, prefix string) ([]string, error) {
 	GetLogger().Debug("reading bucket: " + bucketName + ", prefix: " + prefix)
 	client, err := storage.NewClient(context.Background())
 	if err != nil {
@@ -107,7 +107,7 @@ func (g *GcpSvs) GCS_List(bucketName, prefix, delimiter string) ([]string, error
 	}
 	query := &storage.Query{
 		Prefix: prefix,
-		// Delimiter: delimiter,
+		// Delimiter: delimiter,	#buggy on their end
 	}
 	query.SetAttrSelection([]string{"Name"})
 	objItr := client.Bucket(bucketName).Objects(context.Background(), query)
