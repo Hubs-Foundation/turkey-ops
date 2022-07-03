@@ -165,15 +165,18 @@ func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 			clusterNames[arr[1]] = true
 		}
 	}
-	var clusterList []string
+	var clusterData []map[string]string
 	for k, _ := range clusterNames {
-		clusterList = append(clusterList, k)
+		clusterData = append(clusterData, map[string]string{
+			"name":   k,
+			"config": "https://console.cloud.google.com/storage/browser/turkeycfg/tf-backend/" + k,
+		})
 	}
 
-	internal.Logger.Sugar().Debugf("%v", clusterList)
+	internal.Logger.Sugar().Debugf("%v", clusterData)
 
-	json.NewEncoder(w).Encode(map[string][]string{
-		"clusters": clusterList,
+	json.NewEncoder(w).Encode(map[string][]map[string]string{
+		"clusters": clusterData,
 	})
 }
 func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {

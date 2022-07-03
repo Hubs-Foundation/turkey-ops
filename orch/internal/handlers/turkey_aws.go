@@ -52,7 +52,7 @@ var TurkeyAws = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		cfg.CLOUD = "aws"
 		//aws service
-		awss, err := internal.NewAwsSvs(cfg.AWS_KEY, cfg.AWS_SECRET, cfg.AWS_REGION)
+		awss, err := internal.NewAwsSvs(cfg.AWS_KEY, cfg.AWS_SECRET, cfg.Region)
 		if err != nil {
 			internal.Logger.Error("ERROR @ NewAwsSvs: " + err.Error())
 			return

@@ -53,9 +53,8 @@ function turkeyGcp_get(){
   xhr.onreadystatechange = function() {if (this.readyState == 4) {
     resJson = JSON.parse(this.responseText);
     console.log("this.responseText: ", this.responseText)
-    console.log("resJson: ", resJson)
     console.log("resJson.clusters: ", resJson.clusters)
-    tbody.innerHTML=resJson.clusters.map(row => `<tr><td>${row}</td><td>[update],[delete]</td></tr>`).join('');
+    tbody.innerHTML=resJson.clusters.map(row => `<tr><td>${row.name}</td><td>${row.config}</td></tr>`).join('');
   }};
   xhr.open("GET", "/tco_gcp", true);
   // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -103,7 +102,7 @@ tbody.onclick = function (e) {
       // }
       var clusterName=cells[0].innerHTML
       document.getElementById("cluster_cfg").value = `{
-  "domain":"???.myhubs.net",
+  "domain":"changeMe.myhubs.net",
   "region":"us-central1",  
   "stackname":"` + clusterName + `"
 }`

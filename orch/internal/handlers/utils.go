@@ -157,9 +157,8 @@ type clusterCfg struct {
 	GCP_SA_HMAC_SECRET      string `json:"GCP_SA_HMAC_SECRET"`      //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
 	SKETCHFAB_API_KEY       string `json:"SKETCHFAB_API_KEY"`
 	// this will just be Region ...
-	AWS_REGION string `json:"AWS_REGION"` //us-east-1
-	ItaChan    string `json:"itachan"`    //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
-	CLOUD      string `json:"cloud"`      //aws or gcp or azure or something else like nope or local etc
+	ItaChan string `json:"itachan"` //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
+	CLOUD   string `json:"cloud"`   //aws or gcp or azure or something else like nope or local etc
 
 	//optional inputs
 	DeploymentPrefix     string `json:"name"`                 //t-
@@ -182,30 +181,98 @@ type clusterCfg struct {
 	PSQL    string `json:"PSQL"`    //postgresql://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
 }
 
-func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
+func turkey_getCfg(r *http.Request) (clusterCfg, error) {
 	var cfg clusterCfg
-
 	//get r.body
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		internal.Logger.Warn("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
-	//make cfg
+	//unmarshal to cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
 		internal.Logger.Warn("bad clusterCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
+	return cfg, nil
+}
+
+// load current cfg from stack to populate ommited fields in inputedCfg
+func turkey_loadStackCfg(stackname string, inputedCfg clusterCfg) (clusterCfg, error) {
+	var cfg clusterCfg
+	//get cfg.json from turkeycfg bucket
+	cfgBytes, err := internal.Cfg.Gcps.GCS_ReadFile("turkeycfg", "tf-backend/"+stackname+"/cfg.json")
+	if err != nil {
+		return cfg, nil
+	}
+	//unmarshal to cfg
+	err = json.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		internal.Logger.Warn("bad clusterCfg: " + string(cfgBytes))
+		return cfg, err
+	}
+	// for ommited files in inputedCfg -- load from (previous deployed) cfg
+	cfg_m, err := clusterCfgToMap(cfg)
+	if err != nil {
+		return cfg, err
+	}
+	inputedCfg_m, err := clusterCfgToMap(inputedCfg)
+	if err != nil {
+		return cfg, err
+	}
+	for k, v := range inputedCfg_m {
+		if v == "" {
+			inputedCfg_m[k] = cfg_m[k]
+		}
+	}
+	var loadedCfg clusterCfg
+	loadedCfgJsonByte, err := json.Marshal(inputedCfg_m)
+	if err != nil {
+		return cfg, err
+	}
+	err = json.Unmarshal(loadedCfgJsonByte, &loadedCfg)
+	if err != nil {
+		return loadedCfg, err
+	}
+	return loadedCfg, nil
+}
+
+func clusterCfgToMap(cfg clusterCfg) (map[string]string, error) {
+	var m map[string]string
+	cfgJsonByte, err := json.Marshal(cfg)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(cfgJsonByte, &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
+
+	cfg, err := turkey_getCfg(r)
+	if err != nil {
+		return cfg, err
+	}
+	if cfg.Stackname != "" {
+		cfg, err = turkey_loadStackCfg(cfg.Stackname, cfg)
+		if err != nil {
+			internal.Logger.Error("failed to load provided cluster stackname: " + cfg.Stackname)
+			return cfg, err
+		}
+
+	}
 
 	//required inputs
 	if cfg.Region == "" {
-		return cfg, errors.New("bad input: Region is required")
+		return cfg, errors.New("bad input: can't figure out value for Region")
 	}
-	cfg.AWS_REGION = cfg.Region
 
 	// todo -- make a util func to use a regex to validate domain name
-	if cfg.Domain == "" || strings.HasPrefix(cfg.Domain, "???") {
+	if cfg.Domain == "" || strings.HasPrefix(cfg.Domain, "changeMe") {
 		return cfg, errors.New("bad input: Domain is required")
 	}
 
@@ -266,13 +333,11 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		if cfg.ItaChan == "prod" {
 			cfg.ItaChan = "stable"
 		}
-		internal.Logger.Warn("ItaChan unspecified -- fallinb back to Env (swaping staging/prod for beta/stable): " + cfg.ItaChan)
+		internal.Logger.Warn("ItaChan unspecified -- falling back to Env (swaping staging/prod for beta/stable): " + cfg.ItaChan)
 	}
 
 	//optional inputs
 	if cfg.DeploymentPrefix == "" {
-		// cfg.DeploymentPrefix = "t-"
-		// internal.Logger.Warn("deploymentPrefix unspecified -- using (default)" + cfg.DeploymentPrefix)
 		cfg.DeploymentPrefix = strings.ReplaceAll(cfg.Domain, ".", "")
 		internal.Logger.Warn("deploymentPrefix unspecified -- using (default)" + cfg.DeploymentPrefix)
 	}
