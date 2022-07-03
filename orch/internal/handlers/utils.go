@@ -233,6 +233,7 @@ func turkey_loadStackCfg(stackname string, inputedCfg clusterCfg) (clusterCfg, e
 	}
 	err = json.Unmarshal(loadedCfgJsonByte, &loadedCfg)
 	if err != nil {
+		internal.Logger.Error("failed to Unmarshal loadedCfgJsonByte " + string(loadedCfgJsonByte))
 		return loadedCfg, err
 	}
 	return loadedCfg, nil
