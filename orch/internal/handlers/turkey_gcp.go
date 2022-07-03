@@ -27,20 +27,20 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		tcp_gcp_create(w, r)
+		tco_gcp_create(w, r)
 	case "DELETE":
-		tcp_gcp_delete(w, r)
+		tco_gcp_delete(w, r)
 	case "GET":
-		tcp_gcp_get(w, r)
+		tco_gcp_get(w, r)
 	case "PATCH":
-		tcp_gcp_update(w, r)
+		tco_gcp_update(w, r)
 	default:
 		return
 		// fmt.Fprintf(w, "unexpected method: "+r.Method)
 	}
 })
 
-func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
+func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 	// sess := internal.GetSession(r.Cookie)
 
 	// ########## 1. get cfg from r.body ########################################
@@ -152,7 +152,7 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
+func tco_gcp_get(w http.ResponseWriter, r *http.Request) {
 	bktPrefix := "tf-backend/"
 	rawList, err := internal.Cfg.Gcps.GCS_List("turkeycfg", bktPrefix)
 	if err != nil {
@@ -179,7 +179,7 @@ func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 		"clusters": clusterData,
 	})
 }
-func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {
+func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 
 	// ######################################### 1. get cfg from r.body ########################################
 	cfg, err := turkey_makeCfg(r)
@@ -240,7 +240,7 @@ func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func tcp_gcp_delete(w http.ResponseWriter, r *http.Request) {
+func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
 	// sess := internal.GetSession(r.Cookie)
 
 	// ######################################### 1. get cfg from r.body ########################################
