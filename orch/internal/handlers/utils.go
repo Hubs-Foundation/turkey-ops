@@ -200,39 +200,39 @@ func turkey_getCfg(r *http.Request) (clusterCfg, error) {
 
 // load current cfg from stack to populate ommited fields in inputedCfg
 func turkey_loadStackCfg(stackname string, inputedCfg clusterCfg) (clusterCfg, error) {
-	var cfg clusterCfg
+	var currentCfg clusterCfg
 	//get cfg.json from turkeycfg bucket
 	cfgBytes, err := internal.Cfg.Gcps.GCS_ReadFile("turkeycfg", "tf-backend/"+stackname+"/cfg.json")
 	if err != nil {
-		return cfg, nil
+		return currentCfg, err
 	}
 	//unmarshal to cfg
-	err = json.Unmarshal(cfgBytes, &cfg)
+	err = json.Unmarshal(cfgBytes, &currentCfg)
 	if err != nil {
 		internal.Logger.Warn("bad clusterCfg: " + string(cfgBytes))
-		return cfg, err
+		return currentCfg, err
 	}
 	// for ommited files in inputedCfg -- load from (previous deployed) cfg
-	cfg_m, err := clusterCfgToMap(cfg)
+	currentCfg_m, err := clusterCfgToMap(currentCfg)
 	if err != nil {
-		return cfg, err
+		return currentCfg, err
 	}
-	inputedCfg_m, err := clusterCfgToMap(inputedCfg)
+	inputedcurrentCfg_m, err := clusterCfgToMap(inputedCfg)
 	if err != nil {
-		return cfg, err
+		return currentCfg, err
 	}
-	internal.Logger.Sugar().Debugf("(current) cfg_m: %v", cfg_m)
-	internal.Logger.Sugar().Debugf("inputedCfg_m: %v", inputedCfg_m)
-	for k, v := range inputedCfg_m {
+	internal.Logger.Sugar().Debugf("currentCfg_m: %v", currentCfg_m)
+	internal.Logger.Sugar().Debugf("inputedcurrentCfg_m: %v", inputedcurrentCfg_m)
+	for k, v := range inputedcurrentCfg_m {
 		if v == "" {
 			internal.Logger.Debug("loading from current cfg: " + k)
-			inputedCfg_m[k] = cfg_m[k]
+			inputedcurrentCfg_m[k] = currentCfg_m[k]
 		}
 	}
 	var loadedCfg clusterCfg
-	loadedCfgJsonByte, err := json.Marshal(inputedCfg_m)
+	loadedCfgJsonByte, err := json.Marshal(inputedcurrentCfg_m)
 	if err != nil {
-		return cfg, err
+		return currentCfg, err
 	}
 	err = json.Unmarshal(loadedCfgJsonByte, &loadedCfg)
 	if err != nil {
@@ -262,6 +262,14 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	if err != nil {
 		return cfg, err
 	}
+
+	// changeMe's same as "" ... todo -- make a util func to use a regex to validate domain name
+	if strings.HasPrefix(cfg.Domain, "changeMe") {
+		cfg.Domain = ""
+	}
+
+	// stackname present == there's an existing cluster
+	// 	== we should look for values there for omitted inputs, instead of fall back to locally available or newly generated values
 	if cfg.Stackname != "" {
 		internal.Logger.Debug("loading current cfg for: " + cfg.Stackname)
 		cfg, err = turkey_loadStackCfg(cfg.Stackname, cfg)
@@ -276,8 +284,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		return cfg, errors.New("bad input: can't figure out value for Region")
 	}
 
-	// todo -- make a util func to use a regex to validate domain name
-	if cfg.Domain == "" || strings.HasPrefix(cfg.Domain, "changeMe") {
+	if cfg.Domain == "" {
 		return cfg, errors.New("bad input: Domain is required")
 	}
 
