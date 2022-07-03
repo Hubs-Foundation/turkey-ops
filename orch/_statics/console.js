@@ -88,7 +88,7 @@ function turkeyGcp_update(){
   }};
   xhr.open("PATCH", "/tco_gcp", false);
   // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhr.send();
+  xhr.send(document.getElementById(cfgBoxId).value);
 
   // orcReq("PATCH", "/tco_gcp","cluster_cfg")
 }

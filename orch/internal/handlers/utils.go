@@ -192,7 +192,7 @@ func turkey_getCfg(r *http.Request) (clusterCfg, error) {
 	//unmarshal to cfg
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
-		internal.Logger.Warn("bad clusterCfg: " + string(rBodyBytes))
+		internal.Logger.Error("bad clusterCfg: " + string(rBodyBytes))
 		return cfg, err
 	}
 	return cfg, nil
@@ -221,8 +221,11 @@ func turkey_loadStackCfg(stackname string, inputedCfg clusterCfg) (clusterCfg, e
 	if err != nil {
 		return cfg, err
 	}
+	internal.Logger.Sugar().Debugf("(current) cfg_m: %v", cfg_m)
+	internal.Logger.Sugar().Debugf("inputedCfg_m: %v", inputedCfg_m)
 	for k, v := range inputedCfg_m {
 		if v == "" {
+			internal.Logger.Debug("loading from current cfg: " + k)
 			inputedCfg_m[k] = cfg_m[k]
 		}
 	}
