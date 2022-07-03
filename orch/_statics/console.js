@@ -89,7 +89,7 @@ function getDomain()
 
 var table = document.getElementById("gcp_cluster_table");
 var tbody = table.getElementsByTagName("tbody")[0];
-tbody.onmouseover = function (e) {
+tbody.onclick = function (e) {
   e = e || window.event;
   // var data = [];
   var target = e.srcElement || e.target;
@@ -102,8 +102,7 @@ tbody.onmouseover = function (e) {
       //     data.push(cells[i].innerHTML);
       // }
       var clusterName=cells[0].innerHTML
-      document.getElementById("cluster_cfg").value = `
-{
+      document.getElementById("cluster_cfg").value = `{
   "domain":"???.myhubs.net",
   "region":"us-central1",  
   "stackname":"` + clusterName + `"
