@@ -46,24 +46,6 @@ function turkeyGcp_deploy(){ orcReq("POST", "/tco_gcp","cluster_cfg") }
 document.getElementById("turkeyGcp_del").addEventListener("click", turkeyGcp_del, false);
 function turkeyGcp_del(){ orcReq("DELETE", "/tco_gcp","cluster_cfg") }
 
-document.getElementById("turkeyGcp_get").addEventListener("click", turkeyGcp_get, false);
-function turkeyGcp_get(){ 
-  tbody=document.getElementById("gcp_cluster_table").getElementsByTagName("tbody")[0];
-  var xhr = new XMLHttpRequest(); res=""
-  xhr.onreadystatechange = function() {if (this.readyState == 4) {
-    resJson = JSON.parse(this.responseText);
-    console.log("this.responseText: ", this.responseText)
-    console.log("resJson.clusters: ", resJson.clusters)
-    tbody.innerHTML=resJson.clusters.map(row => `<tr><td>${row.name}</td><td>${row.config}</td></tr>`).join('');
-  }};
-  xhr.open("GET", "/tco_gcp", true);
-  // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xhr.send();
-}
-
-document.getElementById("turkeyGcp_update").addEventListener("click", turkeyGcp_update, false);
-function turkeyGcp_update(){ orcReq("PATCH", "/tco_gcp","cluster_cfg") }
-
 function orcReq(method, path, cfgBoxId) {
   cfg=document.getElementById(cfgBoxId).value
   divLogBoard=document.getElementById("divLogBoard");
@@ -77,6 +59,25 @@ function orcReq(method, path, cfgBoxId) {
   xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhr.send(cfg);
 }
+
+
+document.getElementById("turkeyGcp_get").addEventListener("click", turkeyGcp_get, false);
+function turkeyGcp_get(){ 
+  tbody=document.getElementById("gcp_cluster_table").getElementsByTagName("tbody")[0];
+  var xhr = new XMLHttpRequest(); res=""
+  xhr.onreadystatechange = function() {if (this.readyState == 4) {
+    resJson = JSON.parse(this.responseText);
+    console.log("this.responseText: ", this.responseText)
+    console.log("resJson.clusters: ", resJson.clusters)
+    tbody.innerHTML=resJson.clusters.map(row => `<tr><td>${row.name}</td><td><a href=${row.cfgbkt}>${row.cfgbkt}</a></td></tr>`).join('');
+  }};
+  xhr.open("GET", "/tco_gcp", true);
+  // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xhr.send();
+}
+
+document.getElementById("turkeyGcp_update").addEventListener("click", turkeyGcp_update, false);
+function turkeyGcp_update(){ orcReq("PATCH", "/tco_gcp","cluster_cfg") }
 
 //-------------------------
 function getDomain()

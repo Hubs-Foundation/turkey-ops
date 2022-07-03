@@ -47,16 +47,11 @@ func (p *proxyman) new(target string) (*httputil.ReverseProxy, error) {
 	}
 	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
 	proxy.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		// Proxy: http.ProxyFromEnvironment,
-		// DialContext: (&net.Dialer{
-		// 	Timeout:   900 * time.Second,
-		// 	KeepAlive: 900 * time.Second,
-		// }).DialContext,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
 		MaxIdleConns:          100,
-		IdleConnTimeout:       900 * time.Second,
+		IdleConnTimeout:       1000 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
+		ExpectContinueTimeout: 2 * time.Second,
 	}
 
 	return proxy, nil

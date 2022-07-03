@@ -169,7 +169,7 @@ func tcp_gcp_get(w http.ResponseWriter, r *http.Request) {
 	for k, _ := range clusterNames {
 		clusterData = append(clusterData, map[string]string{
 			"name":   k,
-			"config": "https://console.cloud.google.com/storage/browser/turkeycfg/tf-backend/" + k,
+			"cfgbkt": "https://console.cloud.google.com/storage/browser/turkeycfg/tf-backend/" + k,
 		})
 	}
 
