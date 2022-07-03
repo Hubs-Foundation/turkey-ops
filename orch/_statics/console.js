@@ -103,9 +103,11 @@ tbody.onmouseover = function (e) {
       // }
       var clusterName=cells[0]
       document.getElementById("cluster_cfg").value = `
-      {
-        "stackname":"` + clusterName + `"
-      }`
+{
+  "domain":"???.myhubs.net",
+  "region":"us-central1",  
+  "stackname":"` + clusterName + `"
+}`
   }
 };
 

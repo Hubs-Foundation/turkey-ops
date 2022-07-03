@@ -10,31 +10,24 @@ provider "google-beta" {
   project = "{{.ProjectId}}"
   region  = "{{.Region}}"
 }
-
+variable "vmType" {
+  type = map
+  default = {
+    "stream"  = "e2-highcpu-4"
+    "hub" = "e2-highmem-2"
+    "service" = "e2-standard-4"
+    "spot" = "e2-standard-4"
+  }
+}
 {{ if ne .Env "dev" }}
 variable "location" {
   type= string
   default   = "{{.Region}}"
 }
-variable "vmType" {
-  type = map
-  default = {
-    "stream"  = "e2-highcpu-2"
-    "hub" = "e2-highmem-2"
-    "service" = "e2-standard-4"
-    "spot" = "e2-standard-2"
-  }
-}
 {{ else }}
 variable "location" {
   type= string
   default   = "{{.Region}}-b"
-}
-variable "vmType" {
-  type = map
-  default = {
-    "spot" = "e2-standard-4"
-  }
 }
 {{ end }}
 
@@ -141,7 +134,6 @@ resource "google_container_node_pool" "stream_nodes" {
     max_node_count = 32
   }
 }
-
 resource "google_container_node_pool" "hub_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-hub"
@@ -172,7 +164,6 @@ resource "google_container_node_pool" "hub_nodes" {
     max_node_count = 128
   }
 }
-
 resource "google_container_node_pool" "service_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-service"
@@ -202,6 +193,7 @@ resource "google_container_node_pool" "service_nodes" {
     max_node_count = 32
   }
 }
+{{ end }}
 resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers hub probably)
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-spot"
@@ -230,36 +222,6 @@ resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooli
     max_node_count = 256
   }
 }
-{{ else }}
-resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers hub probably)
-  provider = google-beta
-  name       = "${google_container_cluster.gke.name}-spot"
-  location   = var.location
-  cluster    = google_container_cluster.gke.name
-  node_count = 1
-  node_config {
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/logging.write",
-      "https://www.googleapis.com/auth/monitoring",
-    ]
-    labels = {
-      env = "{{.Env}}"
-      stackname="{{.Stackname}}"
-      turkey = "spot"
-    }
-    preemptible  = true
-    machine_type = var.vmType["spot"]
-    tags         = ["turkey","{{.Env}}","spot","{{.Stackname}}"]
-    metadata = {
-      disable-legacy-endpoints = "true"
-    }
-  }
-  autoscaling { # this is "cluster autoscaler"
-    min_node_count = 2
-    max_node_count = 8
-  }
-}
-{{ end }}
 
 ################## pgsql
 resource "google_compute_global_address" "private_ip_address" {
@@ -297,7 +259,7 @@ resource "google_sql_database_instance" "pgsql" {
       private_network = google_compute_network.vpc.id
     }
     database_flags {
-      name = "max_connection"
+      name = "max_connections"
       value = 2500
     }
   }

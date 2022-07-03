@@ -202,9 +202,11 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	}
 	cfg.AWS_REGION = cfg.Region
 
-	if cfg.Domain == "" {
+	// todo -- make a util func to use a regex to validate domain name
+	if cfg.Domain == "" || strings.HasPrefix(cfg.Domain, "???") {
 		return cfg, errors.New("bad input: Domain is required")
 	}
+
 	//required but with fallbacks
 	if cfg.OAUTH_CLIENT_ID_FXA == "" {
 		internal.Logger.Warn("OAUTH_CLIENT_ID_FXA not supplied, falling back to local value")
