@@ -234,7 +234,7 @@ func RunCmd_sync(name string, arg ...string) (error, []string) {
 		return err, nil
 	}
 
-	return nil, nil
+	return nil, out
 }
 
 func RootDomain(fullDomain string) string {
