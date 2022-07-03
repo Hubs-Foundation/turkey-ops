@@ -2,14 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/smtp"
 	"os"
 	"strings"
-	"text/template"
 	"time"
 
 	"main/internal"
@@ -57,12 +55,12 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// ########## 2. run tf #########################################
-		err, tfout := runTf(cfg, "apply", "--auto-approve")
+		tfFile, tfout, err := runTf(cfg, "apply", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
 		}
-		internal.Logger.Sugar().Debugf("%v", tfout)
+		internal.Logger.Sugar().Debugf("tfout: %v", tfout)
 		internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "tf deployment completed")
 		// ########## 3. prepare for post Deployment setups:
 		// ###### get db info and complete clusterCfg (cfg)
@@ -116,6 +114,7 @@ func tcp_gcp_create(w http.ResponseWriter, r *http.Request) {
 		//upload clusterCfg
 		clusterCfgBytes, _ := json.Marshal(cfg)
 		internal.Cfg.Gcps.GCS_WriteFile("turkeycfg", "tf-backend/"+cfg.Stackname+"/cfg.json", string(clusterCfgBytes))
+		internal.Cfg.Gcps.GCS_WriteFile("turkeycfg", "tf-backend/"+cfg.Stackname+"/infra.tf", tfFile)
 
 		//email the final manual steps to authenticated user
 
@@ -195,7 +194,7 @@ func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {
 
 	if _, err := os.Stat(tfplanFileName); err != nil {
 		internal.Logger.Debug("[update] [" + cfg.Stackname + "] planning")
-		err, tfout := runTf(cfg, "plan", "-out="+tfplanFileName)
+		_, tfout, err := runTf(cfg, "plan", "-out="+tfplanFileName)
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
@@ -219,7 +218,7 @@ func tcp_gcp_update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	internal.Logger.Debug("[update] [" + cfg.Stackname + "] applying")
-	err, tfout := runTf(cfg, "apply", tfplanFileName, "--auto-approve")
+	_, tfout, err := runTf(cfg, "apply", tfplanFileName, "--auto-approve")
 	if err != nil {
 		internal.Logger.Error("failed @runTf: " + err.Error())
 		return
@@ -256,7 +255,7 @@ func tcp_gcp_delete(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// ######################################### 2. run tf #########################################
-		err, tfout := runTf(cfg, "destroy", "--auto-approve")
+		_, tfout, err := runTf(cfg, "destroy", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
@@ -274,56 +273,6 @@ func tcp_gcp_delete(w http.ResponseWriter, r *http.Request) {
 		"stackName":    cfg.Stackname,
 		"statusUpdate": "GET@/tco_gcp_status",
 	})
-}
-
-func runTf(cfg clusterCfg, verb string, flags ...string) (error, []string) {
-	wd, _ := os.Getwd()
-	// render the template.tf with cfg.Stackname into a Stackname named folder so that
-	// 1. we can run terraform from that folder
-	// 2. terraform will use a Stackname named folder in it's remote backend
-	tfTemplateFile := wd + "/_files/tf/gcp.tf.gotemplate"
-	if _, err := os.Stat(tfTemplateFile); errors.Is(err, os.ErrNotExist) {
-		return err, nil
-	}
-
-	// tf_bin := wd + "/_files/tf/terraform"
-	tf_bin := "terraform"
-	tfdir := wd + "/_files/tf/" + cfg.Stackname
-	os.Mkdir(tfdir, os.ModePerm)
-
-	tfFile := tfdir + "/rendered.tf"
-	t, err := template.ParseFiles(tfTemplateFile)
-	if err != nil {
-		return err, nil
-	}
-	f, _ := os.Create(tfFile)
-	defer f.Close()
-
-	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass, Env string }{
-		ProjectId: internal.Cfg.Gcps.ProjectId,
-		Stackname: cfg.Stackname,
-		Region:    cfg.Region,
-		DbUser:    "postgres",
-		DbPass:    cfg.DB_PASS,
-		Env:       cfg.Env,
-	})
-
-	err, out_init := internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
-	if err != nil {
-		tfBytes, _ := ioutil.ReadFile(tfFile)
-		return errors.New(err.Error() + "...cat $tfFile: " + string(tfBytes)), nil
-	}
-
-	args := []string{"-chdir=" + tfdir, verb}
-	for _, flag := range flags {
-		args = append(args, flag)
-	}
-	// err, out_verb := internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, flags)
-	err, out_verb := internal.RunCmd_sync(tf_bin, args...)
-	if err != nil {
-		return err, nil
-	}
-	return nil, append(out_init, out_verb...)
 }
 
 func k8sSetups(cfg clusterCfg, k8sCfg *rest.Config, k8sYamls []string) (map[string]string, error) {

@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"text/template"
 	"time"
 )
 
@@ -168,6 +169,7 @@ type clusterCfg struct {
 
 	//generated pre-infra-deploy
 	Stackname            string `json:"stackname"`
+	DB_USER              string `json:"DB_USER"`       //postgres
 	DB_PASS              string `json:"DB_PASS"`       //itjfHE8888
 	COOKIE_SECRET        string `json:"COOKIE_SECRET"` //a-random-string-to-sign-auth-cookies
 	PERMS_KEY            string `json:"PERMS_KEY"`     //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
@@ -284,6 +286,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 
 	//generate the rest
 	pwdSeed := int64(hash(cfg.Stackname))
+	cfg.DB_USER = "postgres"
 	cfg.DB_PASS = internal.PwdGen(15, pwdSeed, "D~")
 	cfg.COOKIE_SECRET = internal.PwdGen(15, pwdSeed, "C~")
 	cfg.DB_HOST = "to-be-determined-after-infra-deployment"
@@ -316,4 +319,55 @@ func hash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return h.Sum32()
+}
+
+func runTf(cfg clusterCfg, verb string, flags ...string) (string, []string, error) {
+	wd, _ := os.Getwd()
+	// render the template.tf with cfg.Stackname into a Stackname named folder so that
+	// 1. we can run terraform from that folder
+	// 2. terraform will use a Stackname named folder in it's remote backend
+	tfTemplateFile := wd + "/_files/tf/gcp.tf.gotemplate"
+	if _, err := os.Stat(tfTemplateFile); errors.Is(err, os.ErrNotExist) {
+		return "", nil, err
+	}
+
+	// tf_bin := wd + "/_files/tf/terraform"
+	tf_bin := "terraform"
+	tfdir := wd + "/_files/tf/" + cfg.Stackname
+	os.Mkdir(tfdir, os.ModePerm)
+
+	tfFile := tfdir + "/rendered.tf"
+	t, err := template.ParseFiles(tfTemplateFile)
+	if err != nil {
+		return "", nil, err
+	}
+	f, _ := os.Create(tfFile)
+	defer f.Close()
+
+	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass, Env string }{
+		ProjectId: internal.Cfg.Gcps.ProjectId,
+		Stackname: cfg.Stackname,
+		Region:    cfg.Region,
+		DbUser:    cfg.DB_USER,
+		DbPass:    cfg.DB_PASS,
+		Env:       cfg.Env,
+	})
+	tfBytes, _ := ioutil.ReadFile(tfFile)
+	tfFileStr := string(tfBytes)
+
+	err, tf_out_init := internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, "init")
+	if err != nil {
+		return tfFileStr, nil, err
+	}
+
+	args := []string{"-chdir=" + tfdir, verb}
+	for _, flag := range flags {
+		args = append(args, flag)
+	}
+	// err, out_verb := internal.RunCmd_sync(tf_bin, "-chdir="+tfdir, verb, flags)
+	err, tf_out_verb := internal.RunCmd_sync(tf_bin, args...)
+	if err != nil {
+		return "", nil, err
+	}
+	return tfFileStr, append(tf_out_init, tf_out_verb...), nil
 }
