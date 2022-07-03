@@ -25,6 +25,9 @@ func main() {
 	router.Handle("/authn", internal.Authn())
 	router.Handle("/chk_cookie", internal.ChkCookie())
 
+	//remove after new dev env
+	router.Handle("/", internal.AuthnProxy())
+
 	//private
 	router.Handle("/gimmie_test_jwt_cookie", internalEndpoint()(internal.GimmieTestJwtCookie()))
 	router.Handle("/zaplvl", internalEndpoint()(internal.Atom))
