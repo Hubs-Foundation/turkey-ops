@@ -28,8 +28,8 @@ function logout() {
 document.getElementById("hc_deploy").addEventListener("click", hc_deploy, false);
 function hc_deploy(){ orcReq("POST", "/hc_instance","cfg") }
 
-document.getElementById("hc_get").addEventListener("click", hc_get, false);
-function hc_get(){ orcReq("GET", "/hc_instance","cfg") }
+// document.getElementById("hc_get").addEventListener("click", hc_get, false);
+// function hc_get(){ orcReq("GET", "/hc_instance","cfg") }
 
 document.getElementById("hc_del").addEventListener("click", hc_del, false);
 function hc_del(){ orcReq("DELETE", "/hc_instance","cfg") }
@@ -77,7 +77,21 @@ function turkeyGcp_get(){
 }
 
 document.getElementById("turkeyGcp_update").addEventListener("click", turkeyGcp_update, false);
-function turkeyGcp_update(){ orcReq("PATCH", "/tco_gcp","cluster_cfg") }
+function turkeyGcp_update(){ 
+  mbody=document.getElementById("reviewUpdateModalBody");
+  var xhr = new XMLHttpRequest(); res=""
+  xhr.onreadystatechange = function() {if (this.readyState == 4) {
+    resJson = JSON.parse(this.responseText);
+    console.log("this.responseText: ", this.responseText)
+    console.log("resJson.clusters: ", resJson.clusters)
+    mbody.innerHTML=this.responseText;
+  }};
+  xhr.open("PATCH", "/tco_gcp", false);
+  // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xhr.send();
+
+  // orcReq("PATCH", "/tco_gcp","cluster_cfg")
+}
 
 //-------------------------
 function getDomain()
