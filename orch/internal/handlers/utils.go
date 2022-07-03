@@ -247,7 +247,7 @@ func clusterCfgToMap(cfg clusterCfg) (map[string]string, error) {
 	}
 	err = json.Unmarshal(cfgJsonByte, &m)
 	if err != nil {
-		internal.Logger.Debug("failed to Unmarshal: " + string(cfgJsonByte))
+		internal.Logger.Error("failed to Unmarshal: " + string(cfgJsonByte))
 		return nil, err
 	}
 	return m, nil
@@ -266,7 +266,6 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 			internal.Logger.Error("failed to load provided cluster stackname: " + cfg.Stackname)
 			return cfg, err
 		}
-
 	}
 
 	//required inputs
