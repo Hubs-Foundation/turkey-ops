@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"main/ext_libs/ansihtml"
+
 	"main/internal"
 
 	"k8s.io/client-go/rest"
@@ -212,9 +214,9 @@ func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"stackName": cfg.Stackname,
-			"msg":       "stage: planning; call again in 30min to apply",
-			"tf_plan":   planOutStr,
+			"stackName":    cfg.Stackname,
+			"msg":          "stage: planning; call again in 30min to apply",
+			"tf_plan_html": string(ansihtml.ConvertToHTML([]byte(planOutStr))),
 		})
 		return
 	}
