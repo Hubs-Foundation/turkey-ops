@@ -204,9 +204,13 @@ func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
 		}
-		internal.Logger.Sugar().Debugf("%v", tfout)
+
 		internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
-		planOutStr := strings.Join(tfout, "\n")
+
+		for i := 0; i < len(tfout); i++ {
+			tfout[i] = string(ansihtml.ConvertToHTML([]byte(tfout[i])))
+		}
+		tf_out_html := strings.Join(tfout, "<br>")
 
 		go func() {
 			time.Sleep(31 * time.Minute)
@@ -216,7 +220,7 @@ func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"stackName":    cfg.Stackname,
 			"msg":          "stage: planning; call again in 30min to apply",
-			"tf_plan_html": string(ansihtml.ConvertToHTML([]byte(strings.Replace(planOutStr, `\n`, `<br>`, -1)))),
+			"tf_plan_html": tf_out_html,
 		})
 		return
 	}
