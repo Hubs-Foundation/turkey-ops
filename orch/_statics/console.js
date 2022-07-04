@@ -79,6 +79,7 @@ function turkeyGcp_get(){
 document.getElementById("turkeyGcp_update").addEventListener("click", turkeyGcp_update, false);
 function turkeyGcp_update(){ 
   mbody=document.getElementById("reviewUpdateModalBody");
+  mbody.innerHTML="---loading---"
   var xhr = new XMLHttpRequest(); res=""
   xhr.onreadystatechange = function() {if (this.readyState == 4) {
     resJson = JSON.parse(this.responseText);
