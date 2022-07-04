@@ -208,7 +208,7 @@ func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
 
 		for i := 0; i < len(tfout); i++ {
-			tfout[i] = string(ansihtml.ConvertToHTML([]byte(tfout[i])))
+			tfout[i] = string(ansihtml.ConvertToHTML([]byte("|" + tfout[i])))
 		}
 		tf_out_html := strings.Join(tfout, "<br>")
 
