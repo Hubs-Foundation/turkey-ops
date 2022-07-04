@@ -76,6 +76,8 @@ function turkeyGcp_get(){
   xhr.send();
 }
 
+var Convert = require('ansi-to-html');
+var convert = new Convert();
 document.getElementById("turkeyGcp_update").addEventListener("click", turkeyGcp_update, false);
 function turkeyGcp_update(){ 
   mbody=document.getElementById("reviewUpdateModalBody");
@@ -84,8 +86,8 @@ function turkeyGcp_update(){
   xhr.onreadystatechange = function() {if (this.readyState == 4) {
     resJson = JSON.parse(this.responseText);
     console.log("this.responseText: ", this.responseText)
-    console.log("resJson.clusters: ", resJson.clusters)
-    mbody.innerHTML=this.responseText;
+    console.log("resJson.tf_plan: ", resJson.tf_plan)
+    mbody.innerHTML=`<h1>${resJson.msg}</h1><br>`+convert.toHtml(resJson.tf_plan);
   }};
   xhr.open("PATCH", "/tco_gcp", false);
   // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
