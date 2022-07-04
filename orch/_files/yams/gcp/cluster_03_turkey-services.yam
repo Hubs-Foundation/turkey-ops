@@ -86,7 +86,7 @@ spec:
   - host: dash.{{.Domain}}
     http:
       paths:
-      - path: /turkeyauthproxy
+      - path: /
         pathType: Prefix
         backend:
           service:
@@ -192,13 +192,13 @@ spec:
             name: turkeyauth
             port: 
               number: 9002
-      - path: /turkeyauthproxy
-        pathType: Prefix
-        backend:
-          service:
-            name: turkeyauth
-            port: 
-              number: 9002
+      # - path: /turkeyauthproxy
+      #   pathType: Prefix
+      #   backend:
+      #     service:
+      #       name: turkeyauth
+      #       port: 
+      #         number: 9002
 ---
 apiVersion: apps/v1
 kind: Deployment
