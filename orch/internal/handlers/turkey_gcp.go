@@ -220,21 +220,19 @@ func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	internal.Logger.Debug("[update] [" + cfg.Stackname + "] applying")
-	_, tfout, err := runTf(cfg, "apply", tfplanFileName, "--auto-approve")
-	if err != nil {
-		internal.Logger.Error("failed @runTf: " + err.Error())
-		return
-	}
-	internal.Logger.Sugar().Debugf("%v", tfout)
-	internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
-	planOutStr := strings.Join(tfout, "\n")
+	// internal.Logger.Debug("[update] [" + cfg.Stackname + "] applying")
+	// _, tfout, err := runTf(cfg, "apply", tfplanFileName, "--auto-approve")
+	// if err != nil {
+	// 	internal.Logger.Error("failed @runTf: " + err.Error())
+	// 	return
+	// }
+	// internal.Logger.Sugar().Debugf("%v", tfout)
+	// internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"stackName":   cfg.Stackname,
-		"stage":       "planning",
-		"instruction": "review the <tf_plan> and try again in 30min to apply",
-		"tf_plan":     planOutStr,
+		"stackName": cfg.Stackname,
+		"stage":     "applying",
+		"tf_plan":   tfplanFileName,
 	})
 	// ######################################### 2. run tf #########################################
 
@@ -258,12 +256,10 @@ func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// ######################################### 2. run tf #########################################
-		_, tfout, err := runTf(cfg, "destroy", "--auto-approve")
+		_, _, err := runTf(cfg, "destroy", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
-			return
 		}
-		internal.Logger.Sugar().Debugf("%v", tfout)
 		// ################# 3. delete the folder in GCS bucket for this stack
 		err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeycfg", "tf-backend/"+cfg.Stackname)
 		if err != nil {
