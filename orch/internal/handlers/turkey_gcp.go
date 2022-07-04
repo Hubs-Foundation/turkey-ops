@@ -212,10 +212,9 @@ func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"stackName":   cfg.Stackname,
-			"stage":       "planning",
-			"instruction": "review the <tf_plan> and try again in 30min to apply",
-			"tf_plan":     planOutStr,
+			"stackName": cfg.Stackname,
+			"msg":       "stage: planning; call again in 30min to apply",
+			"tf_plan":   planOutStr,
 		})
 		return
 	}
@@ -231,7 +230,7 @@ func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"stackName": cfg.Stackname,
-		"stage":     "applying",
+		"msg":       "stage: applying",
 		"tf_plan":   tfplanFileName,
 	})
 	// ######################################### 2. run tf #########################################
