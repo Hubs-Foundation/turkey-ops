@@ -57,12 +57,12 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// ########## 2. run tf #########################################
-		tfFile, tfout, err := runTf(cfg, "apply", "--auto-approve")
+		tfFile, _, err := runTf(cfg, "apply", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 			return
 		}
-		internal.Logger.Sugar().Debugf("tfout: %v", tfout)
+		// internal.Logger.Sugar().Debugf("tfout: %v", tfout)
 		internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "tf deployment completed")
 		// ########## 3. prepare for post Deployment setups:
 		// ###### get db info and complete clusterCfg (cfg)

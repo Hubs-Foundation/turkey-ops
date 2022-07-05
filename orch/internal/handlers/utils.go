@@ -204,22 +204,22 @@ func turkey_loadStackCfg(stackname string, inputedCfg clusterCfg) (clusterCfg, e
 	//get cfg.json from turkeycfg bucket
 	cfgBytes, err := internal.Cfg.Gcps.GCS_ReadFile("turkeycfg", "tf-backend/"+stackname+"/cfg.json")
 	if err != nil {
-		return currentCfg, err
+		return inputedCfg, err
 	}
 	//unmarshal to cfg
 	err = json.Unmarshal(cfgBytes, &currentCfg)
 	if err != nil {
 		internal.Logger.Warn("bad clusterCfg: " + string(cfgBytes))
-		return currentCfg, err
+		return inputedCfg, err
 	}
 	// for ommited files in inputedCfg -- load from (previous deployed) cfg
 	currentCfg_m, err := clusterCfgToMap(currentCfg)
 	if err != nil {
-		return currentCfg, err
+		return inputedCfg, err
 	}
 	inputedcurrentCfg_m, err := clusterCfgToMap(inputedCfg)
 	if err != nil {
-		return currentCfg, err
+		return inputedCfg, err
 	}
 	internal.Logger.Sugar().Debugf("currentCfg_m: %v", currentCfg_m)
 	internal.Logger.Sugar().Debugf("inputedcurrentCfg_m: %v", inputedcurrentCfg_m)
@@ -232,12 +232,12 @@ func turkey_loadStackCfg(stackname string, inputedCfg clusterCfg) (clusterCfg, e
 	var loadedCfg clusterCfg
 	loadedCfgJsonByte, err := json.Marshal(inputedcurrentCfg_m)
 	if err != nil {
-		return currentCfg, err
+		return inputedCfg, err
 	}
 	err = json.Unmarshal(loadedCfgJsonByte, &loadedCfg)
 	if err != nil {
 		internal.Logger.Error("failed to Unmarshal loadedCfgJsonByte " + string(loadedCfgJsonByte))
-		return loadedCfg, err
+		return inputedCfg, err
 	}
 	return loadedCfg, nil
 }
@@ -272,7 +272,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	// 	== we should look for values there for omitted inputs, instead of fall back to locally available or newly generated values
 	if cfg.Stackname != "" {
 		internal.Logger.Debug("loading current cfg for: " + cfg.Stackname)
-		cfg, err = turkey_loadStackCfg(cfg.Stackname, cfg)
+		cfg, err := turkey_loadStackCfg(cfg.Stackname, cfg)
 		if err != nil {
 			internal.Logger.Error("failed to load provided cluster stackname: " + cfg.Stackname)
 			return cfg, err
