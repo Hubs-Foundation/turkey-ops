@@ -141,6 +141,9 @@ func wakeupHcNs(ns string) {
 	if err != nil {
 		internal.Logger.Error("wakeupHcNs - failed to list deployments: " + err.Error())
 	}
+	if len(ds.Items) < 1 {
+		internal.Logger.Error("wakeupHcNs - deployment list is empty for namespace: " + ns)
+	}
 
 	scaleUpTo := 1
 	for _, d := range ds.Items {

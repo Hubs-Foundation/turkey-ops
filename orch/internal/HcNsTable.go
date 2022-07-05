@@ -7,7 +7,9 @@ import (
 
 //concurrent cached/map for hubs cloud namespace bookkeeping
 type HcNsMan struct {
-	hcNsTable                map[string]HcNsNotes
+	// nsName : HcNsNotes
+	hcNsTable map[string]HcNsNotes
+	// subdomain : nsName
 	hcSubdomainNsLookupTable map[string]string
 }
 
