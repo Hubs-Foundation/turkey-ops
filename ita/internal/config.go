@@ -66,6 +66,7 @@ func MakeCfg() {
 	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {
+		Logger.Sugar().Warnf("failed to parse: %v", os.Getenv("FreeTierIdleMax"))
 		cfg.FreeTierIdleMax = 30 * time.Minute
 	}
 	Logger.Sugar().Infof("cfg.turkeyorchHost: %v", cfg.turkeyorchHost)
