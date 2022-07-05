@@ -217,20 +217,22 @@ func turkey_loadStackCfg(stackname string, inputedCfg clusterCfg) (clusterCfg, e
 	if err != nil {
 		return inputedCfg, err
 	}
-	inputedcurrentCfg_m, err := clusterCfgToMap(inputedCfg)
+	inputedCfg_m, err := clusterCfgToMap(inputedCfg)
 	if err != nil {
 		return inputedCfg, err
 	}
 	internal.Logger.Sugar().Debugf("currentCfg_m: %v", currentCfg_m)
-	internal.Logger.Sugar().Debugf("inputedcurrentCfg_m: %v", inputedcurrentCfg_m)
-	for k, v := range inputedcurrentCfg_m {
+	internal.Logger.Sugar().Debugf("inputedCfg_m, before: %v", inputedCfg_m)
+	for k, v := range inputedCfg_m {
 		if v == "" {
-			internal.Logger.Debug("loading from current cfg: " + k)
-			inputedcurrentCfg_m[k] = currentCfg_m[k]
+			internal.Logger.Sugar().Debugf("loading from current cfg: <%v> : <%v>"+k, currentCfg_m[k])
+			inputedCfg_m[k] = currentCfg_m[k]
 		}
 	}
+	internal.Logger.Sugar().Debugf("inputedCfg_m, after: %v", inputedCfg_m)
+
 	var loadedCfg clusterCfg
-	loadedCfgJsonByte, err := json.Marshal(inputedcurrentCfg_m)
+	loadedCfgJsonByte, err := json.Marshal(inputedCfg_m)
 	if err != nil {
 		return inputedCfg, err
 	}
@@ -272,7 +274,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	// 	== we should look for values there for omitted inputs, instead of fall back to locally available or newly generated values
 	if cfg.Stackname != "" {
 		internal.Logger.Debug("loading current cfg for: " + cfg.Stackname)
-		cfg, err := turkey_loadStackCfg(cfg.Stackname, cfg)
+		cfg, err = turkey_loadStackCfg(cfg.Stackname, cfg)
 		if err != nil {
 			internal.Logger.Error("failed to load provided cluster stackname: " + cfg.Stackname)
 			return cfg, err
