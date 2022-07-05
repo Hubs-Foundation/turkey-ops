@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -237,13 +238,18 @@ func RunCmd_sync(name string, arg ...string) (error, []string) {
 	return nil, out
 }
 
-func RootDomain(fullDomain string) string {
+func FindRootDomain(fullDomain string) string {
 	fdArr := strings.Split(fullDomain, ".")
 	len := len(fdArr)
 	if len < 2 {
 		return ""
 	}
 	return fdArr[len-2] + "." + fdArr[len-1]
+}
+
+func IsValidDomainName(domain string) bool {
+	RegExp := regexp.MustCompile(`^(([a-zA-Z]{1})|([a-zA-Z]{1}[a-zA-Z]{1})|([a-zA-Z]{1}[0-9]{1})|([0-9]{1}[a-zA-Z]{1})|([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9]))\.([a-zA-Z]{2,6}|[a-zA-Z0-9-]{2,30}\.[a-zA-Z]{2,3})$`)
+	return RegExp.MatchString(domain)
 }
 
 /////////////////////////////////////////////////

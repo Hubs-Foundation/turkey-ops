@@ -265,8 +265,8 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		return cfg, err
 	}
 
-	// changeMe's same as "" ... todo -- make a util func to use a regex to validate domain name
-	if strings.HasPrefix(cfg.Domain, "changeMe") {
+	// treat invalid Domains as ""
+	if strings.HasPrefix(cfg.Domain, "changeMe") || !internal.IsValidDomainName(cfg.Domain) {
 		cfg.Domain = ""
 	}
 
@@ -283,11 +283,11 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 
 	//required inputs
 	if cfg.Region == "" {
-		return cfg, errors.New("bad input: can't figure out value for Region")
+		return cfg, errors.New("bad input: NOT FOUND: Region")
 	}
 
 	if cfg.Domain == "" {
-		return cfg, errors.New("bad input: Domain is required")
+		return cfg, errors.New("bad input: NOT FOUND: valid domain name")
 	}
 
 	//required but with fallbacks

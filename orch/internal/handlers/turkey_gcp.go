@@ -101,7 +101,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "k8sSetups completed")
 
 		// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
-		rootDomain := internal.RootDomain(cfg.Domain)
+		rootDomain := internal.FindRootDomain(cfg.Domain)
 		err = internal.Cfg.Gcps.Dns_createRecordSet(strings.Replace(rootDomain, ".", "-", 1),
 			// strings.Replace("*."+cfg.Domain, rootDomain, "", 1),
 			"*."+cfg.Domain+".",
