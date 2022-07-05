@@ -251,13 +251,17 @@ func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
 	// ######################################### 1. get cfg from r.body ########################################
 	cfg, err := turkey_makeCfg(r)
 	if err != nil {
-		internal.Logger.Error("ERROR @ turkey_makeCfg: " + err.Error())
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"stackName": cfg.Stackname,
-			"error":     "ERROR @ turkey_makeCfg: " + err.Error(),
-		})
-		return
+		if len(cfg.Stackname) < 6 {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"stackName": cfg.Stackname,
+				"error":     "ERROR @ turkey_makeCfg: " + err.Error(),
+			})
+			return
+		}
+		internal.Logger.Sugar().Errorf("ERROR @ turkey_makeCfg <%v> ", err.Error())
+		internal.Logger.Sugar().Warnf("continuing for stackName <%v> ", cfg.Stackname)
 	}
+
 	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
 	internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] started")
 
