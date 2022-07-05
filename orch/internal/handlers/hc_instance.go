@@ -476,6 +476,21 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	nsName := "hc-" + hcCfg.HubId
+
+	internal.Logger.Debug("&#128024 deleting ns: " + nsName)
+	// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
+	hc_switch(hcCfg.HubId, "down")
+
+	err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
+		nsName,
+		metav1.DeleteOptions{})
+	if err != nil {
+		internal.Logger.Error("delete ns failed: " + err.Error())
+		return
+	}
+	internal.Logger.Debug("&#127754 deleted ns: " + nsName)
+
 	go func() {
 		hcCfg.DBname = "ret_" + hcCfg.HubId
 		internal.Logger.Debug("&#128024 deleting db: " + hcCfg.DBname)
@@ -497,19 +512,6 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		internal.Logger.Debug("&#128024 deleted db: " + hcCfg.DBname)
-	}()
-
-	go func() {
-		nsName := "hc-" + hcCfg.HubId
-		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
-		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
-			nsName,
-			metav1.DeleteOptions{})
-		if err != nil {
-			internal.Logger.Error("delete ns failed: " + err.Error())
-			return
-		}
-		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
 	}()
 
 	go func() {
@@ -563,14 +565,13 @@ func hc_switch(HubId, status string) error {
 
 	Replicas := 0
 	if status == "up" {
-		// todo -- read tier, find out desired replica counts for each deployments (hubs, ret, spoke, ita, nearspark ... probably just ret)
-		//			or, (possible?) just set them to 1 and let hpa take care of the rest
+		// scale up to 1 and let hpa to manage scaling -- todo: test and verify
 		Replicas = 1
 	}
 
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		internal.Logger.Error("wakeupHcNs - failed to list deployments: " + err.Error())
+		internal.Logger.Error("hc_switch - failed to list deployments: " + err.Error())
 		return err
 	}
 
@@ -578,7 +579,7 @@ func hc_switch(HubId, status string) error {
 		d.Spec.Replicas = pointerOfInt32(Replicas)
 		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
-			internal.Logger.Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
+			internal.Logger.Error("hc_switch -- failed to scale <ns: " + ns + ", deployment: " + d.Name + ">: " + err.Error())
 			return err
 		}
 	}
