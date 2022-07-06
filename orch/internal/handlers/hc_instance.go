@@ -583,6 +583,10 @@ func hc_switch(HubId, status string) error {
 			return err
 		}
 	}
+	err = internal.Cfg.K8ss_local.WatiForDeployments(ns, 15*time.Minute)
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
+	}
 	locker.Unlock()
 	return nil
 }

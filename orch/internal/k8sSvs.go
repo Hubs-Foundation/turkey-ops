@@ -384,6 +384,34 @@ func (l *k8Locker) Unlock() {
 	}
 }
 
+func (k8 K8sSvs) WatiForDeployments(nsName string, timeout time.Duration) error {
+	ttl := timeout
+	wait := 5 * time.Second
+	for ttl > 0 {
+		time.Sleep(wait)
+		ttl -= wait
+		Logger.Sugar().Debugf("ttl: %v (%v)", ttl, nsName)
+		ds, err := k8.ClientSet.AppsV1().Deployments(nsName).List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		alldone := true
+		for _, d := range ds.Items {
+			if d.Status.Replicas != d.Status.AvailableReplicas ||
+				d.Status.Replicas != d.Status.ReadyReplicas ||
+				d.Status.Replicas != d.Status.UpdatedReplicas {
+				alldone = false
+				Logger.Sugar().Debugf("waiting for: %v (%v)", d.Name, nsName)
+			}
+		}
+		if alldone {
+			return nil
+		}
+	}
+	Logger.Sugar().Debugf("waited: %v", timeout-ttl)
+	return errors.New("timeout")
+}
+
 // func (k8 K8sSvs) Init_LeaseBasedLock(namespaceName, lockName string) (*apiCoordV1.Lease, error) {
 // 		//try 3 times to create one
 // 		tries := 3
