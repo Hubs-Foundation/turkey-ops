@@ -405,10 +405,10 @@ func (k8 K8sSvs) WatiForDeployments(nsName string, timeout time.Duration) error 
 			}
 		}
 		if alldone {
+			Logger.Sugar().Debugf("waited: %v", timeout-ttl)
 			return nil
 		}
 	}
-	Logger.Sugar().Debugf("waited: %v", timeout-ttl)
 	return errors.New("timeout")
 }
 
