@@ -21,9 +21,6 @@ stringData:
   OAUTH_CLIENT_SECRET_FXA: {{.OAUTH_CLIENT_SECRET_FXA}}    
   COOKIE_SECRET: {{.COOKIE_SECRET}}
   DB_CONN: {{.DB_CONN}}
-  AWS_KEY: {{.AWS_KEY}}
-  AWS_SECRET: {{.AWS_SECRET}}
-  AWS_REGION: {{.AWS_REGION}}
   PERMS_KEY: {{.PERMS_KEY}}
   DB_PASS: {{.DB_PASS}}
   DB_HOST: {{.DB_HOST}}
@@ -447,22 +444,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: SMTP_PASS                        
-        - name: AWS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: AWS_KEY           
-        - name: AWS_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: AWS_SECRET           
-        - name: AWS_REGION
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: AWS_REGION           
+              key: SMTP_PASS
         - name: PERMS_KEY
           valueFrom:
             secretKeyRef:
