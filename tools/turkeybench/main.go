@@ -17,7 +17,7 @@ import (
 //naFfSCreQagnbhL9pgcDC2ZfxY2IzrXLSrsEXMsYUp0=|1656465179|gtan@mozilla.com
 var (
 	turkeyDomain      = "gtan.myhubs.net"
-	_turkeyauthcookie = "55_ndpj9_9laOSqbPHRGPsLzcyJK_KEQURIrgIZB9EQ=|1657081626|gtan@mozilla.com"
+	_turkeyauthcookie = "KgZZSYKl-LB3jRBSvS1QK5qJVpJmsbZ1KDDFguxl3f4=|1657155037|gtan@mozilla.com"
 	useremail         = "gtan@mozilla.com"
 	stepWait          = 1 * time.Millisecond
 )
@@ -36,9 +36,11 @@ func main() {
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf(">> domain: %v, user count: %v, stepWait: %v. press any key to start...", turkeyDomain, len(vuBag), stepWait)
+	fmt.Printf(">> domain: %v, user count: %v, stepWait: %v. type \"go\" to start: ", turkeyDomain, len(vuBag), stepWait)
 	cmd, _ := reader.ReadString('\n')
-	_ = cmd
+	if !chkCmd(cmd, "go") {
+		return
+	}
 	var wg_create sync.WaitGroup
 	for _, vu := range vuBag {
 		wg_create.Add(1)
@@ -56,10 +58,10 @@ func main() {
 	}
 
 	for {
-		fmt.Println(`>> "load" or "delete" to run vu.load or vu.delete`)
-		fmt.Println(`>> "exit" to quit...`)
+		fmt.Println(`>> "load" or "delete" to run vu.load or vu.delete: `)
+		fmt.Println(`>> "exit" to quit: `)
 		cmd, _ = reader.ReadString('\n')
-		if cmd == "load\n" {
+		if chkCmd(cmd, "load") {
 			var wg_load sync.WaitGroup
 			for _, vu := range vuBag {
 				wg_load.Add(1)
@@ -69,15 +71,22 @@ func main() {
 				}(vu)
 			}
 			wg_load.Wait()
-		} else if cmd == "delete\n" {
+		} else if chkCmd(cmd, "delete") {
 			for _, vu := range vuBag {
 				vu.Delete()
 			}
-		} else if cmd == "exit\n" {
+		} else if chkCmd(cmd, "exit") {
 			break
 		} else {
 			fmt.Println(">> bad input: <" + cmd + ">")
 		}
 	}
 
+}
+
+func chkCmd(cmd, chk string) bool {
+	if cmd == chk+"\n" || cmd == chk+"\r\n" {
+		return true
+	}
+	return false
 }

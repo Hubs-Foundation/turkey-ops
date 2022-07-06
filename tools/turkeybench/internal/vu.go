@@ -65,7 +65,7 @@ func (vu *Vuser) Create() {
 		panic("failed @ creation")
 	}
 	vu.TCreate = time.Since(tStart)
-	fmt.Printf("\n%v vu.Id[%v] -- [tCreate: %v]", time.Now(), vu.Id, vu.TCreate)
+	fmt.Printf("\n%v vu.Id[%v] -- [tCreate: %v]", time.Now().Format("15:04:05"), vu.Id, vu.TCreate)
 	//wait for ret
 	tStart = time.Now()
 	timeout := time.Now().Add(30 * time.Minute)
@@ -78,12 +78,12 @@ func (vu *Vuser) Create() {
 		if resp != nil {
 			// bodyBytes, _ := io.ReadAll(resp.Body)
 			// fmt.Printf("\n---[waiting-for-ret] got: %v[%v], retrying, ttl: %v, hubId: %v", resp.StatusCode, string(bodyBytes), ttl, vu.HubId)
-			fmt.Printf("\n---[waiting-for-ret] [vu.id:%v] got: %v, retrying, ttl: %v, hubId: %v", vu.Id, resp.StatusCode, ttl, vu.HubId)
+			fmt.Printf("\n%v---[waiting-for-ret] [vu.id:%v] received: %v, retrying, ttl: %v, hubId: %v", time.Now().Format("15:04:05"), vu.Id, resp.StatusCode, ttl, vu.HubId)
 		} else {
-			fmt.Printf("\n---[waiting-for-ret] [vu.id:%v] got: %v, retrying, ttl: %v, hubId: %v", vu.Id, err, ttl, vu.HubId)
+			fmt.Printf("\n%v---[waiting-for-ret] [vu.id:%v] received: %v, retrying, ttl: %v, hubId: %v", time.Now().Format("15:04:05"), vu.Id, err, ttl, vu.HubId)
 		}
 		if ttl < 0 {
-			fmt.Printf("\n---[waiting-for-ret] [vu.id:%v] err: timeout -- hubId %v", vu.Id, vu.HubId)
+			fmt.Printf("\n%v---[waiting-for-ret] [vu.id:%v] err: timeout -- hubId %v", time.Now().Format("15:04:05"), vu.Id, vu.HubId)
 			vu.TReady = -1
 			break
 		}
@@ -92,7 +92,7 @@ func (vu *Vuser) Create() {
 	if vu.TReady != -1 {
 		vu.TReady = time.Since(tStart)
 	}
-	fmt.Printf("\n %v[%v] [tReady: %v] @ %v", time.Now(), vu.Id, vu.TReady, vu.Url)
+	fmt.Printf("\n %v[%v] [tReady: %v] @ %v", time.Now().Format("15:04:05"), vu.Id, vu.TReady, vu.Url)
 }
 
 func (vu *Vuser) Delete() {
@@ -131,5 +131,6 @@ func (vu *Vuser) Load(ttl time.Duration) {
 }
 
 func (vu *Vuser) ToString() string {
-	return fmt.Sprintf(`{ vu.Id: %v, vu.HubId: %v, vu.tCreate: %v, vu.tReady: %v}`, vu.Id, vu.HubId, vu.TCreate, vu.TReady)
+	return fmt.Sprintf(
+		`{ vu.Id: %v, vu.tCreate: %v, vu.tReady: %v, vu.Url: %v}`, vu.Id, vu.TCreate, vu.TReady, vu.Url)
 }

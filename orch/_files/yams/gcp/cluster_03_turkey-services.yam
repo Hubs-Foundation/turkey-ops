@@ -48,7 +48,7 @@ metadata:
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
-    haproxy.org/server-ssl: "true"    
+    haproxy.org/server-ssl: "true"
     haproxy.org/request-set-header: |
       backend http://grafana.monitoring:3000/
       AllowedEmailDomains mozilla.com,
@@ -71,6 +71,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
     haproxy.org/request-set-header: |
       backend http://skooner.tools:80/
       AllowedEmailDomains mozilla.com,
@@ -903,6 +904,8 @@ spec:
           value: dev
         - name: BASIC_AUTH_PASSWORD
           value: ducksducksducks
+        - name: AUTH_SERVER
+          value: auth.{{.Domain}}
         resources:
           requests:
             memory: 500Mi
