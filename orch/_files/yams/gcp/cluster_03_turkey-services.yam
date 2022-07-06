@@ -133,7 +133,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: turkeyauth
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 50
   targetCPUUtilizationPercentage: 70
 ---
@@ -316,7 +316,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: turkeyorch
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 50
   targetCPUUtilizationPercentage: 70
 ---
@@ -571,7 +571,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: pgbouncer
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 50
   targetCPUUtilizationPercentage: 70
 ---
@@ -635,7 +635,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: pgbouncer-t
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 50
   targetCPUUtilizationPercentage: 70
 ---
@@ -826,7 +826,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: turkeydashboard
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 50
   targetCPUUtilizationPercentage: 70
 ---

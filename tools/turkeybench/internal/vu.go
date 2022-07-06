@@ -65,7 +65,7 @@ func (vu *Vuser) Create() {
 		panic("failed @ creation")
 	}
 	vu.TCreate = time.Since(tStart)
-	fmt.Printf("\n%v[%v] -- [tCreate: %v]", time.Now(), vu.Id, vu.TCreate)
+	fmt.Printf("\n%v vu.Id[%v] -- [tCreate: %v]", time.Now(), vu.Id, vu.TCreate)
 	//wait for ret
 	tStart = time.Now()
 	timeout := time.Now().Add(30 * time.Minute)
@@ -73,17 +73,17 @@ func (vu *Vuser) Create() {
 	// fmt.Printf("\nreq: %v", retReq.URL)
 	resp, err = _httpClient.Do(retReq)
 	for err != nil || resp.StatusCode != http.StatusOK {
-		time.Sleep(5 * time.Minute)
+		time.Sleep(15 * time.Second)
 		ttl := time.Until(timeout)
-		// if resp != nil {
-		// 	// bodyBytes, _ := io.ReadAll(resp.Body)
-		// 	// fmt.Printf("\n---[waiting-for-ret] got: %v[%v], retrying, ttl: %v, hubId: %v", resp.StatusCode, string(bodyBytes), ttl, vu.HubId)
-		// 	fmt.Printf("\n---[waiting-for-ret] got: %v, retrying, ttl: %v, hubId: %v", resp.StatusCode, ttl, vu.HubId)
-		// } else {
-		// 	fmt.Printf("\n---[waiting-for-ret]: %v, retrying, ttl: %v, hubId: %v", err, ttl, vu.HubId)
-		// }
+		if resp != nil {
+			// bodyBytes, _ := io.ReadAll(resp.Body)
+			// fmt.Printf("\n---[waiting-for-ret] got: %v[%v], retrying, ttl: %v, hubId: %v", resp.StatusCode, string(bodyBytes), ttl, vu.HubId)
+			fmt.Printf("\n---[waiting-for-ret] [vu.id:%v] got: %v, retrying, ttl: %v, hubId: %v", vu.Id, resp.StatusCode, ttl, vu.HubId)
+		} else {
+			fmt.Printf("\n---[waiting-for-ret] [vu.id:%v] got: %v, retrying, ttl: %v, hubId: %v", vu.Id, err, ttl, vu.HubId)
+		}
 		if ttl < 0 {
-			fmt.Printf("\n---[waiting-for-ret]:err: timeout -- hubId %v", vu.HubId)
+			fmt.Printf("\n---[waiting-for-ret] [vu.id:%v] err: timeout -- hubId %v", vu.Id, vu.HubId)
 			vu.TReady = -1
 			break
 		}
@@ -118,15 +118,16 @@ func (vu *Vuser) Delete() {
 }
 
 func (vu *Vuser) Load(ttl time.Duration) {
+	time.Sleep(ttl)
 	return
-	fmt.Printf("\n[%v] loading (just time.Sleep for now...)", vu.Id)
-	wait := 1 * time.Minute
-	for ttl > 0 {
-		time.Sleep(wait)
-		fmt.Printf("\n[%v] running, ttl: %v, url: %v", vu.Id, ttl, vu.Url)
-		ttl -= wait
-	}
-	fmt.Printf("\n[%v] done", vu.Id)
+	// fmt.Printf("\n[%v] loading (just time.Sleep for now...)", vu.Id)
+	// wait := 1 * time.Minute
+	// for ttl > 0 {
+	// 	time.Sleep(wait)
+	// 	fmt.Printf("\n[%v] running, ttl: %v, url: %v", vu.Id, ttl, vu.Url)
+	// 	ttl -= wait
+	// }
+	// fmt.Printf("\n[%v] done", vu.Id)
 }
 
 func (vu *Vuser) ToString() string {
