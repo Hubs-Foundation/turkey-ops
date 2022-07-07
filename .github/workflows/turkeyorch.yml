@@ -9,10 +9,11 @@ on:
 
 jobs:
   turkeyGitops:
-    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
+    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@feature/gitops-moz-dockerhub
     with:
       codePath: orch
-      registry: mozillareality
+      registry: mozilla
       dockerfile: Dockerfile
+      DOCKER_HUB_USR: ${{ secrets.DOCKER_HUB_USR_MOZ }}
     secrets:
-      DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
+      DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD_MOZ }}
