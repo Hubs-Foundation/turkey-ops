@@ -14,6 +14,6 @@ jobs:
       codePath: orch
       registry: mozilla
       dockerfile: Dockerfile
-      DOCKER_HUB_USR: ${{ secrets.DOCKER_HUB_USR_MOZ }}
+      DOCKER_HUB_USR: mzcshubs
     secrets:
       DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD_MOZ }}
