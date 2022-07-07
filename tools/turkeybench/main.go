@@ -17,7 +17,7 @@ import (
 //naFfSCreQagnbhL9pgcDC2ZfxY2IzrXLSrsEXMsYUp0=|1656465179|gtan@mozilla.com
 var (
 	turkeyDomain      = "gtan.myhubs.net"
-	_turkeyauthcookie = "KgZZSYKl-LB3jRBSvS1QK5qJVpJmsbZ1KDDFguxl3f4=|1657155037|gtan@mozilla.com"
+	_turkeyauthcookie = "fterFx-yCNququYpFMZM3pFLb8SKN_hZ22LY31bcsbQ=|1657260837|gtan@mozilla.com"
 	useremail         = "gtan@mozilla.com"
 	stepWait          = 1 * time.Millisecond
 )
@@ -25,22 +25,20 @@ var (
 //	super lame manual cleanup ...
 //	kubectl get ns | grep turkeybench | awk '{print $1}' | xargs kubectl delete ns
 //	SELECT CONCAT('DROP DATABASE ', datname,';') FROM pg_database WHERE datname LIKE 'ret_turkeybench%' AND datistemplate=false
+var vuBag []*internal.Vuser
 
 func main() {
-	vuBag := []*internal.Vuser{}
-	for i := 0; i < 10; i++ {
-		vuBag = append(vuBag, internal.NewVuser(strconv.Itoa(i),
-			turkeyDomain, _turkeyauthcookie, useremail,
-			"turkeybench"+strings.ReplaceAll(uuid.New().String(), "-", ""),
-		))
-	}
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf(">> domain: %v, user count: %v, stepWait: %v. type \"go\" to start: ", turkeyDomain, len(vuBag), stepWait)
+	fmt.Printf(">> domain: %v, stepWait: %v. type a number to start: ", turkeyDomain, stepWait)
 	cmd, _ := reader.ReadString('\n')
-	if !chkCmd(cmd, "go") {
+	if num, err := strconv.Atoi(dropNewLineChars(cmd)); err == nil {
+		addUsers(num)
+	} else {
+		fmt.Println("bad input: <" + cmd + ">")
 		return
 	}
+
 	var wg_create sync.WaitGroup
 	for _, vu := range vuBag {
 		wg_create.Add(1)
@@ -58,10 +56,11 @@ func main() {
 	}
 
 	for {
+		fmt.Println("\n---")
 		fmt.Println(`>> "load" or "delete" to run vu.load or vu.delete: `)
 		fmt.Println(`>> "exit" to quit: `)
 		cmd, _ = reader.ReadString('\n')
-		if chkCmd(cmd, "load") {
+		if dropNewLineChars(cmd) == "load" {
 			var wg_load sync.WaitGroup
 			for _, vu := range vuBag {
 				wg_load.Add(1)
@@ -71,11 +70,11 @@ func main() {
 				}(vu)
 			}
 			wg_load.Wait()
-		} else if chkCmd(cmd, "delete") {
+		} else if dropNewLineChars(cmd) == "delete" {
 			for _, vu := range vuBag {
 				vu.Delete()
 			}
-		} else if chkCmd(cmd, "exit") {
+		} else if dropNewLineChars(cmd) == "exit" {
 			break
 		} else {
 			fmt.Println(">> bad input: <" + cmd + ">")
@@ -84,9 +83,17 @@ func main() {
 
 }
 
-func chkCmd(cmd, chk string) bool {
-	if cmd == chk+"\n" || cmd == chk+"\r\n" {
-		return true
+func addUsers(num int) {
+	for i := 0; i < num; i++ {
+		vuBag = append(vuBag, internal.NewVuser(strconv.Itoa(i),
+			turkeyDomain, _turkeyauthcookie, useremail,
+			"turkeybench"+strings.ReplaceAll(uuid.New().String(), "-", ""),
+		))
 	}
-	return false
+}
+
+func dropNewLineChars(str string) string {
+	str = strings.ReplaceAll(str, "\r\n", "")
+	str = strings.ReplaceAll(str, "\n", "")
+	return str
 }

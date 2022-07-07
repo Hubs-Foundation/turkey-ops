@@ -477,24 +477,24 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nsName := "hc-" + hcCfg.HubId
-
-	internal.Logger.Debug("&#128024 deleting ns: " + nsName)
-	// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
-	hc_switch(hcCfg.HubId, "down")
-
-	err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
-		nsName,
-		metav1.DeleteOptions{})
-	if err != nil {
-		internal.Logger.Error("delete ns failed: " + err.Error())
-		return
-	}
-	internal.Logger.Debug("&#127754 deleted ns: " + nsName)
-
 	go func() {
+		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
+		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
+		hc_switch(hcCfg.HubId, "down")
+
+		//delete ns
+		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
+			nsName,
+			metav1.DeleteOptions{})
+		if err != nil {
+			internal.Logger.Error("delete ns failed: " + err.Error())
+			return
+		}
+		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
+
+		//delete db
 		hcCfg.DBname = "ret_" + hcCfg.HubId
 		internal.Logger.Debug("&#128024 deleting db: " + hcCfg.DBname)
-		//delete db -- force
 		force := true
 		_, err = internal.PgxPool.Exec(context.Background(), "drop database "+hcCfg.DBname)
 		if err != nil {
@@ -512,9 +512,8 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		internal.Logger.Debug("&#128024 deleted db: " + hcCfg.DBname)
-	}()
 
-	go func() {
+		// delete GCS (if any)
 		err := internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hcCfg.HubId+"."+internal.Cfg.Domain)
 		if err != nil {
 			internal.Logger.Error("delete ns failed: " + err.Error())
