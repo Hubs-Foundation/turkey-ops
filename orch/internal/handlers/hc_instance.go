@@ -54,6 +54,7 @@ type hcCfg struct {
 	GCP_SA_HMAC_SECRET   string `json:"GCP_SA_HMAC_SECRET"` //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
 	DASHBOARD_ACCESS_KEY string
 	SKETCHFAB_API_KEY    string
+	REGCRED              string `json:"regcred"` //private container registry creds for k8s/secret/.dockerconfigjson
 	//generated on the fly
 	JWK          string `json:"jwk"` // encoded from PermsKey.public
 	GuardianKey  string `json:"guardiankey"`
