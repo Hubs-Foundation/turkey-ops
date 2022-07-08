@@ -35,7 +35,7 @@ func CheckCookie(r *http.Request) (string, error) {
 	claims, err := checkJwtCookie(r)
 	if err != nil {
 		if cfg.AllowAuthCookie { // (dev env only) or if you have a good authCookie ?
-			Logger.Sugar().Debugf("bad jwtCookie + AllowAuthCookie: falling back to authCookie. full Req Dump: %v", r)
+			Logger.Sugar().Debugf("bad jwtCookie(err: %v) + AllowAuthCookie: falling back to authCookie. full Req Dump: %v", err, r)
 			return checkAuthCookie(r)
 		} else {
 			return "", err
@@ -84,6 +84,7 @@ func checkJwtCookie(r *http.Request) (jwt.Claims, error) {
 	if err != nil {
 		return nil, err
 	}
+	Logger.Sugar().Debugf("token: %v", token)
 	if !token.Valid {
 		return nil, errors.New("invalid token")
 	}

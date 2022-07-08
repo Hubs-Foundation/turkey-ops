@@ -25,7 +25,6 @@ func main() {
 	router.Handle("/authn", internal.Authn())
 	router.Handle("/chk_cookie", internal.ChkCookie())
 
-	//remove after new dev env
 	router.Handle("/", internal.AuthnProxy())
 
 	//private
