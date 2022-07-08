@@ -66,7 +66,7 @@ function turkeyGcp_get(){
   tbody=document.getElementById("gcp_cluster_table").getElementsByTagName("tbody")[0];
   var xhr = new XMLHttpRequest(); res=""
   xhr.onreadystatechange = function() {if (this.readyState == 4) {
-    resJson = JSON.parse(this.responseText);
+    var resJson = JSON.parse(this.responseText);
     console.log("this.responseText: ", this.responseText)
     console.log("resJson.clusters: ", resJson.clusters)
     tbody.innerHTML=resJson.clusters.map(row => `<tr><td>${row.name}</td><td><a href=${row.cfgbkt}>${row.cfgbkt}</a></td></tr>`).join('');
@@ -125,25 +125,45 @@ tbody.onclick = function (e) {
   }
 };
 
-// tbody.onclick = function (e) {
-//     e = e || window.event;
-//     var data = [];
-//     var target = e.srcElement || e.target;
-//     while (target && target.nodeName !== "TR") {
-//         target = target.parentNode;
-//     }
-//     if (target) {
-//         var cells = target.getElementsByTagName("td");
-//         for (var i = 0; i < cells.length; i++) {
-//             data.push(cells[i].innerHTML);
-//         }
-//     }
-//     alert(data);
-// };
+document.getElementById("btn_sampleCfg_minDev").onclick = function(){
+  document.getElementById("cluster_cfg").value = `{
+  "domain":"changeMe.myhubs.net",
+  "region":"us-central1"
+}`
+}
 
+document.getElementById("btn_sampleCfg_minProd").onclick = function(){
+  document.getElementById("cluster_cfg").value = `{
+  "domain":"changeMe.myhubs.net",
+  "region":"us-central1",
+  "env":"prod",
+  "OAUTH_CLIENT_ID_FXA":"changeMe",
+  "OAUTH_CLIENT_SECRET_FXA":"changeMe"
+}`
+}
 
-
-
-
-
-
+document.getElementById("btn_sampleCfg_fullBlown").onclick = function(){
+  document.getElementById("cluster_cfg").value = `{
+  "domain":"changeMe.myhubs.net",
+  "region":"us-central1",
+  "env":"prod",
+  "OAUTH_CLIENT_ID_FXA":"changeMe",
+  "OAUTH_CLIENT_SECRET_FXA":"changeMe",
+  "SMTP_SERVER":"changeMe",
+  "SMTP_PORT":"changeMe",
+  "SMTP_USER":"changeMe",
+  "SMTP_PASS":"changeMe",
+  "GCP_SA_KEY_b64":"changeMe",
+  "GCP_SA_HMAC_KEY":"changeMe",
+  "GCP_SA_HMAC_SECRET":"changeMe",
+  "AWS_KEY":"changeMe",
+  "AWS_SECRET":"changeMe",
+  "SKETCHFAB_API_KEY":"changeMe",
+  "ItaChan":"changeMe",
+  "CLOUD":"changeMe",
+  "DeploymentPrefix":"changeMe",
+  "DeploymentId":"changeMe",
+  "AWS_Ingress_Cert_ARN":"changeMe",
+  "Options":"changeMe"
+}`
+}
