@@ -190,13 +190,6 @@ spec:
             name: turkeyauth
             port: 
               number: 9002
-      # - path: /turkeyauthproxy
-      #   pathType: Prefix
-      #   backend:
-      #     service:
-      #       name: turkeyauth
-      #       port: 
-      #         number: 9002
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -352,18 +345,8 @@ metadata:
   name: regcred
   namespace: turkey-services
 data:
-  .dockerconfigjson: ewoJImF1dGhzIjogewoJCSJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOiB7CgkJCSJhdXRoIjogImJXOTZhV3hzWVhKbFlXeHBkSGs2Y21Wd2IzSjBJR0psWjJGMElIWmxjM1J0Wlc1MElHRnNkbVZ2YkdGeUlHTnNiM1JvIgoJCX0KCX0KfQ==
+  .dockerconfigjson: {{.REGCRED}}
 type: kubernetes.io/dockerconfigjson
-# ---
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: hubsbuilds
-#   namespace: turkey-services
-#   labels:
-#     foo: bar
-# data:
-#   foo: bar
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -869,7 +852,7 @@ spec:
       {{ end }}
       containers:
       - name: turkeydashboard
-        image: mozillareality/turkeydashboard:{{.ItaChan}}-latest
+        image: mozilla/turkeydashboard:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: AUTH_PUBLIC_KEY
@@ -913,6 +896,8 @@ spec:
           limits:
             memory: 2Gi
             cpu: 1
+      imagePullSecrets:
+      - name: regcred  
 ---
 apiVersion: v1
 kind: Service

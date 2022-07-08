@@ -36,7 +36,6 @@ type Config struct {
 	DASHBOARD_ACCESS_KEY string `description:"api key for turkey DASHBOARD access"`
 
 	SKETCHFAB_API_KEY string `description:"enables reticulum's sketchfab option"`
-	REGCRED           string `description:"private container registry creds for k8s/secret/.dockerconfigjson"`
 
 	DockerhubUser string
 	DockerhubPass string
@@ -102,7 +101,6 @@ func MakeCfg() {
 	Cfg.SmtpPass = os.Getenv("SMTP_PASS")
 
 	Cfg.SKETCHFAB_API_KEY = os.Getenv("SKETCHFAB_API_KEY")
-	Cfg.REGCRED = os.Getenv("REGCRED")
 
 	Cfg.DockerhubUser = os.Getenv("DOCKERHUB_USER")
 	Cfg.DockerhubPass = os.Getenv("DOCKERHUB_PASS")
