@@ -845,6 +845,8 @@ spec:
       labels:
         app: turkeydashboard
     spec:
+      imagePullSecrets:
+      - name: regcred  
       # terminationGracePeriodSeconds: 3
       {{ if ne .Env "dev" }}
       nodeSelector:
@@ -896,8 +898,6 @@ spec:
           limits:
             memory: 2Gi
             cpu: 1
-      imagePullSecrets:
-      - name: regcred  
 ---
 apiVersion: v1
 kind: Service
