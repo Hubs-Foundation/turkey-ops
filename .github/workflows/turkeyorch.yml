@@ -9,7 +9,7 @@ on:
 
 jobs:
   turkeyGitops:
-    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@feature/gitops-moz-dockerhub
+    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
     with:
       codePath: orch
       registry: mozilla
