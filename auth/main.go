@@ -25,28 +25,22 @@ func main() {
 	router.Handle("/authn", internal.Authn())
 	router.Handle("/chk_cookie", internal.ChkCookie())
 
-	router.Handle("/", internal.AuthnProxy())
-
 	//private
-	router.Handle("/gimmie_test_jwt_cookie", internalEndpoint()(internal.GimmieTestJwtCookie()))
-	router.Handle("/zaplvl", internalEndpoint()(internal.Atom))
+	router.Handle("/_healthz", internal.Healthz())
 	//get: curl localhost:9001/zaplvl
 	//set: curl -X PUT -d 'level=debug' localhost:9001/zaplvl
+	router.Handle("/zaplvl", internalEndpoint()(internal.Atom))
+	router.Handle("/gimmie_test_jwt_cookie", internalEndpoint()(internal.GimmieTestJwtCookie()))
+	router.Handle("/gimmie_pubkey", internalEndpoint()(internal.Gimmie_pubkey()))
 	router.Handle("/turkeyauthproxy", internal.AuthnProxy())
-	router.Handle("/_healthz", internal.Healthz())
+	router.Handle("/", internal.AuthnProxy())
 
+	//start http server
 	go internal.StartNewServer(router, 9001, false)
+	//start https server
 	internal.StartNewServer(router, 9002, true)
 }
 
-// func privateEndpoint(requiredRole string) func(http.Handler) http.Handler {
-// 	return func(next http.Handler) http.Handler {
-// 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 			fmt.Println("~~~~~~~~~~~privateEndpoint~~~~~~~~~~~")
-// 			next.ServeHTTP(w, r)
-// 		})
-// 	}
-// }
 func internalEndpoint() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

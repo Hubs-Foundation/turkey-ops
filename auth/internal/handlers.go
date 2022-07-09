@@ -1,7 +1,10 @@
 package internal
 
 import (
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"main/internal/idp"
@@ -409,5 +412,21 @@ func GimmieTestJwtCookie() http.Handler {
 		}
 
 		fmt.Fprintf(w, jwtCookie.Value)
+	})
+}
+
+func Gimmie_pubkey() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/gimmie_pubkey" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		Logger.Debug("dumpHeader: " + dumpHeader(r))
+		pubKey := cfg.PermsKey.PublicKey
+		pubKeyBytes := x509.MarshalPKCS1PublicKey(&pubKey)
+		pubKey_pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
+		PERMS_KEY_PUB_b64 := base64.StdEncoding.EncodeToString(pubKey_pemBytes) //string(pubKey_pemBytes)
+		fmt.Fprintf(w, PERMS_KEY_PUB_b64)
 	})
 }

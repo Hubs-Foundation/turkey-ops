@@ -210,7 +210,7 @@ func RunCmd_sync(name string, arg ...string) (error, []string) {
 	stderr, _ := cmd.StderrPipe()
 
 	err = cmd.Start()
-	GetLogger().Debug("RunCmd_sync: " + cmd.String())
+	GetLogger().Info("RunCmd_sync: " + cmd.String())
 	if err != nil {
 		return err, nil
 	}
@@ -219,7 +219,7 @@ func RunCmd_sync(name string, arg ...string) (error, []string) {
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
 		m := scanner.Text()
-		GetLogger().Debug(m)
+		GetLogger().Info(m)
 		out = append(out, m)
 	}
 

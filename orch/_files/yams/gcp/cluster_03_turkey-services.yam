@@ -891,6 +891,8 @@ spec:
           value: ducksducksducks
         - name: AUTH_SERVER
           value: auth.{{.Domain}}
+        - name: FXA_SERVER
+          value: {{.FXA_SERVER}}
         resources:
           requests:
             memory: 500Mi

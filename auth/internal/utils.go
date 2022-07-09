@@ -25,10 +25,10 @@ func InitLogger() {
 
 	if os.Getenv("LOG_LEVEL") == "warn" {
 		Atom.SetLevel(zap.WarnLevel)
-	} else if os.Getenv("LOG_LEVEL") == "info" {
-		Atom.SetLevel(zap.InfoLevel)
-	} else {
+	} else if os.Getenv("LOG_LEVEL") == "debug" {
 		Atom.SetLevel(zap.DebugLevel)
+	} else {
+		Atom.SetLevel(zap.InfoLevel)
 	}
 
 }

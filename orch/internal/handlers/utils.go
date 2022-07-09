@@ -142,7 +142,7 @@ type clusterCfg struct {
 	Region string `json:"region"` //us-east-1
 	Domain string `json:"domain"` //myhubs.net
 
-	//required? but possible to fallback to locally available values
+	//required? but possible to fallback to default or locally available values
 	Env                     string `json:"env"`                     //dev
 	OAUTH_CLIENT_ID_FXA     string `json:"OAUTH_CLIENT_ID_FXA"`     //2db93e6523568888
 	OAUTH_CLIENT_SECRET_FXA string `json:"OAUTH_CLIENT_SECRET_FXA"` //06e08133333333333387dd5425234388ac4e29999999999905a2eaea7e1d8888
@@ -155,10 +155,10 @@ type clusterCfg struct {
 	AWS_SECRET              string `json:"AWS_SECRET"`              //AKIAYEJRSWRAQSAM8888AKIAYEJRSWRAQSAM8888
 	GCP_SA_HMAC_KEY         string `json:"GCP_SA_HMAC_KEY"`         //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.GOOG1EGPHPZU7F3GUTJCVQWLTYCY747EUAVHHEHQBN4WXSMPXJU4488888888
 	GCP_SA_HMAC_SECRET      string `json:"GCP_SA_HMAC_SECRET"`      //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
-	SKETCHFAB_API_KEY       string `json:"SKETCHFAB_API_KEY"`
-	// this will just be Region ...
-	ItaChan string `json:"itachan"` //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
-	CLOUD   string `json:"cloud"`   //aws or gcp or azure or something else like nope or local etc
+	SKETCHFAB_API_KEY       string `json:"SKETCHFAB_API_KEY"`       //
+	ItaChan                 string `json:"itachan"`                 //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
+	CLOUD                   string `json:"cloud"`                   //aws or gcp or azure or something else like nope or local etc
+	FXA_SERVER              string `json:"FXA_SERVER"`              // for turkeydashboard
 
 	//optional inputs
 	DeploymentPrefix     string `json:"name"`                 //t-
@@ -375,14 +375,24 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	pvtKeyBytes := x509.MarshalPKCS1PrivateKey(pvtKey)
 	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: pvtKeyBytes})
 	cfg.PERMS_KEY = strings.ReplaceAll(string(pemBytes), "\n", `\\n`)
-	pubKey := pvtKey.PublicKey
-	pubKeyBytes := x509.MarshalPKCS1PublicKey(&pubKey)
-	pubKey_pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
-	// cfg.PERMS_KEY_PUB = strings.ReplaceAll(string(pubKey_pemBytes), "\n", `\\n`)
-	cfg.PERMS_KEY_PUB_b64 = base64.StdEncoding.EncodeToString(pubKey_pemBytes) //string(pubKey_pemBytes)
+	if cfg.PERMS_KEY_PUB_b64 == "" {
+		pubKey := pvtKey.PublicKey
+		pubKeyBytes := x509.MarshalPKCS1PublicKey(&pubKey)
+		pubKey_pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
+		cfg.PERMS_KEY_PUB_b64 = base64.StdEncoding.EncodeToString(pubKey_pemBytes) //string(pubKey_pemBytes)
+		internal.Logger.Warn("cfg.PERMS_KEY_PUB_b64 unspecified, using (current cluster's) perms_key.PublicKey")
+	}
 	if cfg.CLOUD == "" {
 		internal.Logger.Warn("cfg.CLOUD unspecified, falling back to (because it probably is): gcp")
 		cfg.CLOUD = "gcp"
+	}
+	if cfg.FXA_SERVER == "" {
+		if cfg.Env == "prod" {
+			cfg.FXA_SERVER = "accounts.stage.mozaws.net"
+		} else {
+			cfg.FXA_SERVER = "accounts.firefox.com"
+		}
+		internal.Logger.Warn("cfg.CLOUD unspecified" + cfg.FXA_SERVER)
 	}
 
 	if cfg.GCP_SA_KEY_b64 == "" {
