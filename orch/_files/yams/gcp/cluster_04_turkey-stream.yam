@@ -39,27 +39,13 @@ stringData:
 ########################################################################
 ######################   dialog   ######################################
 ########################################################################  
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: dialog-hpa
-  namespace: turkey-stream
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: dialog
-  minReplicas: 1
-  maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dialog
   namespace: turkey-stream
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: dialog
@@ -123,7 +109,7 @@ metadata:
   name: coturn
   namespace: turkey-stream
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: coturn                                          
@@ -266,27 +252,13 @@ spec:
             port: 
               number: 9002
 ---
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: dip-hpa
-  namespace: turkey-stream
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: dip
-  minReplicas: 1
-  maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dip
   namespace: turkey-stream
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: dip

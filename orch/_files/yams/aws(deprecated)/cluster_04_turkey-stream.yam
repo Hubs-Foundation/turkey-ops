@@ -67,7 +67,7 @@ metadata:
   name: dialog
   namespace: turkey-stream
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: dialog
@@ -133,7 +133,7 @@ metadata:
   name: coturn
   namespace: turkey-stream
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: coturn                                          

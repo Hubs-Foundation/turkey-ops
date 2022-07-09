@@ -121,20 +121,6 @@ spec:
 ####################################################################################
 ####################################### auth #######################################
 ####################################################################################
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: turkeyauth-hpa
-  namespace: turkey-services
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: turkeyauth
-  minReplicas: 1
-  maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -297,20 +283,6 @@ spec:
 ####################################################################################
 ######################################### orch #####################################
 ####################################################################################
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: turkeyorch-hpa
-  namespace: turkey-services
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: turkeyorch
-  minReplicas: 1
-  maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -527,20 +499,6 @@ subjects:
 ####################################################################################
 ################################### pgbouncer ######################################
 ####################################################################################
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: pgbouncer-hpa
-  namespace: turkey-services
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: pgbouncer
-  minReplicas: 1
-  maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -590,20 +548,6 @@ spec:
           limits:
             memory: 2Gi
             cpu: 1            
----
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: pgbouncer-t-hpa
-  namespace: turkey-services
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: pgbouncer-t
-  minReplicas: 1
-  maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
 ---
 apiVersion: v1
 kind: Service
@@ -782,20 +726,6 @@ subjects:
 ####################################################################################
 ####################################### dashboard #######################################
 ####################################################################################  
-apiVersion: autoscaling/v1
-kind: HorizontalPodAutoscaler
-metadata:
-  name: turkeydashboard-hpa
-  namespace: turkey-services
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: turkeydashboard
-  minReplicas: 1
-  maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

@@ -1,0 +1,111 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: haproxy-hpa
+  namespace: ingress
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: haproxy
+  minReplicas: 1
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: dip-hpa
+  namespace: turkey-stream
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dip
+  minReplicas: 1
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: turkeyauth-hpa
+  namespace: turkey-services
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: turkeyauth
+  minReplicas: 1
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: turkeyorch-hpa
+  namespace: turkey-services
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: turkeyorch
+  minReplicas: 1
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pgbouncer-hpa
+  namespace: turkey-services
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pgbouncer
+  minReplicas: 1
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pgbouncer-t-hpa
+  namespace: turkey-services
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pgbouncer-t
+  minReplicas: 1
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: turkeydashboard-hpa
+  namespace: turkey-services
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: turkeydashboard
+  minReplicas: 1
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 70
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: dialog-hpa
+  namespace: turkey-stream
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: dialog
+  minReplicas: 1
+  maxReplicas: 50
+  targetCPUUtilizationPercentage: 50
