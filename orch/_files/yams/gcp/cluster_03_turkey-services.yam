@@ -30,6 +30,8 @@ stringData:
   SMTP_PASS: {{.SMTP_PASS}}
   DASHBOARD_DATABASE_URL: ecto://postgres:{{.DB_PASS}}@{{.DB_HOST}}/dashboard
   DASHBOARD_SECRET_KEY_BASE: {{.COOKIE_SECRET}}
+  AWS_KEY: {{.AWS_KEY}}
+  AWS_SECRET: {{.AWS_SECRET}}
   GCP_SA_HMAC_KEY: {{.GCP_SA_HMAC_KEY}}
   GCP_SA_HMAC_SECRET: {{.GCP_SA_HMAC_SECRET}}  
   DASHBOARD_ACCESS_KEY: {{.DASHBOARD_ACCESS_KEY}}
@@ -415,7 +417,17 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: OAUTH_CLIENT_SECRET_FXA      
+              key: OAUTH_CLIENT_SECRET_FXA
+        - name: AWS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_KEY      
+        - name: AWS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AWS_SECRET
         - name: GCP_SA_KEY
           valueFrom:
             secretKeyRef:

@@ -273,11 +273,13 @@ metadata:
   namespace: ingress
 spec:
   schedule: "*/10 * * * *" # every 10 minutes initially, certbotbot will update this to a much longer interval after the initial run
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
-      backoffLimit: 1
+      backoffLimit: 0
       template:
         spec:
+          restartPolicy: Never
           serviceAccountName: certbotbot
           {{ if ne .Env "dev" }}
           nodeSelector:
@@ -306,8 +308,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: configs
-                  key: GCP_SA_KEY                                           
-          restartPolicy: OnFailure
+                  key: GCP_SA_KEY
   successfulJobsHistoryLimit: 1
   failedJobsHistoryLimit: 1
 ---
