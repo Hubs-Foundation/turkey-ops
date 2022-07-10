@@ -54,7 +54,6 @@ type hcCfg struct {
 	GCP_SA_HMAC_SECRET   string `json:"GCP_SA_HMAC_SECRET"` //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
 	DASHBOARD_ACCESS_KEY string
 	SKETCHFAB_API_KEY    string
-	REGCRED              string `json:"regcred"` //private container registry creds for k8s/secret/.dockerconfigjson
 	//generated on the fly
 	JWK          string `json:"jwk"` // encoded from PermsKey.public
 	GuardianKey  string `json:"guardiankey"`
@@ -411,13 +410,6 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	cfg.GCP_SA_HMAC_SECRET = internal.Cfg.GCP_SA_HMAC_SECRET
 	cfg.DASHBOARD_ACCESS_KEY = internal.Cfg.DASHBOARD_ACCESS_KEY
 	cfg.SKETCHFAB_API_KEY = internal.Cfg.SKETCHFAB_API_KEY
-	if cfg.REGCRED == "" {
-		regcredSecret, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(internal.Cfg.PodNS).Get(context.Background(), "regcred", metav1.GetOptions{})
-		if err != nil {
-			internal.Logger.Error("failed to get regcredSecret: " + err.Error())
-		}
-		cfg.REGCRED = string(regcredSecret.Data[".dockerconfigjson"])
-	}
 	//produce the rest
 	if cfg.Tier == "free" || internal.Cfg.Env == "dev" {
 		cfg.NodePool = "spot"

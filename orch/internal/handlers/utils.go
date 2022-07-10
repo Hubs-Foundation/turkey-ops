@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rand"
@@ -22,6 +23,8 @@ import (
 	"sync/atomic"
 	"text/template"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func pointerOfInt32(i int) *int32 {
@@ -159,6 +162,7 @@ type clusterCfg struct {
 	ItaChan                 string `json:"itachan"`                 //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
 	CLOUD                   string `json:"cloud"`                   //aws or gcp or azure or something else like nope or local etc
 	FXA_SERVER              string `json:"FXA_SERVER"`              // for turkeydashboard
+	REGCRED                 string `json:"regcred"`                 //private container registry creds for k8s/secret/.dockerconfigjson
 
 	//optional inputs
 	DeploymentPrefix     string `json:"name"`                 //t-
@@ -394,7 +398,13 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		}
 		internal.Logger.Warn("cfg.CLOUD unspecified" + cfg.FXA_SERVER)
 	}
-
+	if cfg.REGCRED == "" {
+		regcredSecret, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(internal.Cfg.PodNS).Get(context.Background(), "regcred", metav1.GetOptions{})
+		if err != nil {
+			internal.Logger.Error("failed to get regcredSecret: " + err.Error())
+		}
+		cfg.REGCRED = string(regcredSecret.Data[".dockerconfigjson"])
+	}
 	if cfg.GCP_SA_KEY_b64 == "" {
 		cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
 		internal.Logger.Warn("GCP_SA_KEY_b64 unspecified -- using: " + cfg.GCP_SA_KEY_b64)
