@@ -319,7 +319,7 @@ metadata:
   name: regcred
   namespace: turkey-services
 data:
-  .dockerconfigjson: {{.REGCRED}}
+  .dockerconfigjson: {{.REGCRED_b64}}
 type: kubernetes.io/dockerconfigjson
 ---
 apiVersion: apps/v1
