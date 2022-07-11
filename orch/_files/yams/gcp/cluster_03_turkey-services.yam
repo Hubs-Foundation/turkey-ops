@@ -41,7 +41,7 @@ data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
 ---
 ####################################################################################
-####################################### turkeyauthproxy ingress #######################################
+######################### turkeyauthproxy ingress ##################################
 ####################################################################################
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -110,6 +110,84 @@ metadata:
 spec:
   rules:
   - host: orch.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
+    haproxy.org/request-set-header: |
+      backend http://haproxy-stats.ingress:1024/
+      AllowedEmailDomains mozilla.com,
+    haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
+  generation: 1
+  name: haproxy-stats
+  namespace: turkey-services
+spec:
+  rules:
+  - host: haproxy.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
+    haproxy.org/request-set-header: |
+      backend http://alertmanager.monitoring:9093/
+      AllowedEmailDomains mozilla.com,
+    haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
+  generation: 1
+  name: skooner
+  namespace: turkey-services
+spec:
+  rules:
+  - host: alertmanager.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeyauth
+            port: 
+              number: 9002
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
+    haproxy.org/request-set-header: |
+      backend http://prometheus.monitoring:9090/
+      AllowedEmailDomains mozilla.com,
+    haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
+  generation: 1
+  name: skooner
+  namespace: turkey-services
+spec:
+  rules:
+  - host: alertmanager.{{.Domain}}
     http:
       paths:
       - path: /
