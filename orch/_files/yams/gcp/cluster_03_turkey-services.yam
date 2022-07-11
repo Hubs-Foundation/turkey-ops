@@ -345,7 +345,7 @@ spec:
       {{ end }}
       containers:
       - name: turkeyorch
-        image: mozillareality/turkeyorch:{{.ItaChan}}-latest
+        image: mozilla/turkeyorch:{{.ItaChan}}-latest
         imagePullPolicy: IfNotPresent        
         env:
         - name: ENV
