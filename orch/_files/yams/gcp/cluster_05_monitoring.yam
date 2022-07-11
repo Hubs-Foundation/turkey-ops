@@ -244,15 +244,15 @@ metadata:
 data:
   prometheus.rules: |-
     groups:
-    - name: dummy alert group
+    - name: group1
       rules:
-      - alert: dummy Pod Memory Alert
-        expr: sum(container_memory_usage_bytes) > 1
-        for: 1m
+      - alert: turkey pods pending
+        expr: sum(kube_pod_container_status_waiting) > 1
+        for: 10m
         labels:
           severity: sev1
         annotations:
-          summary: High Memory Usage
+          summary: sum(kube_pod_container_status_waiting) > 1
   prometheus.yml: |-
     global:
       scrape_interval: 15s

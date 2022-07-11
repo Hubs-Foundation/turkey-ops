@@ -157,7 +157,7 @@ metadata:
       AllowedEmailDomains mozilla.com,
     haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
   generation: 1
-  name: skooner
+  name: alertmanager
   namespace: turkey-services
 spec:
   rules:
@@ -183,11 +183,11 @@ metadata:
       AllowedEmailDomains mozilla.com,
     haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
   generation: 1
-  name: skooner
+  name: prometheus
   namespace: turkey-services
 spec:
   rules:
-  - host: alertmanager.{{.Domain}}
+  - host: prometheus.{{.Domain}}
     http:
       paths:
       - path: /
