@@ -1371,17 +1371,17 @@ spec:
         volumeMounts:
         - name: config-volume
           mountPath: /etc/alertmanager
-        # - name: templates-volume
-        #   mountPath: /etc/alertmanager-templates
+        - name: templates-volume
+          mountPath: /etc/alertmanager-templates
         - name: alertmanager
           mountPath: /alertmanager
       volumes:
       - name: config-volume
         configMap:
           name: alertmanager-config
-      # - name: templates-volume
-      #   configMap:
-      #     name: alertmanager-templates
+      - name: templates-volume
+        configMap:
+          name: alertmanager-templates
       - name: alertmanager
         emptyDir: {}
 ---
@@ -1424,6 +1424,16 @@ data:
         from: changeMe@changeMe.com
         smarthost: smtp.changeMe.com:25
         require_tls: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: alertmanager-templates
+  namespace: monitoring
+data:
+  default.tmpl: |
+    //dummy
 ---
 apiVersion: v1
 kind: Service
