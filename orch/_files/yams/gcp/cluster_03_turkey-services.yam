@@ -256,8 +256,8 @@ spec:
           periodSeconds: 60            
         resources:
           requests:
-            memory: 1Gi
-            cpu: 0.5
+            memory: 0.5Gi
+            cpu: 0.25
           limits:
             memory: 2Gi
             cpu: 1
@@ -465,8 +465,8 @@ spec:
           periodSeconds: 60
         resources:
           requests:
-            memory: 1Gi
-            cpu: 0.5       
+            memory: 0.5Gi
+            cpu: 0.25       
           limits:
             memory: 2Gi
             cpu: 1
@@ -555,8 +555,8 @@ spec:
               key: DB_HOST          
         resources:
           requests:
-            memory: 500Mi
-            cpu: 0.5
+            memory: 250Mi
+            cpu: 0.25
           limits:
             memory: 2Gi
             cpu: 1            
@@ -620,8 +620,8 @@ spec:
           value: transaction
         resources:
           requests:
-            memory: 500Mi
-            cpu: 0.5
+            memory: 250Mi
+            cpu: 0.25
           limits:
             memory: 2Gi
             cpu: 1                       
@@ -837,8 +837,8 @@ spec:
           value: {{.FXA_SERVER}}
         resources:
           requests:
-            memory: 500Mi
-            cpu: 0.5
+            memory: 250Mi
+            cpu: 0.25
           limits:
             memory: 2Gi
             cpu: 1

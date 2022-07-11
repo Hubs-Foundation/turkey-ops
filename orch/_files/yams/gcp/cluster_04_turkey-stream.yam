@@ -51,7 +51,10 @@ spec:
       app: dialog
   minReadySeconds: 15
   strategy:
-    type: RollingUpdate  
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   template:
     metadata:
       labels:
@@ -74,7 +77,11 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: PERMS_KEY          
+              key: PERMS_KEY
+        resources:
+          requests:
+            memory: 2Gi
+            cpu: 1
         # livenessProbe:
         #   httpGet:
         #     path: "http://localhost"
@@ -141,6 +148,10 @@ spec:
             secretKeyRef:
               name: configs
               key: PSQL             
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 0.5
         # livenessProbe:
         #   httpGet:
         #     path: "http://localhost"
