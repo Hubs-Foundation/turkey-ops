@@ -18,6 +18,11 @@ metadata:
   name: haproxy-config
   namespace: ingress
 data:
+  timeout-client: 30m
+  timeout-client-fin: 1h
+  timeout-server: 30m
+  timeout-server-fin: 1h
+  timeout-connect: 5s
   backend-config-snippet: |
     option forwardfor 
     acl no-backend nbsrv() lt 1 
