@@ -224,7 +224,7 @@ func K8s_GetServiceIngress0(cfg *rest.Config, namespace string, serviceName stri
 			GetLogger().Warn("got nothing and max retry(10) reached")
 			break
 		}
-		GetLogger().Debug("got nothing -- retrying: " + fmt.Sprint(tries))
+		GetLogger().Info("got nothing -- retrying: " + fmt.Sprint(tries))
 		time.Sleep(time.Second * 30)
 		svc, _ = svcsClient.Get(context.Background(), serviceName, metav1.GetOptions{})
 		tries++

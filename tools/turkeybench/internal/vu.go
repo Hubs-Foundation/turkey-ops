@@ -44,6 +44,7 @@ func (vu *Vuser) Create() {
 	createReqBody, _ := json.Marshal(map[string]string{
 		"hub_id":    vu.HubId,
 		"useremail": vu.useremail,
+		"tier":      "mvp2",
 	})
 	createReq, err := http.NewRequest("POST", "https://orch."+vu.turkeyDomain+"/hc_instance", bytes.NewBuffer(createReqBody))
 	createReq.AddCookie(&http.Cookie{

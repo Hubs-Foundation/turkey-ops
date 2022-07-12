@@ -48,3 +48,6 @@ if ! get_new_cert; then echo "ERROR failed to get new cert, exit in 15 min"; sle
 if ! save_cert; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
 
 kubectl -n ingress rollout restart deployment haproxy
+
+if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 36000; fi
+

@@ -17,7 +17,7 @@ import (
 //naFfSCreQagnbhL9pgcDC2ZfxY2IzrXLSrsEXMsYUp0=|1656465179|gtan@mozilla.com
 var (
 	turkeyDomain      = "gtan.myhubs.net"
-	_turkeyauthcookie = "fterFx-yCNququYpFMZM3pFLb8SKN_hZ22LY31bcsbQ=|1657260837|gtan@mozilla.com"
+	_turkeyauthcookie = "lBu5HHVQbu4wsiYn7S9Lt3uvolCGgfdlXS9oMaBYx-c=|1657689815|gtan@mozilla.com"
 	useremail         = "gtan@mozilla.com"
 	stepWait          = 1 * time.Millisecond
 )
