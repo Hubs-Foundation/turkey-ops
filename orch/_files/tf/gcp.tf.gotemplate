@@ -14,7 +14,7 @@ variable "vmType" {
   type = map
   default = {
     "stream"  = "e2-highcpu-4"
-    "hub" = "e2-highmem-2"
+    "hub" = "e2-highmem-4"
     "service" = "e2-standard-4"
     "spot" = "e2-standard-4"
   }

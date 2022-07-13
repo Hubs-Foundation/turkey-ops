@@ -131,7 +131,7 @@ spec:
       hostNetwork: true
       {{ if ne .Env "dev" }}
       nodeSelector:
-        turkey: stream
+        turkey: service
       {{ end }}
       containers:
       - name: coturn
