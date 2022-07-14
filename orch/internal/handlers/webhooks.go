@@ -49,7 +49,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&dockerJson)
 	if err != nil ||
 		!strings.HasPrefix(dockerJson.Callback_url, "https://registry.hub.docker.com/u/mozilla") {
-		internal.Logger.Debug(" bad r.Body, is it json? have they changed it? (https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload)")
+		internal.Logger.Warn(" bad r.Body, is it json? have they changed it? (https://docs.docker.com/docker-hub/webhooks/#example-webhook-payload)")
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -59,7 +59,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	tagArr := strings.Split(dockerJson.Push_data.Tag, "-")
 
 	//assume we can trust the payload at this point
-	internal.Logger.Debug(fmt.Sprintf("parsed dockerJson: %+v", dockerJson))
+	internal.Logger.Info(fmt.Sprintf("parsed dockerJson: %+v", dockerJson))
 	channel := tagArr[0]
 	_, ok := supportedChannels[channel]
 	if !ok {
