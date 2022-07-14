@@ -17,9 +17,9 @@ var _httpClient = &http.Client{
 }
 
 type Vuser struct {
-	turkeyDomain      string //	ie. "gtan.myhubs.net"
-	_turkeyauthcookie string // ie. "WmeluLWXgwZ_U3Vk6k073-dtT9jNCd1WJ6_7vRkhKh4=|1655339779|gtan@mozilla.com"
-	useremail         string // 	ie. "gtan@mozilla.com"
+	turkeyDomain     string //	ie. "gtan.myhubs.net"
+	_turkeyauthtoken string // ie. "WmeluLWXgwZ_U3Vk6k073-dtT9jNCd1WJ6_7vRkhKh4=|1655339779|gtan@mozilla.com"
+	useremail        string // 	ie. "gtan@mozilla.com"
 
 	Id      string
 	HubId   string
@@ -30,12 +30,12 @@ type Vuser struct {
 
 func NewVuser(Id, domain, authcookie, email, hubId string) *Vuser {
 	return &Vuser{
-		turkeyDomain:      domain,
-		_turkeyauthcookie: authcookie,
-		useremail:         email,
-		HubId:             hubId,
-		Url:               "https://" + hubId + "." + domain + "/?skipadmin",
-		Id:                Id,
+		turkeyDomain:     domain,
+		_turkeyauthtoken: authcookie,
+		useremail:        email,
+		HubId:            hubId,
+		Url:              "https://" + hubId + "." + domain + "/?skipadmin",
+		Id:               Id,
 	}
 }
 
@@ -48,8 +48,8 @@ func (vu *Vuser) Create() {
 	})
 	createReq, err := http.NewRequest("POST", "https://orch."+vu.turkeyDomain+"/hc_instance", bytes.NewBuffer(createReqBody))
 	createReq.AddCookie(&http.Cookie{
-		Name:  "_turkeyauthcookie",
-		Value: vu._turkeyauthcookie,
+		Name:  "_turkeyauthtoken",
+		Value: vu._turkeyauthtoken,
 	})
 	if err != nil {
 		panic("createReq error: " + err.Error())
@@ -104,8 +104,8 @@ func (vu *Vuser) Delete() {
 	})
 	deleteReq, err := http.NewRequest("DELETE", "https://orch."+vu.turkeyDomain+"/hc_instance", bytes.NewBuffer(deleteReqBody))
 	deleteReq.AddCookie(&http.Cookie{
-		Name:  "_turkeyauthcookie",
-		Value: vu._turkeyauthcookie,
+		Name:  "_turkeyauthtoken",
+		Value: vu._turkeyauthtoken,
 	})
 	if err != nil {
 		panic("deleteReq error: " + err.Error())

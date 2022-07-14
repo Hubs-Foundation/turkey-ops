@@ -45,9 +45,6 @@ func main() {
 	router.Handle("/tco_aws", mozOnly()(handlers.TurkeyAws))
 	router.Handle("/tco_gcp", mozOnly()(handlers.TurkeyGcp))
 
-	router.Handle("/Dummy", handlers.Dummy)
-	router.Handle("/ytdl/api/info", handlers.Ytdl)
-
 	port, err := strconv.Atoi(internal.Cfg.Port)
 	if err != nil {
 		internal.GetLogger().Panic("bad port: " + err.Error())

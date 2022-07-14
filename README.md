@@ -1,6 +1,6 @@
 # turkey-ops
 disclaimer:
-super early 1 person hacking away repo a.k.a messy commit history will be sqashed, mess codes will be refactored, branching policy/gitops/deployment channel will be formally established ... at some point in future
+atm a 1 person hacking away repo a.k.a messy commit history will be sqashed, mess codes will be refactored, branching policy/gitops will be formally established
 
 ---
 outdated docs

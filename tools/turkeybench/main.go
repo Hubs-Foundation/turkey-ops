@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -16,10 +17,9 @@ import (
 
 //naFfSCreQagnbhL9pgcDC2ZfxY2IzrXLSrsEXMsYUp0=|1656465179|gtan@mozilla.com
 var (
-	turkeyDomain      = "gtan.myhubs.net"
-	_turkeyauthcookie = "lBu5HHVQbu4wsiYn7S9Lt3uvolCGgfdlXS9oMaBYx-c=|1657689815|gtan@mozilla.com"
-	useremail         = "gtan@mozilla.com"
-	stepWait          = 1 * time.Millisecond
+	turkeyDomain = "gtan.myhubs.net"
+	useremail    = "gtan@mozilla.com"
+	stepWait     = 1 * time.Millisecond
 )
 
 //	super lame manual cleanup ...
@@ -29,15 +29,23 @@ var vuBag []*internal.Vuser
 
 func main() {
 
+	userCnt := flag.Int("u", 10, "number of virtual users, int")
+	token := flag.String("t", "error: not-provided", "value of _turkeyauthtoken, string")
+	addUsers(*userCnt, *token)
+
+	fmt.Printf(">> domain: %v, stepWait: %v, userCnt: %v, token: %v", turkeyDomain, stepWait, userCnt, token)
+	// fmt.Printf("# virtual user to run: ")
+	// userCnt, _ := reader.ReadString('\n')
+	// fmt.Printf("_turkeyauthtoken: ")
+	// token, _ := reader.ReadString('\n')
+	// if num, err := strconv.Atoi(userCnt); err == nil {
+	// 	addUsers(num)
+	// } else {
+	// 	fmt.Println("bad input: <" + userCnt + ">")
+	// 	return
+	// }
+
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf(">> domain: %v, stepWait: %v. type a number to start: ", turkeyDomain, stepWait)
-	cmd, _ := reader.ReadString('\n')
-	if num, err := strconv.Atoi(dropNewLineChars(cmd)); err == nil {
-		addUsers(num)
-	} else {
-		fmt.Println("bad input: <" + cmd + ">")
-		return
-	}
 
 	var wg_create sync.WaitGroup
 	for _, vu := range vuBag {
@@ -59,7 +67,7 @@ func main() {
 		fmt.Println("\n---")
 		fmt.Println(`>> "load" or "delete" to run vu.load or vu.delete: `)
 		fmt.Println(`>> "exit" to quit: `)
-		cmd, _ = reader.ReadString('\n')
+		cmd, _ := reader.ReadString('\n')
 		if dropNewLineChars(cmd) == "load" {
 			var wg_load sync.WaitGroup
 			for _, vu := range vuBag {
@@ -83,10 +91,10 @@ func main() {
 
 }
 
-func addUsers(num int) {
+func addUsers(num int, token string) {
 	for i := 0; i < num; i++ {
 		vuBag = append(vuBag, internal.NewVuser(strconv.Itoa(i),
-			turkeyDomain, _turkeyauthcookie, useremail,
+			turkeyDomain, token, useremail,
 			"turkeybench"+strings.ReplaceAll(uuid.New().String(), "-", ""),
 		))
 	}
