@@ -481,6 +481,7 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
 		hc_switch(hcCfg.HubId, "down")
+		internal.Cfg.K8ss_local.WaitForDeploymentsScalingDown(nsName, 30*time.Minute)
 
 		//delete ns
 		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),

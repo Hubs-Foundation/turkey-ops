@@ -38,6 +38,23 @@ type K8sSvs struct {
 	ClientSet *kubernetes.Clientset
 }
 
+func NewK8sSvs_local() *K8sSvs {
+
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		GetLogger().Error(err.Error())
+		return nil
+	}
+	clientSet, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		GetLogger().Error(err.Error())
+	}
+	return &K8sSvs{
+		Cfg:       cfg,
+		ClientSet: clientSet,
+	}
+}
+
 func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 	if k8.ClientSet == nil {
 		return nil, errors.New("k8.ClientSet == nil")
@@ -77,21 +94,30 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 	return stop, nil
 }
 
-func NewK8sSvs_local() *K8sSvs {
+func (k8 K8sSvs) WaitForDeploymentsScalingDown(namespace string, timeout time.Duration) error {
 
-	cfg, err := rest.InClusterConfig()
-	if err != nil {
-		GetLogger().Error(err.Error())
-		return nil
+	if k8.ClientSet == nil {
+		return errors.New("k8.ClientSet == nil")
 	}
-	clientSet, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		GetLogger().Error(err.Error())
+
+	wait := 5 * time.Second
+	podCount := 1
+	for podCount > 1 && timeout > 0 {
+		time.Sleep(wait)
+		timeout -= wait
+		podCount = 0
+		pods, err := k8.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		podCount = len(pods.Items)
 	}
-	return &K8sSvs{
-		Cfg:       cfg,
-		ClientSet: clientSet,
+
+	if timeout <= 0 {
+		return errors.New("timeout")
 	}
+
+	return nil
 }
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
