@@ -94,15 +94,15 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 	return stop, nil
 }
 
-func (k8 K8sSvs) WaitForDeploymentsScalingDown(namespace string, timeout time.Duration) error {
+func (k8 K8sSvs) WaitUntilPodCount(namespace string, count int, timeout time.Duration) error {
 
 	if k8.ClientSet == nil {
 		return errors.New("k8.ClientSet == nil")
 	}
 
 	wait := 5 * time.Second
-	podCount := 1
-	for podCount > 1 && timeout > 0 {
+	podCount := -1
+	for podCount != count && timeout > 0 {
 		time.Sleep(wait)
 		timeout -= wait
 		podCount = 0
