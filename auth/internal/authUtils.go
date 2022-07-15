@@ -79,7 +79,7 @@ func checkJwtCookie(r *http.Request) (jwt.Claims, error) {
 	token, err := jwt.Parse(c.Value, func(token *jwt.Token) (interface{}, error) {
 		// since we only use the one private key to sign the tokens,
 		// we also only use its public counter part to verify
-		return cfg.PermsKey.Public(), nil
+		return cfg.PermsKey_pub, nil
 	})
 	if err != nil {
 		return nil, err

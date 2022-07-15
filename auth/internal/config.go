@@ -24,7 +24,7 @@ type Config struct {
 	Domain          string `description:"root domain"`
 	TrustedClients  string `description:"ie. https://portal.myhubs.net"`
 	AllowAuthCookie bool   `description:"allow creation and verification of simple secret protected authCookie in addition to full jwt-signed-with-domain-name authToken"`
-	
+
 	AuthHost               string               `long:"auth-host" env:"AUTH_HOST" description:"Single host to use when returning from 3rd party auth"`
 	Config                 func(s string) error `long:"config" env:"CONFIG" description:"Path to config file" json:"-"`
 	CookieDomains          []CookieDomain       `long:"cookie-domain" env:"COOKIE_DOMAIN" env-delim:"," description:"Domain to set auth cookie on, can be set multiple times"`
@@ -110,7 +110,11 @@ func MakeCfg() {
 	if err != nil {
 		Logger.Error(" preparePermsKey failed!!! " + err.Error())
 	}
-	cfg.PermsKey_pub = cfg.PermsKey.Public()
+	if os.Getenv("AUTH_PUBLIC_KEY") != "" {
+		cfg.PermsKey_pub = os.Getenv("AUTH_PUBLIC_KEY")
+	} else {
+		cfg.PermsKey_pub = cfg.PermsKey.Public()
+	}
 	//log out pem encoded public key
 	pubKeyBytes := x509.MarshalPKCS1PublicKey(&cfg.PermsKey.PublicKey)
 	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
