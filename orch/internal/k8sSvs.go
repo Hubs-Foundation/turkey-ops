@@ -94,29 +94,24 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 	return stop, nil
 }
 
-func (k8 K8sSvs) WaitUntilPodCount(namespace string, count int, timeout time.Duration) error {
-
+func (k8 K8sSvs) WaitForPodKill(namespace string, timeout time.Duration) error {
 	if k8.ClientSet == nil {
 		return errors.New("k8.ClientSet == nil")
 	}
-
 	wait := 5 * time.Second
 	podCount := -1
-	for podCount != count && timeout > 0 {
+	for podCount != 0 && timeout > 0 {
 		time.Sleep(wait)
 		timeout -= wait
-		podCount = 0
 		pods, err := k8.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return err
 		}
 		podCount = len(pods.Items)
 	}
-
 	if timeout <= 0 {
 		return errors.New("timeout")
 	}
-
 	return nil
 }
 

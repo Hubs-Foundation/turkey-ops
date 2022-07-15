@@ -481,7 +481,7 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
 		hc_switch(hcCfg.HubId, "down")
-		internal.Cfg.K8ss_local.WaitUntilPodCount(nsName, 1, 30*time.Minute)
+		internal.Cfg.K8ss_local.WaitForPodKill(nsName, 30*time.Minute)
 
 		//delete ns
 		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
@@ -569,6 +569,7 @@ func hc_switch(HubId, status string) error {
 		Replicas = 1
 	}
 
+	//deployments
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		internal.Logger.Error("hc_switch - failed to list deployments: " + err.Error())
@@ -583,10 +584,28 @@ func hc_switch(HubId, status string) error {
 			return err
 		}
 	}
-	err = internal.Cfg.K8ss_local.WatiForDeployments(ns, 15*time.Minute)
+	//statefulset
+	sss, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().StatefulSets(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
+		internal.Logger.Error("hc_switch - failed to list statefulsets: " + err.Error())
+		return err
 	}
+
+	for _, ss := range sss.Items {
+		ss.Spec.Replicas = pointerOfInt32(Replicas)
+		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().StatefulSets(ns).Update(context.Background(), &ss, metav1.UpdateOptions{})
+		if err != nil {
+			internal.Logger.Error("hc_switch -- failed to scale <ns: " + ns + ", deployment: " + ss.Name + ">: " + err.Error())
+			return err
+		}
+	}
+
+	// //waits
+	// err = internal.Cfg.K8ss_local.WatiForDeployments(ns, 15*time.Minute)
+	// if err != nil {
+	// 	internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
+	// }
+
 	locker.Unlock()
 	return nil
 }
