@@ -35,7 +35,13 @@ var TurkeyGcp = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		tco_gcp_get(w, r)
 	case "PATCH":
-		tco_gcp_update(w, r)
+		comp := r.URL.Query().Get("comp")
+		if comp == "tf" {
+			tco_gcp_tfUpdate(w, r)
+		} else if comp == "k8s" {
+			tco_gcp_k8sUpdate(w, r)
+		}
+
 	default:
 		return
 		// fmt.Fprintf(w, "unexpected method: "+r.Method)
@@ -181,7 +187,7 @@ func tco_gcp_get(w http.ResponseWriter, r *http.Request) {
 		"clusters": clusterData,
 	})
 }
-func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
+func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 
 	// ######################################### 1. get cfg from r.body ########################################
 	cfg, err := turkey_makeCfg(r)
@@ -227,22 +233,50 @@ func tco_gcp_update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// internal.Logger.Debug("[update] [" + cfg.Stackname + "] applying")
-	// _, tfout, err := runTf(cfg, "apply", tfplanFileName, "--auto-approve")
-	// if err != nil {
-	// 	internal.Logger.Error("failed @runTf: " + err.Error())
-	// 	return
-	// }
-	// internal.Logger.Sugar().Debugf("%v", tfout)
-	// internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
-
+	//tfplanFileName exists == plan's already reviewed
+	go func() {
+		tfFile, tfout, err := runTf(cfg, "apply", "--auto-approve")
+		if err != nil {
+			internal.Logger.Error("failed @runTf: " + err.Error())
+			return
+		}
+		internal.Logger.Sugar().Debugf("tfFile: %v", tfFile)
+		internal.Logger.Sugar().Debugf("tfout: %v", tfout)
+		internal.Logger.Debug("[tco_gcp_tfUpdate] [" + cfg.Stackname + "] " + "tf deployment completed")
+		//update configs
+		clusterCfgBytes, _ := json.Marshal(cfg)
+		internal.Cfg.Gcps.GCS_WriteFile("turkeycfg", "tf-backend/"+cfg.Stackname+"/cfg.json", string(clusterCfgBytes))
+		internal.Cfg.Gcps.GCS_WriteFile("turkeycfg", "tf-backend/"+cfg.Stackname+"/infra.tf", tfFile)
+		// ###### any breaking changes?
+		dbIps, err := internal.Cfg.Gcps.GetSqlIps(cfg.Stackname)
+		if err != nil {
+			internal.Logger.Error("[tco_gcp_tfUpdate] [" + cfg.Stackname + "] " + "post tf deployment: failed to GetSqlPublicIp . err: " + err.Error())
+			return
+		}
+		if cfg.DB_HOST != dbIps["PRIVATE"] {
+			internal.Logger.Warn(`!!! breaking change: cfg.DB_HOST != dbIps["PRIVATE"] !!!`)
+		}
+	}()
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"stackName": cfg.Stackname,
 		"msg":       "stage: applying",
 		"tf_plan":   tfplanFileName,
 	})
-	// ######################################### 2. run tf #########################################
+	return
+}
+func tco_gcp_k8sUpdate(w http.ResponseWriter, r *http.Request) {
 
+	// ######################################### 1. get cfg from r.body ########################################
+	cfg, err := turkey_makeCfg(r)
+	if err != nil {
+		internal.Logger.Error("ERROR @ turkey_makeCfg: " + err.Error())
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"stackName": cfg.Stackname,
+			"error":     "ERROR @ turkey_makeCfg: " + err.Error(),
+		})
+		return
+	}
+	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
 }
 
 func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
