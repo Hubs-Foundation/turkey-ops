@@ -111,7 +111,8 @@ func MakeCfg() {
 		Logger.Error(" preparePermsKey failed!!! " + err.Error())
 	}
 	if os.Getenv("AUTH_PUBLIC_KEY") != "" {
-		cfg.PermsKey_pub, err = x509.ParsePKCS1PublicKey([]byte(os.Getenv("AUTH_PUBLIC_KEY")))
+		pemB, _ := pem.Decode([]byte(os.Getenv("AUTH_PUBLIC_KEY")))
+		cfg.PermsKey_pub, err = x509.ParsePKCS1PublicKey(pemB.Bytes)
 		if err != nil {
 			Logger.Sugar().Errorf("failed to parse AUTH_PUBLIC_KEY (%v), error: %v", os.Getenv("AUTH_PUBLIC_KEY"), err)
 			cfg.PermsKey_pub = cfg.PermsKey.Public()
