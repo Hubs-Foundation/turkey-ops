@@ -888,6 +888,7 @@ spec:
       labels:
         app: ita
     spec:
+      serviceAccountName: ita-sa
       nodeSelector:
         turkey: {{.NodePool}}
       containers:
