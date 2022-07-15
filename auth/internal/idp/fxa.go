@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 )
 
@@ -35,16 +34,20 @@ func (f *Fxa) Setup() error {
 		return errors.New("providers.fxa.client-id, providers.fxa.client-secret must be set")
 	}
 
-	//default to staging fxa \
-	fxaLoginHost := "accounts.stage.mozaws.net"
-	fxaTokenHost := "oauth.stage.mozaws.net"
-	fxaUserHost := "profile.stage.mozaws.net"
-	//	unless it's a prod env
-	if os.Getenv("ENV") == "prod" {
-		fxaLoginHost = "accounts.firefox.com"
-		fxaTokenHost = "api.accounts.firefox.com"
-		fxaUserHost = "profile.accounts.firefox.com"
-	}
+	// //default to staging fxa \
+	// fxaLoginHost := "accounts.stage.mozaws.net"
+	// fxaTokenHost := "oauth.stage.mozaws.net"
+	// fxaUserHost := "profile.stage.mozaws.net"
+	// //	unless it's a prod env
+	// if os.Getenv("ENV") == "prod" {
+	// 	fxaLoginHost = "accounts.firefox.com"
+	// 	fxaTokenHost = "api.accounts.firefox.com"
+	// 	fxaUserHost = "profile.accounts.firefox.com"
+	// }
+
+	fxaLoginHost := "accounts.firefox.com"
+	fxaTokenHost := "api.accounts.firefox.com"
+	fxaUserHost := "profile.accounts.firefox.com"
 
 	// fxaLoginHost := os.Getenv("FXA_LOGIN_HOST")
 	// if fxaLoginHost == "" {
