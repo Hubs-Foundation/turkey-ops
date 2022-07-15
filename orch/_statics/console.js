@@ -77,7 +77,7 @@ function turkeyGcp_get(){
 }
 
 
-document.getElementById("turkeyGcp_update").addEventListener("click", turkeyGcp_update, false);
+document.getElementById("turkeyGcp_update_tf").addEventListener("click", turkeyGcp_update, false);
 function turkeyGcp_update(){ 
   var mbody=document.getElementById("reviewUpdateModalBody");
   mbody.innerHTML="---loading---"
@@ -87,7 +87,7 @@ function turkeyGcp_update(){
     console.log(resJson.stackName, resJson.msg, resJson.tf_plan_html)
     mbody.innerHTML=`<h1>${resJson.stackName}</h1><br><h2>${resJson.msg}</h2><br><h3>tf_plan_html: </h3><br>`+resJson.tf_plan_html;
   }};
-  xhr.open("PATCH", "/tco_gcp", false);
+  xhr.open("PATCH", "/tco_gcp?comp=tf", false);
   // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xhr.send(document.getElementById("cluster_cfg").value);
 
