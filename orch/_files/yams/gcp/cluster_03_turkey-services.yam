@@ -337,11 +337,11 @@ spec:
           periodSeconds: 60            
         resources:
           requests:
-            memory: 0.5Gi
-            cpu: 0.5
-          limits:
-            memory: 2Gi
             cpu: 1
+            memory: 1Gi
+          limits:
+            cpu: 2
+            memory: 3Gi
 
 ---
 apiVersion: v1
@@ -544,11 +544,11 @@ spec:
           periodSeconds: 60
         resources:
           requests:
+            cpu: 0.25
             memory: 0.5Gi
-            cpu: 0.25       
           limits:
-            memory: 2Gi
             cpu: 1
+            memory: 2Gi
       imagePullSecrets:
       - name: regcred      
 ---
@@ -632,11 +632,11 @@ spec:
               key: DB_HOST          
         resources:
           requests:
-            memory: 250Mi
             cpu: 0.25
+            memory: 250Mi
           limits:
+            cpu: 1
             memory: 2Gi
-            cpu: 1            
 ---
 apiVersion: v1
 kind: Service
@@ -695,11 +695,11 @@ spec:
           value: transaction
         resources:
           requests:
-            memory: 250Mi
             cpu: 0.25
+            memory: 250Mi
           limits:
+            cpu: 1
             memory: 2Gi
-            cpu: 1                       
 ---
 apiVersion: v1
 kind: Service
@@ -752,11 +752,11 @@ spec:
           value: ita
         resources:
           requests:
-            memory: 50Mi
             cpu: 0.05
+            memory: 50Mi
           limits:
-            memory: 200Mi
             cpu: 0.1
+            memory: 200Mi
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -908,11 +908,11 @@ spec:
           value: {{.FXA_SERVER}}
         resources:
           requests:
-            memory: 250Mi
             cpu: 0.25
+            memory: 250Mi
           limits:
-            memory: 2Gi
             cpu: 1
+            memory: 2Gi
 ---
 apiVersion: v1
 kind: Service

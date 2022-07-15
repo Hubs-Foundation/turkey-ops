@@ -82,11 +82,11 @@ spec:
         - containerPort: 3000
         resources:
           requests:
-            cpu: 0.5
-            memory: 1Gi
+            cpu: 0.25
+            memory: 0.5Gi
           limits:
-            cpu: 2
-            memory: "4Gi"
+            cpu: 1
+            memory: "2Gi"
         volumeMounts:
           - name: grafana-storage
             mountPath: /var/lib/grafana
@@ -216,11 +216,11 @@ spec:
             failureThreshold: 60
         resources:
           requests:
+            cpu: 0.5
+            memory: 1Gi
+          limits:
             cpu: 1
             memory: 2Gi
-          limits:
-            cpu: 2
-            memory: 4Gi
         volumeMounts:
           - name: config
             mountPath: /etc/prometheus
@@ -491,12 +491,12 @@ spec:
           - containerPort: 9100
             protocol: TCP
         resources:
-          requests:
-            cpu: 100m
-            memory: 180Mi
+          # requests:
+          #   cpu: 100m
+          #   memory: 180Mi
           limits:
             cpu: 250m
-            memory: 180Mi
+            memory: 250Mi
         volumeMounts:
         - mountPath: /host/sys
           mountPropagation: HostToContainer
@@ -818,11 +818,11 @@ spec:
           readOnlyRootFilesystem: true
         resources:
           requests:
-            cpu: 0.5
-            memory: 1Gi
+            cpu: 0.25
+            memory: 0.5Gi
           limits:
-            cpu: 2
-            memory: 4Gi
+            cpu: 1
+            memory: 2Gi
       terminationGracePeriodSeconds: 4800
       volumes:
         - name: config
@@ -1001,12 +1001,12 @@ spec:
             containerPort: 3101
             protocol: TCP                
         resources:
-          requests:
-            cpu: 500m
-            memory: 1Gi
+          # requests:
+          #   cpu: 250m
+          #   memory: 0.5Gi
           limits:
-            cpu: 1
-            memory: 2Gi
+            cpu: 0.5
+            memory: 1Gi
         livenessProbe:
           httpGet:
             path: /ready
