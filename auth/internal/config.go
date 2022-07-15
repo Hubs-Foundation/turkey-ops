@@ -111,14 +111,18 @@ func MakeCfg() {
 		Logger.Error(" preparePermsKey failed!!! " + err.Error())
 	}
 	if os.Getenv("AUTH_PUBLIC_KEY") != "" {
-		cfg.PermsKey_pub = os.Getenv("AUTH_PUBLIC_KEY")
+		cfg.PermsKey_pub, err = x509.ParsePKCS1PublicKey([]byte(os.Getenv("AUTH_PUBLIC_KEY")))
+		if err != nil {
+			Logger.Sugar().Errorf("failed to parse AUTH_PUBLIC_KEY (%v), error: %v", os.Getenv("AUTH_PUBLIC_KEY"), err)
+			cfg.PermsKey_pub = cfg.PermsKey.Public()
+		}
 	} else {
 		cfg.PermsKey_pub = cfg.PermsKey.Public()
 	}
 	//log out pem encoded public key
 	pubKeyBytes := x509.MarshalPKCS1PublicKey(&cfg.PermsKey.PublicKey)
 	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
-	Logger.Sugar().Infof("PermsKey_pub: %v", strings.ReplaceAll(string(pemBytes), "\n", `\\n`))
+	Logger.Sugar().Infof("PermsKey_pub: %v", string(pemBytes))
 }
 
 func rootDomain(fullDomain string) string {
