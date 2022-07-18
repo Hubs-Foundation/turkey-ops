@@ -151,9 +151,9 @@ func turkey_loadStackCfg(stackname string, inputedCfg clusterCfg) (clusterCfg, e
 	//get cfg.json from turkeycfg bucket
 	cfgBytes, err := internal.Cfg.Gcps.GCS_ReadFile("turkeycfg", "tf-backend/"+stackname+"/cfg.json")
 	if err != nil {
-		// return inputedCfg, err
+		// previous deployment attempt was not successful -- we'll retry fresh
 		internal.Logger.Warn("failed to get cfg.json for " + stackname + ", returning inputedCfg unchanged")
-		return currentCfg, nil
+		return inputedCfg, nil
 	}
 	//unmarshal to cfg
 	err = json.Unmarshal(cfgBytes, &currentCfg)
