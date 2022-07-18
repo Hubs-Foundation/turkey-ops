@@ -59,8 +59,8 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg.CLOUD = "gcp"
-	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-	internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "started ... this can take a while")
+	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
+	internal.Logger.Info("[creation] [" + cfg.Stackname + "] " + "started ... this can take a while")
 
 	go func() {
 		// ########## 2. run tf #########################################
@@ -75,7 +75,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// internal.Logger.Sugar().Debugf("tfout: %v", tfout)
-		internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "tf deployment completed")
+		internal.Logger.Info("[creation] [" + cfg.Stackname + "] " + "tf deployment completed")
 		// ########## 3. prepare for post Deployment setups:
 		// ###### get db info and complete clusterCfg (cfg)
 		dbIps, err := internal.Cfg.Gcps.GetSqlIps(cfg.Stackname)
@@ -88,7 +88,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 		cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
 
-		internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "&#129311; GetSqlPublicIp found cfg.DB_HOST == " + cfg.DB_HOST)
+		internal.Logger.Info("[creation] [" + cfg.Stackname + "] " + "&#129311; GetSqlPublicIp found cfg.DB_HOST == " + cfg.DB_HOST)
 
 		// ###### get k8s config
 		k8sCfg, err := internal.Cfg.Gcps.GetK8sConfigFromGke(cfg.Stackname)
@@ -96,7 +96,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "post tf deployment: failed to get k8sCfg for eks name: " + cfg.Stackname + ". err: " + err.Error())
 			return
 		}
-		internal.Logger.Debug("[creation] [" + cfg.Stackname + "]" + "&#129311; GetK8sConfigFromGke: found kubeconfig for Host == " + k8sCfg.Host)
+		internal.Logger.Info("[creation] [" + cfg.Stackname + "]" + "&#129311; GetK8sConfigFromGke: found kubeconfig for Host == " + k8sCfg.Host)
 		// ###### 3 produce k8s yamls
 		k8sYamls, err := collectAndRenderYams_localGcp(cfg) // templated k8s yamls == yam; rendered k8s yamls == yaml
 		if err != nil {
@@ -114,7 +114,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "failed @ k8sSetups: " + err.Error())
 			return
 		}
-		internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "k8sSetups completed")
+		internal.Logger.Info("[creation] [" + cfg.Stackname + "] " + "k8sSetups completed")
 
 		// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
 		rootDomain := internal.FindRootDomain(cfg.Domain)
@@ -125,7 +125,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 		dnsMsg := "(already done in gcp/cloudDns)"
 		if err != nil {
-			internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "Dns_createRecordSet failed: " + err.Error())
+			internal.Logger.Warn("[creation] [" + cfg.Stackname + "] " + "Dns_createRecordSet failed: " + err.Error())
 			dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"
 		}
 
@@ -159,7 +159,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "failed @ email report: " + err.Error())
 		}
-		internal.Logger.Debug("[creation] [" + cfg.Stackname + "] " + "completed for " + cfg.Stackname + ", full details emailed to " + authnUser)
+		internal.Logger.Info("[creation] [" + cfg.Stackname + "] " + "completed for " + cfg.Stackname + ", full details emailed to " + authnUser)
 
 	}()
 
@@ -293,7 +293,8 @@ func tco_gcp_k8sUpdate(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
+	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
+	http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 }
 
 func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
@@ -313,8 +314,8 @@ func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Sugar().Warnf("continuing for stackName <%v> ", cfg.Stackname)
 	}
 
-	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-	internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] started")
+	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
+	internal.Logger.Info("[deletion] [" + cfg.Stackname + "] started")
 
 	tf, err := NewTfSvs(cfg.Stackname, cfg)
 	if err != nil {
@@ -333,7 +334,7 @@ func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			internal.Logger.Error("failed @ delete tf-backend for " + cfg.Stackname + ": " + err.Error())
 		}
-		internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] completed")
+		internal.Logger.Info("[deletion] [" + cfg.Stackname + "] completed")
 	}()
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -366,7 +367,7 @@ func k8sSetups(cfg clusterCfg, k8sCfg *rest.Config, k8sYamls []string) (map[stri
 			report["skoonerToken"] = string(v["token"])
 		}
 	}
-	internal.Logger.Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
+	// internal.Logger.Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
 	// find service-lb's host info (or public ip)
 	lb, err := internal.K8s_GetServiceIngress0(k8sCfg, "ingress", "lb")
 	if err != nil {
@@ -374,7 +375,7 @@ func k8sSetups(cfg clusterCfg, k8sCfg *rest.Config, k8sYamls []string) (map[stri
 		return nil, err
 	}
 	report["lb"] = lb.IP
-	internal.Logger.Debug("~~~~~~~~~~lb: " + report["lb"])
+	internal.Logger.Info("~~~~~~~~~~lb: " + report["lb"])
 
 	return report, nil
 }
