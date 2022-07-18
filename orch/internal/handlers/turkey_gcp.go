@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/smtp"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -63,9 +64,14 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		// ########## 2. run tf #########################################
-		tfFile, _, err := runTf(cfg, "apply", "--auto-approve")
+		tf, err := NewTfSvs(cfg.Stackname, cfg)
 		if err != nil {
-			internal.Logger.Error("failed @runTf: " + err.Error())
+			internal.Logger.Error("failed @NewTfSvs : " + err.Error())
+			return
+		}
+		tfFile, _, err := tf.Run("apply", "--auto-approve")
+		if err != nil {
+			internal.Logger.Error("failed @tf.Run: " + err.Error())
 			return
 		}
 		// internal.Logger.Sugar().Debugf("tfout: %v", tfout)
@@ -201,16 +207,23 @@ func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
 
-	tfplanFileName := cfg.Stackname + ".tf_plan"
+	tf, err := NewTfSvs(cfg.Stackname, cfg)
+	if err != nil {
+		internal.Logger.Error("failed @NewTfSvs : " + err.Error())
+		return
+	}
 
-	if _, err := os.Stat(tfplanFileName); err != nil {
-		internal.Logger.Debug("[update] [" + cfg.Stackname + "] planning")
-		_, tfout, err := runTf(cfg, "plan", "-out="+tfplanFileName)
+	hrInt := (time.Now().Unix() - 1648672222) / int64(time.Hour)
+	tfplanFileName := cfg.Stackname + ".tf_plan." + strconv.FormatInt(hrInt, 36)
+	tfplanFile := tf.Dir + "/" + tfplanFileName
+
+	if _, err := os.Stat(tfplanFile); err != nil {
+		internal.Logger.Debug("[update] [" + cfg.Stackname + "] planning: " + tfplanFileName)
+		_, tfout, err := tf.Run("plan", "-out="+tfplanFileName)
 		if err != nil {
-			internal.Logger.Error("failed @runTf: " + err.Error())
+			internal.Logger.Error("failed @tf.Run: " + err.Error())
 			return
 		}
-
 		internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
 
 		for i := 0; i < len(tfout); i++ {
@@ -221,8 +234,8 @@ func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 		tf_out_html := strings.Join(tfout, "<br>")
 
 		go func() {
-			time.Sleep(31 * time.Minute)
-			os.Remove(tfplanFileName)
+			time.Sleep(120 * time.Minute)
+			os.Remove(tfplanFile)
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -299,9 +312,15 @@ func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
 	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
 	internal.Logger.Debug("[deletion] [" + cfg.Stackname + "] started")
 
+	tf, err := NewTfSvs(cfg.Stackname, cfg)
+	if err != nil {
+		internal.Logger.Error("failed @NewTfSvs : " + err.Error())
+		return
+	}
+
 	go func() {
 		// ######################################### 2. run tf #########################################
-		_, _, err := runTf(cfg, "destroy", "--auto-approve")
+		_, _, err := tf.Run("destroy", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 		}
