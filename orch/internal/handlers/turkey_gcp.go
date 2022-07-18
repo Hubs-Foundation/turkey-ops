@@ -103,6 +103,10 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "failed @ collectYams: " + err.Error())
 			return
 		}
+		// upload the yamls
+		for yamlIdx, yaml := range k8sYamls {
+			internal.Cfg.Gcps.GCS_WriteFile("turkeycfg", "tf-backend/"+cfg.Stackname+"/k8s-yamls/"+strconv.Itoa(yamlIdx)+".yaml", yaml)
+		}
 
 		// ########## 4. k8s setups
 		report, err := k8sSetups(cfg, k8sCfg, k8sYamls)
