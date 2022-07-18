@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/smtp"
@@ -209,7 +208,7 @@ func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
+	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
 
 	tf, err := NewTfSvs(cfg.Stackname, cfg)
 	if err != nil {
@@ -222,17 +221,17 @@ func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 	tfplanFile := tf.Dir + "/" + tfplanFileName
 
 	if _, err := os.Stat(tfplanFile); err != nil {
-		internal.Logger.Debug("[update] [" + cfg.Stackname + "] planning: " + tfplanFileName)
+		internal.Logger.Info("[update] [" + cfg.Stackname + "] planning: " + tfplanFileName)
 		_, tfout, err := tf.Run("plan", "-out="+tfplanFileName)
 		if err != nil {
 			internal.Logger.Error("failed @tf.Run: " + err.Error())
 			return
 		}
-		internal.Logger.Debug("[plan] [" + cfg.Stackname + "] completed")
+		internal.Logger.Info("[plan] [" + cfg.Stackname + "] completed")
 
 		for i := 0; i < len(tfout); i++ {
-			tfout[i] = strings.ReplaceAll(tfout[i], ` `, `.`)
-			internal.Logger.Sugar().Debugf("<%v>", tfout[i])
+			tfout[i] = strings.ReplaceAll(tfout[i], ` `, `_`)
+			// internal.Logger.Sugar().Debugf("<%v>", tfout[i])
 			tfout[i] = string(ansihtml.ConvertToHTML([]byte(tfout[i])))
 		}
 		tf_out_html := strings.Join(tfout, "<br>")
@@ -243,9 +242,9 @@ func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 		}()
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"stackName":    cfg.Stackname,
-			"msg":          "stage: planning; call again in 30min to apply",
-			"tf_plan_html": tf_out_html,
+			"stackName": cfg.Stackname,
+			"msg":       "stage: planning; call again in the same hour to apply",
+			"output":    tf_out_html,
 		})
 		return
 	}
@@ -271,13 +270,13 @@ func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if cfg.DB_HOST != dbIps["PRIVATE"] {
-			internal.Logger.Warn(`!!! breaking change: cfg.DB_HOST != dbIps["PRIVATE"] !!!`)
+			internal.Logger.Sugar().Warnf(`!!! breaking change: cfg.DB_HOST (%v) != dbIps["PRIVATE"] (%v) !!!`, cfg.DB_HOST, dbIps["PRIVATE"])
 		}
 	}()
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"stackName": cfg.Stackname,
 		"msg":       "stage: applying",
-		"tf_plan":   tfplanFileName,
+		"output":    "use skooner for now...log streaming to be added",
 	})
 	return
 }

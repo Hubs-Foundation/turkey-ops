@@ -84,8 +84,8 @@ function turkeyGcp_update(){
   var xhr = new XMLHttpRequest(); res=""
   xhr.onreadystatechange = function() {if (this.readyState == 4) {
     resJson = JSON.parse(this.responseText);
-    console.log(resJson.stackName, resJson.msg, resJson.tf_plan_html)
-    mbody.innerHTML=`<h1>${resJson.stackName}</h1><br><h2>${resJson.msg}</h2><br><h3>tf_plan_html: </h3><br>`+resJson.tf_plan_html;
+    console.log(resJson.stackName, resJson.msg, resJson.output)
+    mbody.innerHTML=`<h1>${resJson.stackName}</h1><br><h2>${resJson.msg}</h2><br><h3>output: </h3><br>`+resJson.output;
   }};
   xhr.open("PATCH", "/tco_gcp?comp=tf", false);
   // xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
