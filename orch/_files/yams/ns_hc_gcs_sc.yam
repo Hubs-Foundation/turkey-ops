@@ -261,7 +261,7 @@ data:
 
     [ret."Elixir.Ret.JanusLoadStatus"]
     default_janus_host = "stream.<DOMAIN>"
-    janus_service_name = "stream.<DOMAIN>"
+    janus_service_name = ""
     janus_admin_secret = ""
     janus_admin_port = 7000
     janus_port = 4443
@@ -337,7 +337,7 @@ data:
     [ret."Elixir.RetWeb.HealthController"]
 
     [ret."Elixir.RetWeb.PageController"]
-    skip_cache = true
+    skip_cache = false
     extra_avatar_headers = ""
     extra_index_headers = ""
     extra_room_headers = ""
@@ -571,10 +571,10 @@ spec:
             failureThreshold: 300
         resources:
           requests:
-            memory: 250Mi
-            cpu: 0.02
+            memory: 350Mi
+            cpu: 0.25
           limits:
-            memory: 2Gi
+            memory: 1Gi
             cpu: 1
       - name: postgrest
         image: mozillareality/postgrest:{{.Img_postgrest}}
@@ -600,7 +600,7 @@ spec:
               key: PGRST_JWT_SECRET
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: POD_NS
           valueFrom:
@@ -614,11 +614,11 @@ spec:
       #   - containerPort: 8080
       #   imagePullPolicy: IfNotPresent
       ###############################################
-      ########## gcsfuse ############################
+      ########## gcsfuse sidecar#####################
       ###############################################
       - name: gcsfuse
         image: mozillareality/gcsfuse:{{.Img_gcsfuse}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
             exec:
@@ -697,7 +697,7 @@ spec:
       containers:
       - name: hubs
         image: mozillareality/hubs:{{.Img_hubs}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: SUB_DOMAIN
           valueFrom:
@@ -770,7 +770,7 @@ spec:
       containers:
       - name: spoke
         image: mozillareality/spoke:{{.Img_spoke}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: SUB_DOMAIN
           valueFrom:
@@ -908,7 +908,7 @@ spec:
       containers:
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         env:
         - name: POD_NS
           valueFrom:
@@ -1004,7 +1004,7 @@ spec:
         turkey: {{.NodePool}}
       containers:
       - image: mozillareality/speelycaptor:{{.Img_speelycaptor}}
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         name: speelycaptor
         env:
         - name: scratchBucketId
@@ -1023,7 +1023,7 @@ spec:
               key: GCP_SA_HMAC_SECRET                
         resources:
           requests:
-            memory: 25Mi
+            memory: 20Mi
             cpu: 0.01
           limits:
             memory: 2Gi
@@ -1066,9 +1066,9 @@ spec:
       nodeSelector:
         turkey: {{.NodePool}}
       containers:
-      - image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
-        imagePullPolicy: Always
-        name: photomnemonic
+      - name: photomnemonic
+        image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
+        imagePullPolicy: IfNotPresent        
         resources:
           requests:
             memory: 20Mi

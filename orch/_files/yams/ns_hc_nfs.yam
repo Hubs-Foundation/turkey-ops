@@ -401,6 +401,8 @@ spec:
       labels:
         app: reticulum
     spec:
+      nodeSelector:
+        turkey: {{.NodePool}}
       volumes:
       - name: nfs
         nfs:
@@ -409,8 +411,6 @@ spec:
       - name: config
         configMap:
           name: ret-config           
-      nodeSelector:
-        turkey: {{.NodePool}}
       containers:
       - name: reticulum
         volumeMounts:
@@ -421,9 +421,7 @@ spec:
           mountPath: /home/ret
         securityContext:
           privileged: true       
-        image: mozillareality/ret:{{.Img_ret}}
-        # command: ["/bin/sh","-c"]
-        # args: [apk add coreutils && bash /run.sh]        
+        image: mozillareality/ret:{{.Img_ret}}  
         ports:
         - containerPort: 9100
         imagePullPolicy: IfNotPresent
@@ -525,8 +523,6 @@ spec:
             secretKeyRef:
               name: configs
               key: SKETCHFAB_API_KEY              
-        # - name: turkeyCfg_ITA_HOST
-        #   value: http://ita
         - name: turkeyCfg_IMG_PROXY
           value: nearspark.hc-{{.HubId}}
         - name: turkeyCfg_HEADER_AUTHZ
@@ -540,9 +536,7 @@ spec:
               name: configs
               key: DASHBOARD_ACCESS_KEY
         - name: turkeyCfg_YTDL_HOST
-          value: "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"
-        # - name: turkeyCfg_YTDL_HOST
-        #   value: "http://ytdl.turkey-services"
+          value: "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"          
         - name: turkeyCfg_PHOTOMNEMONIC
           value: "http://photomnemonic:5000"  
         - name: turkeyCfg_SPEELYCAPTOR
@@ -576,10 +570,10 @@ spec:
             failureThreshold: 300
         resources:
           requests:
-            memory: 200Mi
-            cpu: 0.1
+            memory: 350Mi
+            cpu: 0.25
           limits:
-            memory: 2Gi
+            memory: 1Gi
             cpu: 1
       - name: postgrest
         image: mozillareality/postgrest:{{.Img_postgrest}}
@@ -676,27 +670,6 @@ spec:
             secretKeyRef:
               name: configs
               key: DOMAIN
-        # - name: turkeyCfg_postgrest_server
-        #   value: 
-        # - name: turkeyCfg_thumbnail_server
-        #   # value: {{.Subdomain}}-cors.{{.Domain}}/nearspark
-        #   value: nearspark.reticulum.io
-        # - name: turkeyCfg_base_assets_path
-        #   value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
-        # - name: turkeyCfg_non_cors_proxy_domains
-        #   value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
-        # - name: turkeyCfg_reticulum_server
-        #   value: {{.Subdomain}}.{{.Domain}}
-        # - name: turkeyCfg_cors_proxy_server
-        #   value: {{.Subdomain}}-cors.{{.Domain}}
-        # - name: turkeyCfg_ga_tracking_id
-        #   value: 
-        # - name: turkeyCfg_shortlink_domain
-        #   value: {{.Subdomain}}.{{.Domain}}
-        # - name: turkeyCfg_ita_server
-        #   value: 
-        # - name: turkeyCfg_sentry_dsn
-        #   value: 
         livenessProbe:
           httpGet:
             path: https://localhost/healthz
