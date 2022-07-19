@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -17,9 +16,8 @@ import (
 
 //naFfSCreQagnbhL9pgcDC2ZfxY2IzrXLSrsEXMsYUp0=|1656465179|gtan@mozilla.com
 var (
-	turkeyDomain = "gtan.myhubs.net"
-	useremail    = "gtan@mozilla.com"
-	stepWait     = 1 * time.Millisecond
+	useremail = "gtan@mozilla.com"
+	stepWait  = 1 * time.Millisecond
 )
 
 //	super lame manual cleanup ...
@@ -29,21 +27,16 @@ var vuBag []*internal.Vuser
 
 func main() {
 
-	userCnt := flag.Int("u", 10, "number of virtual users, int")
-	token := flag.String("t", "error: not-provided", "value of _turkeyauthtoken, string")
-	addUsers(*userCnt, *token)
+	// userCnt := *flag.Int("u", 10, "number of virtual users, int")
+	// turkeyDomain := *flag.String("d", "error: not-provided", "ie. \"dev.myhubs.net\", string")
+	// token := *flag.String("t", "error: not-provided", "value of _turkeyauthtoken, string")
+	// flag.Parse()
+	userCnt, _ := strconv.Atoi(os.Getenv("u"))
+	turkeyDomain := os.Getenv("d")
+	token := os.Getenv("t")
+	fmt.Printf(">> \ndomain: %v, \nstepWait: %v, \nuserCnt: %v, \ntoken: %v", turkeyDomain, stepWait, userCnt, token)
 
-	fmt.Printf(">> domain: %v, stepWait: %v, userCnt: %v, token: %v", turkeyDomain, stepWait, userCnt, token)
-	// fmt.Printf("# virtual user to run: ")
-	// userCnt, _ := reader.ReadString('\n')
-	// fmt.Printf("_turkeyauthtoken: ")
-	// token, _ := reader.ReadString('\n')
-	// if num, err := strconv.Atoi(userCnt); err == nil {
-	// 	addUsers(num)
-	// } else {
-	// 	fmt.Println("bad input: <" + userCnt + ">")
-	// 	return
-	// }
+	addUsers(userCnt, turkeyDomain, token)
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -91,12 +84,16 @@ func main() {
 
 }
 
-func addUsers(num int, token string) {
+func addUsers(num int, turkeyDomain, token string) {
 	for i := 0; i < num; i++ {
-		vuBag = append(vuBag, internal.NewVuser(strconv.Itoa(i),
-			turkeyDomain, token, useremail,
-			"turkeybench"+strings.ReplaceAll(uuid.New().String(), "-", ""),
-		))
+		vuBag = append(
+			vuBag,
+			internal.NewVuser(
+				strconv.Itoa(i),
+				turkeyDomain, token, useremail,
+				"turkeybench"+strings.ReplaceAll(uuid.New().String(), "-", ""),
+			),
+		)
 	}
 }
 
