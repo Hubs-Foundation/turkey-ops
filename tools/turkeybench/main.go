@@ -31,9 +31,9 @@ func main() {
 	// turkeyDomain := *flag.String("d", "error: not-provided", "ie. \"dev.myhubs.net\", string")
 	// token := *flag.String("t", "error: not-provided", "value of _turkeyauthtoken, string")
 	// flag.Parse()
-	userCnt, _ := strconv.Atoi(os.Getenv("u"))
-	turkeyDomain := os.Getenv("d")
-	token := os.Getenv("t")
+	userCnt, _ := strconv.Atoi(os.Getenv("userCnt"))
+	turkeyDomain := os.Getenv("domain")
+	token := os.Getenv("token")
 	fmt.Printf(">> \ndomain: %v, \nstepWait: %v, \nuserCnt: %v, \ntoken: %v", turkeyDomain, stepWait, userCnt, token)
 
 	addUsers(userCnt, turkeyDomain, token)
