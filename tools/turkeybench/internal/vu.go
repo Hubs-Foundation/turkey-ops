@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -41,22 +43,22 @@ func NewVuser(Id, domain, authcookie, email, hubId string) *Vuser {
 
 func (vu *Vuser) Create() {
 	//create
-	createReqBody, _ := json.Marshal(map[string]string{
+	reqBody, _ := json.Marshal(map[string]string{
 		"hub_id":    vu.HubId,
 		"useremail": vu.useremail,
 		"tier":      "mvp2",
 	})
-	createReq, err := http.NewRequest("POST", "https://orch."+vu.turkeyDomain+"/hc_instance", bytes.NewBuffer(createReqBody))
-	createReq.AddCookie(&http.Cookie{
+	req, err := http.NewRequest("POST", "https://orch."+vu.turkeyDomain+"/hc_instance", bytes.NewBuffer(reqBody))
+	req.AddCookie(&http.Cookie{
 		Name:  "_turkeyauthtoken",
 		Value: vu._turkeyauthtoken,
 	})
 	if err != nil {
-		panic("createReq error: " + err.Error())
+		panic("req error: " + err.Error())
 	}
 
 	tStart := time.Now()
-	resp, err := _httpClient.Do(createReq)
+	resp, err := _httpClient.Do(req)
 	if err != nil {
 		panic(err)
 	}
@@ -99,39 +101,71 @@ func (vu *Vuser) Create() {
 func (vu *Vuser) Delete() {
 	fmt.Printf("\n[deleting: %v]", vu.HubId)
 	//delete
-	deleteReqBody, _ := json.Marshal(map[string]string{
+	reqBody, _ := json.Marshal(map[string]string{
 		"hub_id": vu.HubId,
 	})
-	deleteReq, err := http.NewRequest("DELETE", "https://orch."+vu.turkeyDomain+"/hc_instance", bytes.NewBuffer(deleteReqBody))
-	deleteReq.AddCookie(&http.Cookie{
+	req, err := http.NewRequest("DELETE", "https://orch."+vu.turkeyDomain+"/hc_instance", bytes.NewBuffer(reqBody))
+	req.AddCookie(&http.Cookie{
 		Name:  "_turkeyauthtoken",
 		Value: vu._turkeyauthtoken,
 	})
 	if err != nil {
-		panic("deleteReq error: " + err.Error())
+		panic("req error: " + err.Error())
 	}
-	resp, err := _httpClient.Do(deleteReq)
+	resp, err := _httpClient.Do(req)
 	if err != nil && resp.StatusCode != http.StatusOK {
 		fmt.Printf("\nerr: %v, resp: %v", err, resp)
-		panic("failed @ delete")
+		return
 	}
 	fmt.Printf("\n[%v] deleted", vu.HubId)
 }
 
 func (vu *Vuser) Load(ttl time.Duration) {
-	time.Sleep(ttl)
+	//create 5 rooms
+	for i := 0; i < 5; i++ {
+		hubRoomId := vu.create_a_room(i)
+		if hubRoomId == "" {
+			log.Printf("bad hubRoomResp: %v", hubRoomId)
+			return
+		}
+		log.Printf("%v[%v] new hub room: https://%v.%v/%v", time.Now().Format("15:04:05"), vu.Id, vu.HubId, vu.turkeyDomain, hubRoomId)
+		time.Sleep(3 * time.Second)
+	}
+
+	// time.Sleep(ttl)
 	return
-	// fmt.Printf("\n[%v] loading (just time.Sleep for now...)", vu.Id)
-	// wait := 1 * time.Minute
-	// for ttl > 0 {
-	// 	time.Sleep(wait)
-	// 	fmt.Printf("\n[%v] running, ttl: %v, url: %v", vu.Id, ttl, vu.Url)
-	// 	ttl -= wait
-	// }
-	// fmt.Printf("\n[%v] done", vu.Id)
 }
 
 func (vu *Vuser) ToString() string {
 	return fmt.Sprintf(
 		`{ vu.Id: %v, vu.tCreate: %v, vu.tReady: %v, vu.Url: %v}`, vu.Id, vu.TCreate, vu.TReady, vu.Url)
+}
+
+func (vu *Vuser) create_a_room(id int) string {
+	reqBody, _ := json.Marshal(map[string]map[string]string{
+		"hub": {"name": fmt.Sprintf("word%v word%v word%v", id, id, id)},
+	})
+	req, err := http.NewRequest("POST", "https://"+vu.HubId+"."+vu.turkeyDomain+"/api/v1/hubs", bytes.NewBuffer(reqBody))
+	if err != nil {
+		panic("req error: " + err.Error())
+	}
+	req.Header.Set("content-type", "application/json")
+	resp, err := _httpClient.Do(req)
+	if err != nil && resp.StatusCode != http.StatusOK {
+		fmt.Printf("\nerr: %v, resp: %v", err, resp)
+		return ""
+	}
+	rBodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("\nerr: %v, resp: %v", err, resp)
+		return ""
+	}
+	var hubRoomResp map[string]string
+	err = json.Unmarshal(rBodyBytes, &hubRoomResp)
+	if err != nil {
+		log.Printf("faile to unmarshal rBodyBytes(%v), err: %v", string(rBodyBytes), err)
+		return ""
+	}
+	return hubRoomResp["hub_id"]
+
 }
