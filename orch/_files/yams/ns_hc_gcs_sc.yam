@@ -598,6 +598,10 @@ spec:
             secretKeyRef:
               name: configs
               key: PGRST_JWT_SECRET
+        resources:
+          requests:
+            memory: 25Mi
+            cpu: 0.01
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
         imagePullPolicy: IfNotPresent
@@ -608,6 +612,10 @@ spec:
               fieldPath: metadata.namespace
         - name: RET_MODE
           value: RET_MODE==will-not-start-turkey-updater
+        resources:
+          requests:
+            memory: 25Mi
+            cpu: 0.01
       # - name: ytdl
       #   image: mozillareality/ytdl:stable-latest
       #   ports:

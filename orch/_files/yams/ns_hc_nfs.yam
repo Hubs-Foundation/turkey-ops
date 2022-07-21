@@ -587,8 +587,8 @@ spec:
               key: PGRST_JWT_SECRET
         resources:
           requests:
-            memory: 50Mi
-            cpu: 0.02
+            memory: 25Mi
+            cpu: 0.01
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
         imagePullPolicy: IfNotPresent
@@ -601,8 +601,8 @@ spec:
           value: RET_MODE==will-not-start-turkey-updater
         resources:
           requests:
-            memory: 50Mi
-            cpu: 0.02
+            memory: 25Mi
+            cpu: 0.01
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
