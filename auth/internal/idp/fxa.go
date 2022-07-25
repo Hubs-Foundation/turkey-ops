@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 )
 
 // Fxa provider
@@ -99,13 +98,14 @@ func (f *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 	}
 
 	defer res.Body.Close()
-	err = json.NewDecoder(res.Body).Decode(&token)
+	// err = json.NewDecoder(res.Body).Decode(&token)
+	rBodyByte, _ := ioutil.ReadAll(res.Body)
+	err = json.Unmarshal(rBodyByte, &token)
 
 	if token.AccessToken == "" {
-		return token, errors.New("failed to get token , res.StatusCode: " + strconv.Itoa(res.StatusCode) +
-			", f.ClientID: " + f.ClientID[:4] + "..." + f.ClientID[len(f.ClientID)-4:] +
-			", f.ClientSecret: " + f.ClientSecret[:4] + "..." + f.ClientSecret[len(f.ClientSecret)-4:] +
-			", redirect_uri: " + redirectURI + ", code: " + code)
+		infoDump := fmt.Sprintf(`failed to get token , res.StatusCode: %v, f.ClientID: %v, f.ClientSecret: %v, redirect_uri: %v, code: %v, reqUrl: %v, resBody: %v`,
+			res.StatusCode, f.ClientID[:4]+"..."+f.ClientID[len(f.ClientID)-4:], f.ClientSecret[:4]+"..."+f.ClientSecret[len(f.ClientSecret)-4:], redirectURI, code, f.TokenURL, string(rBodyByte))
+		return token, errors.New(infoDump)
 	}
 
 	return token, err
