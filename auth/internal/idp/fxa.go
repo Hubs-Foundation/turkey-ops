@@ -93,6 +93,7 @@ func (f *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 		"redirect_uri":  redirectURI,
 		"code":          code,
 	})
+	fmt.Println(string(jsonBody))
 	res, err := http.Post(f.TokenURL.String(), "application/json", bytes.NewBuffer(jsonBody))
 
 	// res, err := http.PostForm(f.TokenURL.String(), form)
