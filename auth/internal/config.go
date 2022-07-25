@@ -69,10 +69,14 @@ func MakeCfg() {
 	}
 
 	cfg.TurkeyDomain = os.Getenv("turkeyDomain")
-	rootDomain := rootDomain(cfg.TurkeyDomain)
-	if rootDomain == "" {
-		Logger.Error("bad turkeyDomain env var: " + cfg.TurkeyDomain + "falling back to <myhubs.net>")
-		rootDomain = "myhubs.net"
+
+	rootDomain := os.Getenv("rootDomain") //prefer supplied rootDomain
+	if rootDomain == "" {                 //fallback to ROOT domain extracted from turkeyDomain
+		rootDomain = getRootDomain(cfg.TurkeyDomain)
+		if rootDomain == "" { //fallback x2 to hardcoded rootDomain, and in error now
+			Logger.Error("bad turkeyDomain env var: " + cfg.TurkeyDomain + "falling back to <myhubs.net>")
+			rootDomain = "myhubs.net"
+		}
 	}
 	cfg.Domain = rootDomain
 	cfg.AuthHost = rootDomain
@@ -126,7 +130,7 @@ func MakeCfg() {
 	Logger.Sugar().Infof("PermsKey_pub: %v", string(pemBytes))
 }
 
-func rootDomain(fullDomain string) string {
+func getRootDomain(fullDomain string) string {
 	fdArr := strings.Split(fullDomain, ".")
 	len := len(fdArr)
 	if len < 2 {
