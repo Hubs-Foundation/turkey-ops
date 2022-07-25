@@ -1,6 +1,7 @@
 package idp
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -92,7 +93,13 @@ func (f *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 	form.Set("redirect_uri", redirectURI)
 	form.Set("code", code)
 
-	res, err := http.PostForm(f.TokenURL.String(), form)
+	jsonStr := fmt.Sprintf(
+		`{"client_id":"%v","client_secret":"%v","grant_type":"authorization_code","redirect_uri":"%v","code":"%v"}`,
+		f.ClientID, f.ClientSecret, redirectURI, code)
+
+	res, err := http.Post(f.TokenURL.String(), "application/json", bytes.NewBuffer([]byte(jsonStr)))
+
+	// res, err := http.PostForm(f.TokenURL.String(), form)
 	if err != nil {
 		return token, err
 	}

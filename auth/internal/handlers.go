@@ -167,7 +167,7 @@ func Oauth() http.Handler {
 		// Exchange code for token
 		code := r.URL.Query().Get("code")
 		Logger.Debug("Exchange code (" + code + ") for token")
-		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_oauth", code)
+		token, err := p.ExchangeCode("https://auth."+cfg.Domain+"/_fxa", code)
 		if err != nil {
 			Logger.Sugar().Warn("Code exchange failed with provider (" + providerName + "): " + err.Error())
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
