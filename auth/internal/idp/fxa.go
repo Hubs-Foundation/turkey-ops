@@ -86,13 +86,6 @@ func (f *Fxa) GetLoginURL(redirectURI, state string) string {
 func (f *Fxa) ExchangeCode(redirectURI, code string) (Token, error) {
 	var token Token
 
-	form := url.Values{}
-	form.Set("client_id", f.ClientID)
-	form.Set("client_secret", f.ClientSecret)
-	form.Set("grant_type", "authorization_code")
-	form.Set("redirect_uri", redirectURI)
-	form.Set("code", code)
-
 	jsonStr := fmt.Sprintf(
 		`{"client_id":"%v","client_secret":"%v","grant_type":"authorization_code","redirect_uri":"%v","code":"%v"}`,
 		f.ClientID, f.ClientSecret, redirectURI, code)
