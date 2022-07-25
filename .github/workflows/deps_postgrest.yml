@@ -1,18 +1,18 @@
 
-name: goofys
+name: postgrest
 on:
   push:
     branches: [ master ]
     paths:
-    - 'deps/goofys/**'
-    - '.github/workflows/deps_goofys.yml'
+    - 'deps/postgrest/**'
+    - '.github/workflows/deps_postgrest.yml'
   workflow_dispatch:
 
 jobs:
   turkeyGitops:
     uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
     with:
-      codePath: deps/goofys
+      codePath: deps/postgrest
       registry: mozillareality
       dockerfile: Dockerfile
     secrets:
