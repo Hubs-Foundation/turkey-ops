@@ -102,6 +102,7 @@ func (k8 K8sSvs) WaitForPodKill(namespace string, timeout time.Duration, targetC
 	wait := 5 * time.Second
 	podCount := int(^uint(0) >> 1)
 	for podCount > targetCnt && timeout > 0 {
+		Logger.Sugar().Infof("[%v] %v -> %v", namespace, podCount, targetCnt)
 		time.Sleep(wait)
 		timeout -= wait
 		pods, err := k8.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})

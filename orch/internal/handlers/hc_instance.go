@@ -565,7 +565,7 @@ func hc_switch(HubId, status string) error {
 
 	Replicas := 0
 	if status == "up" {
-		// scale up to 1 and let hpa to manage scaling -- todo: test and verify
+		// scale up to 1 and let hpa to manage scaling
 		Replicas = 1
 	}
 
