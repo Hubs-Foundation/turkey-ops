@@ -564,7 +564,7 @@ spec:
             memory: 1Gi
             cpu: 1
       - name: postgrest
-        image: mozillareality/postgrest:v9.0.0
+        image: mozillareality/postgrest:{{.Img_postgrest}}
         ports:
         - containerPort: 3000
         imagePullPolicy: IfNotPresent
