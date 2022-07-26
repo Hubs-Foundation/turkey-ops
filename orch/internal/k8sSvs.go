@@ -114,6 +114,11 @@ func (k8 K8sSvs) WaitForPodKill(namespace string, timeout time.Duration, targetC
 	if timeout <= 0 {
 		return errors.New("timeout")
 	}
+	pods, err := k8.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	Logger.Sugar().Infof("[%v] exit cnt: %v", namespace, len(pods.Items))
 	return nil
 }
 
