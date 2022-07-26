@@ -477,12 +477,20 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nsName := "hc-" + hcCfg.HubId
+	err = internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "")
+	if err != nil {
+		internal.Logger.Error("failed @PatchNsAnnotation, err: " + err.Error())
+		return
+	}
 	go func() {
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
 		hc_switch(hcCfg.HubId, "down")
-		internal.Cfg.K8ss_local.WaitForPodKill(nsName, 30*time.Minute, 1)
-
+		err := internal.Cfg.K8ss_local.WaitForPodKill(nsName, 60*time.Minute, 1)
+		if err != nil {
+			internal.Logger.Error("error @WaitForPodKill: " + err.Error())
+			return
+		}
 		//delete ns
 		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
 			nsName,
@@ -492,7 +500,6 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
-
 		//delete db
 		hcCfg.DBname = "ret_" + hcCfg.HubId
 		internal.Logger.Debug("&#128024 deleting db: " + hcCfg.DBname)
@@ -513,9 +520,8 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		internal.Logger.Debug("&#128024 deleted db: " + hcCfg.DBname)
-
 		// delete GCS (if any)
-		err := internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hcCfg.HubId+"."+internal.Cfg.Domain)
+		err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hcCfg.HubId+"."+internal.Cfg.Domain)
 		if err != nil {
 			internal.Logger.Error("delete ns failed: " + err.Error())
 			return

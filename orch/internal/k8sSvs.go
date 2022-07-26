@@ -117,6 +117,22 @@ func (k8 K8sSvs) WaitForPodKill(namespace string, timeout time.Duration, targetC
 	return nil
 }
 
+func (k8 K8sSvs) PatchNsAnnotation(namespace string, AnnotationKey, AnnotationValue string) error {
+	if k8.ClientSet == nil {
+		return errors.New("k8.ClientSet == nil")
+	}
+	ns, err := k8.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ns.Annotations[AnnotationKey] = AnnotationValue
+	_, err = k8.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
 
 func Ssa_k8sChartYaml(ssa_userId, k8sChartYaml string, cfg *rest.Config) error {
