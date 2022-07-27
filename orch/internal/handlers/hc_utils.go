@@ -84,7 +84,8 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	goods := r.URL.Query().Get("goods")
 	if !strings.HasSuffix(goods, internal.Cfg.Domain) {
 		internal.Logger.Sugar().Debugf("TurkeyReturnCenter bounce / !strings.HasSuffix(goods (%v), internal.Cfg.Domain(%v)) ", goods, internal.Cfg.Domain)
-		http.Error(w, "huh?", http.StatusNotFound)
+		w.Header().Set("turkey", "?")
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
@@ -96,15 +97,22 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	// not requesting a hubs cloud namespace == bounce
 	if nsName == "" {
 		// internal.Logger.Debug("TurkeyReturnCenter bounce / internal.HC_NS_MAN.GetNsName doesn't have a nsName for subdomain: " + subdomain)
-		http.Error(w, "hi?", http.StatusNotFound)
+		w.Header().Set("turkey", "??")
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
 	w.WriteHeader(http.StatusServiceUnavailable)
 
-	notes := internal.HC_NS_MAN.Get(subdomain)
+	notes := internal.HC_NS_MAN.Get(nsName)
+	if notes.Lastchecked.IsZero() {
+		w.Header().Set("turkey", "???")
+		internal.Logger.Error("did not find expected nsName: <" + nsName + "> for subdomain: <" + subdomain + ">")
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
 	// high frequency pokes == bounce
-	coolDown := 5 * time.Minute
+	coolDown := 15 * time.Minute
 	waitReq := coolDown - time.Since(notes.Lastchecked)
 	if waitReq > 0 {
 		internal.Logger.Debug("on coolDown bounc for: " + subdomain)
