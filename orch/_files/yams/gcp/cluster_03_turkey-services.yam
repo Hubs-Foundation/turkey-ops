@@ -850,6 +850,16 @@ spec:
             name: turkeydashboard
             port: 
               number: 4000
+  - host: dashboardclient.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeydashboard
+            port: 
+              number: 3000
 ---
 apiVersion: apps/v1
 kind: Deployment
