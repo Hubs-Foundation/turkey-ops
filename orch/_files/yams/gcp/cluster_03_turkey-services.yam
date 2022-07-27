@@ -925,6 +925,19 @@ spec:
           limits:
             cpu: 1
             memory: 2Gi
+      - name: turkeydashboardclient
+        image: mozilla/turkeydashboardclient:{{.ItaChan}}-latest
+        imagePullPolicy: IfNotPresent        
+        env:
+        - name: dummy
+          value: dummy
+        resources:
+          requests:
+            cpu: 0.25
+            memory: 250Mi
+          limits:
+            cpu: 1
+            memory: 2Gi
 ---
 apiVersion: v1
 kind: Service
@@ -938,6 +951,9 @@ spec:
   selector:
     app: turkeydashboard
   ports:
+  - name: http-client
+    port: 3000
+    targetPort: 3000
   - name: http
     port: 4000
     targetPort: 4000
