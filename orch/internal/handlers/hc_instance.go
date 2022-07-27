@@ -475,13 +475,28 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Error("missing hcCfg.HubId")
 		return
 	}
-
+	//mark the hc- namespace for the cleanup cronjob (todo)
 	nsName := "hc-" + hcCfg.HubId
-	err = internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "")
+	err = internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
 	if err != nil {
 		internal.Logger.Error("failed @PatchNsAnnotation, err: " + err.Error())
 		return
 	}
+	//remove ingress route
+	err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{})
+	if err != nil {
+		internal.Logger.Error("failed @k8s.ingress.DeleteCollection, err: " + err.Error())
+	}
+	ttl := 1 * time.Minute
+	wait := 5 * time.Second
+	for il, _ := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).List(context.Background(), metav1.ListOptions{}); len(il.Items) > 0; {
+		time.Sleep(5 * time.Second)
+		if ttl -= wait; ttl < 0 {
+			internal.Logger.Error("timeout @ remove ingress")
+			break
+		}
+	}
+
 	go func() {
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"

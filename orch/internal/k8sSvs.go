@@ -80,6 +80,10 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				GetLogger().Sugar().Debugf("updated: %v", newObj)
 				ns := newObj.(*corev1.Namespace)
+				if ns.Annotations["deleting"] == "true" {
+					HC_NS_MAN.Del(ns.Name)
+					return
+				}
 				HC_NS_MAN.Set(ns.Name, HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
 			},
 			DeleteFunc: func(obj interface{}) {
@@ -102,7 +106,6 @@ func (k8 K8sSvs) WaitForPodKill(namespace string, timeout time.Duration, targetC
 	wait := 5 * time.Second
 	podCount := int(^uint(0) >> 1)
 	for podCount > targetCnt && timeout > 0 {
-		Logger.Sugar().Infof("[%v] %v -> %v", namespace, podCount, targetCnt)
 		time.Sleep(wait)
 		timeout -= wait
 		pods, err := k8.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
@@ -110,6 +113,7 @@ func (k8 K8sSvs) WaitForPodKill(namespace string, timeout time.Duration, targetC
 			return err
 		}
 		podCount = len(pods.Items)
+		Logger.Sugar().Infof("[%v] %v -> %v", namespace, podCount, targetCnt)
 	}
 	if timeout <= 0 {
 		return errors.New("timeout")
