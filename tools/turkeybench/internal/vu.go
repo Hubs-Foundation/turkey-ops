@@ -130,7 +130,7 @@ func (vu *Vuser) Load(ttl time.Duration, botCnt int) {
 			return
 		}
 		vu.RoomIds = append(vu.RoomIds, hubRoomId)
-		log.Printf("%v[%v] new hub room: https://%v.%v/%v", time.Now().Format("15:04:05"), vu.Id, vu.HubId, vu.turkeyDomain, hubRoomId)
+		log.Printf("%v[%v] new hub room created: https://%v.%v/%v", time.Now().Format("15:04:05"), vu.Id, vu.HubId, vu.turkeyDomain, hubRoomId)
 		time.Sleep(2 * time.Second)
 	}
 
@@ -141,16 +141,21 @@ func (vu *Vuser) Load(ttl time.Duration, botCnt int) {
 	for _, room := range vu.RoomIds {
 		roomId := room
 		for i := 0; i < botCnt; i++ {
-			botNum := i
+			// botNum := i
 			go func() {
 				reqUrl := fmt.Sprintf(
 					"https://botomatic-fsu7tyt32a-uc.a.run.app/run?host=%v.%v&hub_sid=%v&audio=true&duration=%v",
 					vu.HubId, vu.turkeyDomain, roomId, (int)(ttl.Seconds()))
-				log.Printf("vu.Id[%v] starting bot # %v in room %v", vu.Id, botNum, roomId)
+				// log.Printf("vu.Id[%v] starting bot # %v in room https://%v.%v/%v", vu.Id, botNum, vu.HubId, vu.turkeyDomain, roomId)
 				req, _ := http.NewRequest("GET", reqUrl, nil)
 				resp, _ := botClient.Do(req)
-				rBodyByte, _ := io.ReadAll(resp.Body)
-				log.Printf("vu.Id[%v] [bot# %v] resp: %v", vu.Id, botNum, string(rBodyByte))
+				// if resp == nil {
+				// 	log.Printf("vu.Id[%v] [%v-bot#%v] resp: %v", roomId, vu.Id, botNum, "nil (ERROR)")
+				// } else {
+				// 	rBodyByte, _ := io.ReadAll(resp.Body)
+				// 	log.Printf("vu.Id[%v] [%v-bot#%v] resp: %v", roomId, vu.Id, botNum, string(rBodyByte))
+				// }
+				_ = resp
 			}()
 		}
 	}

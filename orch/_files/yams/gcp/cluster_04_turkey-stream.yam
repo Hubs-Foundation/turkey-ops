@@ -80,7 +80,7 @@ spec:
               key: PERMS_KEY
         resources:
           requests:
-            memory: 2Gi
+            memory: 1Gi
             cpu: 1
         # livenessProbe:
         #   httpGet:

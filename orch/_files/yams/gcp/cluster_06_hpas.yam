@@ -10,7 +10,7 @@ spec:
     name: haproxy
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -24,7 +24,7 @@ spec:
     name: dip
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -38,7 +38,7 @@ spec:
     name: turkeyauth
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -52,7 +52,7 @@ spec:
     name: turkeyorch
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -66,7 +66,7 @@ spec:
     name: pgbouncer
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -80,7 +80,7 @@ spec:
     name: pgbouncer-t
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -94,7 +94,7 @@ spec:
     name: turkeydashboard
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -108,7 +108,7 @@ spec:
     name: dialog
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 50
+  targetCPUUtilizationPercentage: 75
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -122,4 +122,4 @@ spec:
     name: coturn
   minReplicas: 2
   maxReplicas: 50
-  targetCPUUtilizationPercentage: 70
+  targetCPUUtilizationPercentage: 75
