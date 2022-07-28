@@ -28,6 +28,7 @@ type Vuser struct {
 	TCreate time.Duration
 	TReady  time.Duration
 	Url     string
+	RoomIds []string
 }
 
 func NewVuser(Id, domain, authcookie, email, hubId string) *Vuser {
@@ -120,7 +121,7 @@ func (vu *Vuser) Delete() {
 	fmt.Printf("\n[%v] deleted", vu.HubId)
 }
 
-func (vu *Vuser) Load(ttl time.Duration) {
+func (vu *Vuser) Load(ttl time.Duration, botCnt int) {
 	//create 5 rooms
 	for i := 0; i < 5; i++ {
 		hubRoomId := vu.create_a_room(i)
@@ -128,12 +129,31 @@ func (vu *Vuser) Load(ttl time.Duration) {
 			log.Printf("bad hubRoomResp: %v", hubRoomId)
 			return
 		}
+		vu.RoomIds = append(vu.RoomIds, hubRoomId)
 		log.Printf("%v[%v] new hub room: https://%v.%v/%v", time.Now().Format("15:04:05"), vu.Id, vu.HubId, vu.turkeyDomain, hubRoomId)
-		time.Sleep(3 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 
-	// time.Sleep(ttl)
-	return
+	botClient := &http.Client{
+		Timeout:   1 * time.Hour,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
+	for _, room := range vu.RoomIds {
+		roomId := room
+		for i := 0; i < botCnt; i++ {
+			botNum := i
+			go func() {
+				reqUrl := fmt.Sprintf(
+					"https://botomatic-fsu7tyt32a-uc.a.run.app/run?host=%v.%v&hub_sid=%v&audio=true&duration=%v",
+					vu.HubId, vu.turkeyDomain, roomId, (int)(ttl.Seconds()))
+				log.Printf("vu.Id[%v] starting bot # %v in room %v", vu.Id, botNum, roomId)
+				req, _ := http.NewRequest("GET", reqUrl, nil)
+				resp, _ := botClient.Do(req)
+				rBodyByte, _ := io.ReadAll(resp.Body)
+				log.Printf("vu.Id[%v] [bot# %v] resp: %v", vu.Id, botNum, string(rBodyByte))
+			}()
+		}
+	}
 }
 
 func (vu *Vuser) ToString() string {
