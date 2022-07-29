@@ -8,16 +8,16 @@
 //     divLogBoard.scrollTop = divLogBoard.scrollHeight;
 //   }
 // }
-window.addEventListener("load", logToken);
-function logToken(){  
-  document.getElementById("divLogBoard").innerHTML+=getCookie("_turkeyauthtoken")
-}
-
 function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(';').shift();
 }
+window.addEventListener("load", logToken);
+function logToken(){  
+  document.getElementById("divLogBoard").innerHTML+=getCookie("_turkeyauthtoken")
+}
+
 
 document.getElementById("login_google").addEventListener("click", login_google);
 function login_google() {
