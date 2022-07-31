@@ -79,7 +79,10 @@ func MakeCfg() {
 		}
 	}
 	cfg.Domain = rootDomain
-	cfg.AuthHost = rootDomain
+	cfg.AuthHost = os.Getenv("AuthHost")
+	if cfg.AuthHost == "" {
+		cfg.AuthHost = rootDomain
+	}
 	cfg.TrustedClients = os.Getenv("trustedClients")
 	cfg.Secret = []byte("dummy-SecretString-replace-me-with-env-var-later")
 	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours

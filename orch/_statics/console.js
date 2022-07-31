@@ -21,7 +21,7 @@ function getCookie(name) {
     console.log("cookie: ", part)
   }
   if (parts.length === 2) return parts.pop().split(';').shift();
-  return "?"
+  return "ok"
 }
 
 document.getElementById("login_google").addEventListener("click", login_google);
