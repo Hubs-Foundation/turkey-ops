@@ -35,6 +35,7 @@ func main() {
 	userCnt, _ := strconv.Atoi(os.Getenv("userCnt"))
 	turkeyDomain := os.Getenv("domain")
 	token := os.Getenv("token")
+	token = strings.ReplaceAll(token, "_turkeyauthtoken: ", "")
 	fmt.Printf(">> \ndomain: %v, \nstepWait: %v, \nuserCnt: %v, \ntoken: %v", turkeyDomain, stepWait, userCnt, token[:10]+"...")
 
 	addUsers(userCnt, turkeyDomain, token)
