@@ -239,6 +239,11 @@ func useAuthDomain(r *http.Request) (bool, string) {
 		return false, ""
 	}
 
+	if r.Header.Get("x-turkeyauth-proxied") != "" {
+		Logger.Debug("force cfg.AuthHost because -H x-turkeyauth-proxied == " + r.Header.Get("x-turkeyauth-proxied"))
+		return true, cfg.AuthHost
+	}
+
 	// Does the request match a given cookie domain?
 	reqMatch, reqHost := matchCookieDomains(r.Host)
 

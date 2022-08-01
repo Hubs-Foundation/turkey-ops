@@ -275,6 +275,7 @@ func AuthnProxy() http.Handler {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
+		r.Header.Set("x-turkeyauth-proxied", "1")
 
 		Logger.Sugar().Debugf("backend url: %v", backendUrl)
 
@@ -308,7 +309,6 @@ func AuthnProxy() http.Handler {
 		}
 
 		r.Header.Set("X-Forwarded-UserEmail", email)
-		r.Header.Set("x-turkeyauth-proxied", "1")
 
 		proxy.ServeHTTP(w, r)
 	})
