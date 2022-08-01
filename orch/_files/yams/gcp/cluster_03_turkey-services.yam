@@ -288,6 +288,8 @@ spec:
         env:
         - name: ENV
           value: {{.Env}}
+        - name: AuthHost
+          value: auth.{{.Domain}}
         - name: turkeyDomain
           value: {{.Domain}}
         - name: trustedClients  # must end with ','
