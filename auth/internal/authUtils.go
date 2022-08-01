@@ -462,7 +462,7 @@ func matchCookieDomains(domain string) (bool, string) {
 	for _, d := range cfg.CookieDomains {
 		if d.Match(p[0]) {
 			if d.Domain == cfg.Domain {
-				Logger.Warn("roodDomain matched, cross-domain-leak possible")
+				Logger.Sugar().Warnf("roodDomain matched (against: %v), cross-domain-leak possible", domain)
 			}
 			return true, d.Domain
 		}
