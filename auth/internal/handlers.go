@@ -194,7 +194,7 @@ func Oauth() http.Handler {
 		http.SetCookie(w, client_jwtCookie)
 
 		root_jwtCookie := jwtCookie
-		root_jwtCookie.Domain = getRootDomain(jwtCookie.Domain)
+		root_jwtCookie.Domain = "." + getRootDomain(jwtCookie.Domain)
 		http.SetCookie(w, root_jwtCookie)
 		///////////////////////////////////////////////////////
 		//dev only -- make an auth cookie too
