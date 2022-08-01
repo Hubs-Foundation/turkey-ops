@@ -93,11 +93,13 @@ func MakeCfg() {
 	// cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)}
 
 	for _, c := range strings.Split(cfg.TrustedClients, ",") {
-		d := strings.Split(c, "//")
-		if len(d) < 2 {
+		uri := strings.Split(c, "//")
+		if len(uri) < 2 {
 			continue
 		}
-		cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(d[1]))
+		d := strings.Split(uri[1], "/")
+
+		cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(d[0]))
 	}
 	//add rootDomain at the bottom as a fallback
 	cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(rootDomain))
