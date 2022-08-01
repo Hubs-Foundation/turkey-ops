@@ -103,7 +103,7 @@ func MakeCfg() {
 	cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(rootDomain))
 	Logger.Sugar().Infof("cfg.CookieDomains: %v", cfg.CookieDomains)
 
-	// cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)} //todo -- remove this
+	cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)} //todo -- remove this
 	///////////////////////////////////////////////////////////
 
 	cfg.LogoutRedirect = "https://hubs.mozilla.com"
