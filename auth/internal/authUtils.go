@@ -250,10 +250,11 @@ func useAuthDomain(r *http.Request) (bool, string) {
 	// Do any of the auth hosts match a cookie domain?
 	authMatch, authHost := matchCookieDomains(cfg.AuthHost)
 
-	Logger.Sugar().Debugf("reqMatch: %v,reqHost: %v,authMatch: %v,authHost: %v,",
-		reqMatch, reqHost, authMatch, authHost)
+	use := reqMatch && authMatch && reqHost == authHost
+	Logger.Sugar().Debugf("reqMatch: %v,reqHost: %v,authMatch: %v,authHost: %v, use: %v",
+		reqMatch, reqHost, authMatch, authHost, use)
 	// We need both to match the same domain
-	return reqMatch && authMatch && reqHost == authHost, reqHost
+	return use, reqHost
 }
 
 // Cookie methods
