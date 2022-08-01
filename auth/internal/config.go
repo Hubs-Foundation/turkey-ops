@@ -20,8 +20,8 @@ var cfg *Config
 // Config holds the runtime application config
 type Config struct {
 	Env             string `description:"dev/staging/prod"`
-	TurkeyDomain    string `description:"turkey domain"`
-	Domain          string `description:"root domain"`
+	Domain          string `description:"turkey domain"`
+	RootDomain      string `description:"root domain"`
 	TrustedClients  string `description:"<url1,url2,...url#,> ie. https://portal.myhubs.net,"`
 	AllowAuthCookie bool   `description:"allow creation and verification of simple secret protected authCookie in addition to full jwt-signed-with-domain-name authToken"`
 
@@ -68,17 +68,17 @@ func MakeCfg() {
 		cfg.AllowAuthCookie = false
 	}
 
-	cfg.TurkeyDomain = os.Getenv("turkeyDomain")
+	cfg.Domain = os.Getenv("turkeyDomain")
 
 	rootDomain := os.Getenv("rootDomain") //prefer supplied rootDomain
 	if rootDomain == "" {                 //fallback to ROOT domain extracted from turkeyDomain
-		rootDomain = getRootDomain(cfg.TurkeyDomain)
+		rootDomain = getRootDomain(cfg.Domain)
 		if rootDomain == "" { //fallback x2 to hardcoded rootDomain, this is unexpected
-			Logger.Error("missing rootDomain + bad turkeyDomain: " + cfg.TurkeyDomain + "falling back to <myhubs.net>")
+			Logger.Error("missing rootDomain + bad turkeyDomain: " + cfg.Domain + "falling back to <myhubs.net>")
 			rootDomain = "myhubs.net"
 		}
 	}
-	cfg.Domain = rootDomain
+	cfg.RootDomain = rootDomain
 	cfg.AuthHost = os.Getenv("AuthHost")
 
 	cfg.TrustedClients = os.Getenv("trustedClients")
@@ -103,7 +103,7 @@ func MakeCfg() {
 	cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(rootDomain))
 	Logger.Sugar().Infof("cfg.CookieDomains: %v", cfg.CookieDomains)
 
-	cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)} //todo -- remove this
+	// cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)} //todo -- remove this
 	///////////////////////////////////////////////////////////
 
 	cfg.LogoutRedirect = "https://hubs.mozilla.com"

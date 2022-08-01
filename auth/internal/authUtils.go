@@ -280,7 +280,7 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"iss": cfg.TurkeyDomain,
+		"iss": cfg.Domain,
 		"sub": user.Sub,
 		// "aud":"whomever?",
 		"exp": expires.Unix(),
@@ -441,7 +441,7 @@ func cookieDomain(r *http.Request) string {
 	// Check if any of the given cookie domains matches
 	_, domain := matchCookieDomains(r.Host)
 
-	Logger.Sugar().Debugf("cookieDomain (%v)---dump r, %v", domain, r)
+	Logger.Sugar().Debugf("cookieDomain (%v)---dump r.URL, %v", domain, r.URL)
 
 	return domain
 }
@@ -457,7 +457,7 @@ func csrfCookieDomain(r *http.Request) string {
 	// Remove port
 	p := strings.Split(host, ":")
 
-	Logger.Sugar().Debugf("csrfCookieDomain (%v)---dump r, %v", p[0], r)
+	Logger.Sugar().Debugf("csrfCookieDomain (%v)---dump r.URL, %v", p[0], r.URL)
 
 	return p[0]
 }
@@ -470,7 +470,7 @@ func matchCookieDomains(domain string) (bool, string) {
 	for _, d := range cfg.CookieDomains {
 		if d.Match(p[0]) {
 			if d.Domain == cfg.Domain {
-				Logger.Sugar().Warnf("roodDomain (%v) matched (against: %v), cross-domain-leak possible", d.Domain, domain)
+				Logger.Sugar().Warnf("Domain (%v) matched (against: %v), cross-domain-leak possible", d.Domain, domain)
 			}
 			return true, d.Domain
 		}
