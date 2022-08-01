@@ -90,8 +90,8 @@ func MakeCfg() {
 	cfg.JwtCookieName = "_turkeyauthtoken"
 
 	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
-	// cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)}
 
+	//////////////////////////////////////////////////////////////////////////
 	for _, c := range strings.Split(cfg.TrustedClients, ",") {
 		uri := strings.Split(c, "//")
 		if len(uri) < 2 {
@@ -104,6 +104,9 @@ func MakeCfg() {
 	//add rootDomain at the bottom as a fallback
 	cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(rootDomain))
 	Logger.Sugar().Infof("cfg.CookieDomains: %v", cfg.CookieDomains)
+
+	cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)} //todo -- remove this
+	///////////////////////////////////////////////////////////
 
 	cfg.LogoutRedirect = "https://hubs.mozilla.com"
 
