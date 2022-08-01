@@ -456,6 +456,7 @@ func csrfCookieDomain(r *http.Request) string {
 
 // Return matching cookie domain if exists
 func matchCookieDomains(domain string) (bool, string) {
+	Logger.Sugar().Debugf("matchCookieDomains--matching: %v", domain)
 	// Remove port
 	p := strings.Split(domain, ":")
 
