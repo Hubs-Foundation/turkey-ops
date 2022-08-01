@@ -239,10 +239,10 @@ func useAuthDomain(r *http.Request) (bool, string) {
 		return false, ""
 	}
 
-	if r.Header.Get("x-turkeyauth-proxied") != "" {
-		Logger.Debug("force cfg.AuthHost because -H x-turkeyauth-proxied == " + r.Header.Get("x-turkeyauth-proxied"))
-		return true, cfg.AuthHost
-	}
+	// if r.Header.Get("x-turkeyauth-proxied") != "" {
+	// 	Logger.Debug("force cfg.AuthHost because -H x-turkeyauth-proxied == " + r.Header.Get("x-turkeyauth-proxied"))
+	// 	return true, cfg.AuthHost
+	// }
 
 	// Does the request match a given cookie domain?
 	reqMatch, reqHost := matchCookieDomains(r.Host)
@@ -250,6 +250,8 @@ func useAuthDomain(r *http.Request) (bool, string) {
 	// Do any of the auth hosts match a cookie domain?
 	authMatch, authHost := matchCookieDomains(cfg.AuthHost)
 
+	Logger.Sugar().Debugf("reqMatch: %v,reqHost: %v,authMatch: %v,authHost: %v,",
+		reqMatch, reqHost, authMatch, authHost)
 	// We need both to match the same domain
 	return reqMatch && authMatch && reqHost == authHost, reqHost
 }
