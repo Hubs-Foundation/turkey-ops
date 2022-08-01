@@ -186,12 +186,17 @@ func Oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		// http.SetCookie(w, jwtCookie)
+		http.SetCookie(w, jwtCookie)
+		////////////////////////////////////////////////////////////////////////
 		client_jwtCookie := jwtCookie
 		client_jwtCookie.Domain = "." + redirect[strings.Index(redirect, "://")+3:]
 		Logger.Debug("client_jwtCookie.Domain: " + client_jwtCookie.Domain)
 		http.SetCookie(w, client_jwtCookie)
 
+		root_jwtCookie := jwtCookie
+		root_jwtCookie.Domain = getRootDomain(jwtCookie.Domain)
+		http.SetCookie(w, root_jwtCookie)
+		///////////////////////////////////////////////////////
 		//dev only -- make an auth cookie too
 		if cfg.AllowAuthCookie {
 			http.SetCookie(w, MakeAuthCookie(r, user.Email))
