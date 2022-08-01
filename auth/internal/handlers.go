@@ -186,7 +186,7 @@ func Oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		http.SetCookie(w, jwtCookie)
+		// http.SetCookie(w, jwtCookie)
 		client_jwtCookie := jwtCookie
 		client_jwtCookie.Domain = "." + redirect[strings.Index(redirect, "://")+3:]
 		Logger.Debug("client_jwtCookie.Domain: " + client_jwtCookie.Domain)
