@@ -35,7 +35,8 @@ func CheckCookie(r *http.Request) (string, error) {
 	claims, err := checkJwtCookie(r)
 	if err != nil {
 		if cfg.AllowAuthCookie { // (dev env only) or if you have a good authCookie ?
-			Logger.Sugar().Debugf("bad jwtCookie(err: %v) + AllowAuthCookie: falling back to authCookie. full Req Dump: %v", err, r)
+			Logger.Sugar().Debugf("bad jwtCookie(err: %v) + AllowAuthCookie == falling back to authCookie", err)
+			Logger.Sugar().Debugf("dump r, %v", r)
 			return checkAuthCookie(r)
 		} else {
 			return "", err
@@ -431,6 +432,9 @@ func Nonce() (string, error) {
 func cookieDomain(r *http.Request) string {
 	// Check if any of the given cookie domains matches
 	_, domain := matchCookieDomains(r.Host)
+
+	Logger.Sugar().Debugf("cookieDomain (%v)---dump r, %v", domain, r)
+
 	return domain
 }
 
@@ -442,9 +446,11 @@ func csrfCookieDomain(r *http.Request) string {
 	} else {
 		host = r.Host
 	}
-
 	// Remove port
 	p := strings.Split(host, ":")
+
+	Logger.Sugar().Debugf("csrfCookieDomain (%v)---dump r, %v", p[0], r)
+
 	return p[0]
 }
 

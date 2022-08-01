@@ -91,7 +91,7 @@ func MakeCfg() {
 
 	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
 	cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)}
-	// cfg.LogoutRedirect = "https://api." + cfg.TurkeyDomain + "/console"
+
 	cfg.LogoutRedirect = "https://hubs.mozilla.com"
 
 	cfg.DefaultProvider = "fxa"

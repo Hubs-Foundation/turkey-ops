@@ -15,11 +15,6 @@ import (
 	"time"
 )
 
-func dumpHeader(r *http.Request) string {
-	headerBytes, _ := json.Marshal(r.Header)
-	return string(headerBytes)
-}
-
 func Healthz() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if atomic.LoadInt32(&Healthy) == 1 {
@@ -37,7 +32,7 @@ func Login() http.Handler {
 			return
 		}
 
-		Logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Sugar().Debugf("dump r, %v", r)
 
 		idp := r.URL.Query()["idp"]
 		if len(idp) != 1 {
@@ -127,7 +122,7 @@ func Oauth() http.Handler {
 		}
 
 		Logger.Debug("Handling callback")
-		Logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Sugar().Debugf("dump r, %v", r)
 
 		// Check state
 		state := r.URL.Query().Get("state")
@@ -213,8 +208,7 @@ func Authn() http.Handler {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		// Logger.Debug("dumpHeader: " + dumpHeader(r))
-		Logger.Sugar().Debugf("r.Header, %v", r.Header)
+		Logger.Sugar().Debugf("dump r, %v", r)
 		// Read URI from header if we're acting as forward auth middleware
 		// because traefik would add X-Forwarded-Uri for original requestor
 		if _, ok := r.Header["X-Forwarded-Uri"]; ok {
@@ -249,7 +243,7 @@ func clearCSRFcookies(w http.ResponseWriter, r *http.Request) {
 func AuthnProxy() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		Logger.Sugar().Debugf("request dump: %v", r)
+		Logger.Sugar().Debugf("dump r, %v", r)
 
 		if r.URL.Path == "/" {
 			Logger.Debug("direct calls not allowed")
@@ -386,7 +380,7 @@ func GimmieTestJwtCookie() http.Handler {
 			return
 		}
 
-		Logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Sugar().Debugf("dump r, %v", r)
 		Logger.Sugar().Debugf("r.RemoteAddr: %v", r.RemoteAddr)
 		Logger.Sugar().Debugf("r.RequestURI: %v", r.RequestURI)
 
@@ -422,7 +416,7 @@ func Gimmie_pubkey() http.Handler {
 			return
 		}
 
-		Logger.Debug("dumpHeader: " + dumpHeader(r))
+		Logger.Sugar().Debugf("dump r, %v", r)
 		pubKey := cfg.PermsKey.PublicKey
 		pubKeyBytes := x509.MarshalPKCS1PublicKey(&pubKey)
 		pubKey_pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
