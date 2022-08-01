@@ -98,7 +98,7 @@ func MakeCfg() {
 			continue
 		}
 		d := strings.Split(uri[1], "/")
-
+		Logger.Debug("newCookieDomain: " + d[0])
 		cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(d[0]))
 	}
 	//add rootDomain at the bottom as a fallback
