@@ -21,7 +21,6 @@ var cfg *Config
 type Config struct {
 	Env             string `description:"dev/staging/prod"`
 	Domain          string `description:"turkey domain"`
-	RootDomain      string `description:"root domain"`
 	TrustedClients  string `description:"<url1,url2,...url#,> ie. https://portal.myhubs.net,"`
 	AllowAuthCookie bool   `description:"allow creation and verification of simple secret protected authCookie in addition to full jwt-signed-with-domain-name authToken"`
 
@@ -62,23 +61,22 @@ func MakeCfg() {
 		cfg.Env = "dev"
 	}
 
-	if os.Getenv("ALLOW_AUTH_COOKIE") == "true" || cfg.Env == "dev" {
-		cfg.AllowAuthCookie = true
-	} else {
-		cfg.AllowAuthCookie = false
-	}
+	// if os.Getenv("ALLOW_AUTH_COOKIE") == "true" || cfg.Env == "dev" {
+	// 	cfg.AllowAuthCookie = true
+	// } else {
+	// 	cfg.AllowAuthCookie = false
+	// }
 
 	cfg.Domain = os.Getenv("turkeyDomain")
 
-	rootDomain := os.Getenv("rootDomain") //prefer supplied rootDomain
-	if rootDomain == "" {                 //fallback to ROOT domain extracted from turkeyDomain
-		rootDomain = getRootDomain(cfg.Domain)
-		if rootDomain == "" { //fallback x2 to hardcoded rootDomain, this is unexpected
-			Logger.Error("missing rootDomain + bad turkeyDomain: " + cfg.Domain + "falling back to <myhubs.net>")
-			rootDomain = "myhubs.net"
-		}
-	}
-	cfg.RootDomain = rootDomain
+	// rootDomain := os.Getenv("rootDomain") //prefer supplied rootDomain
+	// if rootDomain == "" {                 //fallback to ROOT domain extracted from turkeyDomain
+	// 	rootDomain = getRootDomain(cfg.Domain)
+	// 	if rootDomain == "" { //fallback x2 to hardcoded rootDomain, this is unexpected
+	// 		Logger.Error("missing rootDomain + bad turkeyDomain: " + cfg.Domain + "falling back to <myhubs.net>")
+	// 		rootDomain = "myhubs.net"
+	// 	}
+	// }
 	cfg.AuthHost = os.Getenv("AuthHost")
 
 	cfg.TrustedClients = os.Getenv("trustedClients")
@@ -89,22 +87,7 @@ func MakeCfg() {
 
 	cfg.CSRFCookieName = "_turkeyauthcsrfcookie"
 
-	//////////////////////////////////////////////////////////////////////////
-	for _, c := range strings.Split(cfg.TrustedClients, ",") {
-		uri := strings.Split(c, "//")
-		if len(uri) < 2 {
-			continue
-		}
-		d := strings.Split(uri[1], "/")
-		Logger.Debug("newCookieDomain: " + d[0])
-		cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(d[0]))
-	}
-	//add rootDomain at the bottom as a fallback
-	cfg.CookieDomains = append(cfg.CookieDomains, *NewCookieDomain(rootDomain))
-	Logger.Sugar().Infof("cfg.CookieDomains: %v", cfg.CookieDomains)
-
-	// cfg.CookieDomains = []CookieDomain{*NewCookieDomain(rootDomain)} //todo -- remove this
-	///////////////////////////////////////////////////////////
+	cfg.CookieDomains = []CookieDomain{*NewCookieDomain(cfg.Domain)}
 
 	cfg.LogoutRedirect = "https://hubs.mozilla.com"
 

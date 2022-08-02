@@ -34,13 +34,14 @@ func CheckCookie(r *http.Request) (string, error) {
 	//jwt cookie
 	claims, err := checkJwtCookie(r)
 	if err != nil {
-		if cfg.AllowAuthCookie { // (dev env only) or if you have a good authCookie ?
-			Logger.Sugar().Debugf("bad jwtCookie(err: %v) + AllowAuthCookie == falling back to authCookie", err)
-			Logger.Sugar().Debugf("dump r, %v", r)
-			return checkAuthCookie(r)
-		} else {
-			return "", err
-		}
+		// if cfg.AllowAuthCookie { // (dev env only) or if you have a good authCookie ?
+		// 	Logger.Sugar().Debugf("bad jwtCookie(err: %v) + AllowAuthCookie == falling back to authCookie", err)
+		// 	Logger.Sugar().Debugf("dump r, %v", r)
+		// 	return checkAuthCookie(r)
+		// } else {
+		// 	return "", err
+		// }
+		return "", err
 	}
 	Logger.Sugar().Debugf("good jwt cookie, jwt.MapClaims: %v", claims)
 	return claims.(jwt.MapClaims)["fxa_email"].(string), nil
@@ -257,8 +258,7 @@ func useAuthDomain(r *http.Request) (bool, string) {
 	return use, reqHost
 }
 
-// Cookie methods
-
+// dev only
 func MakeAuthCookie(r *http.Request, email string) *http.Cookie {
 	expires := cookieExpiry()
 	mac := cookieSignature(r, email, fmt.Sprintf("%d", expires.Unix()))

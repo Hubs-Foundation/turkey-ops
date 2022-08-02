@@ -187,20 +187,13 @@ func Oauth() http.Handler {
 			return
 		}
 		http.SetCookie(w, jwtCookie)
-		////////////////////////////////////////////////////////////////////////
-		client_jwtCookie := jwtCookie
-		client_jwtCookie.Domain = redirect[strings.Index(redirect, "://")+3:]
-		Logger.Debug("client_jwtCookie.Domain: " + client_jwtCookie.Domain)
-		http.SetCookie(w, client_jwtCookie)
 
-		root_jwtCookie := jwtCookie
-		root_jwtCookie.Domain = "." + getRootDomain(jwtCookie.Domain)
-		http.SetCookie(w, root_jwtCookie)
-		///////////////////////////////////////////////////////
+		// Logger.Debug("client domain: " + redirect[strings.Index(redirect, "://")+3:])
+
 		//dev only -- make an auth cookie too
-		if cfg.AllowAuthCookie {
-			http.SetCookie(w, MakeAuthCookie(r, user.Email))
-		}
+		// if cfg.AllowAuthCookie {
+		// 	http.SetCookie(w, MakeAuthCookie(r, user.Email))
+		// }
 
 		Logger.Sugar().Debug("cookie generated for: ", user)
 
