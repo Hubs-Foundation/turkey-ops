@@ -133,7 +133,6 @@ tbody.onclick = function (e) {
       // }
       var clusterName=cells[0].innerHTML
       document.getElementById("cluster_cfg").value = `{
-  "domain":"changeMe.myhubs.net",
   "region":"us-central1",  
   "stackname":"` + clusterName + `"
 }`
@@ -143,6 +142,7 @@ tbody.onclick = function (e) {
 document.getElementById("btn_sampleCfg_minDev").onclick = function(){
   document.getElementById("cluster_cfg").value = `{
   "domain":"changeMe.myhubs.net",
+  "hubdomain":"changeMe.myhubs.dev",
   "region":"us-central1"
 }`
 }
@@ -150,6 +150,7 @@ document.getElementById("btn_sampleCfg_minDev").onclick = function(){
 document.getElementById("btn_sampleCfg_minProd").onclick = function(){
   document.getElementById("cluster_cfg").value = `{
   "domain":"changeMe.myhubs.net",
+  "hubdomain":"changeMe.myhubs.dev",
   "region":"us-central1",
   "env":"prod",
   "OAUTH_CLIENT_ID_FXA":"changeMe",
@@ -160,6 +161,7 @@ document.getElementById("btn_sampleCfg_minProd").onclick = function(){
 document.getElementById("btn_sampleCfg_fullBlown").onclick = function(){
   document.getElementById("cluster_cfg").value = `{
   "domain":"changeMe.myhubs.net",
+  "hubdomain":"changeMe.myhubs.dev",
   "region":"us-central1",
   "env":"prod",
   "OAUTH_CLIENT_ID_FXA":"changeMe",

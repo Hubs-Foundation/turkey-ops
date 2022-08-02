@@ -1,5 +1,8 @@
 {
     "yaml.schemas": {
-        "https://json.schemastore.org/yamllint.json": "file:///d%3A/repos/turkey-ops/api/_files/yams/gcp/cluster_01_ingress.yam"
+        "https://json.schemastore.org/yamllint.json": [
+            "file:///d%3A/repos/turkey-ops/api/_files/yams/gcp/cluster_01_ingress.yam",
+            "file:///d%3A/repos/turkey-ops/orch/_files/yams/ns_hc_nfs.yam"
+        ]
     }
 }

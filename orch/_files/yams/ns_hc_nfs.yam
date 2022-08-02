@@ -20,7 +20,8 @@ metadata:
 stringData:
   NODE_COOKIE: {{.NODE_COOKIE}}
   SUB_DOMAIN: "{{.Subdomain}}"
-  DOMAIN: {{.HubDomain}}
+  DOMAIN: {{.Domain}}
+  HUB_DOMAIN: {{.HubDomain}}
   DB_USER: postgres
   DB_PASS: {{.DBpass}}
   DB_NAME: {{.DBname}}
@@ -197,7 +198,7 @@ data:
     [ret."Elixir.RetWeb.Endpoint".secondary_url]
 
     [ret."Elixir.RetWeb.Endpoint".cors_proxy_url]
-    host = "<SUB_DOMAIN>-cors.<DOMAIN>"
+    host = "<SUB_DOMAIN>-cors.<HUB_DOMAIN>"
     port = 443
 
     [ret."Elixir.RetWeb.Endpoint".imgproxy_url]
@@ -205,18 +206,18 @@ data:
     port = 5000
 
     [ret."Elixir.RetWeb.Endpoint".assets_url]
-    host = "<SUB_DOMAIN>-assets.<DOMAIN>"
+    host = "<SUB_DOMAIN>-assets.<HUB_DOMAIN>"
     port = 443
 
     [ret."Elixir.RetWeb.Endpoint".link_url]
     host = "hubs-link.local"
 
     [ret."Elixir.RetWeb.Endpoint".url]
-    host = "<SUB_DOMAIN>.<DOMAIN>"
+    host = "<SUB_DOMAIN>.<HUB_DOMAIN>"
     port = 443
 
     [ret."Elixir.RetWeb.Endpoint".static_url]
-    host = "<SUB_DOMAIN>.<DOMAIN>"
+    host = "<SUB_DOMAIN>.<HUB_DOMAIN>"
 
     [ret."Elixir.Ret.Repo"]
     username = "<DB_USER>"
@@ -256,7 +257,7 @@ data:
 
     [ret."Elixir.Ret.Guardian"]
     secret_key = "<GUARDIAN_KEY>"
-    issuer = "<SUB_DOMAIN>.<DOMAIN>"
+    issuer = "<SUB_DOMAIN>.<HUB_DOMAIN>"
 
     [ret."Elixir.Ret.PermsToken"]
     perms_key = "<PERMS_KEY>"
@@ -278,9 +279,9 @@ data:
     speelycaptor_endpoint = "<SPEELYCAPTOR>"
 
     [ret."Elixir.Ret.PageOriginWarmer"]
-    hubs_page_origin = "https://<SUB_DOMAIN>-assets.<DOMAIN>/hubs/pages"
-    spoke_page_origin = "https://<SUB_DOMAIN>-assets.<DOMAIN>/spoke/pages"
-    admin_page_origin = "https://<SUB_DOMAIN>-assets.<DOMAIN>/hubs/pages"
+    hubs_page_origin = "https://<SUB_DOMAIN>-assets.<HUB_DOMAIN>/hubs/pages"
+    spoke_page_origin = "https://<SUB_DOMAIN>-assets.<HUB_DOMAIN>/spoke/pages"
+    admin_page_origin = "https://<SUB_DOMAIN>-assets.<HUB_DOMAIN>/hubs/pages"
 
     [ret."Elixir.Ret.HttpUtils"]
     insecure_ssl = false
@@ -288,12 +289,12 @@ data:
     [ret."Elixir.Ret.Storage"]
     storage_path = "/storage"
     ttl = 172800
-    host = "https://<SUB_DOMAIN>.<DOMAIN>"
+    host = "https://<SUB_DOMAIN>.<HUB_DOMAIN>"
     quota_gb = "<STORAGE_QUOTA_GB>" # example: "12"
-    # ^^^ has to be string or elixir throws (ArgumentError) argument error:erlang.byte_size(#), but like why
+    # ^^^ has to be string or elixir throws (ArgumentError) argument error:erlang.byte_size(#), but why
 
     [ret."Elixir.RetWeb.Email"]
-    from = "noreply@<SUB_DOMAIN>.<DOMAIN>"
+    from = "noreply@<SUB_DOMAIN>.<HUB_DOMAIN>"
 
     [ret."Elixir.Ret.Mailer"]
     server = "<SMTP_SERVER>"
@@ -436,6 +437,11 @@ spec:
             secretKeyRef:
               name: configs
               key: SUB_DOMAIN
+        - name: turkeyCfg_HUB_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: HUB_DOMAIN
         - name: turkeyCfg_DOMAIN
           valueFrom:
             secretKeyRef:
