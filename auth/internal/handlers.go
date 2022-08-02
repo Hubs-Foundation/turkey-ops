@@ -73,7 +73,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	// Error indicates no cookie, generate nonce
 	nonce, err := Nonce()
 	if err != nil {
-		Logger.Info("Error generating nonce: " + err.Error())
+		Logger.Error("Error generating nonce: " + err.Error())
 		http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 		return
 	}
@@ -86,7 +86,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	// 	Logger.Info("You are using \"secure\" cookies for a request that was not " + "received via https. You should either redirect to https or pass the " + "\"insecure-cookie\" config option to permit cookies via http.")
 	// }
 
-	// todo is there a better way to do this in go?
+	// todo: find a better way to do this in go?
 	redirectURL := "auth." + cfg.Domain
 	if providerName == "google" {
 		redirectURL = "https://auth." + cfg.Domain
@@ -224,7 +224,7 @@ func Authn() http.Handler {
 			return
 		}
 
-		Logger.Sugar().Debug("allowed. good cookie found for " + email)
+		Logger.Sugar().Info("allowed: " + email)
 		w.Header().Set("X-Forwarded-UserEmail", email)
 		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
 
@@ -288,7 +288,7 @@ func AuthnProxy() http.Handler {
 			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
-		Logger.Sugar().Debug("allowed. good cookie found for " + email)
+		Logger.Sugar().Debug("allowed: " + email)
 
 		AllowedEmailDomains := r.Header.Get("AllowedEmailDomains")
 		if AllowedEmailDomains != "" {
@@ -300,7 +300,7 @@ func AuthnProxy() http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			Logger.Debug("good email domain too")
+			Logger.Info("ALLOWED: " + email)
 		}
 
 		proxy, err := Proxyman.Get(urlStr)
