@@ -85,8 +85,9 @@ func jwkEncode(pub crypto.PublicKey) (string, error) {
 
 type clusterCfg struct {
 	//required inputs
-	Region string `json:"region"` //us-east-1
-	Domain string `json:"domain"` //myhubs.net
+	Region    string `json:"region"`    //us-east-1
+	Domain    string `json:"domain"`    //myhubs.net
+	HubDomain string `json:"hubdomain"` //myhubs.dev
 
 	//required? but possible to fallback to default or locally available values
 	Env                     string `json:"env"`                     //dev
@@ -236,6 +237,9 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	}
 
 	if cfg.Domain == "" {
+		return cfg, errors.New("bad input: NOT FOUND: valid domain name")
+	}
+	if cfg.HubDomain == "" {
 		return cfg, errors.New("bad input: NOT FOUND: valid domain name")
 	}
 

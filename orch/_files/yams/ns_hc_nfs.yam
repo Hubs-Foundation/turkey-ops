@@ -20,7 +20,7 @@ metadata:
 stringData:
   NODE_COOKIE: {{.NODE_COOKIE}}
   SUB_DOMAIN: "{{.Subdomain}}"
-  DOMAIN: {{.Domain}}
+  DOMAIN: {{.HubDomain}}
   DB_USER: postgres
   DB_PASS: {{.DBpass}}
   DB_NAME: {{.DBname}}
@@ -56,11 +56,11 @@ metadata:
     kubernetes.io/ingress.class: haproxy
     haproxy.org/server-ssl: "true"
     haproxy.org/response-set-header: |
-      access-control-allow-origin "https://{{.Subdomain}}.{{.Domain}}"
+      access-control-allow-origin "https://{{.Subdomain}}.{{.HubDomain}}"
     haproxy.org/path-rewrite: /api-internal(.*) /_drop_
 spec:
   rules:
-  - host: {{.Subdomain}}.{{.Domain}}
+  - host: {{.Subdomain}}.{{.HubDomain}}
     http:
       paths:
       - path: /
@@ -70,7 +70,7 @@ spec:
             name: ret
             port: 
               number: 4000
-  - host: {{.Subdomain}}-assets.{{.Domain}}
+  - host: {{.Subdomain}}-assets.{{.HubDomain}}
     http:
       paths:
       - path: /files/
@@ -101,7 +101,7 @@ spec:
             name: spoke
             port: 
               number: 8080                          
-  - host: {{.Subdomain}}-cors.{{.Domain}}
+  - host: {{.Subdomain}}-cors.{{.HubDomain}}
     http:
       paths:
       - path: /files/
@@ -143,7 +143,7 @@ spec:
 #     haproxy.org/path-rewrite: /nearspark/(.*) /\1              # strip /nearspark  
 # spec:
 #   rules:        
-#   - host: {{.Subdomain}}-cors.{{.Domain}}
+#   - host: {{.Subdomain}}-cors.{{.HubDomain}}
 #     http:
 #       paths:
 #       - path: /nearspark
@@ -749,19 +749,19 @@ spec:
                 name: configs
                 key: DOMAIN
           # - name: turkeyCfg_base_assets_path
-          #   value: https://{{.Subdomain}}-assets.{{.Domain}}/spoke/
+          #   value: https://{{.Subdomain}}-assets.{{.HubDomain}}/spoke/
           # - name: turkeyCfg_cors_proxy_server
-          #   value: {{.Subdomain}}-cors.{{.Domain}}
+          #   value: {{.Subdomain}}-cors.{{.HubDomain}}
           # - name: turkeyCfg_ga_tracking_id
           #   value: 
           # - name: turkeyCfg_hubs_server
-          #   value: {{.Subdomain}}.{{.Domain}}
+          #   value: {{.Subdomain}}.{{.HubDomain}}
           # - name: turkeyCfg_is_moz
           #   value: "false"
           # - name: turkeyCfg_non_cors_proxy_domains
-          #   value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+          #   value: {{.Subdomain}}.{{.HubDomain}},{{.Subdomain}}-assets.{{.HubDomain}}
           # - name: turkeyCfg_reticulum_server
-          #   value: {{.Subdomain}}.{{.Domain}}
+          #   value: {{.Subdomain}}.{{.HubDomain}}
           # - name: turkeyCfg_sentry_dsn
           #   value: 
           # - name: turkeyCfg_thumbnail_server

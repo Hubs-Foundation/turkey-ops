@@ -16,13 +16,14 @@ type Config struct {
 	PodLabelApp  string
 	AuthProxyUrl string `description:"auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)"`
 
-	Env      string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
-	Channel  string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
-	Domain   string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
-	DBuser   string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
-	DBpass   string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`
-	DBconn   string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
-	PermsKey string `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications"`
+	Env       string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
+	Channel   string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
+	Domain    string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
+	HubDomain string
+	DBuser    string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
+	DBpass    string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`
+	DBconn    string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
+	PermsKey  string `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications"`
 
 	AwsKey               string `long:"aws-key" env:"AWS_KEY" description:"AWS_ACCESS_KEY_ID"`
 	AwsSecret            string `long:"aws-secret" env:"AWS_SECRET" description:"AWS_SECRET_ACCESS_KEY"`
@@ -83,6 +84,7 @@ func MakeCfg() {
 	}
 	Logger.Info("Cfg.Channel: " + Cfg.Channel)
 	Cfg.Domain = os.Getenv("DOMAIN")
+	Cfg.HubDomain = os.Getenv("HUB_DOMAIN")
 	Cfg.DBconn = os.Getenv("DB_CONN")
 	Cfg.DBuser = getEnv("DB_USER", "postgres")
 	Cfg.DBpass = getEnv("DB_PASS", "throw")

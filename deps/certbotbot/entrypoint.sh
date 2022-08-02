@@ -10,7 +10,7 @@ function get_new_cert(){
     echo "get_new_cert with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
     certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
         --dns-$DNS_PROVIDER --dns-$DNS_PROVIDER-propagation-seconds 300 \
-        --debug-challenges -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN
+        --debug-challenges -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d $HUB_DOMAIN -d \*.$HUB_DOMAIN
 }
 
 function get_kubectl(){

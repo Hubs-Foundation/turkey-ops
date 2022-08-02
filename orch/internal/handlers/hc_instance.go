@@ -41,6 +41,7 @@ type hcCfg struct {
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain               string `json:"domain"`
+	HubDomain            string `json:"hubdomain"`
 	DBname               string `json:"dbname"`
 	DBpass               string `json:"dbpass"`
 	PermsKey             string `json:"permskey"`
@@ -392,6 +393,10 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 
 	//inherit from cluster
 	cfg.Domain = internal.Cfg.Domain
+	cfg.HubDomain = internal.Cfg.HubDomain
+	if cfg.HubDomain == "" {
+		cfg.HubDomain = cfg.Domain
+	}
 	cfg.DBpass = internal.Cfg.DBpass
 	cfg.SmtpServer = internal.Cfg.SmtpServer
 	cfg.SmtpPort = internal.Cfg.SmtpPort

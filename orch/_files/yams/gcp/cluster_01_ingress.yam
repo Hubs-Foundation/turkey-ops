@@ -297,6 +297,8 @@ spec:
             env:
             - name: DOMAIN
               value: {{.Domain}}
+            - name: HUB_DOMAIN
+              value: {{.HubDomain}}
             - name: CERTBOT_EMAIL
               value: gtan@mozilla.com
             - name: AWS_ACCESS_KEY_ID
