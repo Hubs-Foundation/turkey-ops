@@ -296,6 +296,7 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 	if err != nil {
 		return nil, err
 	}
+	Logger.Sugar().Infof("MakeJwtCookie -- user: %v, host: %v", user.Email, r.URL.Host)
 	return &http.Cookie{
 		Name:     cfg.JwtCookieName,
 		Value:    tokenString,
@@ -469,9 +470,9 @@ func matchCookieDomains(domain string) (bool, string) {
 
 	for _, d := range cfg.CookieDomains {
 		if d.Match(p[0]) {
-			if d.Domain == cfg.Domain {
-				Logger.Sugar().Warnf("Domain (%v) matched (against: %v), cross-domain-leak possible", d.Domain, domain)
-			}
+			// if d.Domain == cfg.Domain {
+			// 	Logger.Sugar().Warnf("Domain (%v) matched (against: %v), cross-domain-leak possible", d.Domain, domain)
+			// }
 			return true, d.Domain
 		}
 	}
