@@ -296,7 +296,7 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 	if err != nil {
 		return nil, err
 	}
-	Logger.Sugar().Infof("MakeJwtCookie -- user: %v, host: %v", user.Email, r.URL.Host)
+	Logger.Sugar().Infof("MakeJwtCookie -- user: %v, host: %v", user.Email, r.Host)
 	return &http.Cookie{
 		Name:     cfg.JwtCookieName,
 		Value:    tokenString,

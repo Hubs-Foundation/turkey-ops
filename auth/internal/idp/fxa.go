@@ -127,11 +127,11 @@ func (f *Fxa) GetUser(token string) (User, error) {
 		return user, err
 	}
 	defer res.Body.Close()
-	fmt.Println("GetUser.res.StatusCode = ", res.StatusCode)
+	// fmt.Println("GetUser.res.StatusCode = ", res.StatusCode)
 
 	// err = json.NewDecoder(res.Body).Decode(&user)
 	bodyBytes, _ := ioutil.ReadAll(res.Body)
-	fmt.Println("GetUser -- bodyBytes -- " + string(bodyBytes))
+	// fmt.Println("GetUser -- bodyBytes -- " + string(bodyBytes))
 	err = json.Unmarshal(bodyBytes, &user)
 
 	return user, err
