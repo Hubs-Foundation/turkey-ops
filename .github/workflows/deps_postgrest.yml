@@ -2,7 +2,7 @@
 name: postgrest
 on:
   push:
-    branches: [ master ]
+    branches: 
     paths:
     - 'deps/postgrest/**'
     - '.github/workflows/deps_postgrest.yml'
