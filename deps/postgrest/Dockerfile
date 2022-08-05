@@ -1,1 +1,1 @@
-from postgrest/postgrest:v9.0.0
+from postgrest/postgrest:v9.0.1

@@ -637,8 +637,6 @@ func hc_switch(HubId, status string) error {
 }
 
 func hc_patch_subdomain(HubId, Subdomain string) error {
-	//call ret/update-subdomain-script
-	internal.Logger.Error("~~~~~~ TODO: call ret/update-subdomain-script")
 
 	nsName := "hc-" + HubId
 	//update secret

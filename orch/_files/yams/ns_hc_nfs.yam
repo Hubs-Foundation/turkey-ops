@@ -374,7 +374,7 @@ metadata:
   annotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
       app: reticulum

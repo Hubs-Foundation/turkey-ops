@@ -120,7 +120,13 @@ func PwdGen(length int, seed int64, padding string) string {
 		pwd[i] = dict[mrand.Intn(dictLen)]
 	}
 
-	return padding + string(pwd) + padding
+	return padding + string(pwd) + ReverseString(padding)
+}
+func ReverseString(s string) (result string) {
+	for _, v := range s {
+		result = string(v) + result
+	}
+	return
 }
 
 func StackNameGen() string {
