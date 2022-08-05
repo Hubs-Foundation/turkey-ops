@@ -1,4 +1,4 @@
-FROM alpine:3.15
+FROM alpine:3.13
 ARG VERSION=1.17.0
 
 # Inspiration from https://github.com/gmr/alpine-pgbouncer/blob/master/Dockerfile
@@ -9,22 +9,26 @@ RUN \
   # Download
   apk add -U --no-cache autoconf autoconf-doc automake udns udns-dev curl gcc libc-dev libevent libevent-dev libtool make openssl-dev pkgconfig postgresql-client && \
   curl -o  /tmp/pgbouncer-$VERSION.tar.gz -L https://pgbouncer.github.io/downloads/files/$VERSION/pgbouncer-$VERSION.tar.gz && \
-  cd /tmp && \
+  cd /tmp
+run \
   # Unpack, compile
   tar xvfz /tmp/pgbouncer-$VERSION.tar.gz && \
   cd pgbouncer-$VERSION && \
   ./configure --prefix=/usr --with-udns && \
-  make && \
+  make
+run \
   # Manual install
   cp pgbouncer /usr/bin && \
-  mkdir -p /etc/pgbouncer /var/log/pgbouncer /var/run/pgbouncer && \
+  mkdir -p /etc/pgbouncer /var/log/pgbouncer /var/run/pgbouncer
+run \
   # entrypoint installs the configuration, allow to write as postgres user
   cp etc/pgbouncer.ini /etc/pgbouncer/pgbouncer.ini.example && \
   cp etc/userlist.txt /etc/pgbouncer/userlist.txt.example && \
   touch /etc/pgbouncer/userlist.txt && \
   addgroup -g 70 -S postgres 2>/dev/null && \
   adduser -u 70 -S -D -H -h /var/lib/postgresql -g "Postgres user" -s /bin/sh -G postgres postgres 2>/dev/null && \
-  chown -R postgres /var/run/pgbouncer /etc/pgbouncer && \
+  chown -R postgres /var/run/pgbouncer /etc/pgbouncer
+run \
   # Cleanup
   cd /tmp && \
   rm -rf /tmp/pgbouncer*  && \
