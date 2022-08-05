@@ -2,7 +2,7 @@
 name: pgbouncer
 on:
   push:
-    branches: [ master ]
+    branches: 
     paths:
     - 'deps/pgbouncer/**'
     - '.github/workflows/deps_pgbouncer.yml'
