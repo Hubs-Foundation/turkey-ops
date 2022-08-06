@@ -16,13 +16,13 @@ from alpine:3.15
 run apk add -U --no-cache --upgrade busybox && apk add -U --no-cache libevent udns libpq
 copy --from=0 /usr/bin/pgbouncer /usr/bin/pgbouncer
 copy --from=0 /etc/pgbouncer /etc/pgbouncer
-# run mkdir -p /etc/pgbouncer && touch /etc/pgbouncer/userlist.txt
+run mkdir -p /etc/pgbouncer && touch /etc/pgbouncer/userlist.txt
 # copy --from=0 /etc/pgbouncer/ /etc/pgbouncer/
 # run mkdir -p /var/log/pgbouncer /var/run/pgbouncer
 COPY entrypoint.sh /entrypoint.sh
 run chmod +x ./entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/usr/bin/pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
+# CMD ["/usr/bin/pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
 
 
 
