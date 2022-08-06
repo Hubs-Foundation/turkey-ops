@@ -29,7 +29,7 @@ RUN \
 COPY entrypoint.sh /entrypoint.sh
 # RUN chown -R postgres:postgres /entrypoint.sh
 run chmod +x ./entrypoint.sh
-USER postgres
+# USER postgres
 EXPOSE 5432
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/usr/bin/pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
