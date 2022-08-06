@@ -16,7 +16,7 @@ metadata:
     haproxy.org/load-balance: "url_param roomId"
 spec:
   rules:
-  - host: stream.{{.Domain}}
+  - host: stream.{{.HubDomain}}
     http:
       paths:
       - path: /
@@ -252,7 +252,7 @@ metadata:
     haproxy.org/server-ssl: "true"
 spec:
   rules:
-  - host: "*.stream.{{.Domain}}"
+  - host: "*.stream.{{.HubDomain}}"
     http:
       paths:
       - path: /

@@ -249,7 +249,7 @@ data:
     http_port = 9631
 
     [ret."Elixir.Ret.JanusLoadStatus"]
-    default_janus_host = "stream.<DOMAIN>"
+    default_janus_host = "stream.<HUB_DOMAIN>"
     janus_service_name = ""
     janus_admin_secret = ""
     janus_admin_port = 7000
@@ -364,7 +364,7 @@ data:
     max_connections = 250
 
     [ret."Elixir.Ret.Meta"]
-    phx_host = "<SUB_DOMAIN>.<DOMAIN>"
+    phx_host = "<SUB_DOMAIN>.<HUB_DOMAIN>"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -680,7 +680,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: DOMAIN
+              key: HUB_DOMAIN
         livenessProbe:
           httpGet:
             path: https://localhost/healthz
@@ -754,25 +754,6 @@ spec:
               secretKeyRef:
                 name: configs
                 key: DOMAIN
-          # - name: turkeyCfg_base_assets_path
-          #   value: https://{{.Subdomain}}-assets.{{.HubDomain}}/spoke/
-          # - name: turkeyCfg_cors_proxy_server
-          #   value: {{.Subdomain}}-cors.{{.HubDomain}}
-          # - name: turkeyCfg_ga_tracking_id
-          #   value: 
-          # - name: turkeyCfg_hubs_server
-          #   value: {{.Subdomain}}.{{.HubDomain}}
-          # - name: turkeyCfg_is_moz
-          #   value: "false"
-          # - name: turkeyCfg_non_cors_proxy_domains
-          #   value: {{.Subdomain}}.{{.HubDomain}},{{.Subdomain}}-assets.{{.HubDomain}}
-          # - name: turkeyCfg_reticulum_server
-          #   value: {{.Subdomain}}.{{.HubDomain}}
-          # - name: turkeyCfg_sentry_dsn
-          #   value: 
-          # - name: turkeyCfg_thumbnail_server
-          #   # value: nearspark.hc-{{.HubId}}:5000
-          #   value: nearspark.reticulum.io
           livenessProbe:
             httpGet:
               path: https://localhost/healthz
