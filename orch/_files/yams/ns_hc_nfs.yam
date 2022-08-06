@@ -1110,7 +1110,7 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 10Gi
+          storage: {{.StorageLimit}}Gi
 ---
 kind: Service
 apiVersion: v1
