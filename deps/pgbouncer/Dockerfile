@@ -13,7 +13,7 @@ run curl -o  /tmp/pgbouncer-$VERSION.tar.gz -L https://pgbouncer.github.io/downl
   touch /etc/pgbouncer/userlist.txt
 
 from alpine:3.15
-run apk add -U --no-cache --upgrade busybox && libevent-dev udns libpq
+run apk add -U --no-cache --upgrade busybox && apk add -U --no-cache libevent udns libpq
 copy --from=0 /usr/bin/pgbouncer /usr/bin/pgbouncer
 run mkdir -p /etc/pgbouncer && touch /etc/pgbouncer/userlist.txt
 # copy --from=0 /etc/pgbouncer/ /etc/pgbouncer/
