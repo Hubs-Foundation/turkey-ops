@@ -22,10 +22,10 @@ jobs:
       - uses: actions/checkout@v2
         with:
           repository: mozilla/hubs
-          path: '/hubs'      
+          path: '/.hubs'      
       - name: docker build + push          
         run: |
-          cp /hubs/scripts/bot/ ./tools/botomatic
+          cp /.hubs/scripts/bot/ ./tools/botomatic
           cd ./tools/botomatic && ls -lha
           tag="$registryName/$containerName:${GITHUB_RUN_NUMBER}"
           echo "[info] tag: $tag"
