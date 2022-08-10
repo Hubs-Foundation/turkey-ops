@@ -19,9 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+          with:
+            repository: mozilla/hubs
+            path: '/hubs'      
       - name: docker build + push          
         run: |
-          cd ./tools/botomatic
+          cp /hubs/scripts/bot/ ./tools/botomatic
+          cd ./tools/botomatic && ls -lha
           tag="$registryName/$containerName:${GITHUB_RUN_NUMBER}"
           echo "[info] tag: $tag"
           docker build . -t $tag
