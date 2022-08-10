@@ -1,6 +1,6 @@
 
 
-### need:
+### a docker wrap of:
 https://github.com/mozilla/hubs/tree/master/scripts/bot
 
 ### sample usage 
@@ -9,5 +9,7 @@ https://github.com/mozilla/hubs/tree/master/scripts/bot
 
 #### local
 `docker build -t boto . && docker run -it -p 5000:5000 boto`
+
 and then
+
 `sudo docker run -e host=gtan.myhubs.net -e hub_sid=ZuGLiti -e duration=60 -e audio=true botorun`
