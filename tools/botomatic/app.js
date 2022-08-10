@@ -7,7 +7,11 @@ app.get('/_healthz', function (req, res) {
   res.send('1');
 });
 
-var execSync = require('child_process').execSync;
+let exec = require('child_process').execSync;
+if (process.env.BOTO_LOCAL){
+  console.log(" ### local mode ###")
+  exec = require('child_process').exec
+}
 
 app.get('/run-bot', function (req, res) {
     console.log(req.query)
@@ -15,7 +19,7 @@ app.get('/run-bot', function (req, res) {
     cmd="node run-bot.js -u "+req.query.url+" -a bot-recording.mp3 -d bot-recording.json"
     console.log("cmd: ", cmd)
     try {      
-      execSync(cmd,        
+      exec(cmd,        
         function (error, stdout, stderr) {
             console.log('stdout: ' + stdout);
             console.log('stderr: ' + stderr);
