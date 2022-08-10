@@ -20,9 +20,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/checkout@v2
-          with:
-            repository: mozilla/hubs
-            path: '/hubs'      
+        with:
+          repository: mozilla/hubs
+          path: '/hubs'      
       - name: docker build + push          
         run: |
           cp /hubs/scripts/bot/ ./tools/botomatic
