@@ -200,7 +200,7 @@ resource "google_container_node_pool" "service_nodes" {
     max_node_count = 32
   }
 }
-{{ end }}
+{{ else }}
 resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers hub probably)
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-spot"
@@ -229,7 +229,7 @@ resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooli
     max_node_count = 256
   }
 }
-
+{{ end }}
 ################## pgsql
 resource "google_compute_global_address" "private_ip_address" {
   provider = google-beta

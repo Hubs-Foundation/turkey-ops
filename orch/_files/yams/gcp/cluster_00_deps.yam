@@ -10,3 +10,13 @@ roleRef:
 subjects:
 - kind: User
   name: turkey-admin
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gke-disk
+provisioner: pd.csi.storage.gke.io
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+parameters:
+  type: pd-balanced

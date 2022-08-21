@@ -9,7 +9,7 @@ metadata:
   name: data-grafana
   namespace: monitoring
 spec:
-  storageClassName: standard-rwo
+  name: gke-disk
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
@@ -21,7 +21,7 @@ metadata:
   name: data-prom
   namespace: monitoring
 spec:
-  storageClassName: standard-rwo
+  name: gke-disk
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
@@ -33,7 +33,7 @@ metadata:
   name: data-loki
   namespace: monitoring
 spec:
-  storageClassName: standard-rwo
+  name: gke-disk
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
@@ -61,7 +61,7 @@ spec:
     spec:
       {{ if ne .Env "dev" }}
       nodeSelector:
-        turkey: spot
+        turkey: service
       {{ end }}
       securityContext:
       securityContext:
@@ -558,7 +558,7 @@ spec:
       automountServiceAccountToken: true
       {{ if ne .Env "dev" }}
       nodeSelector:
-        turkey: spot
+        turkey: service
       {{ end }}
       containers:
       - image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.3.0

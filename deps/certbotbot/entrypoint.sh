@@ -6,11 +6,17 @@ function need_new_cert(){
     if openssl x509 -checkend 2592000 -noout -in tls.crt; then echo "expiring -- need new cert";return 0; else return 1; fi
 }
 
-function get_new_cert(){
-    echo "get_new_cert with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
+function get_new_cert_dns(){
+    echo "get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
     certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
-        --dns-$DNS_PROVIDER --dns-$DNS_PROVIDER-propagation-seconds 300 \
+        --dns-$CHALLENGE --dns-$CHALLENGE-propagation-seconds 300 \
         --debug-challenges -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d $HUB_DOMAIN -d \*.$HUB_DOMAIN
+}
+
+function get_new_cert_http(){
+    echo "get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
+    certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
+        --preferred-challenges http --nginx -d $DOMAIN 
 }
 
 function get_kubectl(){
@@ -26,15 +32,16 @@ function get_kubectl(){
 }
 
 function save_cert(){
-    kubectl -n ingress create secret tls letsencrypt \
+    name=$1
+    kubectl -n ingress create secret tls $name \
         --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
         --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
         --save-config --dry-run=client -o yaml | kubectl apply -f -
     echo "new cert: "
-    kubectl -n ingress describe secret letsencrypt
+    kubectl -n ingress describe secret $name
 }
 
-export DNS_PROVIDER=$1
+export CHALLENGE=$1
 echo $GCP_SA_KEY > GCP_SA_KEY.json
 chmod 600 GCP_SA_KEY.json
 export GOOGLE_APPLICATION_CREDENTIALS="GCP_SA_KEY.json"
@@ -43,9 +50,18 @@ get_kubectl
 kubectl -n ingress patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */3 * *"}}'
 
 if ! need_new_cert; then echo "good cert, exit in 15 min"; sleep 900; exit 0; fi
+
 echo "getting new cert"
-if ! get_new_cert; then echo "ERROR failed to get new cert, exit in 15 min"; sleep 900; exit 1; fi
-if ! save_cert; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
+if [ "$CHALLENGE" = "http" ]; then
+  get_new_cert_http
+else
+  get_new_cert_dns
+fi
+
+if [ "$?" -ne 0 ]; then echo "ERROR failed to get new cert, exit in 15 min"; sleep 900; exit 1; fi
+
+echo "saving new cert"
+if ! save_cert "letsencrypt-$CHALLENGE"; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
 
 kubectl -n ingress rollout restart deployment haproxy
 
