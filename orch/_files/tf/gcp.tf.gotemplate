@@ -80,22 +80,23 @@ resource "google_container_cluster" "gke" {
   subnetwork = google_compute_subnetwork.public.name
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
   cluster_autoscaling {   # this is node auto-provisioning, not "cluster autoscaler", more info--https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
-{{ if ne .Env "dev" }}    
-    enabled = true
-    resource_limits{
-      resource_type = "memory"
-      minimum = 24
-      maximum = 512
-    }
-    resource_limits{
-      resource_type = "cpu"
-      minimum = 12
-      maximum = 256
-    }
-    autoscaling_profile = "OPTIMIZE_UTILIZATION"
-{{ else }}    
+# {{ if ne .Env "dev" }}    
+#     enabled = true
+#     resource_limits{
+#       resource_type = "memory"
+#       minimum = 24
+#       maximum = 512
+#     }
+#     resource_limits{
+#       resource_type = "cpu"
+#       minimum = 12
+#       maximum = 256
+#     }
+#     autoscaling_profile = "OPTIMIZE_UTILIZATION"
+# {{ else }}    
+#     enabled = false
+# {{ end }}
     enabled = false
-{{ end }}    
   }
 
   # doesn't seem to be working, as of 
