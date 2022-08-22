@@ -1046,6 +1046,18 @@ spec:
 ########################################################################
 ######################   nfs   ###############################
 ########################################################################
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hc-{{.HubId}}-ret-disk-pvc
+  namespace: hc-{{.HubId}}
+spec:
+  storageClassName: gke-disk
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests:
+      storage: {{.StorageLimit}}Gi
+---
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
@@ -1081,17 +1093,21 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
-          - name: hc-{{.HubId}}
-            mountPath: /var/nfs         
-  volumeClaimTemplates:
-  - metadata:
-      name: hc-{{.HubId}}
-    spec:
-      storageClassName: standard-rwo
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: {{.StorageLimit}}Gi
+          - name: hc-{{.HubId}}-ret-disk
+            mountPath: /var/nfs      
+      volumes:
+        - name: hc-{{.HubId}}-ret-disk
+          persistentVolumeClaim:
+            claimName: hc-{{.HubId}}-ret-disk-pvc   
+  volumeClaimTemplates: []
+  # - metadata:
+  #     name: hc-{{.HubId}}
+  #   spec:
+  #     storageClassName: gke-disk
+  #     accessModes: [ "ReadWriteOnce" ]
+  #     resources:
+  #       requests:
+  #         storage: {{.StorageLimit}}Gi
 ---
 kind: Service
 apiVersion: v1
