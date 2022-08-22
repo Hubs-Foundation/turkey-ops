@@ -290,6 +290,7 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 		"fxa_2fa":         user.TwoFA,
 		"fxa_email":       user.Email,
 		"fxa_displayName": user.DisplayName,
+		"fxa_subscriptions": user.Subscriptions,
 	})
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(cfg.PermsKey)
