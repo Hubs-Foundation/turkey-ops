@@ -10,7 +10,7 @@ function get_new_cert_dns(){
     echo "get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
     certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
         --dns-$CHALLENGE --dns-$CHALLENGE-propagation-seconds 300 \
-        --debug-challenges -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d $HUB_DOMAIN -d \*.$HUB_DOMAIN
+        --debug-challenges -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d $HUB_DOMAIN -d \*.$HUB_DOMAIN -d \*.stream.$HUB_DOMAIN
 }
 
 function get_new_cert_http(){
