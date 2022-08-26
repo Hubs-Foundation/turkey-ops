@@ -1,7 +1,7 @@
 name: dip
 on:
   push:
-    branches: [ master ]
+    branches: 
     paths:
     - 'dip/**'
     - '.github/workflows/dip.yml'
