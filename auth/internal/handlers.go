@@ -188,7 +188,9 @@ func Oauth() http.Handler {
 		}
 		http.SetCookie(w, jwtCookie)
 
-		// Logger.Debug("client domain: " + redirect[strings.Index(redirect, "://")+3:])
+		Logger.Debug("jwtCookie domain: " + jwtCookie.Domain)
+		Logger.Debug("redirect: " + redirect)
+		Logger.Debug("redirect domain: " + redirect[strings.Index(redirect, "://")+3:])
 
 		//dev only -- make an auth cookie too
 		// if cfg.AllowAuthCookie {

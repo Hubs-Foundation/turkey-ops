@@ -130,15 +130,6 @@ func MakeCfg() {
 	Logger.Sugar().Infof("PermsKey_pub: %v", string(pemBytes))
 }
 
-func getRootDomain(fullDomain string) string {
-	fdArr := strings.Split(fullDomain, ".")
-	len := len(fdArr)
-	if len < 2 {
-		return ""
-	}
-	return fdArr[len-2] + "." + fdArr[len-1]
-}
-
 // Validate validates a config object
 func (c *Config) Validate() {
 	// Check for show stopper errors

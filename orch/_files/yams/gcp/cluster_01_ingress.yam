@@ -18,17 +18,20 @@ metadata:
   name: haproxy-config
   namespace: ingress
 data:
+  global-config-snippet: |
+    tune.bufsize 33792
+  backend-config-snippet: |
+    option forwardfor 
+    option http-pretend-keepalive
+    acl no-backend nbsrv() lt 1 
+    http-request redirect location "https://orch.{{.Domain}}/turkey-return-center/?goods=%[hdr(host)]" if no-backend
+  ssl-redirect: "true"
   timeout-client: 30m
   timeout-client-fin: 1h
   timeout-server: 30m
   timeout-server-fin: 1h
-  timeout-connect: 5s
-  backend-config-snippet: |
-    option forwardfor 
-    acl no-backend nbsrv() lt 1 
-    http-request redirect location "https://orch.{{.Domain}}/turkey-return-center/?goods=%[hdr(host)]" if no-backend
-  ssl-redirect: "true"
-  #access logging -- disabled for now
+  timeout-connect: 3s
+  #access logging -- can be enabled at runtime
   #syslog-server: 'address:stdout, format: raw, facility:daemon'
 ---
 kind: Deployment

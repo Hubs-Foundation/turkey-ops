@@ -2,6 +2,7 @@ package internal
 
 import (
 	"os"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -31,4 +32,13 @@ func InitLogger() {
 		Atom.SetLevel(zap.InfoLevel)
 	}
 
+}
+
+func getRootDomain(fullDomain string) string {
+	fdArr := strings.Split(fullDomain, ".")
+	len := len(fdArr)
+	if len < 2 {
+		return ""
+	}
+	return fdArr[len-2] + "." + fdArr[len-1]
 }
