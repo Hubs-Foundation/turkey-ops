@@ -32,24 +32,29 @@ func CheckCookie(r *http.Request) (string, error) {
 	// return checkAuthCookie(r)
 
 	//jwt cookie
-	c, err := r.Cookie(cfg.JwtCookieName)
-	if err != nil {
-		Logger.Sugar().Debug("missing jwtCookie: " + cfg.JwtCookieName)
-		return "", errors.New("missing jwtCookie")
+	for _, c := range r.Cookies() {
+		if c.Name == cfg.JwtCookieName {
+			claims, err := checkJwtCookie(c)
+			if err == nil {
+				Logger.Sugar().Debugf("good jwt cookie, jwt.MapClaims: %v", claims)
+				return claims.(jwt.MapClaims)["fxa_email"].(string), nil
+			}
+		}
 	}
-	claims, err := checkJwtCookie(c)
-	if err != nil {
-		// if cfg.AllowAuthCookie { // (dev env only) or if you have a good authCookie ?
-		// 	Logger.Sugar().Debugf("bad jwtCookie(err: %v) + AllowAuthCookie == falling back to authCookie", err)
-		// 	Logger.Sugar().Debugf("dump r, %v", r)
-		// 	return checkAuthCookie(r)
-		// } else {
-		// 	return "", err
-		// }
-		return "", err
-	}
-	Logger.Sugar().Debugf("good jwt cookie, jwt.MapClaims: %v", claims)
-	return claims.(jwt.MapClaims)["fxa_email"].(string), nil
+	Logger.Sugar().Debugf("valid jwtCookie not found: %v", r.Cookies)
+	return "", errors.New("valid jwtCookie not found")
+
+	// c, err := r.Cookie(cfg.JwtCookieName)
+	// if err != nil {
+	// 	Logger.Sugar().Debug("missing jwtCookie: " + cfg.JwtCookieName)
+	// 	return "", errors.New("missing jwtCookie")
+	// }
+	// claims, err := checkJwtCookie(c)
+	// if err != nil {
+	// 	return "", err
+	// }
+	// Logger.Sugar().Debugf("good jwt cookie, jwt.MapClaims: %v", claims)
+	// return claims.(jwt.MapClaims)["fxa_email"].(string), nil
 }
 
 func checkAuthCookie(r *http.Request) (string, error) {
