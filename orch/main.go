@@ -18,13 +18,6 @@ func main() {
 		// internal.StartLruCache()
 		internal.Cfg.K8ss_local.StartWatching_HcNs()
 	}
-	//-----------------------------------
-	cron_fetchBuild := internal.NewCron("cron_fetchBuild", "10m")
-	cron_fetchBuild.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
-	cron_fetchBuild.Start()
-	cron_cleanups := internal.NewCron("cron_cleanups", "30m")
-	cron_cleanups.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
-	cron_cleanups.Start()
 
 	router := http.NewServeMux()
 

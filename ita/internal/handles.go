@@ -70,17 +70,18 @@ var Updater = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "POST" {
-		if len(r.URL.Query()["channel"]) != 1 {
+		if len(r.URL.Query()["channel"]) != 1 || r.URL.Query()["channel"][0] == "" {
 			http.Error(w, "missing: channel", http.StatusBadRequest)
 			return
 		}
 		channel := r.URL.Query()["channel"][0]
-		_, ok := cfg.SupportedChannels[channel]
-		if !ok {
-			Logger.Error("bad channel: " + channel)
-			http.Error(w, "bad channel: "+channel, http.StatusBadRequest)
-			return
-		}
+		// _, ok := cfg.SupportedChannels[channel]
+		// if !ok {
+		// 	Logger.Error("bad channel: " + channel)
+		// 	http.Error(w, "bad channel: "+channel, http.StatusBadRequest)
+		// 	return
+		// }
+
 		cfg.TurkeyUpdater.Start(channel)
 		Set_listeningChannelLabel(channel) //persist to k8s-deployment-label to recover across pod reboot
 

@@ -87,10 +87,10 @@ func (u *TurkeyUpdater) Start(channel string) error {
 		Logger.Info("starting with channel: " + channel)
 	}
 
-	if _, ok := cfg.SupportedChannels[channel]; !ok {
-		Logger.Sugar().Warnf("bad channel %v, exiting without start", channel)
-		return nil
-	}
+	// if _, ok := cfg.SupportedChannels[channel]; !ok {
+	// 	Logger.Sugar().Warnf("bad channel %v, exiting without start", channel)
+	// 	return nil
+	// }
 
 	u.stopCh, err = u.startWatchingPublisher(channel)
 	if err != nil {
@@ -141,10 +141,14 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	Logger.Sugar().Debugf("...received on <"+cfgmap.Name+"."+eventType+">: %v", cfgmap.Labels)
 	Logger.Sugar().Debugf("...current u.containers : %v", u.containers)
 
-	rand.Seed(int64(cfg.HostnameHash))
-	waitSec := rand.Intn(300) + 30
-	Logger.Sugar().Debugf("deployment starting in %v secs", waitSec)
-	time.Sleep(time.Duration(waitSec) * time.Second) // so some namespaces will pull the new container images first and have them cached locally -- less likely for us to get rate limited
+	if u.channel == "stable" {
+		// so some namespaces will pull the new container images first
+		// and have them cached locally -- less likely for us to get rate limited
+		rand.Seed(int64(cfg.HostnameHash))
+		waitSec := rand.Intn(300) + 30
+		Logger.Sugar().Debugf("deployment starting in %v secs", waitSec)
+		time.Sleep(time.Duration(waitSec) * time.Second)
+	}
 
 	for i, info := range u.containers {
 		img := info.containerRepo

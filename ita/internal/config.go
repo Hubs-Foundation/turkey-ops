@@ -22,7 +22,8 @@ type Config struct {
 	RetApiKey      string
 	turkeyorchHost string
 
-	SupportedChannels map[string]bool
+	// SupportedChannels map[string]bool
+	Channel string
 
 	K8sCfg       *rest.Config
 	K8sClientSet *kubernetes.Clientset
@@ -38,11 +39,11 @@ func GetCfg() *Config {
 
 func MakeCfg() {
 	cfg = &Config{}
-	cfg.SupportedChannels = map[string]bool{
-		"dev":    true,
-		"beta":   true,
-		"stable": true,
-	}
+	// cfg.SupportedChannels = map[string]bool{
+	// 	"dev":    true,
+	// 	"beta":   true,
+	// 	"stable": true,
+	// }
 	Hostname, err := os.Hostname()
 	if err != nil {
 		Logger.Warn("failed to get Hostname")
@@ -89,14 +90,14 @@ func MakeCfg() {
 		return //RET_MODE==will-not-start: { turkey-updater, pauseJob }
 	}
 
-	//start turkey-updater
+	//not RET_MODE => start turkey-updater
 
 	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
 
-	listeningChannel, err := Get_listeningChannelLabel()
+	cfg.Channel, err = Get_listeningChannelLabel()
 	if err != nil {
 		Logger.Warn("Get_listeningChannelLabel failed: " + err.Error())
-		listeningChannel = "unset"
+		cfg.Channel = "unset"
 		err := Set_listeningChannelLabel("unset")
 		if err != nil {
 			Logger.Error("Set_listeningChannelLabel failed: " + err.Error())
@@ -104,16 +105,9 @@ func MakeCfg() {
 	}
 
 	cfg.TurkeyUpdater = NewTurkeyUpdater()
-	err = cfg.TurkeyUpdater.Start(listeningChannel)
+	err = cfg.TurkeyUpdater.Start(cfg.Channel)
 	if err != nil {
 		Logger.Error(err.Error())
-	}
-
-	//start pauseJob
-	if cfg.Tier == "free" {
-		cron_15s := NewCron("pauseJob-15s", 15*time.Second)
-		cron_15s.Load("pauseJob", Cronjob_pauseHC)
-		cron_15s.Start()
 	}
 
 }
