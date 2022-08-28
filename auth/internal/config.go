@@ -129,13 +129,6 @@ func MakeCfg() {
 	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
 	Logger.Sugar().Infof("PermsKey_pub: %v", string(pemBytes))
 
-	//make GCP_SA_CREDS
-	keyStr := os.Getenv("GCP_SA_KEY")
-	f, _ := os.Create("/app/gcpkey.json")
-	defer f.Close()
-	f.WriteString(keyStr)
-	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/app/gcpkey.json")
-
 }
 
 // Validate validates a config object
