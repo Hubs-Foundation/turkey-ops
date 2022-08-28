@@ -32,7 +32,12 @@ func CheckCookie(r *http.Request) (string, error) {
 	// return checkAuthCookie(r)
 
 	//jwt cookie
-	claims, err := checkJwtCookie(r)
+	c, err := r.Cookie(cfg.JwtCookieName)
+	if err != nil {
+		Logger.Sugar().Debug("missing jwtCookie: " + cfg.JwtCookieName)
+		return "", errors.New("missing jwtCookie")
+	}
+	claims, err := checkJwtCookie(c)
 	if err != nil {
 		// if cfg.AllowAuthCookie { // (dev env only) or if you have a good authCookie ?
 		// 	Logger.Sugar().Debugf("bad jwtCookie(err: %v) + AllowAuthCookie == falling back to authCookie", err)
@@ -66,17 +71,8 @@ func checkAuthCookie(r *http.Request) (string, error) {
 	return email, nil
 }
 
-func checkJwtCookie(r *http.Request) (jwt.Claims, error) {
-	// Get auth cookie
-	c, err := r.Cookie(cfg.JwtCookieName)
-	if err != nil {
-		Logger.Sugar().Debug("missing jwtCookie: " + cfg.JwtCookieName)
-		return nil, errors.New("missing jwtCookie")
-	}
+func checkJwtCookie(c *http.Cookie) (jwt.Claims, error) {
 	// Validate cookie
-
-	// Logger.Sugar().Debugf("cfg.PermsKey.Public(): %v", cfg.PermsKey.Public())
-	// Logger.Sugar().Debugf("cfg.PermsKey.PublicKey: %v", cfg.PermsKey.PublicKey)
 
 	token, err := jwt.Parse(c.Value, func(token *jwt.Token) (interface{}, error) {
 		// since we only use the one private key to sign the tokens,
@@ -92,40 +88,6 @@ func checkJwtCookie(r *http.Request) (jwt.Claims, error) {
 	}
 	// good token
 	return token.Claims, nil
-
-	// Logger.Sugar().Debugf("token: %v", token)
-	// Logger.Sugar().Debugf("token.Claims: %v", token.Claims)
-
-	// branch out into the possible error from signing
-
-	// switch err.(type) {
-
-	// case nil: // no error
-
-	// 	if !token.Valid { // but may still be invalid
-	// 		Logger.Debug("invalid token: " + err.Error())
-	// 		return "", errors.New("invalid token")
-	// 	}
-	// 	// good token
-	// 	Logger.Sugar().Debugf("good token -- token.Raw: %v", token.Raw)
-	// 	claims := token.Claims.(jwt.MapClaims)
-	// 	return claims["fxa_email"].(string), nil
-
-	// case *jwt.ValidationError: // something was wrong during the validation
-	// 	vErr := err.(*jwt.ValidationError)
-	// 	switch vErr.Errors {
-	// 	case jwt.ValidationErrorExpired:
-	// 		Logger.Debug("token expired: " + err.Error())
-	// 		return "", err
-	// 	default:
-	// 		Logger.Debug("jwt.ValidationError -- unexpected: " + err.Error())
-	// 		return "", err
-	// 	}
-
-	// default: // something else went wrong
-	// 	Logger.Debug("unexpected error: " + err.Error())
-	// 	return "", err
-	// }
 }
 
 // Request Validation
@@ -285,11 +247,11 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 		// "aud":"whomever?",
 		"exp": expires.Unix(),
 		// "nbf": time.Now().UTC(),
-		"iat":             time.Now().Add(-1 * time.Minute).Unix(),
-		"fxa_pic":         user.Avatar,
-		"fxa_2fa":         user.TwoFA,
-		"fxa_email":       user.Email,
-		"fxa_displayName": user.DisplayName,
+		"iat":               time.Now().Add(-1 * time.Minute).Unix(),
+		"fxa_pic":           user.Avatar,
+		"fxa_2fa":           user.TwoFA,
+		"fxa_email":         user.Email,
+		"fxa_displayName":   user.DisplayName,
 		"fxa_subscriptions": user.Subscriptions,
 	})
 	// Sign and get the complete encoded token as a string using the secret
