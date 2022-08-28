@@ -91,9 +91,7 @@ func MakeCfg() {
 	}
 
 	//not RET_MODE => start turkey-updater
-
 	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
-
 	cfg.Channel, err = Get_listeningChannelLabel()
 	if err != nil {
 		Logger.Warn("Get_listeningChannelLabel failed: " + err.Error())
@@ -103,12 +101,17 @@ func MakeCfg() {
 			Logger.Error("Set_listeningChannelLabel failed: " + err.Error())
 		}
 	}
-
 	cfg.TurkeyUpdater = NewTurkeyUpdater()
 	err = cfg.TurkeyUpdater.Start(cfg.Channel)
 	if err != nil {
 		Logger.Error(err.Error())
 	}
+	//make GCP_SA_CREDS, turkey-updater needs it to access turkeycfg bucket
+	keyStr := os.Getenv("GCP_SA_KEY")
+	f, _ := os.Create("/app/gcpkey.json")
+	defer f.Close()
+	f.WriteString(keyStr)
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/app/gcpkey.json")
 
 }
 
