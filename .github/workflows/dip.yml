@@ -16,3 +16,5 @@ jobs:
       dockerfile: Dockerfile
     secrets:
       DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
+      GCP_TURKEYGITOPS_SA_JSON : ${{ secrets.GCP_TURKEYGITOPS_SA_JSON  }}
+      
