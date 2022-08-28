@@ -146,7 +146,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 		// and have them cached locally -- less likely for us to get rate limited
 		rand.Seed(int64(cfg.HostnameHash))
 		waitSec := rand.Intn(300) + 30
-		Logger.Sugar().Debugf("deployment starting in %v secs", waitSec)
+		Logger.Sugar().Debugf("stable channel: deployment will start in %v secs", waitSec)
 		time.Sleep(time.Duration(waitSec) * time.Second)
 	}
 
