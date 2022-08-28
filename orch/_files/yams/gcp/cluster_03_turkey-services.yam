@@ -764,6 +764,11 @@ spec:
               fieldPath: metadata.namespace
         - name: POD_DEPLOYMENT_NAME
           value: ita
+        - name: GCP_SA_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_KEY
         resources:
           requests:
             cpu: 0.05
