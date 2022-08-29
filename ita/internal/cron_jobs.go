@@ -58,30 +58,27 @@ func Cronjob_pauseHC(interval time.Duration) {
 }
 
 func Cronjob_publishTurkeyBuildReport(interval time.Duration) {
-	channel := cfg.Channel
 	bucket := "turkeycfg"
-
-	filename := "build-report-" + channel
-	//read
-	br, err := GCS_ReadFile(bucket, filename)
-	if err != nil {
-		Logger.Error(err.Error())
+	for _, channel := range cfg.SupportedChannels {
+		filename := "build-report-" + channel
+		//read
+		br, err := GCS_ReadFile(bucket, filename)
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+		//make brMap
+		brMap := make(map[string]string)
+		err = json.Unmarshal(br, &brMap)
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+		Logger.Sugar().Debugf("publishing: channel: %v brMap: %v", channel, brMap)
+		//publish
+		err = publishToConfigmap_label(channel, brMap)
+		if err != nil {
+			Logger.Error("failed to publishToConfigmap_label: " + err.Error())
+		}
 	}
-	//make brMap
-	brMap := make(map[string]string)
-	err = json.Unmarshal(br, &brMap)
-	if err != nil {
-		Logger.Error(err.Error())
-	}
-
-	Logger.Sugar().Debugf("publishing: channel: %v brMap: %v", channel, brMap)
-
-	//publish
-	err = publishToConfigmap_label(channel, brMap)
-	if err != nil {
-		Logger.Error("failed to publishToConfigmap_label: " + err.Error())
-	}
-
 }
 
 func GCS_ReadFile(bucketName, filename string) ([]byte, error) {

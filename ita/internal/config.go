@@ -22,8 +22,8 @@ type Config struct {
 	RetApiKey      string
 	turkeyorchHost string
 
-	// SupportedChannels map[string]bool
-	Channel string
+	SupportedChannels []string
+	Channel           string
 
 	K8sCfg       *rest.Config
 	K8sClientSet *kubernetes.Clientset
@@ -39,11 +39,8 @@ func GetCfg() *Config {
 
 func MakeCfg() {
 	cfg = &Config{}
-	// cfg.SupportedChannels = map[string]bool{
-	// 	"dev":    true,
-	// 	"beta":   true,
-	// 	"stable": true,
-	// }
+	cfg.SupportedChannels = []string{"dev", "beta", "stable"}
+
 	Hostname, err := os.Hostname()
 	if err != nil {
 		Logger.Warn("failed to get Hostname")

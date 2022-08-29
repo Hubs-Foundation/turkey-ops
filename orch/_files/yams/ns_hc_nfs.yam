@@ -250,7 +250,7 @@ data:
 
     [ret."Elixir.Ret.JanusLoadStatus"]
     default_janus_host = "stream.<HUB_DOMAIN>"
-    janus_service_name = ""
+    janus_service_name = "stream.<HUB_DOMAIN>"
     janus_admin_secret = ""
     janus_admin_port = 7000
     janus_port = 4443
