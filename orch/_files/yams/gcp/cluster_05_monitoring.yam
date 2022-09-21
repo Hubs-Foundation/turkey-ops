@@ -9,7 +9,6 @@ metadata:
   name: data-grafana
   namespace: monitoring
 spec:
-  name: gke-disk
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
@@ -21,7 +20,6 @@ metadata:
   name: data-prom
   namespace: monitoring
 spec:
-  name: gke-disk
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
@@ -33,7 +31,6 @@ metadata:
   name: data-loki
   namespace: monitoring
 spec:
-  name: gke-disk
   accessModes: [ "ReadWriteOnce" ]
   resources:
     requests:
