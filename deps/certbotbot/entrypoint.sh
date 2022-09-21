@@ -15,8 +15,12 @@ function get_new_cert_dns(){
 
 function get_new_cert_http(){
     echo "get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
-    certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
-        --preferred-challenges http --nginx -d $DOMAIN 
+    echo "start nginx and wait 120 sec for ingress to pick up the pod" && nginx && sleep 120
+    certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
+    if [ "$?" -ne 0 ]; then
+      echo "try #1 failed, retry in 300 sec ..." && sleep 300
+      certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
+    fi
 }
 
 function get_kubectl(){
