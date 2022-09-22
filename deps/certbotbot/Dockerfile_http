@@ -1,6 +1,6 @@
 from debian:bullseye-slim
 
-run apt-get update && apt-get -y install nginx certbot python3-certbot-nginx
+run apt-get update && apt-get -y install curl nginx certbot python3-certbot-nginx
 
 copy entrypoint.sh entrypoint.sh
 entrypoint bash entrypoint.sh http
