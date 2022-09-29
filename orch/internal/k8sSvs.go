@@ -98,7 +98,7 @@ func (k8 K8sSvs) StartWatching_HcNs() (chan struct{}, error) {
 	return stop, nil
 }
 
-// wait until len(Pods.Items) drops to or below targetCnt
+// wait until len(Pods.Items) drops to or below targetCnt, only cares about running pods
 func (k8 K8sSvs) WaitForPodKill(namespace string, timeout time.Duration, targetCnt int) error {
 	if k8.ClientSet == nil {
 		return errors.New("k8.ClientSet == nil")
@@ -108,7 +108,7 @@ func (k8 K8sSvs) WaitForPodKill(namespace string, timeout time.Duration, targetC
 	for podCount > targetCnt && timeout > 0 {
 		time.Sleep(wait)
 		timeout -= wait
-		pods, err := k8.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
+		pods, err := k8.ClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{FieldSelector: "status.phase=Running"})
 		if err != nil {
 			return err
 		}
