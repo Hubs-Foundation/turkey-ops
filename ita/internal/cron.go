@@ -27,23 +27,25 @@ func (c *Cron) Load(name string, job func(interval time.Duration)) {
 	c.Jobs[name] = job
 }
 
-func (c *Cron) Start() {
+func (c *Cron) Start() *time.Ticker {
 	if c.IsRunning {
 		Logger.Warn("already running")
-		return
+		return nil
 	}
 	if len(c.Jobs) == 0 {
 		Logger.Warn("no jobs")
-		return
+		return nil
 	}
-	// cron, non-stop, no way to stop it really ... add wrapper in future in case we need to stop it
-	if c.Interval <= time.Second {
+
+	if c.Interval <= 10*time.Second {
 		Logger.Sugar().Warnf("c.Interval too small -- will use default: %v", defaultCronInterval)
 		c.Interval = defaultCronInterval
 	}
 	Logger.Info("starting cron jobs, interval = " + c.Interval.String() + ", jobs: " + fmt.Sprint(len(c.Jobs)))
+	ticker := time.NewTicker(c.Interval)
 	go func() {
-		t := time.Tick(c.Interval)
+		// t := time.Tick(c.Interval)
+		t := ticker.C
 		for next := range t {
 			Logger.Debug("Cron ... name: <" + c.Name + ", interval: " + c.Interval.String() + ", jobs: " + fmt.Sprint(len(c.Jobs)) + ", tick @ " + next.String())
 			for name, job := range c.Jobs {
@@ -54,6 +56,7 @@ func (c *Cron) Start() {
 		time.Sleep(c.Interval)
 	}()
 	c.IsRunning = true
+	return ticker
 }
 
 // func Cronjob_updateDeployment(deploymentName string) {

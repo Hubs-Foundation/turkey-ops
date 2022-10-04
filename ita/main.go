@@ -19,7 +19,7 @@ func main() {
 	//################# cron jobs #################
 	//#############################################
 	cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
-	cron_30m := internal.NewCron("cron_30m", 5*time.Minute)
+	cron_30m := internal.NewCron("cron_30m", 30*time.Minute)
 	if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
 		cron_1m.Load("pauseJob", internal.Cronjob_pauseHC)
 	}
