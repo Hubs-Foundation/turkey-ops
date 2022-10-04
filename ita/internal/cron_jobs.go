@@ -197,16 +197,16 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	for _, node := range nodes.Items {
 		nodeLabels := node.GetObjectMeta().GetLabels()
 		Logger.Sugar().Debugf("nodeLabels: %v", nodeLabels)
-		nodePool := nodeLabels["cloud.google.com/gke-nodepool"]
-		if strings.Contains(nodePool, "-stream") || strings.Contains(nodePool, "-service") {
-			nodePubIp := "?"
-			for _, addr := range node.Status.Addresses {
-				if addr.Type == "ExternalIP" {
-					nodePubIp = addr.Address
-				}
+		// nodePool := nodeLabels["turkey"]
+		// if nodePool == "stream" || nodePool=="service" {
+		nodePubIp := "?"
+		for _, addr := range node.Status.Addresses {
+			if addr.Type == "ExternalIP" {
+				nodePubIp = addr.Address
 			}
-			nodeIps[node.GetObjectMeta().GetName()] = nodePubIp
 		}
+		nodeIps[node.Name] = nodePubIp
+		// }
 	}
 	Logger.Sugar().Debugf("nodeIps: %v", nodeIps)
 
