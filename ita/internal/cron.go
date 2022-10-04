@@ -47,7 +47,7 @@ func (c *Cron) Start() {
 			Logger.Debug("Cron job: <" + c.Name + "," + c.Interval.String() + "> tick @ " + next.String())
 			for name, job := range c.Jobs {
 				Logger.Debug("running: " + name)
-				job(c.Interval)
+				go job(c.Interval)
 			}
 		}
 		time.Sleep(c.Interval)
