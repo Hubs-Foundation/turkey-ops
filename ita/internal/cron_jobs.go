@@ -191,6 +191,7 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	nodes, _ := cfg.K8sClientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	for _, node := range nodes.Items {
 		nodeLabels := node.GetObjectMeta().GetLabels()
+		Logger.Sugar().Debugf("nodeLabels: %v", nodeLabels)
 		nodePool := nodeLabels["cloud.google.com/gke-nodepool"]
 		if strings.Contains(nodePool, "-stream") || strings.Contains(nodePool, "-service") {
 			nodePubIp := "?"
