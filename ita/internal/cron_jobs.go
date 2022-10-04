@@ -154,6 +154,7 @@ func Cronjob_HcHealthchecks(interval time.Duration) {
 
 	//extra health checks
 	for _, url := range cfg.ExtraHealthchecks {
+		Logger.Debug("url: " + url)
 		err := healthcheckUrl(url)
 		if err != nil {
 			Logger.Error("unhealthy: <" + url + "> " + err.Error())
