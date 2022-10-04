@@ -19,17 +19,17 @@ func main() {
 	//################# cron jobs #################
 	//#############################################
 	cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
-	cron_30m := internal.NewCron("cron_30m", 30*time.Minute)
+	cron_3m := internal.NewCron("cron_3m", 3*time.Minute)
 	if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
 		cron_1m.Load("pauseJob", internal.Cronjob_pauseHC)
 	}
 	if internal.GetCfg().PodNS == "turkey-services" {
+		cron_3m.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
+		cron_3m.Load("SurveyStreamNodes", internal.Cronjob_SurveyStreamNodes)
+		cron_3m.Start()
 		cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
 		cron_1m.Load("HcHealthchecks", internal.Cronjob_HcHealthchecks)
 		cron_1m.Start()
-		cron_30m.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
-		cron_30m.Load("SurveyStreamNodes", internal.Cronjob_SurveyStreamNodes)
-		cron_30m.Start()
 	}
 	//#############################################
 	//################# server ####################
