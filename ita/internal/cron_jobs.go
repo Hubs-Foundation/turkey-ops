@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -208,22 +207,15 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 		nodeIps[node.Name] = nodePubIp
 		// }
 	}
-	Logger.Sugar().Debugf("nodeIps: %v", nodeIps)
-
 	coturnPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=coturn"})
-	Logger.Sugar().Debugf("len(coturnPods.Items): %v", len(coturnPods.Items))
 	for _, pod := range coturnPods.Items {
-		Logger.Sugar().Debug("pod.Spec.NodeName: %v, pod dump: %v", pod.Spec.NodeName, pod)
 		r[nodeIps[pod.Spec.NodeName]] = "coturn"
 	}
 	dialogPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=dialog"})
-	Logger.Sugar().Debugf("len(dialogPods.Items): %v", len(dialogPods.Items))
 	for _, pod := range dialogPods.Items {
 		r[nodeIps[pod.Spec.NodeName]] = "dialog"
 	}
 	mu_streamNodes.Lock()
 	StreamNodes = r
 	mu_streamNodes.Unlock()
-
-	Logger.Debug("StreamNodes: " + fmt.Sprint(StreamNodes))
 }
