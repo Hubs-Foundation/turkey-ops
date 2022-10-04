@@ -188,8 +188,12 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	// r := make(map[string]string)
 
 	nodeIps := make(map[string]string)
-	nodes, _ := cfg.K8sClientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-	Logger.Sugar().Debugf("nodes: %v", len(nodes.Items))
+	cfg.K8sClientSet.NodeV1().RESTClient().Get()
+
+	nodes, err := cfg.K8sClientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		Logger.Error(err.Error())
+	}
 	for _, node := range nodes.Items {
 		nodeLabels := node.GetObjectMeta().GetLabels()
 		Logger.Sugar().Debugf("nodeLabels: %v", nodeLabels)
