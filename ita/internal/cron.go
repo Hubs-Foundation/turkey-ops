@@ -41,7 +41,7 @@ func (c *Cron) Start() {
 		Logger.Sugar().Warnf("c.Interval too small -- will use default: %v", defaultCronInterval)
 		c.Interval = defaultCronInterval
 	}
-	Logger.Info("starting cron jobs, interval = " + c.Interval.String())
+	Logger.Info("starting cron jobs, interval = " + c.Interval.String() + ", jobs: " + fmt.Sprint(len(c.Jobs)))
 	go func() {
 		t := time.Tick(c.Interval)
 		for next := range t {
