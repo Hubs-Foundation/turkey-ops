@@ -154,6 +154,10 @@ func Cronjob_HcHealthchecks(interval time.Duration) {
 
 	//extra health checks
 	for _, url := range cfg.ExtraHealthchecks {
+		if url == "" {
+			Logger.Warn("empty url")
+			continue
+		}
 		Logger.Debug("url: " + url)
 		err := healthcheckUrl(url)
 		if err != nil {

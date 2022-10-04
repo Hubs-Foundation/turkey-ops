@@ -423,7 +423,7 @@ spec:
       labels:
         app: turkeyorch
     spec:
-      serviceAccountName: api-sa
+      serviceAccountName: orch-sa
       {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
@@ -579,20 +579,20 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: api-sa
+  name: orch-sa
   namespace: turkey-services
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: api-rb
+  name: orch-rb
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin  
 subjects:
 - kind: ServiceAccount
-  name: api-sa
+  name: orch-sa
   namespace: turkey-services
 ---
 ####################################################################################
@@ -783,15 +783,14 @@ metadata:
   name: ita-sa
   namespace: turkey-services
 ---
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ita-sa-rb
-  namespace: turkey-services
+  name: ita-sa-turkey-services-rb
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: edit #todo: further tighten this?
+  name: edit #todo: further tighten this? worth the effort?
 subjects:
 - kind: ServiceAccount
   name: ita-sa
