@@ -185,34 +185,38 @@ var mu_streamNodes sync.Mutex
 
 func Cronjob_SurveyStreamNodes(interval time.Duration) {
 
-	r := make(map[string]string)
+	// r := make(map[string]string)
 
 	nodeIps := make(map[string]string)
 	nodes, _ := cfg.K8sClientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	for _, node := range nodes.Items {
-		nodePubIp := "?"
-		for _, addr := range node.Status.Addresses {
-			if addr.Type == "ExternalIP" {
-				nodePubIp = addr.Address
+
+		if strings.Contains(node.GetObjectMeta().GetLabels()["cloud.google.com/gke-nodepool"], "-stream") ||
+			strings.Contains(node.GetObjectMeta().GetLabels()["cloud.google.com/gke-nodepool"], "-service") {
+			nodePubIp := "?"
+			for _, addr := range node.Status.Addresses {
+				if addr.Type == "ExternalIP" {
+					nodePubIp = addr.Address
+				}
 			}
+			nodeIps[node.GetObjectMeta().GetName()] = nodePubIp
 		}
-		nodeIps[node.Name] = nodePubIp
 	}
 	Logger.Sugar().Debugf("nodeIps: %v", nodeIps)
 
-	coturnPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=coturn"})
-	Logger.Sugar().Debugf("len(coturnPods.Items): %v", len(coturnPods.Items))
-	for _, pod := range coturnPods.Items {
-		Logger.Sugar().Debug("pod dump: %v", pod)
-		r[nodeIps[pod.Spec.NodeName]] = "coturn"
-	}
-	dialogPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=dialog"})
-	Logger.Sugar().Debugf("len(dialogPods.Items): %v", len(dialogPods.Items))
-	for _, pod := range dialogPods.Items {
-		r[nodeIps[pod.Spec.NodeName]] = "dialog"
-	}
+	// coturnPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=coturn"})
+	// Logger.Sugar().Debugf("len(coturnPods.Items): %v", len(coturnPods.Items))
+	// for _, pod := range coturnPods.Items {
+	// 	Logger.Sugar().Debug("pod dump: %v", pod)
+	// 	r[nodeIps[pod.Spec.NodeName]] = "coturn"
+	// }
+	// dialogPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=dialog"})
+	// Logger.Sugar().Debugf("len(dialogPods.Items): %v", len(dialogPods.Items))
+	// for _, pod := range dialogPods.Items {
+	// 	r[nodeIps[pod.Spec.NodeName]] = "dialog"
+	// }
 	mu_streamNodes.Lock()
-	StreamNodes = r
+	StreamNodes = nodeIps
 	mu_streamNodes.Unlock()
 
 	Logger.Debug("StreamNodes: " + fmt.Sprint(StreamNodes))
