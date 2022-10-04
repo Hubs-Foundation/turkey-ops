@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -135,4 +136,38 @@ func publishToConfigmap_label(channel string, repo_tag_map map[string]string) er
 	}
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
 	return err
+}
+
+func Cronjob_HcHealthchecks(interval time.Duration) {
+
+	//get list of HC namespaces
+	nsList, err := cfg.K8sClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: "hub_id"})
+	if err != nil {
+		Logger.Error(err.Error())
+		return
+	}
+	//check them
+	for _, ns := range nsList.Items {
+		//get local endpoints from ingress
+		Logger.Warn("comming soon -- ns: " + ns.Name)
+	}
+
+	//extra health checks
+	for _, url := range cfg.ExtraHealthchecks {
+		err := healthcheckUrl(url)
+		if err != nil {
+			Logger.Error("unhealthy: <" + url + "> " + err.Error())
+		}
+	}
+}
+
+func healthcheckUrl(url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("bad resp: " + resp.Status)
+	}
+	return nil
 }
