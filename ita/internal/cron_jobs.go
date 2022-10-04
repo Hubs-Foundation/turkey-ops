@@ -203,6 +203,7 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	coturnPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=coturn"})
 	Logger.Sugar().Debugf("len(coturnPods.Items): %v", len(coturnPods.Items))
 	for _, pod := range coturnPods.Items {
+		Logger.Sugar().Debug("pod dump: %v", pod)
 		r[nodeIps[pod.Spec.NodeName]] = "coturn"
 	}
 	dialogPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=dialog"})
