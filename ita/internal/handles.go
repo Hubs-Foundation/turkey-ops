@@ -131,7 +131,7 @@ func HubInfraStatus() http.Handler {
 }
 
 var ClusterIps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/updater" {
+	if r.URL.Path != "/meta/cluster-ips" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}

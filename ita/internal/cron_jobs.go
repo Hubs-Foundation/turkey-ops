@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -208,4 +209,6 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	mu_streamNodes.Lock()
 	StreamNodes = r
 	mu_streamNodes.Unlock()
+
+	Logger.Debug("StreamNodes: " + fmt.Sprint(StreamNodes))
 }
