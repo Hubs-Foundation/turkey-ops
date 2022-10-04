@@ -145,9 +145,3 @@ var ClusterIps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 
 })
-
-func surveyStreamNodes() map[string]string {
-	r := make(map[string]string)
-
-	return r
-}

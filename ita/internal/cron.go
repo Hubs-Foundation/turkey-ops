@@ -42,7 +42,6 @@ func (c *Cron) Start() {
 	}
 	Logger.Info("starting cron jobs, interval = " + c.Interval.String())
 	go func() {
-		time.Sleep(c.Interval)
 		t := time.Tick(c.Interval)
 		for next := range t {
 			Logger.Debug("Cron job: <" + c.Name + "," + c.Interval.String() + "> tick @ " + next.String())
@@ -51,6 +50,7 @@ func (c *Cron) Start() {
 				job(c.Interval)
 			}
 		}
+		time.Sleep(c.Interval)
 	}()
 	c.IsRunning = true
 }
