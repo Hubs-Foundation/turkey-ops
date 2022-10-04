@@ -185,7 +185,7 @@ var mu_streamNodes sync.Mutex
 
 func Cronjob_SurveyStreamNodes(interval time.Duration) {
 
-	// r := make(map[string]string)
+	r := make(map[string]string)
 
 	nodeIps := make(map[string]string)
 	cfg.K8sClientSet.NodeV1().RESTClient().Get()
@@ -195,8 +195,8 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 		Logger.Error(err.Error())
 	}
 	for _, node := range nodes.Items {
-		nodeLabels := node.GetObjectMeta().GetLabels()
-		Logger.Sugar().Debugf("nodeLabels: %v", nodeLabels)
+		// nodeLabels := node.GetObjectMeta().GetLabels()
+		// Logger.Sugar().Debugf("nodeLabels: %v", nodeLabels)
 		// nodePool := nodeLabels["turkey"]
 		// if nodePool == "stream" || nodePool=="service" {
 		nodePubIp := "?"
@@ -210,17 +210,17 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	}
 	Logger.Sugar().Debugf("nodeIps: %v", nodeIps)
 
-	// coturnPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=coturn"})
-	// Logger.Sugar().Debugf("len(coturnPods.Items): %v", len(coturnPods.Items))
-	// for _, pod := range coturnPods.Items {
-	// 	Logger.Sugar().Debug("pod dump: %v", pod)
-	// 	r[nodeIps[pod.Spec.NodeName]] = "coturn"
-	// }
-	// dialogPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=dialog"})
-	// Logger.Sugar().Debugf("len(dialogPods.Items): %v", len(dialogPods.Items))
-	// for _, pod := range dialogPods.Items {
-	// 	r[nodeIps[pod.Spec.NodeName]] = "dialog"
-	// }
+	coturnPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=coturn"})
+	Logger.Sugar().Debugf("len(coturnPods.Items): %v", len(coturnPods.Items))
+	for _, pod := range coturnPods.Items {
+		Logger.Sugar().Debug("pod dump: %v", pod)
+		r[nodeIps[pod.Spec.NodeName]] = "coturn"
+	}
+	dialogPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=dialog"})
+	Logger.Sugar().Debugf("len(dialogPods.Items): %v", len(dialogPods.Items))
+	for _, pod := range dialogPods.Items {
+		r[nodeIps[pod.Spec.NodeName]] = "dialog"
+	}
 	mu_streamNodes.Lock()
 	StreamNodes = nodeIps
 	mu_streamNodes.Unlock()
