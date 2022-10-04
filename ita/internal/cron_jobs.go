@@ -190,9 +190,9 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	nodeIps := make(map[string]string)
 	nodes, _ := cfg.K8sClientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	for _, node := range nodes.Items {
-
-		if strings.Contains(node.GetObjectMeta().GetLabels()["cloud.google.com/gke-nodepool"], "-stream") ||
-			strings.Contains(node.GetObjectMeta().GetLabels()["cloud.google.com/gke-nodepool"], "-service") {
+		nodeLabels := node.GetObjectMeta().GetLabels()
+		nodePool := nodeLabels["cloud.google.com/gke-nodepool"]
+		if strings.Contains(nodePool, "-stream") || strings.Contains(nodePool, "-service") {
 			nodePubIp := "?"
 			for _, addr := range node.Status.Addresses {
 				if addr.Type == "ExternalIP" {
