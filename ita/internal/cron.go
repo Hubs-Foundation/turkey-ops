@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -44,7 +45,7 @@ func (c *Cron) Start() {
 	go func() {
 		t := time.Tick(c.Interval)
 		for next := range t {
-			Logger.Debug("Cron job: <" + c.Name + "," + c.Interval.String() + "> tick @ " + next.String())
+			Logger.Debug("Cron ... name: <" + c.Name + ", interval: " + c.Interval.String() + ", jobs: " + fmt.Sprint(len(c.Jobs)) + ", tick @ " + next.String())
 			for name, job := range c.Jobs {
 				Logger.Debug("running: " + name)
 				go job(c.Interval)
