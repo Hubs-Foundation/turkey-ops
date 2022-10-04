@@ -28,6 +28,7 @@ func main() {
 		cron_1m.Load("HcHealthchecks", internal.Cronjob_HcHealthchecks)
 		cron_1m.Start()
 		cron_30m.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
+		cron_30m.Load("SurveyStreamNodes", internal.Cronjob_SurveyStreamNodes)
 		cron_30m.Start()
 	}
 	//#############################################
@@ -41,10 +42,12 @@ func main() {
 	//turkeyUpdater endpoints
 	router.Handle("/updater", internal.Updater)
 	//utility endpoints
+	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
+	//public endpoints
+	router.Handle("/meta/cluster-ips", internal.ClusterIps)
 
-	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
 

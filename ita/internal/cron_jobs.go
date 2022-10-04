@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -149,7 +150,8 @@ func Cronjob_HcHealthchecks(interval time.Duration) {
 	//check them
 	for _, ns := range nsList.Items {
 		//get local endpoints from ingress
-		Logger.Warn("comming soon -- ns: " + ns.Name)
+		// Logger.Warn("comming soon -- ns: " + ns.Name)
+		_ = ns
 	}
 
 	//extra health checks
@@ -175,4 +177,35 @@ func healthcheckUrl(url string) error {
 		return errors.New("bad resp: " + resp.Status)
 	}
 	return nil
+}
+
+var StreamNodes map[string]string
+var mu_streamNodes sync.Mutex
+
+func Cronjob_SurveyStreamNodes(interval time.Duration) {
+
+	r := make(map[string]string)
+
+	nodeIps := make(map[string]string)
+	nodes, _ := cfg.K8sClientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	for _, node := range nodes.Items {
+		nodePubIp := "?"
+		for _, addr := range node.Status.Addresses {
+			if addr.Type == "ExternalIP" {
+				nodePubIp = addr.Address
+			}
+		}
+		nodeIps[node.Name] = nodePubIp
+	}
+	coturnPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=coturn"})
+	for _, pod := range coturnPods.Items {
+		r[nodeIps[pod.Spec.NodeName]] = "coturn"
+	}
+	dialogPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=dialog"})
+	for _, pod := range dialogPods.Items {
+		r[nodeIps[pod.Spec.NodeName]] = "dialog"
+	}
+	mu_streamNodes.Lock()
+	StreamNodes = r
+	mu_streamNodes.Unlock()
 }
