@@ -38,6 +38,8 @@ func main() {
 	router.Handle("/tco_aws", mozOnly()(handlers.TurkeyAws))
 	router.Handle("/tco_gcp", mozOnly()(handlers.TurkeyGcp))
 
+	router.Handle("/snapshot", handlers.HC_snapshot)
+
 	port, err := strconv.Atoi(internal.Cfg.Port)
 	if err != nil {
 		internal.GetLogger().Panic("bad port: " + err.Error())
@@ -49,7 +51,7 @@ func main() {
 
 // scratchpad
 
-//todo: make a real rbac -- this just checks if the user's email got an @mozilla.com at the end
+// todo: make a real rbac -- this just checks if the user's email got an @mozilla.com at the end
 func mozOnly() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
