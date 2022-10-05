@@ -144,3 +144,17 @@ var ClusterIps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 
 })
+var ClusterIpsList = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/z/meta/cluster-ips/list" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	if r.Method == "GET" {
+		w.Header().Set("Content-Type", "application/json")
+		res := StreamNodeIpList
+		fmt.Fprint(w, res)
+		return
+	}
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+
+})

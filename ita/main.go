@@ -48,6 +48,7 @@ func main() {
 	router.Handle("/hub_status", internal.HubInfraStatus())
 	//public endpoints
 	router.Handle("/z/meta/cluster-ips", internal.ClusterIps)
+	router.Handle("/z/meta/cluster-ips/list", internal.ClusterIpsList)
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
