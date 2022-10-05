@@ -180,6 +180,8 @@ func healthcheckUrl(url string) error {
 }
 
 var StreamNodes map[string]string
+
+// var StreamNodeIpList string
 var mu_streamNodes sync.Mutex
 
 func Cronjob_SurveyStreamNodes(interval time.Duration) {
@@ -215,7 +217,13 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	for _, pod := range dialogPods.Items {
 		r[nodeIps[pod.Spec.NodeName]] = "dialog"
 	}
+	// ipList := ""
+	// for ip, _ := range r {
+	// 	ipList += ip + "\n"
+	// }
+	r["_as-of"] = time.Now().Format(time.UnixDate)
 	mu_streamNodes.Lock()
 	StreamNodes = r
+	// StreamNodeIpList = ipList
 	mu_streamNodes.Unlock()
 }

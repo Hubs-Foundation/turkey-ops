@@ -138,7 +138,6 @@ var ClusterIps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		w.Header().Set("Content-Type", "application/json")
 		res := StreamNodes
-		res["timestamp"] = time.Now().Format(time.UnixDate)
 		json.NewEncoder(w).Encode(res)
 		return
 	}

@@ -738,10 +738,11 @@ metadata:
     kubernetes.io/ingress.class: haproxy
 spec:
   rules:
-  - http:
+  - host: {{.Domain}}
+    http:
       paths:
-      - path: /meta/cluster-ips
-        pathType: Prefix
+      - path: /z/meta/cluster-ips
+        pathType: Exact
         backend:
           service:
             name: ita
