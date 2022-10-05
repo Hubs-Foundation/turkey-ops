@@ -150,7 +150,7 @@ var ClusterIpsList = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if r.Method == "GET" {
-		w.Header().Set("Content-Type", "application/json")
+		// w.Header().Set("Content-Type", "application/json")
 		res := StreamNodeIpList
 		fmt.Fprint(w, res)
 		return
