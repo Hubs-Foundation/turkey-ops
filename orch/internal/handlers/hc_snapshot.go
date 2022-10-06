@@ -38,7 +38,9 @@ func snapshot_restore(w http.ResponseWriter, r *http.Request) {
 }
 
 func snapshot_list(w http.ResponseWriter, r *http.Request) {
-
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/text")
+	w.Write([]byte("Success on testing!"))
 }
 
 func snapshot_create(w http.ResponseWriter, r *http.Request) {
