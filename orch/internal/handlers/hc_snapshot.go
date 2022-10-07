@@ -1,12 +1,19 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"main/internal"
 	"net/http"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 )
 
 type snapshotCfg struct {
@@ -38,9 +45,40 @@ func snapshot_restore(w http.ResponseWriter, r *http.Request) {
 }
 
 func snapshot_list(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/text")
-	w.Write([]byte("Success on testing!"))
+	ssCfg, err := validateSnapshotCfg(r)
+	if err != nil {
+		internal.Logger.Error("bad snapshotCfg: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	//getting k8s config
+	internal.Logger.Debug("&#9989; ... using InClusterConfig")
+	k8sCfg, err := rest.InClusterConfig()
+	// }
+	if k8sCfg == nil {
+		internal.Logger.Debug("ERROR" + err.Error())
+		internal.Logger.Error(err.Error())
+		return
+	}
+
+	client, err := dynamic.NewForConfig(k8sCfg)
+	if err != nil {
+		internal.Logger.Error(err.Error())
+		return
+	}
+
+	volumesnapshotRes := schema.GroupVersionResource{Group: "snapshot.storage.k8s.io", Version: "v1", Resource: "volumesnapshots"}
+	ssList, err := client.Resource(volumesnapshotRes).Namespace("hc-"+ssCfg.HubId).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		internal.Logger.Error(err.Error())
+		return
+	}
+	for _, d := range ssList.Items {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/text")
+		w.Write([]byte(fmt.Sprintf("%v", d)))
+	}
 }
 
 func snapshot_create(w http.ResponseWriter, r *http.Request) {
@@ -124,7 +162,8 @@ func validateSnapshotCfg(r *http.Request) (snapshotCfg, error) {
 		return cfg, errors.New("bad input, missing HubId")
 	}
 
-	cfg.SnapshotName = "snapshot" + time.Now().Format("20060102150405")
+	ss_suffix := time.Now().Format("20060102150405")
+	cfg.SnapshotName = "snapshot-" + ss_suffix
 	cfg.DBname = "ret_" + cfg.HubId
 
 	return cfg, nil
