@@ -77,7 +77,7 @@ func snapshot_list(w http.ResponseWriter, r *http.Request) {
 	for _, d := range ssList.Items {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/text")
-		w.Write([]byte(fmt.Sprintf("%v", d)))
+		w.Write([]byte(fmt.Sprintf("%v", d.GetName())))
 	}
 }
 
