@@ -23,7 +23,7 @@ type snapshotCfg struct {
 	HubId        string `json:"hub_id"`
 	SnapshotName string `json:"snapshot_name"`
 	DBname       string `json:"dbname"`
-	bucketName   string `json:"bucket_name"`
+	BucketName   string `json:"bucket_name"`
 }
 
 type sqlDump struct {
@@ -177,7 +177,7 @@ func snapshot_create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exportStatus, err := createSqlDump(ssCfg.HubId, ssCfg.SnapshotName, ssCfg.bucketName, ssCfg.DBname)
+	exportStatus, err := createSqlDump(ssCfg.HubId, ssCfg.SnapshotName, ssCfg.BucketName, ssCfg.DBname)
 
 	if err != nil {
 		internal.Logger.Error("create DB dump error: " + err.Error())
@@ -242,8 +242,8 @@ func makeSnapshotCfg(r *http.Request) (snapshotCfg, error) {
 		cfg.SnapshotName = "snapshot-" + ss_suffix
 	}
 	// BucketName
-	if cfg.bucketName == "" {
-		cfg.bucketName = BACKUPBUCKET
+	if cfg.BucketName == "" {
+		cfg.BucketName = BACKUPBUCKET
 	}
 	// DdatabaseName
 	cfg.DBname = "ret_" + cfg.HubId
