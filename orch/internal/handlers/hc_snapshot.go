@@ -10,8 +10,10 @@ import (
 	"net/http"
 	"time"
 
+	volsnapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v6/apis/volumesnapshot/v1"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -94,13 +96,21 @@ func snapshot_restore(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	v := vss.UnstructuredContent()
+	var vs volsnapshotv1.VolumeSnapshot
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(v, &vs)
+	if err != nil {
+		internal.Logger.Error("unable to convert the unstrucctured object to volumesnapshot object: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"result":            "done",
 		"account_id":        ssCfg.AccountId,
 		"hub_id":            ssCfg.HubId,
 		"snapshot_name":     ssCfg.SnapshotName,
-		"snapshot_size_raw": fmt.Sprintf("%v", v),
+		"snapshot_size_raw": vs.Status.RestoreSize.String(),
 	})
 	// v := volsnapshotv1.VolumeSnapshot{}
 	// err =
