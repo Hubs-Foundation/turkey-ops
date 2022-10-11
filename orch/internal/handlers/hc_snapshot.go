@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	volSnapshotClient "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/typed/volumesnapshot/v1"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -24,17 +25,6 @@ type snapshotCfg struct {
 	SnapshotName string `json:"snapshot_name"`
 	DBname       string `json:"dbname"`
 	BucketName   string `json:"bucket_name"`
-}
-
-type sqlDump struct {
-	ExportContext ExportContext `json:"exportContext"`
-}
-
-type ExportContext struct {
-	FileType  string   `json:"fileType"`
-	URI       string   `json:"uri"`
-	Databases []string `json:"databases"`
-	Offload   bool     `json:"offload"`
 }
 
 const BACKUPBUCKET = "turkeyfs"
@@ -57,6 +47,43 @@ var HC_snapshot = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 })
 
 func snapshot_restore(w http.ResponseWriter, r *http.Request) {
+	ssCfg, err := makeSnapshotCfg(r)
+	if err != nil {
+		internal.Logger.Error("bad snapshotCfg: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	//getting k8s config
+	internal.Logger.Debug("&#9989; ... using InClusterConfig")
+	k8sCfg, err := rest.InClusterConfig()
+	// }
+	if k8sCfg == nil {
+		internal.Logger.Debug("ERROR" + err.Error())
+		internal.Logger.Error(err.Error())
+		return
+	}
+	// volSnapshot := &volSnapshotv1.VolumeSnapshot{}
+	client := volSnapshotClient.NewForConfigOrDie(k8sCfg)
+
+	vss, err := client.VolumeSnapshots("hc-"+ssCfg.HubId).Get(context.TODO(), ssCfg.SnapshotName, metav1.GetOptions{})
+	if err != nil {
+		internal.Logger.Error(fmt.Sprintf("snapshot %s not found: %v", ssCfg.HubId, err.Error()))
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	if vss.Status.RestoreSize.String() != "" {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result":               "done",
+			"account_id":           ssCfg.AccountId,
+			"hub_id":               ssCfg.HubId,
+			"snapshot_name":        ssCfg.SnapshotName,
+			"snapshot_size_raw":    fmt.Sprintf("%v", vss.Status.RestoreSize),
+			"snapshot_size_string": fmt.Sprintf("%v", vss.Status.RestoreSize.String()),
+		})
+	}
 
 }
 
