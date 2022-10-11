@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"time"
 
-	volSnapshotClient "github.com/kubernetes-csi/external-snapshotter/client/v6/clientset/versioned/typed/volumesnapshot/v1"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -63,27 +62,60 @@ func snapshot_restore(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Error(err.Error())
 		return
 	}
-	// volSnapshot := &volSnapshotv1.VolumeSnapshot{}
-	client := volSnapshotClient.NewForConfigOrDie(k8sCfg)
 
-	vss, err := client.VolumeSnapshots("hc-"+ssCfg.HubId).Get(context.TODO(), ssCfg.SnapshotName, metav1.GetOptions{})
+	client, err := dynamic.NewForConfig(k8sCfg)
 	if err != nil {
-		internal.Logger.Error(fmt.Sprintf("snapshot %s not found: %v", ssCfg.HubId, err.Error()))
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		internal.Logger.Error(err.Error())
 		return
 	}
 
-	if vss.Status.RestoreSize.String() != "" {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result":               "done",
-			"account_id":           ssCfg.AccountId,
-			"hub_id":               ssCfg.HubId,
-			"snapshot_name":        ssCfg.SnapshotName,
-			"snapshot_size_raw":    fmt.Sprintf("%v", vss.Status.RestoreSize),
-			"snapshot_size_string": fmt.Sprintf("%v", vss.Status.RestoreSize.String()),
-		})
+	// volSnapshot := &volSnapshotv1.VolumeSnapshot{}
+	// client := volSnapshotClient.NewForConfigOrDie(k8sCfg)
+
+	// vss, err := client.VolumeSnapshots("hc-"+ssCfg.HubId).Get(context.TODO(), ssCfg.SnapshotName, metav1.GetOptions{})
+	// if err != nil {
+	// 	internal.Logger.Error(fmt.Sprintf("snapshot %s not found: %v", ssCfg.HubId, err.Error()))
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
+	// }
+
+	volumesnapshotRes := schema.GroupVersionResource{Group: "snapshot.storage.k8s.io", Version: "v1", Resource: "volumesnapshots"}
+	vss, err := client.Resource(volumesnapshotRes).Namespace("hc-"+ssCfg.HubId).Get(context.TODO(), ssCfg.SnapshotName, metav1.GetOptions{})
+	if err != nil {
+		internal.Logger.Error("unable to get the volsnapshot object: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
+	// v, ok := vss.(*volsnapshotv1.VolumeSnapshot)
+	// if !ok {
+	// 	internal.Logger.Error("not a volumesnapshot object")
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
+	// }
+
+	v := vss.UnstructuredContent()
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"result":            "done",
+		"account_id":        ssCfg.AccountId,
+		"hub_id":            ssCfg.HubId,
+		"snapshot_name":     ssCfg.SnapshotName,
+		"snapshot_size_raw": fmt.Sprintf("%v", v),
+	})
+	// v := volsnapshotv1.VolumeSnapshot{}
+	// err =
+
+	// if v.Status.RestoreSize.String() != "" {
+	// 	w.WriteHeader(http.StatusOK)
+	// 	json.NewEncoder(w).Encode(map[string]interface{}{
+	// 		"result":               "done",
+	// 		"account_id":           ssCfg.AccountId,
+	// 		"hub_id":               ssCfg.HubId,
+	// 		"snapshot_name":        ssCfg.SnapshotName,
+	// 		"snapshot_size_raw":    fmt.Sprintf("%v", vss.Status.RestoreSize),
+	// 		"snapshot_size_string": fmt.Sprintf("%v", vss.Status.RestoreSize.String()),
+	// 	})
+	// }
 
 }
 
