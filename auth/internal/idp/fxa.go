@@ -141,6 +141,9 @@ func (f *Fxa) GetUser(token string) (User, error) {
 func (f *Fxa) GetSubscriptions(token string) (map[string]string, error) {
 
 	fxaSubs := make(map[string]string)
+	fmt.Println("f.SubscriptionURL.String() ~~~~~~" + f.SubscriptionURL.String())
+
+	return fxaSubs, nil
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", f.SubscriptionURL.String(), nil)
