@@ -742,7 +742,7 @@ spec:
     http:
       paths:
       - path: /z/meta/cluster-ips
-        pathType: Exact
+        pathType: Prefix
         backend:
           service:
             name: ita

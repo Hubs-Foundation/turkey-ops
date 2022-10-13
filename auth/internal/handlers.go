@@ -179,6 +179,15 @@ func Oauth() http.Handler {
 		}
 		Logger.Sugar().Debug("user", user)
 
+		// Get subscription
+		sub, err := p.GetSubscriptions(token.AccessToken)
+		if err != nil {
+			Logger.Sugar().Warn(err.Error())
+			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		Logger.Sugar().Debugf("sub: %v", sub)
+
 		// Generate cookie
 		jwtCookie, err := MakeJwtCookie(r, user)
 		if err != nil {

@@ -19,9 +19,10 @@ type Fxa struct {
 	entrypoint   string
 	Prompt       string `long:"prompt" env:"PROMPT" default:"select_account" description:"Space separated list of OpenID prompt options"`
 
-	LoginURL *url.URL
-	TokenURL *url.URL
-	UserURL  *url.URL
+	LoginURL        *url.URL
+	TokenURL        *url.URL
+	UserURL         *url.URL
+	SubscriptionURL *url.URL
 }
 
 // Name returns the name of the provider
@@ -135,4 +136,30 @@ func (f *Fxa) GetUser(token string) (User, error) {
 	err = json.Unmarshal(bodyBytes, &user)
 
 	return user, err
+}
+
+func (f *Fxa) GetSubscriptions(token string) (map[string]string, error) {
+
+	fxaSubs := make(map[string]string)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", f.SubscriptionURL.String(), nil)
+	if err != nil {
+		return fxaSubs, err
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	res, err := client.Do(req)
+	if err != nil {
+		return fxaSubs, err
+	}
+	defer res.Body.Close()
+	fmt.Println("GetSubscriptions.res.StatusCode = ", res.StatusCode)
+
+	// err = json.NewDecoder(res.Body).Decode(&user)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	fmt.Println("GetSubscriptions -- bodyBytes -- " + string(bodyBytes))
+	err = json.Unmarshal(bodyBytes, &fxaSubs)
+
+	return fxaSubs, err
 }

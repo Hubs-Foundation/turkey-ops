@@ -161,12 +161,12 @@ func (c Config) String() string {
 // GetProvider returns the provider of the given name
 func (c *Config) GetProvider(name string) (idp.Provider, error) {
 	switch name {
-	case "google":
-		return &c.Providers.Google, nil
-		// case "oidc":
-		// 	return &c.Providers.OIDC, nil
-		// case "generic-oauth":
-		// 	return &c.Providers.GenericOAuth, nil
+	// case "google":
+	// 	return &c.Providers.Google, nil
+	// case "oidc":
+	// 	return &c.Providers.OIDC, nil
+	// case "generic-oauth":
+	// 	return &c.Providers.GenericOAuth, nil
 	case "fxa":
 		Logger.Debug(" ### GetProvider: fxa")
 		return &c.Providers.Fxa, nil
