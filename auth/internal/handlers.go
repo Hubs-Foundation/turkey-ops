@@ -181,11 +181,11 @@ func Oauth() http.Handler {
 
 		// Get subscription
 		sub, err := p.GetSubscriptions(token.AccessToken)
-		// if err != nil {
-		// 	Logger.Sugar().Warn("p.GetSubscriptions(token.AccessToken) ~~~~~~ " + err.Error())
-		// 	// http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
-		// 	// return
-		// }
+		if err != nil {
+			Logger.Sugar().Warn("p.GetSubscriptions(token.AccessToken) ~~~~~~ " + err.Error())
+			// http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+			// return
+		}
 		Logger.Sugar().Debugf("sub: %v", sub)
 
 		// Generate cookie

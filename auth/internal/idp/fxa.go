@@ -40,11 +40,13 @@ func (f *Fxa) Setup() error {
 	fxaLoginHost := "accounts.firefox.com"
 	fxaTokenHost := "api.accounts.firefox.com"
 	fxaUserHost := "profile.accounts.firefox.com"
+	fxaSubHost := "api-accounts.accounts.firefox.com"
 
 	if os.Getenv("ENV") == "dev" {
 		fxaLoginHost = "accounts.stage.mozaws.net"
 		fxaTokenHost = "oauth.stage.mozaws.net"
 		fxaUserHost = "profile.stage.mozaws.net"
+		fxaSubHost = "api-accounts.stage.mozaws.net"
 	}
 
 	// Set static values
@@ -63,6 +65,11 @@ func (f *Fxa) Setup() error {
 		Scheme: "https",
 		Host:   fxaUserHost,
 		Path:   "/v1/profile",
+	}
+	f.SubscriptionURL = &url.URL{
+		Scheme: "https",
+		Host:   fxaSubHost,
+		Path:   "/v1/oauth/mozilla-subscriptions/customer/billing-and-subscriptions",
 	}
 
 	return nil
@@ -141,9 +148,6 @@ func (f *Fxa) GetUser(token string) (User, error) {
 func (f *Fxa) GetSubscriptions(token string) (map[string]string, error) {
 
 	fxaSubs := make(map[string]string)
-	fmt.Println("f.SubscriptionURL.String() ~~~~~~" + f.SubscriptionURL.String())
-
-	return fxaSubs, nil
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", f.SubscriptionURL.String(), nil)
