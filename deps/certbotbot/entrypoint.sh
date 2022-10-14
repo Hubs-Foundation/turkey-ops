@@ -1,11 +1,3 @@
-if [ -z $NAMESPACE ]; then echo "namespace unspecified, defaulting to <ingress>" && export NAMESPACE="ingress"; fi
-if [ -z $CERT_NAME ]; then echo "CERT_NAME unspecified, defaulting to <letsencrypt-$CHALLENGE>" && export CERT_NAME="letsencrypt-$CHALLENGE"; fi
-echo "NAMESPACE=$NAMESPACE"
-echo "DOMAIN=$DOMAIN"
-echo "HUB_DOMAIN=$HUB_DOMAIN"
-echo "CHALLENGE=$CHALLENGE"
-echo "CERTBOT_EMAIL=$CERTBOT_EMAIL"
-echo "CERT_NAME=$CERT_NAME"
 
 function need_new_cert(){    
     if kubectl -n $NAMESPACE get secret letsencrypt -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
@@ -54,11 +46,21 @@ function save_cert(){
     kubectl -n $NAMESPACE describe secret $name
 }
 
+### preps
 export CHALLENGE=$1
 echo $GCP_SA_KEY > GCP_SA_KEY.json
 chmod 600 GCP_SA_KEY.json
 export GOOGLE_APPLICATION_CREDENTIALS="GCP_SA_KEY.json"
+if [ -z $NAMESPACE ]; then echo "namespace unspecified, defaulting to <ingress>" && export NAMESPACE="ingress"; fi
+if [ -z $CERT_NAME ]; then echo "CERT_NAME unspecified, defaulting to <letsencrypt-$CHALLENGE>" && export CERT_NAME="letsencrypt-$CHALLENGE"; fi
+echo "NAMESPACE=$NAMESPACE"
+echo "DOMAIN=$DOMAIN"
+echo "HUB_DOMAIN=$HUB_DOMAIN"
+echo "CHALLENGE=$CHALLENGE"
+echo "CERTBOT_EMAIL=$CERTBOT_EMAIL"
+echo "CERT_NAME=$CERT_NAME"
 
+### steps
 get_kubectl
 kubectl -n $NAMESPACE patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */13 * *"}}'
 if [ "$?" -ne 0 ]; then echo "ERROR -- can't patch cronjob, wtb rbac permision fixes"; sleep 3600; exit 1; fi
