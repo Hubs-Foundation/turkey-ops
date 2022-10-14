@@ -44,6 +44,7 @@ function save_cert(){
         --save-config --dry-run=client -o yaml | kubectl apply -f -
     echo "new cert: "
     kubectl -n $NAMESPACE describe secret $name
+    kubectl -n $NAMESPACE get secret $name -o yaml
 }
 
 ### preps
