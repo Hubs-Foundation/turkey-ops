@@ -246,6 +246,9 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 	expires := cookieExpiry()
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
+	Logger.Sugar().Warnf("### MakeJwtCookie (domain: %v) ### for r: %v ### r.Header: %v ### r.Referer(): %v",
+		cfg.Domain, r, r.Header, r.Host, r.Referer())
+
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"iss": cfg.Domain,
 		"sub": user.Sub,

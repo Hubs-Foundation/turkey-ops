@@ -182,7 +182,7 @@ func Oauth() http.Handler {
 		// Get subscription
 		sub, err := p.GetSubscriptions(token.AccessToken)
 		if err != nil {
-			Logger.Sugar().Warn("p.GetSubscriptions(token.AccessToken) ~~~~~~ " + err.Error())
+			Logger.Sugar().Error("failed @ p.GetSubscriptions(token.AccessToken): " + err.Error())
 			// http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			// return
 		}
