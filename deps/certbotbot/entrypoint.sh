@@ -37,7 +37,7 @@ function get_kubectl(){
 
 function save_cert(){
     name=$1
-    kubectl -n $NAMESPACE delete secret $name
+    # kubectl -n $NAMESPACE delete secret $name
     kubectl -n $NAMESPACE create secret tls $name \
         --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
         --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
@@ -80,7 +80,7 @@ if [ "$?" -ne 0 ]; then echo "ERROR failed to get new cert, exit in 15 min"; sle
 echo "saving new cert"
 if ! save_cert $CERT_NAME; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
 
-if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
+# if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 
 if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 36000; fi
 
