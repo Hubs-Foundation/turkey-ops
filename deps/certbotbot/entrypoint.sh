@@ -1,9 +1,11 @@
 if [ -z $NAMESPACE ]; then echo "namespace unspecified, defaulting to <ingress>" && export NAMESPACE="ingress"; fi
+if [ -z $CERT_NAME ]; then echo "CERT_NAME unspecified, defaulting to <letsencrypt-$CHALLENGE>" && export CERT_NAME="letsencrypt-$CHALLENGE"; fi
 echo "NAMESPACE=$NAMESPACE"
 echo "DOMAIN=$DOMAIN"
 echo "HUB_DOMAIN=$HUB_DOMAIN"
 echo "CHALLENGE=$CHALLENGE"
 echo "CERTBOT_EMAIL=$CERTBOT_EMAIL"
+echo "CERT_NAME=$CERT_NAME"
 
 function need_new_cert(){    
     if kubectl -n $NAMESPACE get secret letsencrypt -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
@@ -43,6 +45,7 @@ function get_kubectl(){
 
 function save_cert(){
     name=$1
+    kubectl -n $NAMESPACE delete secret $name
     kubectl -n $NAMESPACE create secret tls $name \
         --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
         --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
@@ -72,7 +75,7 @@ fi
 if [ "$?" -ne 0 ]; then echo "ERROR failed to get new cert, exit in 15 min"; sleep 900; exit 1; fi
 
 echo "saving new cert"
-if ! save_cert "letsencrypt-$CHALLENGE"; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
+if ! save_cert $CERT_NAME; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
 
 if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 
