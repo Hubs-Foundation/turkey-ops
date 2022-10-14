@@ -1,6 +1,12 @@
+if [ -z $NAMESPACE ]; then echo "namespace unspecified, defaulting to <ingress>" && export NAMESPACE="ingress"; fi
+echo "NAMESPACE=$NAMESPACE"
+echo "DOMAIN=$DOMAIN"
+echo "HUB_DOMAIN=$HUB_DOMAIN"
+echo "CHALLENGE=$CHALLENGE"
+echo "CERTBOT_EMAIL=$CERTBOT_EMAIL"
 
 function need_new_cert(){    
-    if kubectl -n ingress get secret letsencrypt -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
+    if kubectl -n $NAMESPACE get secret letsencrypt -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
     ls -lha tls*
     if grep -q "$DOMAIN" <<< "$(openssl x509 -noout -subject -in tls.crt)"; then echo "bad cert CN -- need new cert"; return 0; fi
     if openssl x509 -checkend 2592000 -noout -in tls.crt; then echo "expiring -- need new cert";return 0; else return 1; fi
@@ -37,12 +43,12 @@ function get_kubectl(){
 
 function save_cert(){
     name=$1
-    kubectl -n ingress create secret tls $name \
+    kubectl -n $NAMESPACE create secret tls $name \
         --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
         --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
         --save-config --dry-run=client -o yaml | kubectl apply -f -
     echo "new cert: "
-    kubectl -n ingress describe secret $name
+    kubectl -n $NAMESPACE describe secret $name
 }
 
 export CHALLENGE=$1
@@ -51,7 +57,8 @@ chmod 600 GCP_SA_KEY.json
 export GOOGLE_APPLICATION_CREDENTIALS="GCP_SA_KEY.json"
 
 get_kubectl
-kubectl -n ingress patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */3 * *"}}'
+kubectl -n $NAMESPACE patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */13 * *"}}'
+if [ "$?" -ne 0 ]; then echo "ERROR -- can't patch cronjob, wtb rbac permision fixes"; sleep 3600; exit 1; fi
 
 if ! need_new_cert; then echo "good cert, exit in 15 min"; sleep 900; exit 0; fi
 
@@ -67,7 +74,7 @@ if [ "$?" -ne 0 ]; then echo "ERROR failed to get new cert, exit in 15 min"; sle
 echo "saving new cert"
 if ! save_cert "letsencrypt-$CHALLENGE"; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
 
-kubectl -n ingress rollout restart deployment haproxy
+if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 
 if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 36000; fi
 
