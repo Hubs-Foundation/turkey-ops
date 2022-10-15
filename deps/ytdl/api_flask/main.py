@@ -242,11 +242,16 @@ def ytdl_api_info():
     url = request.args['url']
 
     cached_result_bytes = redis_client.get("ytdl_cache_for_"+url)
+    
     if cached_result_bytes is not None:
         cached_result = json.loads(cached_result_bytes.decode('utf-8'))
         redis_client.incr("ytdl_cache_stats_hit", 1)
+        logging.warning("hit: " + url)
         return jsonify(cached_result)
+
     redis_client.incr("ytdl_cache_stats_miss", 1)
+    logging.warning("miss: " + url)
+    
 
     result = get_result()
     key = 'info'
