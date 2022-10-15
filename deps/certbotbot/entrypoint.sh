@@ -1,9 +1,10 @@
 
 function need_new_cert(){    
-    if kubectl -n $NAMESPACE get secret letsencrypt -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
+    if kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
     ls -lha tls*
     if grep -q "$DOMAIN" <<< "$(openssl x509 -noout -subject -in tls.crt)"; then echo "bad cert CN -- need new cert"; return 0; fi
-    if openssl x509 -checkend 2592000 -noout -in tls.crt; then echo "expiring -- need new cert";return 0; else return 1; fi
+    # 3888000 sec == 45 days
+    if openssl x509 -checkend 3888000 -noout -in tls.crt; then echo "expiring -- need new cert";return 0; else return 1; fi
 }
 
 function get_new_cert_dns(){

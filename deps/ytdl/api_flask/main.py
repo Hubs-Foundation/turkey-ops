@@ -139,7 +139,7 @@ def flatten_result(result):
 def cloudrun_rollout_restart():
 
     rkey_last_f=rkey+":lastReset_time"
-    cooldown = 120 # seconds
+    cooldown = 600 # seconds
 
     t0=float(0)
     t=redis_client.get(rkey_last_f)
@@ -159,7 +159,7 @@ def cloudrun_rollout_restart():
 
     getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(projectId, svcName)
     res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
-
+    print("cloudrun_rollout_restart~~~get_knative_res.text: " + res.text)
     reqJson=json.loads(res.text)
 
     ###
@@ -240,6 +240,14 @@ app = Flask(__name__)
 @app.route("/api/info")
 def ytdl_api_info():
     url = request.args['url']
+
+    try:
+        cached_result_bytes = redis_client.get(url)
+        cached_result = json.loads(cached_result_bytes.decode('utf-8'))
+        print("redis-cached-result ~~~ redis cached_result: "+str(cached_result))
+    except Exception as e:
+        print("redis-cached-result ~~~ try get from redis failed: " + str(e))
+
     result = get_result()
     key = 'info'
     if query_bool(request.args.get('flatten'), 'flatten', False):
@@ -259,6 +267,12 @@ def ytdl_api_info():
         logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
         r=cloudrun_rollout_restart()
         logging.debug("and cloudrun_rollout_restart says: " + str(r))
+    try:
+        result_bytes = json.dumps(result).encode('utf-8')
+        redis_client.set(url, result_bytes, ex=600)
+        print("redis-cached-result--adding: " + str(result))
+    except Exception as e:
+        print("redis-cached-result~~~ FAILED ~~~ redis_client.zincrby(rkey, 1, inst_ip) because: " + str(e))
 
     return jsonify(result)
 
