@@ -244,9 +244,9 @@ def ytdl_api_info():
     cached_result_bytes = redis_client.get("ytdl_cache_for_"+url)
     if cached_result_bytes is not None:
         cached_result = json.loads(cached_result_bytes.decode('utf-8'))
-        redis_client.zscore("ytdl_cache_stats", "hit")
+        redis_client.incr("ytdl_cache_stats_hit", 1)
         return jsonify(cached_result)
-    redis_client.zscore("ytdl_cache_stats", "miss")
+    redis_client.incr("ytdl_cache_stats_miss", 1)
 
     result = get_result()
     key = 'info'
@@ -279,7 +279,8 @@ def ytdl_api_stats():
         "_rkey": rkey,
         "_inst_ip": inst_ip,
         "_inst_ip_cnt": _inst_ip_cnt,
-        "ytdl_cache_stats": redis_client.get("ytdl_cache_stats")
+        "ytdl_cache_stats_hit": redis_client.get("ytdl_cache_stats_hit"),
+        "ytdl_cache_stats_miss": redis_client.get("ytdl_cache_stats_miss")
         }
     
     # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
