@@ -241,15 +241,12 @@ app = Flask(__name__)
 def ytdl_api_info():
     url = request.args['url']
 
-    try:
-        cached_result_bytes = redis_client.get(url)
-        if cached_result_bytes is not None:
-            cached_result = json.loads(cached_result_bytes.decode('utf-8'))
-            print("redis-cached-result ~~~ redis cached_result: "+str(cached_result))
-        else:
-            print("redis-cached-result ~~~ redis cached_result: None ")
-    except Exception as e:
-        print("redis-cached-result ~~~ try get from redis failed: " + str(e))
+    cached_result_bytes = redis_client.get("ytdl_cache_for_"+url)
+    if cached_result_bytes is not None:
+        cached_result = json.loads(cached_result_bytes.decode('utf-8'))
+        redis_client.zscore("ytdl_cache_stats", "hit")
+        return jsonify(cached_result)
+    redis_client.zscore("ytdl_cache_stats", "miss")
 
     result = get_result()
     key = 'info'
@@ -262,20 +259,16 @@ def ytdl_api_info():
     }
     redis_client.zincrby(rkey, 1, inst_ip)
 
-    # top_stat =redis_client.zrevrange(rkey, 0,-1, withscores=True)
-    # top_ip=str(top_stat[0][0])
-    # top_cnt=int(top_stat[0][1])
+    # cache results
+    result_bytes = json.dumps(result).encode('utf-8')
+    redis_client.set("ytdl_cache_for_"+url, result_bytes, ex=900)
+    
+    #update ip usage count, redeploy at high usage
     cnt = redis_client.zscore(rkey, inst_ip)
     if cnt >=redeploy_at :
         logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
         r=cloudrun_rollout_restart()
         logging.debug("and cloudrun_rollout_restart says: " + str(r))
-    try:
-        result_bytes = json.dumps(result).encode('utf-8')
-        redis_client.set(url, result_bytes, ex=600)
-        print("redis-cached-result--adding: " + str(result))
-    except Exception as e:
-        print("redis-cached-result~~~ FAILED ~~~ redis_client.zincrby(rkey, 1, inst_ip) because: " + str(e))
 
     return jsonify(result)
 
@@ -286,6 +279,7 @@ def ytdl_api_stats():
         "_rkey": rkey,
         "_inst_ip": inst_ip,
         "_inst_ip_cnt": _inst_ip_cnt,
+        "ytdl_cache_stats": redis_client.get("ytdl_cache_stats")
         }
     
     # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
