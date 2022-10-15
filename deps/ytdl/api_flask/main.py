@@ -279,8 +279,8 @@ def ytdl_api_stats():
         "_rkey": rkey,
         "_inst_ip": inst_ip,
         "_inst_ip_cnt": _inst_ip_cnt,
-        "ytdl_cache_stats_hit": redis_client.get("ytdl_cache_stats_hit"),
-        "ytdl_cache_stats_miss": redis_client.get("ytdl_cache_stats_miss")
+        "ytdl_cache_stats_hit": redis_client.get("ytdl_cache_stats_hit").decode('utf-8'),
+        "ytdl_cache_stats_miss": redis_client.get("ytdl_cache_stats_miss").decode('utf-8')
         }
     
     # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
