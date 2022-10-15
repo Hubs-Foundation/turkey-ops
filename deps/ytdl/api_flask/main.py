@@ -243,8 +243,11 @@ def ytdl_api_info():
 
     try:
         cached_result_bytes = redis_client.get(url)
-        cached_result = json.loads(cached_result_bytes.decode('utf-8'))
-        print("redis-cached-result ~~~ redis cached_result: "+str(cached_result))
+        if cached_result_bytes is not None:
+            cached_result = json.loads(cached_result_bytes.decode('utf-8'))
+            print("redis-cached-result ~~~ redis cached_result: "+str(cached_result))
+        else:
+            print("redis-cached-result ~~~ redis cached_result: None ")
     except Exception as e:
         print("redis-cached-result ~~~ try get from redis failed: " + str(e))
 
