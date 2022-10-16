@@ -241,13 +241,13 @@ app = Flask(__name__)
 def ytdl_api_info():
     url = request.args['url']
 
-    cached_result_bytes = redis_client.get("ytdl_cache_for_"+url)
+    # cached_result_bytes = redis_client.get("ytdl_cache_for_"+url)
     
-    if cached_result_bytes is not None:
-        cached_result = json.loads(cached_result_bytes.decode('utf-8'))
-        redis_client.incr("ytdl_cache_stats_hit", 1)
-        logging.warning("ytdl_cache_stats_hit: " + url + json.dumps(cached_result))
-        # return jsonify(cached_result)
+    # if cached_result_bytes is not None:
+    #     cached_result = json.loads(cached_result_bytes.decode('utf-8'))
+    #     redis_client.incr("ytdl_cache_stats_hit", 1)
+    #     logging.warning("ytdl_cache_stats_hit: " + url + json.dumps(cached_result))
+    #     # return jsonify(cached_result)
 
     redis_client.incr("ytdl_cache_stats_miss", 1)
     logging.warning("ytdl_cache_stats_miss: " + url)
@@ -264,9 +264,9 @@ def ytdl_api_info():
     }
     redis_client.zincrby(rkey, 1, inst_ip)
 
-    # cache results
-    result_bytes = json.dumps(result).encode('utf-8')
-    redis_client.set("ytdl_cache_for_"+url, result_bytes, ex=900)
+    # # cache results
+    # result_bytes = json.dumps(result).encode('utf-8')
+    # redis_client.set("ytdl_cache_for_"+url, result_bytes, ex=900)
     
     #update ip usage count, redeploy at high usage
     cnt = redis_client.zscore(rkey, inst_ip)
@@ -281,11 +281,11 @@ def ytdl_api_info():
 def ytdl_api_stats():
     _inst_ip_cnt = redis_client.zscore(rkey, inst_ip)
     report={
+        # "ytdl_cache_stats_hit": redis_client.get("ytdl_cache_stats_hit").decode('utf-8'),
+        # "ytdl_cache_stats_miss": redis_client.get("ytdl_cache_stats_miss").decode('utf-8'),
         "_rkey": rkey,
         "_inst_ip": inst_ip,
-        "_inst_ip_cnt": _inst_ip_cnt,
-        "ytdl_cache_stats_hit": redis_client.get("ytdl_cache_stats_hit").decode('utf-8'),
-        "ytdl_cache_stats_miss": redis_client.get("ytdl_cache_stats_miss").decode('utf-8')
+        "_inst_ip_cnt": _inst_ip_cnt
         }
     
     # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
