@@ -222,6 +222,11 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 		ipList += ip + "\n"
 	}
 	r["_as-of"] = time.Now().Format(time.UnixDate)
+
+	//it shouldn't change anyway but --- todo -- get them from GCP
+	r["35.225.11.240"] = "gke-lb"
+	r["34.111.227.97"] = "gke-ig"
+
 	mu_streamNodes.Lock()
 	StreamNodes = r
 	StreamNodeIpList = ipList
