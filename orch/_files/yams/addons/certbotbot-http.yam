@@ -27,7 +27,7 @@ spec:
             imagePullPolicy: Always
             env:
             - name: DOMAIN
-              value: hubs.mozilla.com
+              value: {{.FULL_DOMAIN}}
             - name: CERTBOT_EMAIL
               value: 
             - name: NAMESPACE
