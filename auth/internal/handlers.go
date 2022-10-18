@@ -188,8 +188,8 @@ func Oauth() http.Handler {
 		}
 		Logger.Sugar().Debugf("sub: %v", sub)
 
-		// set default cookie
-		jwtCookie, err := MakeJwtCookie(r, user, "")
+		// set authHost cookie
+		jwtCookie, err := MakeJwtCookie(r, user, cfg.AuthHost)
 		if err != nil {
 			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
