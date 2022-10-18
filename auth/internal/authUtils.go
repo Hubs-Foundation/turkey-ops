@@ -248,7 +248,7 @@ func MakeJwtCookie(r *http.Request, user idp.User, domain string) (*http.Cookie,
 	// you would like it to contain.
 
 	if domain == "" {
-		domain = cfg.Domain
+		domain = cookieDomain(r)
 	}
 
 	Logger.Sugar().Warnf("### MakeJwtCookie (domain: %v) ### for r: %v ### r.Header: %v ### r.Referer(): %v",
@@ -277,7 +277,7 @@ func MakeJwtCookie(r *http.Request, user idp.User, domain string) (*http.Cookie,
 		Name:     cfg.JwtCookieName,
 		Value:    tokenString,
 		Path:     "/",
-		Domain:   cookieDomain(r),
+		Domain:   domain,
 		HttpOnly: true,
 		Secure:   !cfg.InsecureCookie,
 		Expires:  expires,
