@@ -1,0 +1,91 @@
+########################################################################
+###################### certbotbot-http #########################################
+########################################################################
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: certbotbot-http
+  namespace: hc-{{.HubId}}
+spec:
+  schedule: "1 1 */13 * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: certbotbot-http
+        spec:
+          restartPolicy: Never
+          serviceAccountName: certbotbot-http
+          nodeSelector:
+            turkey: service
+          containers:
+          - name: certbotbot
+            image: mozillareality/certbotbot_http:9
+            imagePullPolicy: Always
+            env:
+            - name: DOMAIN
+              value: hubs.mozilla.com
+            - name: CERTBOT_EMAIL
+              value: 
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: certbotbot-http
+  namespace: hc-{{.HubId}}
+spec:
+  type: ClusterIP
+  selector:
+    app: certbotbot-http
+  ports:
+  - port: 80
+    targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: certbotbot-http
+  namespace: hc-{{.HubId}}
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+spec:
+  rules:
+  - host: {{.FULL_DOMAIN}}
+    http:
+      paths:
+      - path: /.well-known/acme-challenge
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: certbotbot-http
+            port: 
+              number: 80
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: certbotbot-http
+  namespace: hc-{{.HubId}}
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: certbotbot-http-hc-{{.HubId}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+- kind: ServiceAccount
+  name: certbotbot-http
+  namespace: hc-{{.HubId}}
+  

@@ -998,81 +998,81 @@ spec:
   - name: http
     port: 4000
     targetPort: 4000
----
-####################################################################################
-##################################### market #######################################
-####################################################################################  
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: turkeymarketing
-  namespace: turkey-services
-  annotations:
-    kubernetes.io/ingress.class: haproxy
-spec:
-  rules:
-  - host: dashboard-api.{{.Domain}}
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: turkeymarketing
-            port: 
-              number: 3000
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: turkeymarketing
-  namespace: turkey-services
-  labels:
-    app: turkeymarketing
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: turkeymarketing
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: turkeymarketing
-    spec:
-      # terminationGracePeriodSeconds: 3
-      {{ if ne .Env "dev" }}
-      nodeSelector:
-        turkey: service
-      {{ end }}
-      containers:
-      - name: turkeymarketing
-        image: mozillareality/turkeymarketing:{{.ItaChan}}-latest
-        imagePullPolicy: IfNotPresent        
-        env:
-        - name: dummy
-          value: dummy
-        resources:
-          requests:
-            cpu: 0.25
-            memory: 250Mi
-          limits:
-            cpu: 1
-            memory: 2Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: turkeymarketing
-  namespace: turkey-services
-  labels:
-    app: turkeymarketing
-spec:
-  type: ClusterIP
-  selector:
-    app: turkeymarketing
-  ports:
-  - name: http-client
-    port: 3000
-    targetPort: 3000
+# ---
+# ####################################################################################
+# ##################################### marketing ####################################
+# ####################################################################################  
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: turkeymarketing
+#   namespace: turkey-services
+#   annotations:
+#     kubernetes.io/ingress.class: haproxy
+# spec:
+#   rules:
+#   - host: marketing.{{.Domain}}
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: turkeymarketing
+#             port: 
+#               number: 3000
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: turkeymarketing
+#   namespace: turkey-services
+#   labels:
+#     app: turkeymarketing
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: turkeymarketing
+#   strategy:
+#     type: Recreate
+#   template:
+#     metadata:
+#       labels:
+#         app: turkeymarketing
+#     spec:
+#       # terminationGracePeriodSeconds: 3
+#       {{ if ne .Env "dev" }}
+#       nodeSelector:
+#         turkey: service
+#       {{ end }}
+#       containers:
+#       - name: turkeymarketing
+#         image: mozillareality/turkeymarketing:{{.ItaChan}}-latest
+#         imagePullPolicy: IfNotPresent        
+#         env:
+#         - name: dummy
+#           value: dummy
+#         resources:
+#           requests:
+#             cpu: 0.25
+#             memory: 250Mi
+#           limits:
+#             cpu: 1
+#             memory: 2Gi
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: turkeymarketing
+#   namespace: turkey-services
+#   labels:
+#     app: turkeymarketing
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: turkeymarketing
+#   ports:
+#   - name: http-client
+#     port: 3000
+#     targetPort: 3000

@@ -1,0 +1,79 @@
+---
+####################################################################################
+##################################### marketing ####################################
+####################################################################################  
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkeymarketing
+  namespace: hc-hmc
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+spec:
+  rules:
+  - host: hubs.mozilla.com
+    http:
+      paths:
+      - path: /marketing-page
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeymarketing
+            port: 
+              number: 3000
+  tls:
+  - hosts:
+    - hubs.mozilla.com
+    secretName: letsencrypt-http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: turkeymarketing
+  namespace: hc-hmc
+  labels:
+    app: turkeymarketing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turkeymarketing
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: turkeymarketing
+    spec:
+      nodeSelector:
+        turkey: service
+      containers:
+      - name: turkeymarketing
+        image: mozillareality/turkeymarketing:stable-latest
+        imagePullPolicy: IfNotPresent        
+        env:
+        - name: dummy
+          value: dummy
+        resources:
+          requests:
+            cpu: 0.25
+            memory: 250Mi
+          limits:
+            cpu: 1
+            memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: turkeymarketing
+  namespace: hc-hmc
+  labels:
+    app: turkeymarketing
+spec:
+  type: ClusterIP
+  selector:
+    app: turkeymarketing
+  ports:
+  - name: http-client
+    port: 3000
+    targetPort: 3000

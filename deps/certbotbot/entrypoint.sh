@@ -9,7 +9,8 @@ function need_new_cert(){
 
 function get_new_cert_dns(){
     echo "get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
-    certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
+    # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
+    certbot certonly --non-interactive --agree-tos --register-unsafely-without-email \
         --dns-$CHALLENGE --dns-$CHALLENGE-propagation-seconds 300 \
         --debug-challenges -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d $HUB_DOMAIN -d \*.$HUB_DOMAIN -d \*.stream.$HUB_DOMAIN
 }
@@ -17,10 +18,12 @@ function get_new_cert_dns(){
 function get_new_cert_http(){
     echo "get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
     echo "start nginx and wait 120 sec for ingress to pick up the pod" && nginx && sleep 120
-    certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
+    # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
+    certbot certonly --non-interactive --agree-tos --register-unsafely-without-email --preferred-challenges http --nginx -d $DOMAIN
+    
     if [ "$?" -ne 0 ]; then
       echo "try #1 failed, retry in 300 sec ..." && sleep 300
-      certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
+      certbot --register-unsafely-without-email certonly --non-interactive --agree-tos --preferred-challenges http --nginx -d $DOMAIN
     fi
 }
 

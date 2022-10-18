@@ -101,7 +101,7 @@ spec:
           service:
             name: spoke
             port: 
-              number: 8080                          
+              number: 8080
   - host: {{.Subdomain}}-cors.{{.HubDomain}}
     http:
       paths:
