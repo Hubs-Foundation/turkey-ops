@@ -279,7 +279,8 @@ func MakeJwtCookie(r *http.Request, user idp.User, domain string) (*http.Cookie,
 		Path:     "/",
 		Domain:   domain,
 		HttpOnly: true,
-		Secure:   !cfg.InsecureCookie,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 		Expires:  expires,
 	}, nil
 }
