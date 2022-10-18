@@ -49,6 +49,8 @@ func (f *Fxa) Setup() error {
 		fxaSubHost = "api-accounts.stage.mozaws.net"
 	}
 
+	fmt.Println("~~~fxaSubHost: " + fxaSubHost)
+
 	// Set static values
 	f.Scope = "profile openid https://identity.mozilla.com/account/subscriptions"
 	f.LoginURL = &url.URL{

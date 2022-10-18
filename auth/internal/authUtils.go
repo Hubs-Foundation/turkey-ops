@@ -232,9 +232,9 @@ func MakeAuthCookie(r *http.Request, email string) *http.Cookie {
 	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), email)
 
 	return &http.Cookie{
-		Name:     cfg.CookieName,
-		Value:    value,
-		Path:     "/",
+		Name:  cfg.CookieName,
+		Value: value,
+		// Path:     "/",
 		Domain:   cookieDomain(r),
 		HttpOnly: true,
 		Secure:   !cfg.InsecureCookie,

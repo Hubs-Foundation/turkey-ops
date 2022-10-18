@@ -322,7 +322,7 @@ func AuthnProxy() http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			Logger.Sugar().Infof("ALLOWED: %v, %v", email, urlStr)
+			Logger.Sugar().Debugf("ALLOWED: %v, %v", email, urlStr)
 		}
 
 		proxy, err := Proxyman.Get(urlStr)
