@@ -50,7 +50,7 @@ func (f *Fxa) Setup() error {
 	}
 
 	// Set static values
-	f.Scope = "profile openid"
+	f.Scope = "profile openid https://identity.mozilla.com/account/subscriptions"
 	f.LoginURL = &url.URL{
 		Scheme: "https",
 		Host:   fxaLoginHost,
