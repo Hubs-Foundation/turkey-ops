@@ -188,15 +188,25 @@ func Oauth() http.Handler {
 		}
 		Logger.Sugar().Debugf("sub: %v", sub)
 
-		// Generate cookie
-		Logger.Sugar().Warnf("MakeJWwtCookie for redirect: <%v>", redirect)
-		jwtCookie, err := MakeJwtCookie(r, user)
+		// set default cookie
+		Logger.Sugar().Warnf("MakeJwtCookie for redirect: <%v>", redirect)
+		jwtCookie, err := MakeJwtCookie(r, user, "")
 		if err != nil {
 			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
 		http.SetCookie(w, jwtCookie)
+
+		// set redirect cookie
+		Logger.Sugar().Warnf("MakeJwtCookie for redirect: <%v>", redirect)
+		redirect_jwtCookie, err := MakeJwtCookie(r, user, redirect)
+		if err != nil {
+			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
+			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		http.SetCookie(w, redirect_jwtCookie)
 
 		Logger.Debug("jwtCookie domain: " + jwtCookie.Domain)
 		Logger.Debug("redirect: " + redirect)
@@ -412,7 +422,7 @@ func GimmieTestJwtCookie() http.Handler {
 			return
 		}
 
-		jwtCookie, err := MakeJwtCookie(r, user)
+		jwtCookie, err := MakeJwtCookie(r, user, "")
 		if err != nil {
 			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)

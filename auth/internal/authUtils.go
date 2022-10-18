@@ -242,15 +242,20 @@ func MakeAuthCookie(r *http.Request, email string) *http.Cookie {
 	}
 }
 
-func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
+func MakeJwtCookie(r *http.Request, user idp.User, domain string) (*http.Cookie, error) {
 	expires := cookieExpiry()
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
+
+	if domain == "" {
+		domain = cfg.Domain
+	}
+
 	Logger.Sugar().Warnf("### MakeJwtCookie (domain: %v) ### for r: %v ### r.Header: %v ### r.Referer(): %v",
-		cfg.Domain, r, r.Header, r.Host, r.Referer())
+		domain, r, r.Header, r.Host, r.Referer())
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"iss": cfg.Domain,
+		"iss": domain,
 		"sub": user.Sub,
 		// "aud":"whomever?",
 		"exp": expires.Unix(),
