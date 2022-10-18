@@ -188,14 +188,14 @@ func Oauth() http.Handler {
 		}
 		Logger.Sugar().Debugf("sub: %v", sub)
 
-		// set default cookie
-		jwtCookie, err := MakeJwtCookie(r, user, "")
-		if err != nil {
-			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
-			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		http.SetCookie(w, jwtCookie)
+		// // set default cookie
+		// jwtCookie, err := MakeJwtCookie(r, user, "")
+		// if err != nil {
+		// 	Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
+		// 	http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
+		// 	return
+		// }
+		// http.SetCookie(w, jwtCookie)
 
 		// set redirect cookie
 		redirectDomain := getDomain(redirect)
@@ -208,9 +208,9 @@ func Oauth() http.Handler {
 		}
 		http.SetCookie(w, redirect_jwtCookie)
 
-		Logger.Debug("jwtCookie domain: " + jwtCookie.Domain)
-		Logger.Debug("redirect: " + redirect)
-		Logger.Debug("redirect domain: " + redirect[strings.Index(redirect, "://")+3:])
+		// Logger.Debug("jwtCookie domain: " + jwtCookie.Domain)
+		// Logger.Debug("redirect: " + redirect)
+		// Logger.Debug("redirect domain: " + redirect[strings.Index(redirect, "://")+3:])
 
 		//dev only -- make an auth cookie too
 		// if cfg.AllowAuthCookie {
