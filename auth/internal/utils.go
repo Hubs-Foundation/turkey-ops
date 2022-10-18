@@ -45,8 +45,9 @@ func getRootDomain(fullDomain string) string {
 
 func getDomain(url string) string {
 
-	p0 := strings.Split(url, `://`)
+	// p := strings.Split(url, `://`)
+	p := url[strings.Index(url, "://")+3:]
 
-	return strings.Split(p0[1], `/`)[0]
+	return strings.Split(p, `/`)[0]
 
 }
