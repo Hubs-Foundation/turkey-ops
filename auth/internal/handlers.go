@@ -198,11 +198,11 @@ func Oauth() http.Handler {
 		http.SetCookie(w, jwtCookie)
 		Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
 
-		//write token to header for external redirect
+		//write token to url param for external redirect
 		if !strings.Contains(redirect, cfg.Domain) {
-			w.Header().Set(cfg.JwtCookieName, jwtCookie.Value)
-			r.Header.Set(cfg.JwtCookieName, jwtCookie.Value)
-
+			if strings.HasPrefix(redirect, "https://") {
+				redirect += "?" + cfg.JwtCookieName + "=" + jwtCookie.Value
+			}
 			Logger.Sugar().Warnf(" ### jwt debug ### external redirect, set to header: %v => %v", cfg.JwtCookieName, jwtCookie.Value)
 		}
 
