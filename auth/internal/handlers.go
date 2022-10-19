@@ -201,7 +201,8 @@ func Oauth() http.Handler {
 		//write token to url param for external redirect
 		if !strings.Contains(redirect, cfg.Domain) {
 			if strings.HasPrefix(redirect, "https://") {
-				redirect += "?" + cfg.JwtCookieName + "=" + jwtCookie.Value
+				// redirect += "?" + cfg.JwtCookieName + "=" + jwtCookie.Value
+				redirect += "?" + "turkeyauthtoken" + "=" + jwtCookie.Value
 				Logger.Sugar().Warnf(" ### jwt debug ### external redirect, set to url param -- redirect: %v", redirect)
 			}
 		}
