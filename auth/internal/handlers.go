@@ -93,7 +93,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	}
 
 	loginURL := provider.GetLoginURL(redirectURL, MakeState(r, provider, nonce))
-	Logger.Debug(" ### loginURL: " + loginURL)
+	// Logger.Debug(" ### loginURL: " + loginURL)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 }
 
@@ -121,7 +121,7 @@ func Oauth() http.Handler {
 			return
 		}
 
-		Logger.Debug("Handling callback")
+		// Logger.Debug("Handling callback")
 		Logger.Sugar().Debugf("dump r, %v", r)
 
 		// Check state
@@ -196,16 +196,15 @@ func Oauth() http.Handler {
 			return
 		}
 		http.SetCookie(w, jwtCookie)
-		Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
+		Logger.Sugar().Debugf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
 
 		//write token to url param for external redirect
-		if !strings.Contains(redirect, cfg.Domain) {
-			if strings.HasPrefix(redirect, "https://") {
-				// redirect += "?" + cfg.JwtCookieName + "=" + jwtCookie.Value
-				redirect += "?" + "turkeyauthtoken" + "=" + jwtCookie.Value
-				Logger.Sugar().Warnf(" ### jwt debug ### external redirect, set to url param -- redirect: %v", redirect)
-			}
+		// if !strings.Contains(redirect, cfg.Domain) {
+		if strings.HasPrefix(redirect, "https://") {
+			redirect += "?" + cfg.JwtCookieName + "=" + jwtCookie.Value
+			// Logger.Sugar().Warnf(" ### jwt debug ### external redirect, set to url param -- redirect: %v", redirect)
 		}
+		// }
 
 		// Logger.Debug("jwtCookie domain: " + jwtCookie.Domain)
 		// Logger.Debug("redirect: " + redirect)
@@ -220,7 +219,6 @@ func Oauth() http.Handler {
 
 		// Redirect
 		w.Header().Set("X-Forwarded-User", user.Email)
-		Logger.Sugar().Warnf(" ### jwt debug ### redirect: %v", redirect)
 		http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
 
 	})
@@ -301,7 +299,7 @@ func AuthnProxy() http.Handler {
 		}
 		r.Header.Set("x-turkeyauth-proxied", "1")
 
-		Logger.Sugar().Debugf("backend url: %v", backendUrl)
+		// Logger.Sugar().Debugf("backend url: %v", backendUrl)
 
 		email, err := CheckCookie(r)
 		if err != nil {
@@ -310,7 +308,7 @@ func AuthnProxy() http.Handler {
 			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
-		Logger.Sugar().Debug("allowed: " + email)
+		// Logger.Sugar().Debug("allowed: " + email)
 
 		AllowedEmailDomains := r.Header.Get("AllowedEmailDomains")
 		if AllowedEmailDomains != "" {
@@ -322,7 +320,7 @@ func AuthnProxy() http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			Logger.Sugar().Debugf("ALLOWED: %v, %v", email, urlStr)
+			// Logger.Sugar().Debugf("ALLOWED: %v, %v", email, urlStr)
 		}
 
 		proxy, err := Proxyman.Get(urlStr)
