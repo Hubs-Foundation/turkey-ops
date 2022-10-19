@@ -20,7 +20,7 @@ var cfg *Config
 // Config holds the runtime application config
 type Config struct {
 	Env             string `description:"dev/staging/prod"`
-	Domain          string `description:"turkey domain"`
+	Domain          string `description:"turkey domain, used to set auth cookie"`
 	TrustedClients  string `description:"<url1,url2,...url#,> ie. https://portal.myhubs.net,"`
 	AllowAuthCookie bool   `description:"allow creation and verification of simple secret protected authCookie in addition to full jwt-signed-with-domain-name authToken"`
 

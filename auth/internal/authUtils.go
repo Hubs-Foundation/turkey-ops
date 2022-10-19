@@ -251,8 +251,8 @@ func MakeJwtCookie(r *http.Request, user idp.User, domain string) (*http.Cookie,
 		domain = cookieDomain(r)
 	}
 
-	Logger.Sugar().Warnf("### MakeJwtCookie (domain: %v) ### for r: %v ### r.Header: %v ### r.Referer(): %v",
-		domain, r, r.Header, r.Host, r.Referer())
+	// Logger.Sugar().Warnf("### MakeJwtCookie (domain: %v) ### for r: %v ### r.Header: %v ### r.Referer(): %v",
+	// 	domain, r, r.Header, r.Host, r.Referer())
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"iss": domain,
