@@ -40,7 +40,7 @@ func (f *Fxa) Setup() error {
 	fxaLoginHost := "accounts.firefox.com"
 	fxaTokenHost := "api.accounts.firefox.com"
 	fxaUserHost := "profile.accounts.firefox.com"
-	fxaSubHost := "api-accounts.accounts.firefox.com"
+	fxaSubHost := "api-accounts.firefox.com"
 
 	if os.Getenv("ENV") == "dev" {
 		fxaLoginHost = "accounts.stage.mozaws.net"
@@ -48,8 +48,6 @@ func (f *Fxa) Setup() error {
 		fxaUserHost = "profile.stage.mozaws.net"
 		fxaSubHost = "api-accounts.stage.mozaws.net"
 	}
-
-	fmt.Println("~~~fxaSubHost: " + fxaSubHost)
 
 	// Set static values
 	f.Scope = "profile openid https://identity.mozilla.com/account/subscriptions"
@@ -152,6 +150,7 @@ func (f *Fxa) GetSubscriptions(token string) (map[string]string, error) {
 	fxaSubs := make(map[string]string)
 
 	client := &http.Client{}
+
 	req, err := http.NewRequest("GET", f.SubscriptionURL.String(), nil)
 	if err != nil {
 		return fxaSubs, err
