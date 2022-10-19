@@ -201,6 +201,8 @@ func Oauth() http.Handler {
 		//write token to header for external redirect
 		if !strings.Contains(redirect, cfg.Domain) {
 			w.Header().Set(cfg.JwtCookieName, jwtCookie.Value)
+			r.Header.Set(cfg.JwtCookieName, jwtCookie.Value)
+
 			Logger.Sugar().Warnf(" ### jwt debug ### external redirect, set to header: %v => %v", cfg.JwtCookieName, jwtCookie.Value)
 		}
 
