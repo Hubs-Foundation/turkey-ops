@@ -546,7 +546,7 @@ spec:
         #   periodSeconds: 10
         livenessProbe:
           httpGet:
-            path: /api/v1/meta
+            path: /health
             port: 4000
             scheme: HTTPS
           initialDelaySeconds: 30
@@ -559,9 +559,9 @@ spec:
               port: 4000
               scheme: HTTPS
             timeoutSeconds: 5
-            periodSeconds: 3
+            periodSeconds: 5
             successThreshold: 5
-            failureThreshold: 300
+            failureThreshold: 100
         resources:
           requests:
             memory: 250Mi

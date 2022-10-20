@@ -188,15 +188,18 @@ func Oauth() http.Handler {
 		}
 		Logger.Sugar().Debugf("sub: %v", sub)
 
-		// set default cookie
 		jwtCookie, err := MakeJwtCookie(r, user, cfg.Domain)
 		if err != nil {
 			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		http.SetCookie(w, jwtCookie)
-		Logger.Sugar().Debugf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
+
+		// set default cookie for dev envs
+		if cfg.Env == "dev" {
+			http.SetCookie(w, jwtCookie)
+			Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
+		}
 
 		//write token to url param for external redirect
 		// if !strings.Contains(redirect, cfg.Domain) {
