@@ -48,19 +48,24 @@ func Login() http.Handler {
 			return
 		}
 
-		email, err := CheckCookie(r)
 		// err = errors.New("fake error to force authRedirect, remove me after fxa's done")
-		if err != nil {
-			Logger.Debug("valid auth cookie not found >>> authRedirect ... err: " + err.Error())
+
+		if isCrossDomain(cfg.Domain, client) {
+			Logger.Debug("cross domain => redirect")
 			authRedirect(w, r, idp[0])
 		}
 
-		// Valid request
-		Logger.Sugar().Debug("allowed. good cookie found for " + email)
-		w.Header().Set("X-Forwarded-UserEmail", email)
-		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
+		if email, err := CheckCookie(r); err != nil {
+			Logger.Debug("bad cookie => redirect")
+			authRedirect(w, r, idp[0])
+		} else {
+			// already authenticated
+			Logger.Sugar().Debug("allowed. good cookie found for " + email)
+			w.Header().Set("X-Forwarded-UserEmail", email)
+			w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
+			http.Redirect(w, r, client, http.StatusTemporaryRedirect)
+		}
 
-		http.Redirect(w, r, client, http.StatusTemporaryRedirect)
 	})
 }
 
