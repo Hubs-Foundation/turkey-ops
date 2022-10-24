@@ -193,11 +193,14 @@ def cloudrun_rollout_restart():
             "name": "{revisionName}",
             "annotations": {{
                 "run.googleapis.com/vpc-access-egress": "private-ranges-only",
+                "autoscaling.knative.dev/minScale": "1",
+                "autoscaling.knative.dev/maxScale": "100",
                 "run.googleapis.com/vpc-access-connector": "{vpcConn}"}}}},
         "spec": {{
             "serviceAccountName": "{sa}",
             "containers": [{{
                 "image": "{image}",
+                "resources": {{ "limits":{{ "memory":"2Gi", "cpu":"2000m" }} }},
                 "env": [
                     {{"name": "dummy","value": "dummy"}},
                     {{"name": "REDEPLOY_AT","value": "{redeploy_at}"}}
