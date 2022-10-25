@@ -173,6 +173,8 @@ func (f *Fxa) GetSubscriptions(token string, user *User) error {
 	bodyBytes, _ := ioutil.ReadAll(res.Body)
 	fmt.Println("GetSubscriptions -- bodyBytes -- " + string(bodyBytes))
 
+	err = loadSubInfo(bodyBytes, f.turkey_prod_id, user)
+
 	return err
 }
 
