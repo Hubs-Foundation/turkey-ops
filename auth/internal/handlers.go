@@ -182,16 +182,14 @@ func Oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		Logger.Sugar().Debug("user", user)
+		Logger.Sugar().Debug("GetUser -- user", user)
 
 		// Get subscription
-		sub, err := p.GetSubscriptions(token.AccessToken)
+		err = p.GetSubscriptions(token.AccessToken, &user)
 		if err != nil {
 			Logger.Sugar().Error("failed @ p.GetSubscriptions(token.AccessToken): " + err.Error())
-			// http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
-			// return
 		}
-		Logger.Sugar().Debugf("sub: %v", sub)
+		Logger.Sugar().Debug("GetSubscriptions -- user", user)
 
 		jwtCookie, err := MakeJwtCookie(r, user, cfg.Domain)
 		if err != nil {

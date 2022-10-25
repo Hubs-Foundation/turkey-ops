@@ -23,6 +23,8 @@ type Fxa struct {
 	TokenURL        *url.URL
 	UserURL         *url.URL
 	SubscriptionURL *url.URL
+
+	turkey_prod_id string
 }
 
 // Name returns the name of the provider
@@ -41,12 +43,14 @@ func (f *Fxa) Setup() error {
 	fxaTokenHost := "api.accounts.firefox.com"
 	fxaUserHost := "profile.accounts.firefox.com"
 	fxaSubHost := "api-accounts.firefox.com"
+	f.turkey_prod_id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 	if os.Getenv("ENV") == "dev" {
 		fxaLoginHost = "accounts.stage.mozaws.net"
 		fxaTokenHost = "oauth.stage.mozaws.net"
 		fxaUserHost = "profile.stage.mozaws.net"
 		fxaSubHost = "api-accounts.stage.mozaws.net"
+		f.turkey_prod_id = "prod_KPReWHqwGqZBzc"
 	}
 
 	// Set static values
@@ -145,33 +149,51 @@ func (f *Fxa) GetUser(token string) (User, error) {
 	return user, err
 }
 
-func (f *Fxa) GetSubscriptions(token string) (map[string]string, error) {
-
-	fxaSubs := make(map[string]string)
+func (f *Fxa) GetSubscriptions(token string, user *User) error {
 
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", f.SubscriptionURL.String(), nil)
 	if err != nil {
-		return fxaSubs, err
+		return err
 	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	res, err := client.Do(req)
 	if err != nil {
-		return fxaSubs, err
+		return err
 	}
 	defer res.Body.Close()
 	fmt.Println("GetSubscriptions.res.StatusCode = ", res.StatusCode)
 	if res.StatusCode != 200 {
 		bodyBytes, _ := ioutil.ReadAll(res.Body)
-		return fxaSubs, errors.New(string(bodyBytes))
+		return errors.New(string(bodyBytes))
 	}
 
-	// err = json.NewDecoder(res.Body).Decode(&fxaSubs)
 	bodyBytes, _ := ioutil.ReadAll(res.Body)
 	fmt.Println("GetSubscriptions -- bodyBytes -- " + string(bodyBytes))
-	err = json.Unmarshal(bodyBytes, &fxaSubs)
 
-	return fxaSubs, err
+	return err
+}
+
+func loadSubInfo(subRespJson []byte, turkey_prod_id string, user *User) error {
+
+	subplatMap := make(map[string]interface{})
+	err := json.Unmarshal(subRespJson, &subplatMap)
+	if err != nil {
+		return err
+	}
+	subs := subplatMap["subscriptions"]
+	for _, sub := range subs.([]interface{}) {
+		map_sub := sub.(map[string]interface{})
+		product_id := map_sub["product_id"].(string)
+		if product_id == turkey_prod_id {
+			user.Plan_id = map_sub["plan_id"].(string)
+			user.Cancel_at_period_end = map_sub["cancel_at_period_end"].(bool)
+			user.Current_period_end = map_sub["current_period_end"].(float64)
+			return nil
+		}
+	}
+
+	return errors.New("no subscription found for project_id: " + turkey_prod_id)
 }

@@ -21,7 +21,7 @@ type Provider interface {
 	GetLoginURL(redirectURI, state string) string
 	ExchangeCode(redirectURI, code string) (Token, error)
 	GetUser(token string) (User, error)
-	GetSubscriptions(token string) (map[string]string, error)
+	GetSubscriptions(token string, user *User) error
 	Setup() error
 }
 
@@ -42,6 +42,10 @@ type User struct {
 	Sub            string   `json:"sub"`
 	DisplayName    string   `json:"displayName"`
 	Subscriptions  []string `json:"subscriptions"`
+	//
+	Plan_id              string
+	Cancel_at_period_end bool
+	Current_period_end   float64
 }
 
 // OAuthProvider is a provider using the oauth2 library
