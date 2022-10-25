@@ -165,14 +165,13 @@ func (f *Fxa) GetSubscriptions(token string) (map[string]string, error) {
 	fmt.Println("GetSubscriptions.res.StatusCode = ", res.StatusCode)
 	if res.StatusCode != 200 {
 		bodyBytes, _ := ioutil.ReadAll(res.Body)
-		// fmt.Println("GetSubscriptions -- bodyBytes -- " + string(bodyBytes))
 		return fxaSubs, errors.New(string(bodyBytes))
 	}
 
-	err = json.NewDecoder(res.Body).Decode(&fxaSubs)
-	// bodyBytes, _ := ioutil.ReadAll(res.Body)
-	// fmt.Println("GetSubscriptions -- bodyBytes -- " + string(bodyBytes))
-	// err = json.Unmarshal(bodyBytes, &fxaSubs)
+	// err = json.NewDecoder(res.Body).Decode(&fxaSubs)
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	fmt.Println("GetSubscriptions -- bodyBytes -- " + string(bodyBytes))
+	err = json.Unmarshal(bodyBytes, &fxaSubs)
 
 	return fxaSubs, err
 }

@@ -1078,7 +1078,8 @@ spec:
         turkey: {{.NodePool}}
       containers:
         - name: nfs
-          image: mozillareality/nfs:stable-latest
+          # image: mozillareality/nfs:stable-latest
+          image: k8s.gcr.io/volume-nfs:0.8
           imagePullPolicy: IfNotPresent        
           resources:
             requests:
@@ -1089,12 +1090,12 @@ spec:
               cpu: 1          
           env:
             - name: MNT_DIR
-              value: /var/nfs
+              value: /export
           securityContext:
             privileged: true
           volumeMounts:
           - name: hc-{{.HubId}}-ret-disk
-            mountPath: /var/nfs      
+            mountPath: /export
       volumes:
         - name: hc-{{.HubId}}-ret-disk
           persistentVolumeClaim:
