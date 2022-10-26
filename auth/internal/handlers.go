@@ -191,7 +191,9 @@ func Oauth() http.Handler {
 		}
 		Logger.Sugar().Debug("GetSubscriptions -- user", user)
 
-		jwtCookie, err := MakeJwtCookie(r, user, cfg.Domain)
+		// jwtCookie, err := MakeJwtCookie(r, user, cfg.Domain)
+		jwtCookie, err := MakeJwtCookie(r, user, getDomain(redirect))
+
 		if err != nil {
 			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
