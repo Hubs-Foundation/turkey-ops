@@ -144,7 +144,7 @@ spec:
 #     haproxy.org/path-rewrite: /nearspark/(.*) /\1              # strip /nearspark  
 # spec:
 #   rules:        
-#   - host: {{.Subdomain}}-cors.{{.HubDomain}}
+#   - host: {{.Subdomain}}.cors.{{.Domain}}
 #     http:
 #       paths:
 #       - path: /nearspark
@@ -198,7 +198,7 @@ data:
     [ret."Elixir.RetWeb.Endpoint".secondary_url]
 
     [ret."Elixir.RetWeb.Endpoint".cors_proxy_url]
-    host = "<SUB_DOMAIN>-cors.<HUB_DOMAIN>"
+    host = "<SUB_DOMAIN>.cors.<DOMAIN>"
     port = 443
 
     [ret."Elixir.RetWeb.Endpoint".imgproxy_url]
@@ -206,7 +206,7 @@ data:
     port = 5000
 
     [ret."Elixir.RetWeb.Endpoint".assets_url]
-    host = "<SUB_DOMAIN>-assets.<HUB_DOMAIN>"
+    host = "<SUB_DOMAIN>.assets.<DOMAIN>"
     port = 443
 
     [ret."Elixir.RetWeb.Endpoint".link_url]
@@ -249,8 +249,8 @@ data:
     http_port = 9631
 
     [ret."Elixir.Ret.JanusLoadStatus"]
-    default_janus_host = "stream.<HUB_DOMAIN>"
-    janus_service_name = "stream.<HUB_DOMAIN>"
+    default_janus_host = "stream.<DOMAIN>"
+    janus_service_name = "stream.<DOMAIN>"
     janus_admin_secret = ""
     janus_admin_port = 7000
     janus_port = 4443
@@ -279,9 +279,9 @@ data:
     speelycaptor_endpoint = "<SPEELYCAPTOR>"
 
     [ret."Elixir.Ret.PageOriginWarmer"]
-    hubs_page_origin = "https://<SUB_DOMAIN>-assets.<HUB_DOMAIN>/hubs/pages"
-    spoke_page_origin = "https://<SUB_DOMAIN>-assets.<HUB_DOMAIN>/spoke/pages"
-    admin_page_origin = "https://<SUB_DOMAIN>-assets.<HUB_DOMAIN>/hubs/pages"
+    hubs_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/hubs/pages"
+    spoke_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/spoke/pages"
+    admin_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/hubs/pages"
 
     [ret."Elixir.Ret.HttpUtils"]
     insecure_ssl = false

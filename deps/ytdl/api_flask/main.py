@@ -257,7 +257,7 @@ def ytdl_api_info():
     
     #update ip usage count, redeploy at high usage
     cnt = redis_client.zscore(rkey, inst_ip)
-    logging.debug( "NOT redeploying -- " + inst_ip + ", cnt=" + str(cnt)+ ", redeploy_at="+ str(redeploy_at))
+    # logging.debug( "NOT redeploying -- " + inst_ip + ", cnt=" + str(cnt)+ ", redeploy_at="+ str(redeploy_at))
     if cnt >=redeploy_at :
         logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
         r=cloudrun_rollout_restart()
