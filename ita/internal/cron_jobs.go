@@ -168,6 +168,7 @@ func Cronjob_HcHealthchecks(interval time.Duration) {
 	}
 }
 
+// check endpoint
 func healthcheckUrl(url string) error {
 	resp, err := http.Get(url)
 	if err != nil {
