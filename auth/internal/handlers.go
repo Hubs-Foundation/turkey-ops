@@ -200,8 +200,9 @@ func Oauth() http.Handler {
 			return
 		}
 
+		Logger.Sugar().Warnf("redirect: %v, skooner: %v", redirect, "dash."+cfg.Domain)
 		// set default cookie for dev env's skooner
-		if cfg.Env == "dev" && redirect == ("dash."+cfg.Domain) {
+		if cfg.Env == "dev" && strings.HasPrefix(redirect, "dash.") {
 			http.SetCookie(w, jwtCookie)
 			Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
 		}
