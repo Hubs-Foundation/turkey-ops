@@ -678,11 +678,11 @@ spec:
         - name: turkeyCfg_non_cors_proxy_domains
           value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
         - name: turkeyCfg_reticulum_server
-          value: {{.Subdomain}}.{{.Domain}}
+          value: {{.Subdomain}}.{{.HubDomain}}
         - name: turkeyCfg_cors_proxy_server
           value: {{.Subdomain}}-cors.{{.Domain}}
         - name: turkeyCfg_shortlink_domain
-          value: {{.Subdomain}}.{{.Domain}}
+          value: {{.Subdomain}}.{{.HubDomain}}
         # - name: turkeyCfg_sentry_dsn
         #   value: dummy
         # - name: turkeyCfg_ga_tracking_id
@@ -757,11 +757,11 @@ spec:
         - name: turkeyCfg_non_cors_proxy_domains
           value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
         - name: turkeyCfg_reticulum_server
-          value: {{.Subdomain}}.{{.Domain}}
+          value: {{.Subdomain}}.{{.HubDomain}}
         - name: turkeyCfg_cors_proxy_server
           value: {{.Subdomain}}-cors.{{.Domain}}
         - name: turkeyCfg_shortlink_domain
-          value: {{.Subdomain}}.{{.Domain}}
+          value: {{.Subdomain}}.{{.HubDomain}}
         - name: turkeyCfg_hubs_server
           value: {{.Subdomain}}.{{.Domain}}
         # - name: turkeyCfg_is_moz
