@@ -247,9 +247,9 @@ func MakeJwtCookie(r *http.Request, user idp.User, domain string) (*http.Cookie,
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 
-	if domain == "" {
-		domain = cookieDomain(r)
-	}
+	// if domain == "" {
+	// 	domain = cookieDomain(r)
+	// }
 
 	// Logger.Sugar().Warnf("### MakeJwtCookie (domain: %v) ### for r: %v ### r.Header: %v ### r.Referer(): %v",
 	// 	domain, r, r.Header, r.Host, r.Referer())
