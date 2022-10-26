@@ -671,16 +671,22 @@ spec:
         image: mozillareality/hubs:{{.Img_hubs}}
         imagePullPolicy: IfNotPresent
         env:
-        - name: SUB_DOMAIN
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: SUB_DOMAIN
-        - name: DOMAIN
-          valueFrom:
-            secretKeyRef:
-              name: configs
-              key: HUB_DOMAIN
+        - name: turkeyCfg_thumbnail_server
+          value: nearspark.reticulum.io
+        - name: turkeyCfg_base_assets_path
+          value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
+        - name: turkeyCfg_non_cors_proxy_domains
+          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+        - name: turkeyCfg_reticulum_server
+          value: {{.Subdomain}}.{{.Domain}}
+        - name: turkeyCfg_cors_proxy_server
+          value: {{.Subdomain}}-cors.{{.Domain}}
+        - name: turkeyCfg_shortlink_domain
+          value: {{.Subdomain}}.{{.Domain}}
+        # - name: turkeyCfg_sentry_dsn
+        #   value: dummy
+        # - name: turkeyCfg_ga_tracking_id
+        #   value: dummy
         livenessProbe:
           httpGet:
             path: https://localhost/healthz
@@ -740,35 +746,41 @@ spec:
       nodeSelector:
         turkey: {{.NodePool}}
       containers:
-        - name: spoke
-          image: mozillareality/spoke:{{.Img_spoke}}
-          imagePullPolicy: IfNotPresent
-          env:
-          - name: SUB_DOMAIN
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: SUB_DOMAIN
-          - name: DOMAIN
-            valueFrom:
-              secretKeyRef:
-                name: configs
-                key: DOMAIN
-          livenessProbe:
-            httpGet:
-              path: https://localhost/healthz
-              port: 8080
-              scheme: HTTPS
-            initialDelaySeconds: 20
-            timeoutSeconds: 1
-            periodSeconds: 120
-          resources:
-            requests:
-              memory: 20Mi
-              cpu: 0.01
-            limits:
-              memory: 2Gi
-              cpu: 1
+      - name: spoke
+        image: mozillareality/spoke:{{.Img_spoke}}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: turkeyCfg_thumbnail_server
+          value: nearspark.reticulum.io
+        - name: turkeyCfg_base_assets_path
+          value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
+        - name: turkeyCfg_non_cors_proxy_domains
+          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+        - name: turkeyCfg_reticulum_server
+          value: {{.Subdomain}}.{{.Domain}}
+        - name: turkeyCfg_cors_proxy_server
+          value: {{.Subdomain}}-cors.{{.Domain}}
+        - name: turkeyCfg_shortlink_domain
+          value: {{.Subdomain}}.{{.Domain}}
+        - name: turkeyCfg_hubs_server
+          value: {{.Subdomain}}.{{.Domain}}
+        # - name: turkeyCfg_is_moz
+        #   value: "false"
+        livenessProbe:
+          httpGet:
+            path: https://localhost/healthz
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 0.01
+          limits:
+            memory: 2Gi
+            cpu: 1
 ---
 apiVersion: v1
 kind: Service
