@@ -191,9 +191,8 @@ func Oauth() http.Handler {
 		}
 		Logger.Sugar().Debug("GetSubscriptions -- user", user)
 
-		// jwtCookie, err := MakeJwtCookie(r, user, cfg.Domain)
+		jwtCookie, err := MakeJwtCookie(r, user, cfg.Domain)
 		// jwtCookie, err := MakeJwtCookie(r, user, getDomain(redirect))
-		jwtCookie, err := MakeJwtCookie(r, user, "")
 
 		if err != nil {
 			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
@@ -201,8 +200,8 @@ func Oauth() http.Handler {
 			return
 		}
 
-		// set default cookie for dev envs
-		if cfg.Env == "dev" {
+		// set default cookie for dev env's skooner
+		if cfg.Env == "dev" && redirect == ("dash."+cfg.Domain) {
 			http.SetCookie(w, jwtCookie)
 			Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
 		}
