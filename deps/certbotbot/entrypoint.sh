@@ -41,14 +41,15 @@ function get_kubectl(){
 
 function save_cert(){
     name=$1
-    # kubectl -n $NAMESPACE delete secret $name
-    kubectl -n $NAMESPACE create secret tls $name \
+    ns=$2
+    echo "saving cert: <$name> to namespace: <$ns>"
+    kubectl -n $ns create secret tls $name \
         --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
         --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
         --save-config --dry-run=client -o yaml | kubectl apply -f -
     echo "new cert: "
-    kubectl -n $NAMESPACE describe secret $name
-    kubectl -n $NAMESPACE get secret $name -o yaml
+    kubectl -n $ns describe secret $name
+    kubectl -n $ns get secret $name -o yaml
 }
 
 ### preps
@@ -64,6 +65,7 @@ echo "HUB_DOMAIN=$HUB_DOMAIN"
 echo "CHALLENGE=$CHALLENGE"
 echo "CERTBOT_EMAIL=$CERTBOT_EMAIL"
 echo "CERT_NAME=$CERT_NAME"
+echo "CP_TO_NS=$CP_TO_NS"
 
 ### steps
 get_kubectl
@@ -82,7 +84,8 @@ fi
 if [ "$?" -ne 0 ]; then echo "ERROR failed to get new cert, exit in 15 min"; sleep 900; exit 1; fi
 
 echo "saving new cert"
-if ! save_cert $CERT_NAME; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
+if ! save_cert $CERT_NAME $NAMESPACE; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
+for ns in ${CP_TO_NS//,/ }; do echo save_cert $CERT_NAME $ns; done
 
 # if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 

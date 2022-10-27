@@ -1,11 +1,12 @@
 ########################################################################
-###################### certbotbot-http #########################################
+###################### certbotbot-http #################################
+#####params: Namespace, FULL_DOMAIN#####################################
 ########################################################################
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: certbotbot-http
-  namespace: hc-{{.HubId}}
+  namespace: {{.NAMESPACE}}
 spec:
   schedule: "1 1 */13 * *"
   concurrencyPolicy: Forbid
@@ -41,7 +42,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: certbotbot-http
-  namespace: hc-{{.HubId}}
+  namespace: {{.NAMESPACE}}
 spec:
   type: ClusterIP
   selector:
@@ -54,7 +55,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: certbotbot-http
-  namespace: hc-{{.HubId}}
+  namespace: {{.NAMESPACE}}
   annotations:
     kubernetes.io/ingress.class: haproxy
 spec:
@@ -74,12 +75,12 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: certbotbot-http
-  namespace: hc-{{.HubId}}
+  namespace: {{.NAMESPACE}}
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: certbotbot-http-hc-{{.HubId}}
+  name: certbotbot-http-{{.NAMESPACE}}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -87,5 +88,5 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: certbotbot-http
-  namespace: hc-{{.HubId}}
+  namespace: {{.NAMESPACE}}
   
