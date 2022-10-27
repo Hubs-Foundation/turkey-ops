@@ -169,13 +169,22 @@ func Cronjob_HcHealthchecks(interval time.Duration) {
 }
 
 func healthcheckUrl(url string) error {
-	resp, err := http.Get(url)
+
+	// resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
+	req.Header.Add("Cache-Control", "no-cache")
+	resp, err := _httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("bad resp: " + resp.Status)
 	}
+
 	return nil
 }
 
