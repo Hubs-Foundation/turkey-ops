@@ -249,8 +249,8 @@ data:
     http_port = 9631
 
     [ret."Elixir.Ret.JanusLoadStatus"]
-    default_janus_host = "stream.<HUB_DOMAIN>"
-    janus_service_name = "stream.<HUB_DOMAIN>"
+    default_janus_host = "stream.<DOMAIN>"
+    janus_service_name = "stream.<DOMAIN>"
     janus_admin_secret = ""
     janus_admin_port = 7000
     janus_port = 4443
@@ -307,7 +307,7 @@ data:
 
     [ret."Elixir.RetWeb.Plugs.AddCSP"]
     child_src = ""
-    connect_src = ""
+    connect_src = "wss://*.stream.<DOMAIN>:4443"
     font_src = ""
     form_action = ""
     frame_src = ""
