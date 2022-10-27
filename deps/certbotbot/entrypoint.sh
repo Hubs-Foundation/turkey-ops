@@ -85,7 +85,7 @@ if [ "$?" -ne 0 ]; then echo "ERROR failed to get new cert, exit in 15 min"; sle
 
 echo "saving new cert"
 if ! save_cert $CERT_NAME $NAMESPACE; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
-for ns in ${CP_TO_NS//,/ }; do echo save_cert $CERT_NAME $ns; done
+for ns in ${CP_TO_NS//,/ }; do save_cert $CERT_NAME $ns; done
 
 # if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 
