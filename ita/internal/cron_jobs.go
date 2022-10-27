@@ -141,18 +141,18 @@ func publishToConfigmap_label(channel string, repo_tag_map map[string]string) er
 
 func Cronjob_HcHealthchecks(interval time.Duration) {
 
-	//get list of HC namespaces
-	nsList, err := cfg.K8sClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: "hub_id"})
-	if err != nil {
-		Logger.Error(err.Error())
-		return
-	}
-	//check them
-	for _, ns := range nsList.Items {
-		//get local endpoints from ingress
-		// Logger.Warn("comming soon -- ns: " + ns.Name)
-		_ = ns
-	}
+	// //get list of HC namespaces
+	// nsList, err := cfg.K8sClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: "hub_id"})
+	// if err != nil {
+	// 	Logger.Error(err.Error())
+	// 	return
+	// }
+	// //check them
+	// for _, ns := range nsList.Items {
+	// 	//get local endpoints from ingress
+	// 	// Logger.Warn("comming soon -- ns: " + ns.Name)
+	// 	_ = ns
+	// }
 
 	//extra health checks
 	for _, url := range cfg.ExtraHealthchecks {
