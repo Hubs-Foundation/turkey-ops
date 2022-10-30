@@ -12,7 +12,9 @@ function get_new_cert_dns(){
     # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
     certbot certonly --non-interactive --agree-tos --register-unsafely-without-email \
         --dns-$CHALLENGE --dns-$CHALLENGE-propagation-seconds 300 \
-        --debug-challenges -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d $HUB_DOMAIN -d \*.$HUB_DOMAIN -d \*.stream.$HUB_DOMAIN
+        --debug-challenges \
+        -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d \*.assets.$DOMAIN \
+        -d $HUB_DOMAIN -d \*.$HUB_DOMAIN -d \*.stream.$HUB_DOMAIN -d \*.assets.$HUB_DOMAIN
 }
 
 function get_new_cert_http(){
