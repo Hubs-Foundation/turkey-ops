@@ -71,7 +71,7 @@ spec:
             name: ret
             port: 
               number: 4000
-  - host: {{.Subdomain}}-assets.{{.Domain}}
+  - host: {{.Subdomain}}.assets.{{.Domain}}
     http:
       paths:
       - path: /files/
@@ -102,37 +102,37 @@ spec:
             name: spoke
             port: 
               number: 8080
-  - host: {{.Subdomain}}-cors.{{.Domain}}
-    http:
-      paths:
-      - path: /files/
-        pathType: Prefix
-        backend:
-          service:
-            name: ret
-            port: 
-              number: 4000
-      - path: /http
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: ret
-            port: 
-              number: 4000                  
-      - path: /hubs
-        pathType: Prefix
-        backend:
-          service:
-            name: hubs
-            port: 
-              number: 8080
-      - path: /spoke
-        pathType: Prefix
-        backend:
-          service:
-            name: spoke
-            port: 
-              number: 8080
+  # - host: {{.Subdomain}}.cors.{{.Domain}}
+  #   http:
+  #     paths:
+  #     - path: /files/
+  #       pathType: Prefix
+  #       backend:
+  #         service:
+  #           name: ret
+  #           port: 
+  #             number: 4000
+  #     - path: /http
+  #       pathType: ImplementationSpecific
+  #       backend:
+  #         service:
+  #           name: ret
+  #           port: 
+  #             number: 4000                  
+  #     - path: /hubs
+  #       pathType: Prefix
+  #       backend:
+  #         service:
+  #           name: hubs
+  #           port: 
+  #             number: 8080
+  #     - path: /spoke
+  #       pathType: Prefix
+  #       backend:
+  #         service:
+  #           name: spoke
+  #           port: 
+  #             number: 8080
 # ---
 # apiVersion: networking.k8s.io/v1
 # kind: Ingress
@@ -144,7 +144,7 @@ spec:
 #     haproxy.org/path-rewrite: /nearspark/(.*) /\1              # strip /nearspark  
 # spec:
 #   rules:        
-#   - host: {{.Subdomain}}-cors.{{.Domain}}
+#   - host: {{.Subdomain}}.cors.{{.Domain}}
 #     http:
 #       paths:
 #       - path: /nearspark
@@ -198,7 +198,8 @@ data:
     [ret."Elixir.RetWeb.Endpoint".secondary_url]
 
     [ret."Elixir.RetWeb.Endpoint".cors_proxy_url]
-    host = "<SUB_DOMAIN>-cors.<DOMAIN>"
+    # host = "<SUB_DOMAIN>.cors.<DOMAIN>"
+    host = "hubs-proxy.com"    
     port = 443
 
     [ret."Elixir.RetWeb.Endpoint".imgproxy_url]
@@ -206,7 +207,7 @@ data:
     port = 5000
 
     [ret."Elixir.RetWeb.Endpoint".assets_url]
-    host = "<SUB_DOMAIN>-assets.<DOMAIN>"
+    host = "<SUB_DOMAIN>.assets.<DOMAIN>"
     port = 443
 
     [ret."Elixir.RetWeb.Endpoint".link_url]
@@ -279,9 +280,9 @@ data:
     speelycaptor_endpoint = "<SPEELYCAPTOR>"
 
     [ret."Elixir.Ret.PageOriginWarmer"]
-    hubs_page_origin = "https://<SUB_DOMAIN>-assets.<DOMAIN>/hubs/pages"
-    spoke_page_origin = "https://<SUB_DOMAIN>-assets.<DOMAIN>/spoke/pages"
-    admin_page_origin = "https://<SUB_DOMAIN>-assets.<DOMAIN>/hubs/pages"
+    hubs_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/hubs/pages"
+    spoke_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/spoke/pages"
+    admin_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/hubs/pages"
 
     [ret."Elixir.Ret.HttpUtils"]
     insecure_ssl = false
@@ -674,13 +675,14 @@ spec:
         - name: turkeyCfg_thumbnail_server
           value: nearspark.reticulum.io
         - name: turkeyCfg_base_assets_path
-          value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
+          value: https://{{.Subdomain}}.assets.{{.Domain}}/hubs/
         - name: turkeyCfg_non_cors_proxy_domains
-          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}.assets.{{.Domain}}
         - name: turkeyCfg_reticulum_server
           value: {{.Subdomain}}.{{.HubDomain}}
         - name: turkeyCfg_cors_proxy_server
-          value: {{.Subdomain}}-cors.{{.Domain}}
+          # value: {{.Subdomain}}.cors.{{.Domain}}
+          value: hubs-proxy.com
         - name: turkeyCfg_shortlink_domain
           value: {{.Subdomain}}.{{.HubDomain}}
         # - name: turkeyCfg_sentry_dsn
@@ -753,13 +755,14 @@ spec:
         - name: turkeyCfg_thumbnail_server
           value: nearspark.reticulum.io
         - name: turkeyCfg_base_assets_path
-          value: https://{{.Subdomain}}-assets.{{.Domain}}/hubs/
+          value: https://{{.Subdomain}}.assets.{{.Domain}}/hubs/
         - name: turkeyCfg_non_cors_proxy_domains
-          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}-assets.{{.Domain}}
+          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}.assets.{{.Domain}}
         - name: turkeyCfg_reticulum_server
           value: {{.Subdomain}}.{{.HubDomain}}
         - name: turkeyCfg_cors_proxy_server
-          value: {{.Subdomain}}-cors.{{.Domain}}
+          # value: {{.Subdomain}}.cors.{{.Domain}}
+          value: hubs-proxy.com
         - name: turkeyCfg_shortlink_domain
           value: {{.Subdomain}}.{{.HubDomain}}
         - name: turkeyCfg_hubs_server
