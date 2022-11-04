@@ -11,6 +11,7 @@ import (
 	"time"
 
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	"google.golang.org/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -35,16 +36,90 @@ var HC_snapshot = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	ssCfg, err := makeSnapshotCfg(r)
+	if err != nil {
+		internal.Logger.Error("bad snapshotCfg: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
 	switch r.Method {
 	// case "POST":
 	// 	snapshot_restore(w, r)
 	case "GET":
-		snapshot_list(w, r)
+		snapshot_list(w, r, ssCfg)
 	case "PUT":
-		snapshot_create(w, r)
+		snapshot_create(w, r, ssCfg)
+	case "DELETE":
+		snapshot_delete(w, r, ssCfg)
+	}
+})
+
+func snapshot_delete(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
+	// ssCfg, err := makeSnapshotCfg(r)
+	// if err != nil {
+	// 	internal.Logger.Error("bad snapshotCfg: " + err.Error())
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
+	// }
+	//getting k8s config
+	// internal.Logger.Debug("&#9989; ... using InClusterConfig")
+	// k8sCfg, err := rest.InClusterConfig()
+	// // }
+	// if k8sCfg == nil {
+	// 	internal.Logger.Debug("ERROR" + err.Error())
+	// 	internal.Logger.Error(err.Error())
+	// 	return
+	// }
+
+	// client, err := dynamic.NewForConfig(k8sCfg)
+	// if err != nil {
+	// 	internal.Logger.Error(err.Error())
+	// 	return
+	// }
+
+	client, err := dynamicClient()
+	if err != nil {
+		return
 	}
 
-})
+	volumesnapshotRes := schema.GroupVersionResource{Group: "snapshot.storage.k8s.io", Version: "v1", Resource: "volumesnapshots"}
+	err = client.Resource(volumesnapshotRes).Namespace("hc-"+ssCfg.HubId).Delete(context.TODO(), ssCfg.SnapshotName, metav1.DeleteOptions{})
+	if err != nil {
+		internal.Logger.Error("failed to delete snapshot: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	err = deleteSqlDump(ssCfg.HubId, ssCfg.SnapshotName, ssCfg.BucketName)
+	if err != nil {
+		internal.Logger.Error("failed to delete sqldump: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func dynamicClient() (dynamic.Interface, error) {
+	//getting k8s config
+	internal.Logger.Debug("&#9989; ... using InClusterConfig")
+	k8sCfg, err := rest.InClusterConfig()
+	// }
+	if k8sCfg == nil {
+		internal.Logger.Debug("ERROR" + err.Error())
+		internal.Logger.Error(err.Error())
+		return nil, err
+	}
+
+	client, err := dynamic.NewForConfig(k8sCfg)
+	if err != nil {
+		internal.Logger.Error(err.Error())
+		return nil, err
+	}
+
+	return client, nil
+}
 
 // func snapshot_restore(w http.ResponseWriter, r *http.Request) {
 // 	ssCfg, err := makeSnapshotCfg(r)
@@ -153,27 +228,32 @@ var HC_snapshot = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 // }
 
-func snapshot_list(w http.ResponseWriter, r *http.Request) {
-	ssCfg, err := makeSnapshotCfg(r)
-	if err != nil {
-		internal.Logger.Error("bad snapshotCfg: " + err.Error())
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-
-	//getting k8s config
-	internal.Logger.Debug("&#9989; ... using InClusterConfig")
-	k8sCfg, err := rest.InClusterConfig()
+func snapshot_list(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
+	// ssCfg, err := makeSnapshotCfg(r)
+	// if err != nil {
+	// 	internal.Logger.Error("bad snapshotCfg: " + err.Error())
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
 	// }
-	if k8sCfg == nil {
-		internal.Logger.Debug("ERROR" + err.Error())
-		internal.Logger.Error(err.Error())
-		return
-	}
 
-	client, err := dynamic.NewForConfig(k8sCfg)
+	// //getting k8s config
+	// internal.Logger.Debug("&#9989; ... using InClusterConfig")
+	// k8sCfg, err := rest.InClusterConfig()
+	// // }
+	// if k8sCfg == nil {
+	// 	internal.Logger.Debug("ERROR" + err.Error())
+	// 	internal.Logger.Error(err.Error())
+	// 	return
+	// }
+
+	// client, err := dynamic.NewForConfig(k8sCfg)
+	// if err != nil {
+	// 	internal.Logger.Error(err.Error())
+	// 	return
+	// }
+
+	client, err := dynamicClient()
 	if err != nil {
-		internal.Logger.Error(err.Error())
 		return
 	}
 
@@ -194,16 +274,16 @@ func snapshot_list(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("%v", snList)))
 }
 
-func snapshot_create(w http.ResponseWriter, r *http.Request) {
+func snapshot_create(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
 
-	ssCfg, err := makeSnapshotCfg(r)
-	if err != nil {
-		internal.Logger.Error("bad snapshotCfg: " + err.Error())
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
+	// ssCfg, err := makeSnapshotCfg(r)
+	// if err != nil {
+	// 	internal.Logger.Error("bad snapshotCfg: " + err.Error())
+	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	// 	return
+	// }
 	// scale delpoyment down to 0 before the backup
-	err = hc_switch(ssCfg.HubId, "down")
+	err := hc_switch(ssCfg.HubId, "down")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -409,4 +489,18 @@ func createSqlDump(hubsId, snapshotName, buckeName, databaseName string) (string
 
 	return call.Status, nil
 
+}
+
+func deleteSqlDump(hubsId, snapshotName, bucketName string) error {
+	ctx := context.Background()
+	storageService, err := storage.NewService(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = storageService.Objects.Delete(bucketName, hubsId+"/"+snapshotName+".gz").Do()
+	if err != nil {
+		return err
+	}
+	return nil
 }
