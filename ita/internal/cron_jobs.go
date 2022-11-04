@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -135,4 +137,108 @@ func publishToConfigmap_label(channel string, repo_tag_map map[string]string) er
 	}
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), cfgmap, metav1.UpdateOptions{})
 	return err
+}
+
+func Cronjob_HcHealthchecks(interval time.Duration) {
+
+	//get list of HC namespaces
+	nsList, err := cfg.K8sClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: "hub_id"})
+	if err != nil {
+		Logger.Error(err.Error())
+		return
+	}
+	//check them
+	for _, ns := range nsList.Items {
+		//get local endpoints from ingress
+		// Logger.Warn("comming soon -- ns: " + ns.Name)
+		_ = ns
+	}
+
+	//extra health checks
+	for _, url := range cfg.ExtraHealthchecks {
+		if url == "" {
+			Logger.Warn("empty url")
+			continue
+		}
+		Logger.Debug("url: " + url)
+		err := healthcheckUrl(url)
+		if err != nil {
+			Logger.Error("unhealthy: <" + url + "> " + err.Error())
+		}
+	}
+}
+
+func healthcheckUrl(url string) error {
+
+	// resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Cache-Control", "no-cache")
+	resp, err := _httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("bad resp: " + resp.Status)
+	}
+
+	return nil
+}
+
+var StreamNodes map[string]string
+
+var StreamNodeIpList string
+var mu_streamNodes sync.Mutex
+
+func Cronjob_SurveyStreamNodes(interval time.Duration) {
+
+	r := make(map[string]string)
+
+	nodeIps := make(map[string]string)
+	cfg.K8sClientSet.NodeV1().RESTClient().Get()
+
+	nodes, err := cfg.K8sClientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		Logger.Error(err.Error())
+	}
+	for _, node := range nodes.Items {
+		// nodeLabels := node.GetObjectMeta().GetLabels()
+		// Logger.Sugar().Debugf("nodeLabels: %v", nodeLabels)
+		// nodePool := nodeLabels["turkey"]
+		// if nodePool == "stream" || nodePool=="service" {
+		nodePubIp := "?"
+		for _, addr := range node.Status.Addresses {
+			if addr.Type == "ExternalIP" {
+				nodePubIp = addr.Address
+			}
+		}
+		nodeIps[node.Name] = nodePubIp
+		// }
+	}
+	coturnPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=coturn"})
+	for _, pod := range coturnPods.Items {
+		r[nodeIps[pod.Spec.NodeName]] = "coturn"
+	}
+	dialogPods, _ := cfg.K8sClientSet.CoreV1().Pods("turkey-stream").List(context.Background(), metav1.ListOptions{LabelSelector: "app=dialog"})
+	for _, pod := range dialogPods.Items {
+		r[nodeIps[pod.Spec.NodeName]] = "dialog"
+	}
+
+	//it shouldn't change anyway but --- todo -- get them from GCP
+	r["35.225.11.240"] = "gke-lb"
+	r["34.111.227.97"] = "gke-ig"
+
+	ipList := ""
+	for ip, _ := range r {
+		ipList += ip + "\n"
+	}
+	r["_as-of"] = time.Now().Format(time.UnixDate)
+
+	mu_streamNodes.Lock()
+	StreamNodes = r
+	StreamNodeIpList = ipList
+	mu_streamNodes.Unlock()
 }

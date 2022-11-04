@@ -232,9 +232,9 @@ func MakeAuthCookie(r *http.Request, email string) *http.Cookie {
 	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), email)
 
 	return &http.Cookie{
-		Name:     cfg.CookieName,
-		Value:    value,
-		Path:     "/",
+		Name:  cfg.CookieName,
+		Value: value,
+		// Path:     "/",
 		Domain:   cookieDomain(r),
 		HttpOnly: true,
 		Secure:   !cfg.InsecureCookie,
@@ -242,22 +242,33 @@ func MakeAuthCookie(r *http.Request, email string) *http.Cookie {
 	}
 }
 
-func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
+func MakeJwtCookie(r *http.Request, user idp.User, domain string) (*http.Cookie, error) {
 	expires := cookieExpiry()
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
+
+	// if domain == "" {
+	// 	domain = cookieDomain(r)
+	// }
+
+	// Logger.Sugar().Warnf("### MakeJwtCookie (domain: %v) ### for r: %v ### r.Header: %v ### r.Referer(): %v",
+	// 	domain, r, r.Header, r.Host, r.Referer())
+
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"iss": cfg.Domain,
+		"iss": domain,
 		"sub": user.Sub,
 		// "aud":"whomever?",
 		"exp": expires.Unix(),
 		// "nbf": time.Now().UTC(),
-		"iat":               time.Now().Add(-1 * time.Minute).Unix(),
-		"fxa_pic":           user.Avatar,
-		"fxa_2fa":           user.TwoFA,
-		"fxa_email":         user.Email,
-		"fxa_displayName":   user.DisplayName,
-		"fxa_subscriptions": user.Subscriptions,
+		"iat":                      time.Now().Add(-1 * time.Minute).Unix(),
+		"fxa_pic":                  user.Avatar,
+		"fxa_2fa":                  user.TwoFA,
+		"fxa_email":                user.Email,
+		"fxa_displayName":          user.DisplayName,
+		"fxa_subscriptions":        user.Subscriptions,
+		"fxa_plan_id":              user.Plan_id,
+		"fxa_cancel_at_period_end": user.Cancel_at_period_end,
+		"fxa_current_period_end":   user.Current_period_end,
 	})
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(cfg.PermsKey)
@@ -269,9 +280,10 @@ func MakeJwtCookie(r *http.Request, user idp.User) (*http.Cookie, error) {
 		Name:     cfg.JwtCookieName,
 		Value:    tokenString,
 		Path:     "/",
-		Domain:   cookieDomain(r),
+		Domain:   domain,
 		HttpOnly: true,
-		Secure:   !cfg.InsecureCookie,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 		Expires:  expires,
 	}, nil
 }

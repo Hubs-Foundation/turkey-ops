@@ -21,6 +21,7 @@ type Provider interface {
 	GetLoginURL(redirectURI, state string) string
 	ExchangeCode(redirectURI, code string) (Token, error)
 	GetUser(token string) (User, error)
+	GetSubscriptions(token string, user *User) error
 	Setup() error
 }
 
@@ -31,16 +32,20 @@ type Token struct {
 
 // User is the authenticated user
 type User struct {
-	Email          string `json:"email"`
-	Locale         string `json:"locale"`
-	TwoFA          bool   `json:"twoFactorAuthentication"`
-	MetricsEnabled bool   `json:"metricsEnabled"`
-	Uid            string `json:"uid"`
-	Avatar         string `json:"avatar"`
-	AvatarDefault  bool   `json:"avatarDefault"`
-	Sub            string `json:"sub"`
-	DisplayName    string `json:"displayName"`
+	Email          string   `json:"email"`
+	Locale         string   `json:"locale"`
+	TwoFA          bool     `json:"twoFactorAuthentication"`
+	MetricsEnabled bool     `json:"metricsEnabled"`
+	Uid            string   `json:"uid"`
+	Avatar         string   `json:"avatar"`
+	AvatarDefault  bool     `json:"avatarDefault"`
+	Sub            string   `json:"sub"`
+	DisplayName    string   `json:"displayName"`
 	Subscriptions  []string `json:"subscriptions"`
+	//
+	Plan_id              string
+	Cancel_at_period_end bool
+	Current_period_end   float64
 }
 
 // OAuthProvider is a provider using the oauth2 library

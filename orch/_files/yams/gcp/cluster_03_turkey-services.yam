@@ -423,7 +423,7 @@ spec:
       labels:
         app: turkeyorch
     spec:
-      serviceAccountName: api-sa
+      serviceAccountName: orch-sa
       {{ if ne .Env "dev" }}
       nodeSelector:
         turkey: service
@@ -579,20 +579,20 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: api-sa
+  name: orch-sa
   namespace: turkey-services
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: api-rb
+  name: orch-rb
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin  
 subjects:
 - kind: ServiceAccount
-  name: api-sa
+  name: orch-sa
   namespace: turkey-services
 ---
 ####################################################################################
@@ -729,6 +729,39 @@ spec:
 ########################################################################
 ######################   ita   ###################################
 ########################################################################
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ita-turkeyservices-public
+  namespace: turkey-services
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+spec:
+  rules:
+  - host: {{.Domain}}
+    http:
+      paths:
+      - path: /z/meta/cluster-ips
+        pathType: Prefix
+        backend:
+          service:
+            name: ita
+            port: 
+              number: 6000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ita
+  namespace: turkey-services
+spec:
+  ports:
+  - name: http
+    port: 6000
+    targetPort: 6000
+  selector:
+    app: ita
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -783,15 +816,14 @@ metadata:
   name: ita-sa
   namespace: turkey-services
 ---
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: ita-sa-rb
-  namespace: turkey-services
+  name: ita-sa-turkey-services-rb
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: edit #todo: further tighten this?
+  name: cluster-admin #todo: further tighten this? worth the effort?
 subjects:
 - kind: ServiceAccount
   name: ita-sa
@@ -966,81 +998,81 @@ spec:
   - name: http
     port: 4000
     targetPort: 4000
----
-####################################################################################
-##################################### market #######################################
-####################################################################################  
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: turkeymarketing
-  namespace: turkey-services
-  annotations:
-    kubernetes.io/ingress.class: haproxy
-spec:
-  rules:
-  - host: dashboard-api.{{.Domain}}
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: turkeymarketing
-            port: 
-              number: 3000
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: turkeymarketing
-  namespace: turkey-services
-  labels:
-    app: turkeymarketing
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: turkeymarketing
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      labels:
-        app: turkeymarketing
-    spec:
-      # terminationGracePeriodSeconds: 3
-      {{ if ne .Env "dev" }}
-      nodeSelector:
-        turkey: service
-      {{ end }}
-      containers:
-      - name: turkeymarketing
-        image: mozillareality/turkeymarketing:{{.ItaChan}}-latest
-        imagePullPolicy: IfNotPresent        
-        env:
-        - name: dummy
-          value: dummy
-        resources:
-          requests:
-            cpu: 0.25
-            memory: 250Mi
-          limits:
-            cpu: 1
-            memory: 2Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: turkeymarketing
-  namespace: turkey-services
-  labels:
-    app: turkeymarketing
-spec:
-  type: ClusterIP
-  selector:
-    app: turkeymarketing
-  ports:
-  - name: http-client
-    port: 3000
-    targetPort: 3000
+# ---
+# ####################################################################################
+# ##################################### marketing ####################################
+# ####################################################################################  
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: turkeymarketing
+#   namespace: turkey-services
+#   annotations:
+#     kubernetes.io/ingress.class: haproxy
+# spec:
+#   rules:
+#   - host: marketing.{{.Domain}}
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: turkeymarketing
+#             port: 
+#               number: 3000
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: turkeymarketing
+#   namespace: turkey-services
+#   labels:
+#     app: turkeymarketing
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: turkeymarketing
+#   strategy:
+#     type: Recreate
+#   template:
+#     metadata:
+#       labels:
+#         app: turkeymarketing
+#     spec:
+#       # terminationGracePeriodSeconds: 3
+#       {{ if ne .Env "dev" }}
+#       nodeSelector:
+#         turkey: service
+#       {{ end }}
+#       containers:
+#       - name: turkeymarketing
+#         image: mozillareality/turkeymarketing:{{.ItaChan}}-latest
+#         imagePullPolicy: IfNotPresent        
+#         env:
+#         - name: dummy
+#           value: dummy
+#         resources:
+#           requests:
+#             cpu: 0.25
+#             memory: 250Mi
+#           limits:
+#             cpu: 1
+#             memory: 2Gi
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: turkeymarketing
+#   namespace: turkey-services
+#   labels:
+#     app: turkeymarketing
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: turkeymarketing
+#   ports:
+#   - name: http-client
+#     port: 3000
+#     targetPort: 3000

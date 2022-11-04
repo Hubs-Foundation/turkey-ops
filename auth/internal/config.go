@@ -20,7 +20,7 @@ var cfg *Config
 // Config holds the runtime application config
 type Config struct {
 	Env             string `description:"dev/staging/prod"`
-	Domain          string `description:"turkey domain"`
+	Domain          string `description:"turkey domain, used to set auth cookie"`
 	TrustedClients  string `description:"<url1,url2,...url#,> ie. https://portal.myhubs.net,"`
 	AllowAuthCookie bool   `description:"allow creation and verification of simple secret protected authCookie in addition to full jwt-signed-with-domain-name authToken"`
 
@@ -161,12 +161,12 @@ func (c Config) String() string {
 // GetProvider returns the provider of the given name
 func (c *Config) GetProvider(name string) (idp.Provider, error) {
 	switch name {
-	case "google":
-		return &c.Providers.Google, nil
-		// case "oidc":
-		// 	return &c.Providers.OIDC, nil
-		// case "generic-oauth":
-		// 	return &c.Providers.GenericOAuth, nil
+	// case "google":
+	// 	return &c.Providers.Google, nil
+	// case "oidc":
+	// 	return &c.Providers.OIDC, nil
+	// case "generic-oauth":
+	// 	return &c.Providers.GenericOAuth, nil
 	case "fxa":
 		Logger.Debug(" ### GetProvider: fxa")
 		return &c.Providers.Fxa, nil

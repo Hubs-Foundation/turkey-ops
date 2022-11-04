@@ -42,3 +42,16 @@ func getRootDomain(fullDomain string) string {
 	}
 	return fdArr[len-2] + "." + fdArr[len-1]
 }
+
+func getDomain(url string) string {
+
+	// p := strings.Split(url, `://`)
+	p := url[strings.Index(url, "://")+3:]
+
+	return strings.Split(p, `/`)[0]
+
+}
+
+func isCrossDomain(url1, url2 string) bool {
+	return getRootDomain(getDomain(url1)) == getRootDomain(getDomain(url2))
+}

@@ -129,3 +129,34 @@ func HubInfraStatus() http.Handler {
 		return
 	})
 }
+
+var ClusterIps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/z/meta/cluster-ips" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	if r.Method == "GET" {
+		w.Header().Set("Content-Type", "application/json")
+		res := StreamNodes
+		json.NewEncoder(w).Encode(res)
+		return
+	}
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+
+})
+var ClusterIpsList = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/z/meta/cluster-ips/list" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	if r.Method == "GET" {
+		w.Header().Set("Cache-Control", "no-store, must-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Expires", "0")
+		res := StreamNodeIpList
+		fmt.Fprint(w, res)
+		return
+	}
+	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+
+})

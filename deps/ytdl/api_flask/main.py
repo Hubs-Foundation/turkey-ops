@@ -139,7 +139,7 @@ def flatten_result(result):
 def cloudrun_rollout_restart():
 
     rkey_last_f=rkey+":lastReset_time"
-    cooldown = 120 # seconds
+    cooldown = 600 # seconds
 
     t0=float(0)
     t=redis_client.get(rkey_last_f)
@@ -158,8 +158,12 @@ def cloudrun_rollout_restart():
     knativeBase="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/"
 
     getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(projectId, svcName)
-    res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
 
+    inst_sa_token_res = getGcpMetadata(metadataUrl+"instance/service-accounts/"+full_sa+"/token")
+    inst_sa_token=json.loads(inst_sa_token_res)['access_token']
+
+    res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
+    print("cloudrun_rollout_restart~~~get_knative_res.text: " + res.text)
     reqJson=json.loads(res.text)
 
     ###
@@ -193,11 +197,14 @@ def cloudrun_rollout_restart():
             "name": "{revisionName}",
             "annotations": {{
                 "run.googleapis.com/vpc-access-egress": "private-ranges-only",
+                "autoscaling.knative.dev/minScale": "1",
+                "autoscaling.knative.dev/maxScale": "100",
                 "run.googleapis.com/vpc-access-connector": "{vpcConn}"}}}},
         "spec": {{
             "serviceAccountName": "{sa}",
             "containers": [{{
                 "image": "{image}",
+                "resources": {{ "limits":{{ "memory":"2Gi", "cpu":"2000m" }} }},
                 "env": [
                     {{"name": "dummy","value": "dummy"}},
                     {{"name": "REDEPLOY_AT","value": "{redeploy_at}"}}
@@ -240,6 +247,7 @@ app = Flask(__name__)
 @app.route("/api/info")
 def ytdl_api_info():
     url = request.args['url']
+
     result = get_result()
     key = 'info'
     if query_bool(request.args.get('flatten'), 'flatten', False):
@@ -250,11 +258,10 @@ def ytdl_api_info():
         key: result,
     }
     redis_client.zincrby(rkey, 1, inst_ip)
-
-    # top_stat =redis_client.zrevrange(rkey, 0,-1, withscores=True)
-    # top_ip=str(top_stat[0][0])
-    # top_cnt=int(top_stat[0][1])
+    
+    #update ip usage count, redeploy at high usage
     cnt = redis_client.zscore(rkey, inst_ip)
+    # logging.debug( "NOT redeploying -- " + inst_ip + ", cnt=" + str(cnt)+ ", redeploy_at="+ str(redeploy_at))
     if cnt >=redeploy_at :
         logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
         r=cloudrun_rollout_restart()
@@ -266,9 +273,11 @@ def ytdl_api_info():
 def ytdl_api_stats():
     _inst_ip_cnt = redis_client.zscore(rkey, inst_ip)
     report={
+        # "ytdl_cache_stats_hit": redis_client.get("ytdl_cache_stats_hit").decode('utf-8'),
+        # "ytdl_cache_stats_miss": redis_client.get("ytdl_cache_stats_miss").decode('utf-8'),
         "_rkey": rkey,
         "_inst_ip": inst_ip,
-        "_inst_ip_cnt": _inst_ip_cnt,
+        "_inst_ip_cnt": _inst_ip_cnt
         }
     
     # top_stat =redis_client.zrevrange(rkey, 0,0, withscores=True)
@@ -308,8 +317,6 @@ inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 redeploy_at = int(os.environ.get('REDEPLOY_AT', 88))
 
 projectId=getGcpMetadata(metadataUrl+"project/project-id")
-inst_sa_token_res = getGcpMetadata(metadataUrl+"instance/service-accounts/"+full_sa+"/token")
-inst_sa_token=json.loads(inst_sa_token_res)['access_token']
 inst_id = getGcpMetadata(metadataUrl+"instance/id")
 
 

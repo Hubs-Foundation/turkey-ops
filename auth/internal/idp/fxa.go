@@ -19,9 +19,12 @@ type Fxa struct {
 	entrypoint   string
 	Prompt       string `long:"prompt" env:"PROMPT" default:"select_account" description:"Space separated list of OpenID prompt options"`
 
-	LoginURL *url.URL
-	TokenURL *url.URL
-	UserURL  *url.URL
+	LoginURL        *url.URL
+	TokenURL        *url.URL
+	UserURL         *url.URL
+	SubscriptionURL *url.URL
+
+	turkey_prod_id string
 }
 
 // Name returns the name of the provider
@@ -39,15 +42,19 @@ func (f *Fxa) Setup() error {
 	fxaLoginHost := "accounts.firefox.com"
 	fxaTokenHost := "api.accounts.firefox.com"
 	fxaUserHost := "profile.accounts.firefox.com"
+	fxaSubHost := "api-accounts.firefox.com"
+	f.turkey_prod_id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 	if os.Getenv("ENV") == "dev" {
 		fxaLoginHost = "accounts.stage.mozaws.net"
 		fxaTokenHost = "oauth.stage.mozaws.net"
 		fxaUserHost = "profile.stage.mozaws.net"
+		fxaSubHost = "api-accounts.stage.mozaws.net"
+		f.turkey_prod_id = "prod_KPReWHqwGqZBzc"
 	}
 
 	// Set static values
-	f.Scope = "profile openid"
+	f.Scope = "profile openid https://identity.mozilla.com/account/subscriptions"
 	f.LoginURL = &url.URL{
 		Scheme: "https",
 		Host:   fxaLoginHost,
@@ -62,6 +69,11 @@ func (f *Fxa) Setup() error {
 		Scheme: "https",
 		Host:   fxaUserHost,
 		Path:   "/v1/profile",
+	}
+	f.SubscriptionURL = &url.URL{
+		Scheme: "https",
+		Host:   fxaSubHost,
+		Path:   "/v1/oauth/mozilla-subscriptions/customer/billing-and-subscriptions",
 	}
 
 	return nil
@@ -135,4 +147,55 @@ func (f *Fxa) GetUser(token string) (User, error) {
 	err = json.Unmarshal(bodyBytes, &user)
 
 	return user, err
+}
+
+func (f *Fxa) GetSubscriptions(token string, user *User) error {
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", f.SubscriptionURL.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	fmt.Println("GetSubscriptions.res.StatusCode = ", res.StatusCode)
+	if res.StatusCode != 200 {
+		bodyBytes, _ := ioutil.ReadAll(res.Body)
+		return errors.New(string(bodyBytes))
+	}
+
+	bodyBytes, _ := ioutil.ReadAll(res.Body)
+	fmt.Println("GetSubscriptions -- bodyBytes -- " + string(bodyBytes))
+
+	err = loadSubInfo(bodyBytes, f.turkey_prod_id, user)
+
+	return err
+}
+
+func loadSubInfo(subRespJson []byte, turkey_prod_id string, user *User) error {
+
+	subplatMap := make(map[string]interface{})
+	err := json.Unmarshal(subRespJson, &subplatMap)
+	if err != nil {
+		return err
+	}
+	subs := subplatMap["subscriptions"]
+	for _, sub := range subs.([]interface{}) {
+		map_sub := sub.(map[string]interface{})
+		product_id := map_sub["product_id"].(string)
+		if product_id == turkey_prod_id {
+			user.Plan_id = map_sub["plan_id"].(string)
+			user.Cancel_at_period_end = map_sub["cancel_at_period_end"].(bool)
+			user.Current_period_end = map_sub["current_period_end"].(float64)
+			return nil
+		}
+	}
+
+	return errors.New("no subscription found for project_id: " + turkey_prod_id)
 }

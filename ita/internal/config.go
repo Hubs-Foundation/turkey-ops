@@ -31,6 +31,8 @@ type Config struct {
 	TurkeyUpdater *TurkeyUpdater
 
 	HostnameHash uint32
+
+	ExtraHealthchecks []string
 }
 
 func GetCfg() *Config {
@@ -109,6 +111,8 @@ func MakeCfg() {
 	defer f.Close()
 	f.WriteString(keyStr)
 	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/app/gcpkey.json")
+
+	cfg.ExtraHealthchecks = strings.Split(os.Getenv("EXTRA_HEALTHCHECKS"), ",")
 
 }
 

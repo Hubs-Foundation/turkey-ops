@@ -48,19 +48,24 @@ func Login() http.Handler {
 			return
 		}
 
-		email, err := CheckCookie(r)
 		// err = errors.New("fake error to force authRedirect, remove me after fxa's done")
-		if err != nil {
-			Logger.Debug("valid auth cookie not found >>> authRedirect ... err: " + err.Error())
+
+		if isCrossDomain(cfg.Domain, client) {
+			Logger.Debug("cross domain => redirect")
 			authRedirect(w, r, idp[0])
 		}
 
-		// Valid request
-		Logger.Sugar().Debug("allowed. good cookie found for " + email)
-		w.Header().Set("X-Forwarded-UserEmail", email)
-		w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
+		if email, err := CheckCookie(r); err != nil {
+			Logger.Debug("bad cookie => redirect")
+			authRedirect(w, r, idp[0])
+		} else {
+			// already authenticated
+			Logger.Sugar().Debug("allowed. good cookie found for " + email)
+			w.Header().Set("X-Forwarded-UserEmail", email)
+			w.Header().Set("X-Forwarded-Idp", cfg.DefaultProvider)
+			http.Redirect(w, r, client, http.StatusTemporaryRedirect)
+		}
 
-		http.Redirect(w, r, client, http.StatusTemporaryRedirect)
 	})
 }
 
@@ -93,7 +98,7 @@ func authRedirect(w http.ResponseWriter, r *http.Request, providerName string) {
 	}
 
 	loginURL := provider.GetLoginURL(redirectURL, MakeState(r, provider, nonce))
-	Logger.Debug(" ### loginURL: " + loginURL)
+	// Logger.Debug(" ### loginURL: " + loginURL)
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 }
 
@@ -121,7 +126,7 @@ func Oauth() http.Handler {
 			return
 		}
 
-		Logger.Debug("Handling callback")
+		// Logger.Debug("Handling callback")
 		Logger.Sugar().Debugf("dump r, %v", r)
 
 		// Check state
@@ -177,20 +182,42 @@ func Oauth() http.Handler {
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		Logger.Sugar().Debug("user", user)
+		Logger.Sugar().Debug("GetUser -- user", user)
 
-		// Generate cookie
-		jwtCookie, err := MakeJwtCookie(r, user)
+		// Get subscription
+		err = p.GetSubscriptions(token.AccessToken, &user)
+		if err != nil {
+			Logger.Sugar().Error("failed @ p.GetSubscriptions(token.AccessToken): " + err.Error())
+		}
+		Logger.Sugar().Debug("GetSubscriptions -- user", user)
+
+		jwtCookie, err := MakeJwtCookie(r, user, cfg.Domain)
+		// jwtCookie, err := MakeJwtCookie(r, user, getDomain(redirect))
+
 		if err != nil {
 			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		http.SetCookie(w, jwtCookie)
 
-		Logger.Debug("jwtCookie domain: " + jwtCookie.Domain)
-		Logger.Debug("redirect: " + redirect)
-		Logger.Debug("redirect domain: " + redirect[strings.Index(redirect, "://")+3:])
+		Logger.Sugar().Warnf("redirect: %v, r.Host: %v", redirect, r.Host)
+		// set default cookie for dev env's skooner
+		if cfg.Env == "dev" && strings.Contains(redirect, "dash.") {
+			http.SetCookie(w, jwtCookie)
+			Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
+		}
+
+		//write token to url param for external redirect
+		// if !strings.Contains(redirect, cfg.Domain) {
+		if strings.HasPrefix(redirect, "https://") {
+			redirect += "?" + cfg.JwtCookieName + "=" + jwtCookie.Value
+			// Logger.Sugar().Warnf(" ### jwt debug ### external redirect, set to url param -- redirect: %v", redirect)
+		}
+		// }
+
+		// Logger.Debug("jwtCookie domain: " + jwtCookie.Domain)
+		// Logger.Debug("redirect: " + redirect)
+		// Logger.Debug("redirect domain: " + redirect[strings.Index(redirect, "://")+3:])
 
 		//dev only -- make an auth cookie too
 		// if cfg.AllowAuthCookie {
@@ -281,7 +308,7 @@ func AuthnProxy() http.Handler {
 		}
 		r.Header.Set("x-turkeyauth-proxied", "1")
 
-		Logger.Sugar().Debugf("backend url: %v", backendUrl)
+		// Logger.Sugar().Debugf("backend url: %v", backendUrl)
 
 		email, err := CheckCookie(r)
 		if err != nil {
@@ -290,7 +317,7 @@ func AuthnProxy() http.Handler {
 			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
-		Logger.Sugar().Debug("allowed: " + email)
+		// Logger.Sugar().Debug("allowed: " + email)
 
 		AllowedEmailDomains := r.Header.Get("AllowedEmailDomains")
 		if AllowedEmailDomains != "" {
@@ -302,7 +329,7 @@ func AuthnProxy() http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			Logger.Sugar().Infof("ALLOWED: %v, %v", email, urlStr)
+			// Logger.Sugar().Debugf("ALLOWED: %v, %v", email, urlStr)
 		}
 
 		proxy, err := Proxyman.Get(urlStr)
@@ -402,7 +429,7 @@ func GimmieTestJwtCookie() http.Handler {
 			return
 		}
 
-		jwtCookie, err := MakeJwtCookie(r, user)
+		jwtCookie, err := MakeJwtCookie(r, user, "")
 		if err != nil {
 			Logger.Sugar().Errorf("failed to make cookie for user: %v", user)
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
