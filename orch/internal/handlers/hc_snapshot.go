@@ -56,28 +56,6 @@ var HC_snapshot = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 })
 
 func snapshot_delete(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
-	// ssCfg, err := makeSnapshotCfg(r)
-	// if err != nil {
-	// 	internal.Logger.Error("bad snapshotCfg: " + err.Error())
-	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-	// 	return
-	// }
-	//getting k8s config
-	// internal.Logger.Debug("&#9989; ... using InClusterConfig")
-	// k8sCfg, err := rest.InClusterConfig()
-	// // }
-	// if k8sCfg == nil {
-	// 	internal.Logger.Debug("ERROR" + err.Error())
-	// 	internal.Logger.Error(err.Error())
-	// 	return
-	// }
-
-	// client, err := dynamic.NewForConfig(k8sCfg)
-	// if err != nil {
-	// 	internal.Logger.Error(err.Error())
-	// 	return
-	// }
-
 	client, err := dynamicClient()
 	if err != nil {
 		return
@@ -229,29 +207,6 @@ func dynamicClient() (dynamic.Interface, error) {
 // }
 
 func snapshot_list(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
-	// ssCfg, err := makeSnapshotCfg(r)
-	// if err != nil {
-	// 	internal.Logger.Error("bad snapshotCfg: " + err.Error())
-	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-	// 	return
-	// }
-
-	// //getting k8s config
-	// internal.Logger.Debug("&#9989; ... using InClusterConfig")
-	// k8sCfg, err := rest.InClusterConfig()
-	// // }
-	// if k8sCfg == nil {
-	// 	internal.Logger.Debug("ERROR" + err.Error())
-	// 	internal.Logger.Error(err.Error())
-	// 	return
-	// }
-
-	// client, err := dynamic.NewForConfig(k8sCfg)
-	// if err != nil {
-	// 	internal.Logger.Error(err.Error())
-	// 	return
-	// }
-
 	client, err := dynamicClient()
 	if err != nil {
 		return
@@ -275,13 +230,6 @@ func snapshot_list(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
 }
 
 func snapshot_create(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
-
-	// ssCfg, err := makeSnapshotCfg(r)
-	// if err != nil {
-	// 	internal.Logger.Error("bad snapshotCfg: " + err.Error())
-	// 	http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-	// 	return
-	// }
 	// scale delpoyment down to 0 before the backup
 	err := hc_switch(ssCfg.HubId, "down")
 	if err != nil {
@@ -478,7 +426,7 @@ func createSqlDump(hubsId, snapshotName, buckeName, databaseName string) (string
 		ExportContext: &sqladmin.ExportContext{
 			Databases: []string{databaseName},
 			FileType:  "SQL",
-			Uri:       "gs://" + buckeName + "/" + hubsId + "/" + snapshotName + ".gz",
+			Uri:       fmt.Sprintf("gs://%s/hc-%s/%s.gz", buckeName, hubsId, snapshotName),
 		},
 	}
 
@@ -498,7 +446,7 @@ func deleteSqlDump(hubsId, snapshotName, bucketName string) error {
 		return err
 	}
 
-	err = storageService.Objects.Delete(bucketName, hubsId+"/"+snapshotName+".gz").Do()
+	err = storageService.Objects.Delete(bucketName, fmt.Sprintf("hc-%s/%s.gz", hubsId, snapshotName)).Do()
 	if err != nil {
 		return err
 	}
