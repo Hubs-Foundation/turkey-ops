@@ -1078,6 +1078,8 @@ apiVersion: apps/v1
 metadata:
   name: nfs
   namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 spec:
   serviceName: "nfs"
   selector:
