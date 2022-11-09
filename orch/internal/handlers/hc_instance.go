@@ -158,7 +158,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if fileOption == "_fs" { //create folder for hub-id (hc-<hub_id>) in turkeyfs
-		os.MkdirAll("/turkeyfs/"+hcCfg.HubId, 0600)
+		os.MkdirAll("/turkeyfs/hc-"+hcCfg.HubId, 0600)
 	}
 
 	internal.Logger.Debug(" >>>>>> selected option: " + fileOption)
