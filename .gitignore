@@ -1,2 +1,3 @@
 # /k8s-charts/_*
 /k8s-charts/turkey-services.yaml
+.DS_Store
