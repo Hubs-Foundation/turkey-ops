@@ -150,18 +150,17 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-	fileOption := "_gcs_sc"
+	fileOption := "_fs"
 	if hcCfg.Options != "" {
 		fileOption = hcCfg.Options
-	} else if hcCfg.Tier == "free" { // fuse for free tiers
-		fileOption = "_gcs_sc"
 	} else { // nfs for all non-free tiers
 		fileOption = "_nfs"
 	}
 
-	if os.Getenv("CLOUD") == "aws" { // todo: remove after mpv1
-		fileOption = "_s3fs"
+	if fileOption == "_fs" { //create folder for hub-id (hc-<hub_id>) in turkeyfs
+		os.MkdirAll("/turkeyfs/"+hcCfg.HubId, 0600)
 	}
+
 	internal.Logger.Debug(" >>>>>> selected option: " + fileOption)
 
 	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")

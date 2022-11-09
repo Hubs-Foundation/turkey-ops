@@ -6,6 +6,75 @@ metadata:
   name: turkey-services
 ---
 ########################################################################
+###################### turkeyfs #########################################
+######################################################################## 
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: turkeyfs-pvc
+  namespace: turkey-services
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: gke-filestore
+  resources:
+    requests:
+      storage: 1Ti
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: turkeyfs
+  namespace: turkey-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turkeyfs
+  template:
+    metadata:
+      labels:
+        app: turkeyfs
+    spec:
+      {{ if ne .Env "dev" }}
+      nodeSelector:
+        turkey: service
+      {{ end }}
+      containers:
+      - name: turkeyfs
+        image: k8s.gcr.io/volume-nfs:0.8
+        imagePullPolicy: IfNotPresent       
+        resources:
+          requests:
+            memory: 2000Mi
+            cpu: 1
+          limits:
+            memory: 4000Mi
+            cpu: 2
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: turkeyfs
+          mountPath: /exports
+      volumes:
+        - name: turkeyfs
+          persistentVolumeClaim:
+            claimName: turkeyfs-pvc
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: turkeyfs
+  namespace: turkey-services
+spec:
+  selector:
+    app: turkeyfs
+  ports:    # Open the ports required by the NFS server
+    # Port 2049 for TCP
+    - port: 2049
+      protocol: TCP
+---
+########################################################################
 ###################### configs #########################################
 ########################################################################  
 apiVersion: v1
@@ -428,10 +497,21 @@ spec:
       nodeSelector:
         turkey: service
       {{ end }}
+      volumes:
+      - name: nfs
+        nfs:
+          server: turkeyfs.turkey-services.svc.cluster.local
+          path: /
       containers:
       - name: turkeyorch
         image: mozilla/turkeyorch:{{.ItaChan}}-latest
-        imagePullPolicy: IfNotPresent        
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true    
+        volumeMounts:
+        - name: nfs
+          mountPath: /turkeyfs
+          mountPropagation: Bidirectional
         env:
         - name: ENV
           value: {{.Env}}       
