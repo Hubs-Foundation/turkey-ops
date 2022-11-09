@@ -545,6 +545,12 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 			internal.Logger.Error("delete ns failed: " + err.Error())
 			return
 		}
+		// delete hc-<hub-id> folder on turkeyfs (if any)
+		if len(hcCfg.HubId) < 1 {
+			internal.Logger.Error("DANGER!!! empty HubId")
+		} else {
+			os.RemoveAll("/turkeyfs/hc-" + hcCfg.HubId)
+		}
 	}()
 
 	//return
