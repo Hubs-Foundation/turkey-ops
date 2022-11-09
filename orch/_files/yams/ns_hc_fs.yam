@@ -1,0 +1,1146 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hc-{{.HubId}}
+  labels:
+    hub_id: "{{.HubId}}"
+    subdomain: "{{.Subdomain}}"
+    tier: "{{.Tier}}"
+  annotations:
+    adm: "{{.UserEmail}}"
+---
+########################################################################
+###################### configs #########################################
+########################################################################  
+apiVersion: v1
+kind: Secret
+metadata:
+  name: configs
+  namespace: hc-{{.HubId}}
+stringData:
+  NODE_COOKIE: {{.NODE_COOKIE}}
+  SUB_DOMAIN: "{{.Subdomain}}"
+  DOMAIN: {{.Domain}}
+  HUB_DOMAIN: {{.HubDomain}}
+  DB_USER: postgres
+  DB_PASS: {{.DBpass}}
+  DB_NAME: {{.DBname}}
+  DB_HOST: pgbouncer.turkey-services
+  DB_HOST_T: pgbouncer-t.turkey-services
+  PERMS_KEY: {{.PermsKey}}
+  SMTP_SERVER: {{.SmtpServer}}
+  SMTP_PORT: "{{.SmtpPort}}"
+  SMTP_USER: {{.SmtpUser}}
+  SMTP_PASS: {{.SmtpPass}}
+  ADM_EMAIL: {{.UserEmail}}
+  PGRST_DB_URI: postgres://postgres:{{.DBpass}}@pgbouncer.turkey-services/{{.DBname}}
+  PGRST_JWT_SECRET: "{{.JWK}}"
+  GCP_SA_HMAC_KEY: {{.GCP_SA_HMAC_KEY}}
+  GCP_SA_HMAC_SECRET: {{.GCP_SA_HMAC_SECRET}}
+  GUARDIAN_KEY: {{.GuardianKey}}
+  PHX_KEY: {{.PhxKey}}
+  DASHBOARD_ACCESS_KEY: {{.DASHBOARD_ACCESS_KEY}}
+  HEADER_AUTHZ: {{.HEADER_AUTHZ}}
+  SKETCHFAB_API_KEY: {{.SKETCHFAB_API_KEY}}
+data:
+  GCP_SA_KEY: {{.GCP_SA_KEY_b64}}  
+---
+######################################################################################
+###################################### ingress #######################################
+######################################################################################
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkey-https
+  namespace: hc-{{.HubId}}
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/server-ssl: "true"
+    haproxy.org/response-set-header: |
+      access-control-allow-origin "https://{{.Subdomain}}.{{.HubDomain}}"
+    haproxy.org/path-rewrite: /api-internal(.*) /_drop_
+spec:
+  rules:
+  - host: {{.Subdomain}}.{{.HubDomain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000
+  - host: {{.Subdomain}}.assets.{{.Domain}}
+    http:
+      paths:
+      - path: /files/
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000
+      - path: /http
+        pathType: ImplementationSpecific  # haproxy's "Begin with"
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4000                  
+      - path: /hubs
+        pathType: Prefix
+        backend:
+          service:
+            name: hubs
+            port: 
+              number: 8080
+      - path: /spoke
+        pathType: Prefix
+        backend:
+          service:
+            name: spoke
+            port: 
+              number: 8080
+  # - host: {{.Subdomain}}.cors.{{.Domain}}
+  #   http:
+  #     paths:
+  #     - path: /files/
+  #       pathType: Prefix
+  #       backend:
+  #         service:
+  #           name: ret
+  #           port: 
+  #             number: 4000
+  #     - path: /http
+  #       pathType: ImplementationSpecific
+  #       backend:
+  #         service:
+  #           name: ret
+  #           port: 
+  #             number: 4000                  
+  #     - path: /hubs
+  #       pathType: Prefix
+  #       backend:
+  #         service:
+  #           name: hubs
+  #           port: 
+  #             number: 8080
+  #     - path: /spoke
+  #       pathType: Prefix
+  #       backend:
+  #         service:
+  #           name: spoke
+  #           port: 
+  #             number: 8080
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: turkey-nearspark
+#   namespace: hc-{{.HubId}}
+#   annotations:
+#     kubernetes.io/ingress.class: haproxy    
+#     haproxy.org/path-rewrite: /nearspark/(.*) /\1              # strip /nearspark  
+# spec:
+#   rules:        
+#   - host: {{.Subdomain}}.cors.{{.Domain}}
+#     http:
+#       paths:
+#       - path: /nearspark
+#         pathType: ImplementationSpecific
+#         backend:
+#           service:
+#             name: nearspark
+#             port: 
+#               number: 5000              
+---
+##############################################################################################
+############################################ reticulum #######################################
+##############################################################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ret-config
+  namespace: hc-{{.HubId}}
+data:
+  config.toml.template: |
+    [peerage]
+    dns_name = "ret.<POD_NS>.svc.cluster.local"
+    app_name = "ret"
+
+    [ret."Elixir.Ret"]
+    pool = "<SUB_DOMAIN>"
+
+    [ret."Elixir.RetWeb.Plugs.HeaderAuthorization"]
+    header_name = "x-ret-admin-access-key"
+    header_value = "<HEADER_AUTHZ>"
+
+    [ret."Elixir.RetWeb.Plugs.DashboardHeaderAuthorization"]
+    dashboard_access_key = "<DASHBOARD_ACCESS_KEY>"
+
+    [ret."Elixir.Ret.DiscordClient"]
+    client_id = ""
+    client_secret = ""
+    bot_token = ""
+
+    [ret."Elixir.RetWeb.Endpoint".https]
+    port = 4000
+    certfile = "/ret/cert.pem"
+    cacertfile = "/ret/cacert.pem"
+    keyfile = "/ret/key.pem"
+
+    [ret."Elixir.RetWeb.Endpoint"]
+    allowed_origins = "*"
+    secret_key_base = "<PHX_KEY>"
+    allow_crawlers = true
+
+    [ret."Elixir.RetWeb.Endpoint".secondary_url]
+
+    [ret."Elixir.RetWeb.Endpoint".cors_proxy_url]
+    # host = "<SUB_DOMAIN>.cors.<DOMAIN>"
+    host = "hubs-proxy.com"    
+    port = 443
+
+    [ret."Elixir.RetWeb.Endpoint".imgproxy_url]
+    host = "<IMG_PROXY>"
+    port = 5000
+
+    [ret."Elixir.RetWeb.Endpoint".assets_url]
+    host = "<SUB_DOMAIN>.assets.<DOMAIN>"
+    port = 443
+
+    [ret."Elixir.RetWeb.Endpoint".link_url]
+    host = "hubs-link.local"
+
+    [ret."Elixir.RetWeb.Endpoint".url]
+    host = "<SUB_DOMAIN>.<HUB_DOMAIN>"
+    port = 443
+
+    [ret."Elixir.RetWeb.Endpoint".static_url]
+    host = "<SUB_DOMAIN>.<HUB_DOMAIN>"
+
+    [ret."Elixir.Ret.Repo"]
+    username = "<DB_USER>"
+    password = "<DB_PASS>"
+    database = "<DB_NAME>"
+    hostname = "<DB_HOST_T>"
+    template = "template0"
+    pool_size = 10
+    port = 5432
+
+    [ret."Elixir.Ret.SessionLockRepo"]
+    username = "<DB_USER>"
+    password = "<DB_PASS>"
+    database = "<DB_NAME>"
+    hostname = "<DB_HOST>"
+    template = "template0"
+
+    port = 5432
+
+    [ret."Elixir.Ret.Locking".session_lock_db]
+    username = "<DB_USER>"
+    password = "<DB_PASS>"
+    database = "<DB_NAME>"
+    hostname = "<DB_HOST>"
+    port = 5432
+
+    [ret."Elixir.Ret.Habitat"]
+    ip = "127.0.0.1"
+    http_port = 9631
+
+    [ret."Elixir.Ret.JanusLoadStatus"]
+    default_janus_host = "stream.<DOMAIN>"
+    janus_service_name = "stream.<DOMAIN>"
+    janus_admin_secret = ""
+    janus_admin_port = 7000
+    janus_port = 4443
+
+    [ret."Elixir.Ret.Guardian"]
+    secret_key = "<GUARDIAN_KEY>"
+    issuer = "<SUB_DOMAIN>.<HUB_DOMAIN>"
+
+    [ret."Elixir.Ret.PermsToken"]
+    perms_key = "<PERMS_KEY>"
+
+    [ret."Elixir.Ret.OAuthToken"]
+    oauth_token_key = ""
+
+    [ret]
+    bot_access_key = ""
+    # pgrest_host = ""
+    # ita_host = ""
+
+    [ret."Elixir.Ret.MediaResolver"]
+    ytdl_host = "<YTDL_HOST>"
+    photomnemonic_endpoint = "<PHOTOMNEMONIC>"
+    sketchfab_api_key = "<SKETCHFAB_API_KEY>"
+
+    [ret."Elixir.Ret.Speelycaptor"]
+    speelycaptor_endpoint = "<SPEELYCAPTOR>"
+
+    [ret."Elixir.Ret.PageOriginWarmer"]
+    hubs_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/hubs/pages"
+    spoke_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/spoke/pages"
+    admin_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/hubs/pages"
+
+    [ret."Elixir.Ret.HttpUtils"]
+    insecure_ssl = false
+
+    [ret."Elixir.Ret.Storage"]
+    storage_path = "/storage"
+    ttl = 172800
+    host = "https://<SUB_DOMAIN>.<HUB_DOMAIN>"
+    quota_gb = "<STORAGE_QUOTA_GB>" # example: "12"
+    # ^^^ has to be string or elixir throws (ArgumentError) argument error:erlang.byte_size(#), but why
+
+    [ret."Elixir.RetWeb.Email"]
+    from = "noreply@<SUB_DOMAIN>.<HUB_DOMAIN>"
+
+    [ret."Elixir.Ret.Mailer"]
+    server = "<SMTP_SERVER>"
+    port = "<SMTP_PORT>"
+    username = "<SMTP_USER>"
+    password = "<SMTP_PASS>"
+
+    [ret."Elixir.Ret.Support"]
+    slack_webhook_url = "<SLACK_WEBHOOK>"
+
+    [ret."Elixir.RetWeb.Plugs.AddCSP"]
+    child_src = ""
+    connect_src = "wss://*.stream.<DOMAIN>:4443"
+    font_src = ""
+    form_action = ""
+    frame_src = ""
+    img_src = "nearspark.reticulum.io"
+    manifest_src = ""
+    media_src = ""
+    script_src = ""
+    style_src = ""
+    worker_src = ""
+
+    [ret."Ret.Repo.Migrations.AdminSchemaInit"]
+    postgrest_password = ""
+
+    [ret."Elixir.Ret.StatsJob"]
+
+    [ret."Elixir.RetWeb.HealthController"]
+
+    [ret."Elixir.RetWeb.PageController"]
+    skip_cache = false
+    extra_avatar_headers = ""
+    extra_index_headers = ""
+    extra_room_headers = ""
+    extra_scene_headers = ""
+
+    extra_avatar_html = ""
+    extra_index_html = ""
+    extra_room_html = ""
+    extra_scene_html = ""
+
+    extra_avatar_script = ""
+    extra_index_script = ""
+    extra_room_script = ""
+    extra_scene_script = ""
+
+    [ret."Elixir.Ret.Account"]
+    admin_email = "<ADM_EMAIL>"
+
+    [ret."Elixir.Ret.Coturn"]
+    realm = "turkey"
+    public_tls_ports = "5349"
+
+    [web_push_encryption.vapid_details]
+    subject = ""
+    public_key = ""
+    private_key = ""
+
+    [sentry]
+    dsn = ""
+
+    [run]
+    hostname_dns_suffix = "turkey"
+
+    [hackney]
+    max_connections = 250
+
+    [ret."Elixir.Ret.Meta"]
+    phx_host = "<SUB_DOMAIN>.<HUB_DOMAIN>"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reticulum
+  namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: reticulum
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: 
+      maxUnavailable: 1
+      maxSurge: 1
+  revisionHistoryLimit: 1
+  template:
+    metadata:
+      labels:
+        app: reticulum
+    spec:
+      nodeSelector:
+        turkey: {{.NodePool}}
+      volumes:
+      - name: nfs
+        nfs:
+          server: turkeyfs.turkey-services.svc.cluster.local
+          path: /hc-{{.HubId}}
+      - name: config
+        configMap:
+          name: ret-config           
+      containers:
+      - name: reticulum
+        volumeMounts:
+        - name: nfs
+          mountPath: /storage
+          mountPropagation: Bidirectional
+        - name: config
+          mountPath: /home/ret
+        securityContext:
+          privileged: true       
+        image: mozillareality/ret:{{.Img_ret}}  
+        ports:
+        - containerPort: 9100
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: turkeyCfg_POD_NS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: turkeyCfg_NODE_COOKIE
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: NODE_COOKIE
+        - name: turkeyCfg_SUB_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SUB_DOMAIN
+        - name: turkeyCfg_HUB_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: HUB_DOMAIN
+        - name: turkeyCfg_DOMAIN
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DOMAIN
+        - name: turkeyCfg_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_USER
+        - name: turkeyCfg_DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_PASS
+        - name: turkeyCfg_DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_NAME
+        - name: turkeyCfg_DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_HOST
+        - name: turkeyCfg_DB_HOST_T
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DB_HOST_T
+        - name: turkeyCfg_GUARDIAN_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GUARDIAN_KEY
+        - name: turkeyCfg_PERMS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PERMS_KEY
+        - name: turkeyCfg_PHX_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PHX_KEY
+        - name: turkeyCfg_SMTP_SERVER
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SMTP_SERVER
+        - name: turkeyCfg_SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SMTP_PORT
+        - name: turkeyCfg_SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SMTP_USER
+        - name: turkeyCfg_SMTP_PASS
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SMTP_PASS
+        - name: turkeyCfg_ADM_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: ADM_EMAIL
+        - name: turkeyCfg_SKETCHFAB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SKETCHFAB_API_KEY              
+        - name: turkeyCfg_IMG_PROXY
+          value: nearspark.hc-{{.HubId}}
+        - name: turkeyCfg_HEADER_AUTHZ
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: HEADER_AUTHZ
+        - name: turkeyCfg_DASHBOARD_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DASHBOARD_ACCESS_KEY
+        - name: turkeyCfg_YTDL_HOST
+          value: "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"          
+        - name: turkeyCfg_PHOTOMNEMONIC
+          value: "http://photomnemonic:5000"  
+        - name: turkeyCfg_SPEELYCAPTOR
+          value: "http://speelycaptor:5000"
+        - name: turkeyCfg_STORAGE_QUOTA_GB
+          value: "{{.StorageLimit}}"
+        # startupProbe:
+        #   httpGet:
+        #     path: /?skipadmin
+        #     port: 4000
+        #     scheme: HTTPS
+        #   failureThreshold: 30
+        #   periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 4000
+            scheme: HTTPS
+          initialDelaySeconds: 30
+          timeoutSeconds: 3
+          periodSeconds: 30
+        readinessProbe:
+            initialDelaySeconds: 20
+            httpGet:
+              path: /?skipadmin
+              port: 4000
+              scheme: HTTPS
+            timeoutSeconds: 5
+            periodSeconds: 5
+            successThreshold: 5
+            failureThreshold: 100
+        resources:
+          requests:
+            memory: 250Mi
+            cpu: 0.3
+          limits:
+            memory: 0.5Gi
+            cpu: 0.6
+      - name: postgrest
+        image: mozillareality/postgrest:{{.Img_postgrest}}
+        ports:
+        - containerPort: 3000
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PGRST_LOG_LEVEL
+          value: info        
+        - name: PGRST_DB_SCHEMA
+          value: ret0_admin
+        - name: PGRST_DB_ANON_ROLE
+          value: postgres          
+        - name: PGRST_DB_URI
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PGRST_DB_URI
+        - name: PGRST_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: PGRST_JWT_SECRET
+        resources:
+          requests:
+            memory: 25Mi
+            cpu: 0.01
+      - name: ita
+        image: mozillareality/ita:{{.Img_ita}}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POD_NS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: RET_MODE
+          value: RET_MODE==will-not-start-turkey-updater
+        resources:
+          requests:
+            memory: 25Mi
+            cpu: 0.01
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ret-hpa
+  namespace: hc-{{.HubId}}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: reticulum
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 50
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ret
+  namespace: hc-{{.HubId}}
+spec:
+  clusterIP: None
+  ports:
+  - name: https-reticulum
+    port: 4000
+    targetPort: 4000
+  selector:
+    app: reticulum
+---
+########################################################################
+######################   hubs   ########################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hubs
+  namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hubs
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: 
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: hubs
+    spec:
+      nodeSelector:
+        turkey: {{.NodePool}}
+      containers:
+      - name: hubs
+        image: mozillareality/hubs:{{.Img_hubs}}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: turkeyCfg_thumbnail_server
+          value: nearspark.reticulum.io
+        - name: turkeyCfg_base_assets_path
+          value: https://{{.Subdomain}}.assets.{{.Domain}}/hubs/
+        - name: turkeyCfg_non_cors_proxy_domains
+          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}.assets.{{.Domain}}
+        - name: turkeyCfg_reticulum_server
+          value: {{.Subdomain}}.{{.HubDomain}}
+        - name: turkeyCfg_cors_proxy_server
+          # value: {{.Subdomain}}.cors.{{.Domain}}
+          value: hubs-proxy.com
+        - name: turkeyCfg_shortlink_domain
+          value: {{.Subdomain}}.{{.HubDomain}}
+        # - name: turkeyCfg_sentry_dsn
+        #   value: dummy
+        # - name: turkeyCfg_ga_tracking_id
+        #   value: dummy
+        livenessProbe:
+          httpGet:
+            path: https://localhost/healthz
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 0.01
+          limits:
+            memory: 2Gi
+            cpu: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubs
+  namespace: hc-{{.HubId}}
+spec:
+  clusterIP: None
+  ports:
+  - name: https-hubs
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: hubs
+---
+########################################################################
+######################   spoke   ########################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spoke
+  namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: spoke
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: 
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: spoke
+    spec:
+      nodeSelector:
+        turkey: {{.NodePool}}
+      containers:
+      - name: spoke
+        image: mozillareality/spoke:{{.Img_spoke}}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: turkeyCfg_thumbnail_server
+          value: nearspark.reticulum.io
+        - name: turkeyCfg_base_assets_path
+          value: https://{{.Subdomain}}.assets.{{.Domain}}/hubs/
+        - name: turkeyCfg_non_cors_proxy_domains
+          value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}.assets.{{.Domain}}
+        - name: turkeyCfg_reticulum_server
+          value: {{.Subdomain}}.{{.HubDomain}}
+        - name: turkeyCfg_cors_proxy_server
+          # value: {{.Subdomain}}.cors.{{.Domain}}
+          value: hubs-proxy.com
+        - name: turkeyCfg_shortlink_domain
+          value: {{.Subdomain}}.{{.HubDomain}}
+        - name: turkeyCfg_hubs_server
+          value: {{.Subdomain}}.{{.Domain}}
+        # - name: turkeyCfg_is_moz
+        #   value: "false"
+        livenessProbe:
+          httpGet:
+            path: https://localhost/healthz
+            port: 8080
+            scheme: HTTPS
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 0.01
+          limits:
+            memory: 2Gi
+            cpu: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spoke
+  namespace: hc-{{.HubId}}
+spec:
+  clusterIP: None
+  ports:
+  - name: https-spoke
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: spoke
+# ---
+# ########################################################################
+# ######################   nearspark   ###################################
+# ########################################################################
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: nearspark
+#   namespace: hc-{{.HubId}}
+#   annotations:
+#     cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+# spec:
+#   replicas: 1 
+#   selector:
+#     matchLabels:
+#       app: nearspark
+#   minReadySeconds: 15
+#   strategy:
+#     type: RollingUpdate
+#     rollingUpdate: 
+#       maxUnavailable: 1
+#       maxSurge: 1
+#   template:
+#     metadata:
+#       labels:
+#         app: nearspark
+#     spec:
+#       nodeSelector:
+#         turkey: {{.NodePool}}
+#       containers:
+#       - name: nearspark
+#         image: mozillareality/nearspark:stable-latest
+#         ports:
+#         - containerPort: 5000
+#         imagePullPolicy: IfNotPresent
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nearspark
+#   namespace: hc-{{.HubId}}
+# spec:
+#   ports:
+#   - name: http
+#     port: 5000
+#     targetPort: 5000
+#   selector:
+#     app: nearspark
+---
+########################################################################
+######################   ita ###########################################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ita
+  namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+  labels:
+    CHANNEL: {{.ItaChan}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ita
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: ita
+    spec:
+      serviceAccountName: ita-sa
+      nodeSelector:
+        turkey: {{.NodePool}}
+      containers:
+      - name: ita
+        image: mozillareality/ita:{{.Img_ita}}
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POD_NS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_DEPLOYMENT_NAME
+          value: ita
+        - name: TIER
+          value: {{.Tier}}
+        # - name: CHANNEL
+        #   value: stable
+        - name: RET_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DASHBOARD_ACCESS_KEY
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 0.01
+          limits:
+            memory: 2Gi
+            cpu: 1
+        livenessProbe:
+          httpGet:
+            path: http://localhost/healthz
+            port: 6000
+          initialDelaySeconds: 20
+          timeoutSeconds: 1
+          periodSeconds: 120
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ita
+  namespace: hc-{{.HubId}}
+spec:
+  ports:
+  - name: http
+    port: 6000
+    targetPort: 6000
+  - name: https
+    port: 6001
+    targetPort: 6001
+  selector:
+    app: ita
+---
+########################################################################
+######################   ita rbac  #####################################
+########################################################################
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ita-sa
+  namespace: hc-{{.HubId}}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: ita-rb--hc-{{.HubId}}
+  namespace: hc-{{.HubId}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit #todo: further tighten this?
+subjects:
+- kind: ServiceAccount
+  name: ita-sa
+  namespace: hc-{{.HubId}}            
+---
+########################################################################
+######################   speelycaptor   ###############################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: speelycaptor
+  namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: speelycaptor
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: speelycaptor
+    spec:
+      nodeSelector:
+        turkey: {{.NodePool}}
+      containers:
+      - image: mozillareality/speelycaptor:{{.Img_speelycaptor}}
+        imagePullPolicy: IfNotPresent
+        name: speelycaptor
+        env:
+        - name: scratchBucketId
+          value: turkey-speelycaptor-scratch-bucket
+        - name: CLOUD
+          value: gcp
+        - name: GCP_SA_HMAC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_HMAC_KEY
+        - name: GCP_SA_HMAC_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: GCP_SA_HMAC_SECRET                
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 0.01
+          limits:
+            memory: 2Gi
+            cpu: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: speelycaptor
+  namespace: hc-{{.HubId}}
+spec:
+  ports:
+  - name: speelycaptor
+    port: 5000
+    targetPort: 5000
+  selector:
+    app: speelycaptor
+---
+########################################################################
+######################   photomnemonic   ###############################
+########################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photomnemonic
+  namespace: hc-{{.HubId}}
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: photomnemonic
+  minReadySeconds: 2
+  template:
+    metadata:
+      labels:
+        app: photomnemonic
+    spec:
+      nodeSelector:
+        turkey: {{.NodePool}}
+      containers:
+      - name: photomnemonic
+        image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
+        imagePullPolicy: IfNotPresent        
+        resources:
+          requests:
+            memory: 20Mi
+            cpu: 0.01
+          limits:
+            memory: 2Gi
+            cpu: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: photomnemonic
+  namespace: hc-{{.HubId}}
+spec:
+  ports:
+  - name: photomnemonic
+    port: 5000
+    targetPort: 5000
+  selector:
+    app: photomnemonic
+# ---
+# ########################################################################
+# ######################   nfs   ###############################
+# ########################################################################
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: hc-{{.HubId}}-ret-disk-pvc
+#   namespace: hc-{{.HubId}}
+# spec:
+#   storageClassName: gke-disk
+#   accessModes: [ "ReadWriteOnce" ]
+#   resources:
+#     requests:
+#       storage: {{.StorageLimit}}Gi
+# ---
+# kind: StatefulSet
+# apiVersion: apps/v1
+# metadata:
+#   name: nfs
+#   namespace: hc-{{.HubId}}
+#   annotations:
+#     cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+# spec:
+#   serviceName: "nfs"
+#   selector:
+#     matchLabels:
+#       app: nfs
+#   replicas: 1
+#   template:
+#     metadata:
+#       labels:
+#         app: nfs  
+#     spec:
+#       nodeSelector:
+#         turkey: {{.NodePool}}
+#       containers:
+#         - name: nfs
+#           # image: mozillareality/nfs:stable-latest
+#           image: k8s.gcr.io/volume-nfs:0.8
+#           imagePullPolicy: IfNotPresent        
+#           resources:
+#             requests:
+#               memory: 20Mi
+#               cpu: 0.01
+#             limits:
+#               memory: 2Gi
+#               cpu: 1          
+#           # env:
+#           #   - name: MNT_DIR
+#           #     value: /exports
+#           securityContext:
+#             privileged: true
+#           volumeMounts:
+#           - name: hc-{{.HubId}}-ret-disk
+#             mountPath: /exports
+#       volumes:
+#         - name: hc-{{.HubId}}-ret-disk
+#           persistentVolumeClaim:
+#             claimName: hc-{{.HubId}}-ret-disk-pvc   
+#   volumeClaimTemplates: []
+#   # - metadata:
+#   #     name: hc-{{.HubId}}
+#   #   spec:
+#   #     storageClassName: gke-disk
+#   #     accessModes: [ "ReadWriteOnce" ]
+#   #     resources:
+#   #       requests:
+#   #         storage: {{.StorageLimit}}Gi
+# ---
+# kind: Service
+# apiVersion: v1
+# metadata:
+#   name: nfs
+#   namespace: hc-{{.HubId}}
+# spec:
+#   selector:
+#     app: nfs
+#   ports:    # Open the ports required by the NFS server
+#     # Port 2049 for TCP
+#     - name: nfs-tcp
+#       port: 2049
+#       protocol: TCP
+#     # # Port 111 for UDP
+#     # - name: nfs-udp
+#     #   port: 111
+#     #   protocol: UDP
