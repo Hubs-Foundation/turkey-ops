@@ -214,7 +214,7 @@ func snapshot_create(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) 
 		return
 	}
 	// create the volumentsnapshot
-	yamBytes, err := ioutil.ReadFile("./_files/yams/snapshot.yam")
+	yamBytes, err := ioutil.ReadFile("./_files/yams/addons/snapshot.yam")
 	if err != nil {
 		internal.Logger.Error("failed to get snapshot yam file because: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
