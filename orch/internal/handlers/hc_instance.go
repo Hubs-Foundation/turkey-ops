@@ -692,7 +692,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 				continue
 			}
 			if strings.Contains(envVar.Value, `,`+oldSubdomain+`.`) {
-				d.Spec.Template.Spec.Containers[0].Env[idx].Value = strings.Replace(envVar.Value, `,`+oldSubdomain+`.`, `,`+Subdomain+`.`, 1)
+				d.Spec.Template.Spec.Containers[0].Env[idx].Value = strings.Replace(envVar.Value, `,`+oldSubdomain+`.`, `,`+Subdomain+`.`, -1)
 			}
 			if strings.Contains(envVar.Value, `//`+oldSubdomain+`.`) {
 				d.Spec.Template.Spec.Containers[0].Env[idx].Value = strings.Replace(envVar.Value, `//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
