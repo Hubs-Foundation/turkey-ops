@@ -8,7 +8,9 @@ import (
 	"main/internal"
 	"net/http"
 
+	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v6/apis/volumesnapshot/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -37,14 +39,14 @@ var HC_snapshot = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	}
 
 	switch r.Method {
-	// case "POST":
-	// 	snapshot_restore(w, r)
 	case "GET":
 		snapshot_list(w, r, ssCfg)
 	case "PUT":
 		snapshot_create(w, r, ssCfg)
 	case "DELETE":
 		snapshot_delete(w, r, ssCfg)
+	case "POST":
+		snapshot_restore(w, r, ssCfg)
 	}
 })
 
@@ -72,112 +74,94 @@ func snapshot_delete(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) 
 	w.WriteHeader(http.StatusOK)
 }
 
-// func snapshot_restore(w http.ResponseWriter, r *http.Request) {
-// 	ssCfg, err := makeSnapshotCfg(r)
-// 	if err != nil {
-// 		internal.Logger.Error("bad snapshotCfg: " + err.Error())
-// 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-// 		return
-// 	}
+func snapshot_restore(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
+	client, err := dynamicClient()
+	if err != nil {
+		return
+	}
 
-// 	//getting k8s config
-// 	internal.Logger.Debug("&#9989; ... using InClusterConfig")
-// 	k8sCfg, err := rest.InClusterConfig()
-// 	// }
-// 	if k8sCfg == nil {
-// 		internal.Logger.Debug("ERROR" + err.Error())
-// 		internal.Logger.Error(err.Error())
-// 		return
-// 	}
+	volumesnapshotRes := schema.GroupVersionResource{Group: "snapshot.storage.k8s.io", Version: "v1", Resource: "volumesnapshots"}
+	obj, err := client.Resource(volumesnapshotRes).Namespace("hc-"+ssCfg.HubId).Get(context.TODO(), ssCfg.SnapshotName, metav1.GetOptions{})
+	if err != nil {
+		internal.Logger.Error("unable to get the volsnapshot object: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
-// 	client, err := dynamic.NewForConfig(k8sCfg)
-// 	if err != nil {
-// 		internal.Logger.Error(err.Error())
-// 		return
-// 	}
+	var vs snapshotv1.VolumeSnapshot
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &vs)
+	if err != nil {
+		internal.Logger.Error("unable to convert the unstrucctured object to volumesnapshot object: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
-// 	volumesnapshotRes := schema.GroupVersionResource{Group: "snapshot.storage.k8s.io", Version: "v1", Resource: "volumesnapshots"}
-// 	obj, err := client.Resource(volumesnapshotRes).Namespace("hc-"+ssCfg.HubId).Get(context.TODO(), ssCfg.SnapshotName, metav1.GetOptions{})
-// 	if err != nil {
-// 		internal.Logger.Error("unable to get the volsnapshot object: " + err.Error())
-// 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-// 		return
-// 	}
+	if vs.Status.RestoreSize.String() == "" {
+		internal.Logger.Error(fmt.Sprintf("unable to get the volsnapshot %s restore size", ssCfg.SnapshotName))
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
-// 	var vs volsnapshotv1.VolumeSnapshot
-// 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.UnstructuredContent(), &vs)
-// 	if err != nil {
-// 		internal.Logger.Error("unable to convert the unstrucctured object to volumesnapshot object: " + err.Error())
-// 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-// 		return
-// 	}
+	ssCfg.RestoreSize = vs.Status.RestoreSize.String()
 
-// 	if vs.Status.RestoreSize.String() == "" {
-// 		internal.Logger.Error(fmt.Sprintf("unable to get the volsnapshot %s restore size", ssCfg.SnapshotName))
-// 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-// 		return
-// 	}
+	// create pvc from the volumesnapshot
+	yamBytes, err := ioutil.ReadFile("./_files/yams/addons/restore.yam")
+	if err != nil {
+		internal.Logger.Error("failed to get restore yam file because: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ getting k8s chart file: " + err.Error(),
+			"hub_id": ssCfg.HubId,
+		})
+		return
+	}
 
-// 	ssCfg.RestoreSize = vs.Status.RestoreSize.String()
+	renderedYamls, err := internal.K8s_render_yams([]string{string(yamBytes)}, ssCfg)
+	if err != nil {
+		internal.Logger.Error("failed to render restore yam file because: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ rendering k8s chart file: " + err.Error(),
+			"hub_id": ssCfg.HubId,
+		})
+		return
+	}
 
-// 	// create pvc from the volumesnapshot
-// 	yamBytes, err := ioutil.ReadFile("./_files/yams/restore.yam")
-// 	if err != nil {
-// 		internal.Logger.Error("failed to get restore yam file because: " + err.Error())
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		json.NewEncoder(w).Encode(map[string]interface{}{
-// 			"result": "error @ getting k8s chart file: " + err.Error(),
-// 			"hub_id": ssCfg.HubId,
-// 		})
-// 		return
-// 	}
+	k8sChartYaml := renderedYamls[0]
 
-// 	renderedYamls, err := internal.K8s_render_yams([]string{string(yamBytes)}, ssCfg)
-// 	if err != nil {
-// 		internal.Logger.Error("failed to render restore yam file because: " + err.Error())
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		json.NewEncoder(w).Encode(map[string]interface{}{
-// 			"result": "error @ rendering k8s chart file: " + err.Error(),
-// 			"hub_id": ssCfg.HubId,
-// 		})
-// 		return
-// 	}
+	internal.Logger.Debug("&#128640; --- create pvc from volumesnapshot for: " + ssCfg.HubId)
+	err = internal.Ssa_k8sChartYaml(ssCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
+	if err != nil {
+		internal.Logger.Error("error @ k8s deploy: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ k8s deploy: " + err.Error(),
+			"hub_id": ssCfg.HubId,
+		})
+		return
+	}
 
-// 	k8sChartYaml := renderedYamls[0]
+	// scale delpoyment down to 0 before the backup
+	err = hc_switch(ssCfg.HubId, "down")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":  err.Error(),
+			"hub_id": ssCfg.HubId,
+		})
+		return
+	}
 
-// 	internal.Logger.Debug("&#128640; --- create pvc from volumesnapshot for: " + ssCfg.HubId)
-// 	err = internal.Ssa_k8sChartYaml(ssCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
-// 	if err != nil {
-// 		internal.Logger.Error("error @ k8s deploy: " + err.Error())
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		json.NewEncoder(w).Encode(map[string]interface{}{
-// 			"result": "error @ k8s deploy: " + err.Error(),
-// 			"hub_id": ssCfg.HubId,
-// 		})
-// 		return
-// 	}
+	// w.WriteHeader(http.StatusOK)
+	// json.NewEncoder(w).Encode(map[string]interface{}{
+	// 	"result":            "done",
+	// 	"account_id":        ssCfg.AccountId,
+	// 	"hub_id":            ssCfg.HubId,
+	// 	"snapshot_name":     ssCfg.SnapshotName,
+	// 	"snapshot_size_raw": vs.Status.RestoreSize.String(),
+	// })
 
-// 	// scale delpoyment down to 0 before the backup
-// 	err = hc_switch(ssCfg.HubId, "down")
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		json.NewEncoder(w).Encode(map[string]interface{}{
-// 			"error":  err.Error(),
-// 			"hub_id": ssCfg.HubId,
-// 		})
-// 		return
-// 	}
-
-// 	// w.WriteHeader(http.StatusOK)
-// 	// json.NewEncoder(w).Encode(map[string]interface{}{
-// 	// 	"result":            "done",
-// 	// 	"account_id":        ssCfg.AccountId,
-// 	// 	"hub_id":            ssCfg.HubId,
-// 	// 	"snapshot_name":     ssCfg.SnapshotName,
-// 	// 	"snapshot_size_raw": vs.Status.RestoreSize.String(),
-// 	// })
-
-// }
+}
 
 func snapshot_list(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) {
 	client, err := dynamicClient()
