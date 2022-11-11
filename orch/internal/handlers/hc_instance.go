@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"net/http"
 	"strings"
@@ -673,11 +674,34 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	}
 	ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
 		ingress.Annotations["haproxy.org/response-set-header"],
-		`//`+oldSubdomain+`.`,
-		`//`+Subdomain+`.`, 1)
+		`//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
 	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), ingress, metav1.UpdateOptions{})
 	if err != nil {
 		return err
+	}
+
+	//update env vars in hubs and spoke deployments
+	for _, dName := range []string{"hubs", "spoke"} {
+		d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Get(context.Background(), dName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		for idx, envVar := range d.Spec.Template.Spec.Containers[0].Env {
+			if !strings.Contains(envVar.Value, oldSubdomain) {
+				continue
+			}
+			if strings.Contains(envVar.Value, `//`+oldSubdomain+`.`) {
+				d.Spec.Template.Spec.Containers[0].Env[idx].Value = strings.Replace(envVar.Value, `//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
+				continue
+			}
+
+			regex := regexp.MustCompile(`^` + oldSubdomain + `.\b`)
+			d.Spec.Template.Spec.Containers[0].Env[idx].Value = regex.ReplaceAllLiteralString(envVar.Value, Subdomain+`.`)
+		}
+		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), d, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
 	}
 
 	// //rolling restart affect deployments -- reticulum, hubs, and spoke
