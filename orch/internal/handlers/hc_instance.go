@@ -122,6 +122,7 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 					"error":  err.Error(),
 					"hub_id": cfg.HubId,
 				})
+				return
 			}
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"msg":           "subdomain updated",
@@ -680,7 +681,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		return err
 	}
 
-	//update env vars in hubs and spoke deployments
+	//update env vars in hubs and spoke deployments -- kind of hackish in order to support custom hubs and spoke config overrids, todo: refactor this
 	for _, dName := range []string{"hubs", "spoke"} {
 		d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Get(context.Background(), dName, metav1.GetOptions{})
 		if err != nil {
@@ -689,6 +690,9 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		for idx, envVar := range d.Spec.Template.Spec.Containers[0].Env {
 			if !strings.Contains(envVar.Value, oldSubdomain) {
 				continue
+			}
+			if strings.Contains(envVar.Value, `,`+oldSubdomain+`.`) {
+				d.Spec.Template.Spec.Containers[0].Env[idx].Value = strings.Replace(envVar.Value, `,`+oldSubdomain+`.`, `,`+Subdomain+`.`, 1)
 			}
 			if strings.Contains(envVar.Value, `//`+oldSubdomain+`.`) {
 				d.Spec.Template.Spec.Containers[0].Env[idx].Value = strings.Replace(envVar.Value, `//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
