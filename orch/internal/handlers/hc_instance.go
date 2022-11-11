@@ -691,16 +691,18 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 			if !strings.Contains(envVar.Value, oldSubdomain) {
 				continue
 			}
-			if strings.Contains(envVar.Value, `,`+oldSubdomain+`.`) {
-				d.Spec.Template.Spec.Containers[0].Env[idx].Value = strings.Replace(envVar.Value, `,`+oldSubdomain+`.`, `,`+Subdomain+`.`, -1)
+			newSubdomain := d.Spec.Template.Spec.Containers[0].Env[idx].Value
+			if strings.Contains(newSubdomain, `,`+oldSubdomain+`.`) {
+				newSubdomain = strings.Replace(newSubdomain, `,`+oldSubdomain+`.`, `,`+Subdomain+`.`, -1)
 			}
-			if strings.Contains(envVar.Value, `//`+oldSubdomain+`.`) {
-				d.Spec.Template.Spec.Containers[0].Env[idx].Value = strings.Replace(envVar.Value, `//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
-				continue
+			if strings.Contains(newSubdomain, `//`+oldSubdomain+`.`) {
+				newSubdomain = strings.Replace(newSubdomain, `//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
 			}
 
 			regex := regexp.MustCompile(`^` + oldSubdomain + `.\b`)
-			d.Spec.Template.Spec.Containers[0].Env[idx].Value = regex.ReplaceAllLiteralString(envVar.Value, Subdomain+`.`)
+			newSubdomain = regex.ReplaceAllLiteralString(newSubdomain, Subdomain+`.`)
+
+			d.Spec.Template.Spec.Containers[0].Env[idx].Value = newSubdomain
 		}
 		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
