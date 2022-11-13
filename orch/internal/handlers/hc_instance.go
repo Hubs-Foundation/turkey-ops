@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"net/http"
 	"strings"
@@ -121,6 +122,7 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 					"error":  err.Error(),
 					"hub_id": cfg.HubId,
 				})
+				return
 			}
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"msg":           "subdomain updated",
@@ -673,11 +675,39 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	}
 	ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
 		ingress.Annotations["haproxy.org/response-set-header"],
-		`//`+oldSubdomain+`.`,
-		`//`+Subdomain+`.`, 1)
+		`//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
 	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), ingress, metav1.UpdateOptions{})
 	if err != nil {
 		return err
+	}
+
+	//update env vars in hubs and spoke deployments -- kind of hackish in order to support custom hubs and spoke config overrids, todo: refactor this
+	for _, dName := range []string{"hubs", "spoke"} {
+		d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Get(context.Background(), dName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		for idx, envVar := range d.Spec.Template.Spec.Containers[0].Env {
+			if !strings.Contains(envVar.Value, oldSubdomain) {
+				continue
+			}
+			newSubdomain := d.Spec.Template.Spec.Containers[0].Env[idx].Value
+			if strings.Contains(newSubdomain, `,`+oldSubdomain+`.`) {
+				newSubdomain = strings.Replace(newSubdomain, `,`+oldSubdomain+`.`, `,`+Subdomain+`.`, -1)
+			}
+			if strings.Contains(newSubdomain, `//`+oldSubdomain+`.`) {
+				newSubdomain = strings.Replace(newSubdomain, `//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
+			}
+
+			regex := regexp.MustCompile(`^` + oldSubdomain + `.\b`)
+			newSubdomain = regex.ReplaceAllLiteralString(newSubdomain, Subdomain+`.`)
+
+			d.Spec.Template.Spec.Containers[0].Env[idx].Value = newSubdomain
+		}
+		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), d, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
 	}
 
 	// //rolling restart affect deployments -- reticulum, hubs, and spoke
