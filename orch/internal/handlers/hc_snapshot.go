@@ -287,27 +287,6 @@ func snapshot_create(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) 
 		return
 	}
 
-	// // create the db dump
-	// instanceId, err := getInstanceId()
-	// if err != nil {
-	// 	internal.Logger.Error("failed to get DB instanceId: " + err.Error())
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	json.NewEncoder(w).Encode(map[string]interface{}{
-	// 		"result": "error @ gettting DB instanceId: " + err.Error(),
-	// 		"hub_id": ssCfg.HubId,
-	// 	})
-	// 	return
-	// }
-	// if instanceId == "" {
-	// 	internal.Logger.Error("DB instanceId not found")
-	// 	w.WriteHeader(http.StatusNotFound)
-	// 	json.NewEncoder(w).Encode(map[string]interface{}{
-	// 		"result": "error @ DB instanceId not found: ",
-	// 		"hub_id": ssCfg.HubId,
-	// 	})
-	// 	return
-	// }
-
 	exportStatus, err := createSqlDump(ssCfg.HubId, ssCfg.SnapshotName, ssCfg.BucketName, ssCfg.DBname)
 
 	if err != nil {
