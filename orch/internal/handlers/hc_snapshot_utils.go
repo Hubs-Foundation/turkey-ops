@@ -39,6 +39,28 @@ func dynamicClient() (dynamic.Interface, error) {
 	return client, nil
 }
 
+// create a dynamic kuberntes client
+func kubernetesClient() (*kubernetes.Clientset, error) {
+	//getting k8s config
+	internal.Logger.Debug("&#9989; ... using InClusterConfig")
+	k8sCfg, err := rest.InClusterConfig()
+	// }
+	if k8sCfg == nil {
+		internal.Logger.Debug("ERROR" + err.Error())
+		internal.Logger.Error(err.Error())
+		return nil, err
+	}
+
+	client, err := kubernetes.NewForConfig(k8sCfg)
+	if err != nil {
+		internal.Logger.Debug("ERROR" + err.Error())
+		internal.Logger.Error(err.Error())
+		return nil, err
+	}
+
+	return client, nil
+}
+
 // validate and create snapshotConfig
 func makeSnapshotCfg(r *http.Request) (snapshotCfg, error) {
 	var cfg snapshotCfg
@@ -115,7 +137,7 @@ func getInstanceId() (string, error) {
 }
 
 // create sql dump
-func createSqlDump(hubsId, snapshotName, buckeName, databaseName string) (string, error) {
+func createSqlDump(hubsId, snapshotName, bucketName, databaseName string) (string, error) {
 	projectId := internal.Cfg.Gcps.ProjectId
 
 	instanceId, err := getInstanceId()
@@ -136,7 +158,7 @@ func createSqlDump(hubsId, snapshotName, buckeName, databaseName string) (string
 		ExportContext: &sqladmin.ExportContext{
 			Databases: []string{databaseName},
 			FileType:  "SQL",
-			Uri:       fmt.Sprintf("gs://%s/hc-%s/%s.gz", buckeName, hubsId, snapshotName),
+			Uri:       fmt.Sprintf("gs://%s/hc-%s/%s.gz", bucketName, hubsId, snapshotName),
 		},
 	}
 
@@ -162,4 +184,38 @@ func deleteSqlDump(hubsId, snapshotName, bucketName string) error {
 		return err
 	}
 	return nil
+}
+
+// import sql dump
+func importSqlDump(hubsId, snapshotName, bucketName, databaseName string) (string, error) {
+	projectId := internal.Cfg.Gcps.ProjectId
+
+	instanceId, err := getInstanceId()
+	if err != nil {
+		return "", err
+	}
+	if instanceId == "" {
+		return "", errors.New("instanceId not found")
+	}
+	ctx := context.Background()
+	sqladminService, err := sqladmin.NewService(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	instanceImportRequest := sqladmin.InstancesImportRequest{
+		ImportContext: &sqladmin.ImportContext{
+			Database: databaseName,
+			FileType: "SQL",
+			Uri:      fmt.Sprintf("gs://%s/hc-%s/%s.gz", bucketName, hubsId, snapshotName),
+		},
+	}
+
+	call, err := sqladminService.Instances.Import(projectId, instanceId, &instanceImportRequest).Do()
+	if err != nil {
+		return "", err
+	}
+
+	return call.Status, nil
+
 }

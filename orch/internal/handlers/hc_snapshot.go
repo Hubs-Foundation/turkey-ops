@@ -152,14 +152,67 @@ func snapshot_restore(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg)
 		return
 	}
 
-	// w.WriteHeader(http.StatusOK)
-	// json.NewEncoder(w).Encode(map[string]interface{}{
-	// 	"result":            "done",
-	// 	"account_id":        ssCfg.AccountId,
-	// 	"hub_id":            ssCfg.HubId,
-	// 	"snapshot_name":     ssCfg.SnapshotName,
-	// 	"snapshot_size_raw": vs.Status.RestoreSize.String(),
-	// })
+	clientset, err := kubernetesClient()
+	if err != nil {
+		return
+	}
+
+	hubs_ns := fmt.Sprintf("hc-%s", ssCfg.HubId)
+	ss, err := clientset.AppsV1().StatefulSets(hubs_ns).Get(context.Background(), "nfs", metav1.GetOptions{})
+	if err != nil {
+		internal.Logger.Error("error @ get nfs statefulset: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ get nfs statefulset: " + err.Error(),
+			"hub_id": ssCfg.HubId,
+		})
+		return
+	}
+
+	ss.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName = fmt.Sprintf("restore-%s", ssCfg.SnapshotName)
+	_, err = clientset.AppsV1().StatefulSets(hubs_ns).Update(context.TODO(), ss, metav1.UpdateOptions{})
+	if err != nil {
+		internal.Logger.Error("error @ update nfs statefulset: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ update nfs statefulset: " + err.Error(),
+			"hub_id": ssCfg.HubId,
+		})
+		return
+	}
+
+	importStatus, err := importSqlDump(ssCfg.HubId, ssCfg.SnapshotName, ssCfg.BucketName, ssCfg.DBname)
+
+	if err != nil {
+		internal.Logger.Error("import DB dump error: " + err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "error @ importing DB dump: " + err.Error(),
+			"hub_id": ssCfg.HubId,
+		})
+		return
+	}
+
+	internal.Logger.Info("Instance import reponse status: " + importStatus)
+
+	// scale up the deloyment after the restore
+	err = hc_switch(ssCfg.HubId, "up")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"error":  err.Error(),
+			"hub_id": ssCfg.HubId,
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"result":        "done",
+		"account_id":    ssCfg.AccountId,
+		"hub_id":        ssCfg.HubId,
+		"snapshot_name": ssCfg.SnapshotName,
+	})
 
 }
 
@@ -234,26 +287,26 @@ func snapshot_create(w http.ResponseWriter, r *http.Request, ssCfg snapshotCfg) 
 		return
 	}
 
-	// create the db dump
-	instanceId, err := getInstanceId()
-	if err != nil {
-		internal.Logger.Error("failed to get DB instanceId: " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "error @ gettting DB instanceId: " + err.Error(),
-			"hub_id": ssCfg.HubId,
-		})
-		return
-	}
-	if instanceId == "" {
-		internal.Logger.Error("DB instanceId not found")
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "error @ DB instanceId not found: ",
-			"hub_id": ssCfg.HubId,
-		})
-		return
-	}
+	// // create the db dump
+	// instanceId, err := getInstanceId()
+	// if err != nil {
+	// 	internal.Logger.Error("failed to get DB instanceId: " + err.Error())
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	json.NewEncoder(w).Encode(map[string]interface{}{
+	// 		"result": "error @ gettting DB instanceId: " + err.Error(),
+	// 		"hub_id": ssCfg.HubId,
+	// 	})
+	// 	return
+	// }
+	// if instanceId == "" {
+	// 	internal.Logger.Error("DB instanceId not found")
+	// 	w.WriteHeader(http.StatusNotFound)
+	// 	json.NewEncoder(w).Encode(map[string]interface{}{
+	// 		"result": "error @ DB instanceId not found: ",
+	// 		"hub_id": ssCfg.HubId,
+	// 	})
+	// 	return
+	// }
 
 	exportStatus, err := createSqlDump(ssCfg.HubId, ssCfg.SnapshotName, ssCfg.BucketName, ssCfg.DBname)
 
