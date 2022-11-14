@@ -755,7 +755,7 @@ spec:
         - name: turkeyCfg_thumbnail_server
           value: nearspark.reticulum.io
         - name: turkeyCfg_base_assets_path
-          value: https://{{.Subdomain}}.assets.{{.Domain}}/hubs/
+          value: https://{{.Subdomain}}.assets.{{.Domain}}/spoke/
         - name: turkeyCfg_non_cors_proxy_domains
           value: {{.Subdomain}}.{{.Domain}},{{.Subdomain}}.assets.{{.Domain}}
         - name: turkeyCfg_reticulum_server
