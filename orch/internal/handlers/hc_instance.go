@@ -740,7 +740,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 
 	internal.Logger.Sugar().Debugf("[hc_patch_subdomain, update ingress] %v => %v", oldSubdomain, Subdomain)
 	// update ingress
-	time.Sleep(1 * time.Minute)
+	time.Sleep(30 * time.Second)
 	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), "turkey-https", metav1.GetOptions{})
 	if err != nil {
 		return err
