@@ -963,11 +963,11 @@ data:
               summary: Number of error logs from turkeydashboard backend is more than 5 for the past 10 minutes
           - alert: Errors with endpoint health check
             expr: |
-              count_over_time({app="ita",namespace="turkey-services"} |= "unhealthy: <"[10m]) > 5
+              count_over_time({app="ita",namespace="turkey-services"} |= "unhealthy: <"[5m]) > 2
             labels:
-              severity: warning
+              severity: critical
             annotations:
-              summary: The health check on endpoints has failed more than 5 times for the past 10 minutes
+              summary: The health check on endpoints has failed more than 2 times for the past 5 minutes
 ---
 apiVersion: v1
 kind: Service
@@ -1435,6 +1435,7 @@ spec:
         args:
           - "--config.file=/etc/alertmanager/config.yml"
           - "--storage.path=/alertmanager"
+          - "--web.external-url=http://localhost:39093"
         ports:
         - name: alertmanager
           containerPort: 9093
