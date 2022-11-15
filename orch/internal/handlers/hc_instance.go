@@ -655,7 +655,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	}
 
 	oldSubdomain := string(secret_configs.Data["SUB_DOMAIN"])
-	internal.Logger.Sugar().Debugf("hc_patch_subdomain -- from <%v> to <%v>", oldSubdomain, Subdomain)
+	internal.Logger.Sugar().Debugf("[hc_patch_subdomain] %v => %v", oldSubdomain, Subdomain)
 
 	secret_configs.StringData = map[string]string{"SUB_DOMAIN": Subdomain}
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(nsName).Update(context.Background(), secret_configs, metav1.UpdateOptions{})
@@ -729,8 +729,15 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		return err
 	}
 
+	//waits
+	err = internal.Cfg.K8ss_local.WatiForDeployments(nsName, 15*time.Minute)
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
+	}
+
+	internal.Logger.Sugar().Debugf("[hc_patch_subdomain, update ingress] %v => %v", oldSubdomain, Subdomain)
 	// update ingress
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Minute)
 	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), "turkey-https", metav1.GetOptions{})
 	if err != nil {
 		return err
