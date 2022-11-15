@@ -649,11 +649,11 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 
 	nsName := "hc-" + HubId
 
-	//waits
-	err := internal.Cfg.K8ss_local.WatiForDeployments(nsName, 15*time.Minute)
-	if err != nil {
-		internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
-	}
+	// //waits
+	// err := internal.Cfg.K8ss_local.WatiForDeployments(nsName, 15*time.Minute)
+	// if err != nil {
+	// 	internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
+	// }
 
 	//update secret
 	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(nsName).Get(context.Background(), "configs", metav1.GetOptions{})
@@ -740,7 +740,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 
 	internal.Logger.Sugar().Debugf("[hc_patch_subdomain, update ingress] %v => %v", oldSubdomain, Subdomain)
 	// update ingress
-	time.Sleep(30 * time.Second)
+	time.Sleep(15 * time.Second)
 	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), "turkey-https", metav1.GetOptions{})
 	if err != nil {
 		return err
