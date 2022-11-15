@@ -26,6 +26,8 @@ apiVersion: apps/v1
 metadata:
   name: turkeyfs
   namespace: turkey-services
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 spec:
   replicas: 1
   selector:

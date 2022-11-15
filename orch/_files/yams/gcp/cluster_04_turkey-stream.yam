@@ -44,6 +44,8 @@ kind: Deployment
 metadata:
   name: dialog
   namespace: turkey-stream
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 spec:
   replicas: 1
   selector:
@@ -268,6 +270,8 @@ kind: Deployment
 metadata:
   name: dip
   namespace: turkey-stream
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 spec:
   replicas: 1
   selector:

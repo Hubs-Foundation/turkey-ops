@@ -662,24 +662,6 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	if err != nil {
 		return err
 	}
-	// update ingress
-	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), "turkey-https", metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	for i, rule := range ingress.Spec.Rules {
-		hostArr := strings.SplitN(rule.Host, ".", 2)
-		newHost := strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
-		internal.Logger.Debug("newHost: " + newHost)
-		ingress.Spec.Rules[i].Host = newHost
-	}
-	ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
-		ingress.Annotations["haproxy.org/response-set-header"],
-		`//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
-	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), ingress, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
 
 	//update env vars in hubs and spoke deployments -- kind of hackish in order to support custom hubs and spoke config overrids, todo: refactor this
 	for _, dName := range []string{"hubs", "spoke"} {
@@ -736,13 +718,33 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 			return err
 		}
 	}
-	// finally update ns label
+	// update ns label
 	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	ns.Labels["subdomain"] = Subdomain
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	// update ingress
+	time.Sleep(3 * time.Second)
+	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), "turkey-https", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	for i, rule := range ingress.Spec.Rules {
+		hostArr := strings.SplitN(rule.Host, ".", 2)
+		newHost := strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
+		internal.Logger.Debug("newHost: " + newHost)
+		ingress.Spec.Rules[i].Host = newHost
+	}
+	ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
+		ingress.Annotations["haproxy.org/response-set-header"],
+		`//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
+	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), ingress, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
