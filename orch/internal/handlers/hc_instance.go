@@ -745,8 +745,12 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	}
 	for i, rule := range ingress.Spec.Rules {
 		hostArr := strings.SplitN(rule.Host, ".", 2)
-		newHost := strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
-		internal.Logger.Sugar().Debugf("hostArr[0]: %v, oldSubdomain: %v, Subdomain: %v, newHost: %v", hostArr[0], oldSubdomain, Subdomain, newHost)
+		// newHost := strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
+		internal.Logger.Sugar().Debugf("hostArr[0]: %v, oldSubdomain: %v, Subdomain: %v", hostArr[0], oldSubdomain, Subdomain)
+		if hostArr[0] != oldSubdomain {
+			internal.Logger.Sugar().Warnf(" hostArr[0] != oldSubdomain,  hostArr[0]: %v, oldSubdomain: %v, Subdomain: %v", hostArr[0], oldSubdomain, Subdomain)
+		}
+		newHost := Subdomain + "." + hostArr[1]
 		ingress.Spec.Rules[i].Host = newHost
 	}
 	ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
