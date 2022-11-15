@@ -648,6 +648,13 @@ func hc_switch(HubId, status string) error {
 func hc_patch_subdomain(HubId, Subdomain string) error {
 
 	nsName := "hc-" + HubId
+
+	//waits
+	err := internal.Cfg.K8ss_local.WatiForDeployments(nsName, 15*time.Minute)
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
+	}
+
 	//update secret
 	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(nsName).Get(context.Background(), "configs", metav1.GetOptions{})
 	if err != nil {
@@ -729,11 +736,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		return err
 	}
 
-	//waits
-	err = internal.Cfg.K8ss_local.WatiForDeployments(nsName, 15*time.Minute)
-	if err != nil {
-		internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
-	}
+	time.Sleep(1 * time.Minute)
 
 	internal.Logger.Sugar().Debugf("[hc_patch_subdomain, update ingress] %v => %v", oldSubdomain, Subdomain)
 	// update ingress
