@@ -20,18 +20,18 @@ volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
 parameters:
   type: pd-balanced
-###################################################
-########## file storte ############################
-###################################################
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: gke-filestore
-provisioner: filestore.csi.storage.gke.io
-volumeBindingMode: Immediate
-allowVolumeExpansion: true
-parameters:
-  tier: standard
-  network: {{.Stackname}}
+# ###################################################
+# ########## file storte ############################
+# ###################################################
+# ---
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: gke-filestore
+# provisioner: filestore.csi.storage.gke.io
+# volumeBindingMode: Immediate
+# allowVolumeExpansion: true
+# parameters:
+#   tier: standard
+#   network: {{.Stackname}}
 
