@@ -45,6 +45,8 @@ type hcCfg struct {
 	HubDomain            string `json:"hubdomain"`
 	DBname               string `json:"dbname"`
 	DBpass               string `json:"dbpass"`
+	FilestoreIP          string
+	FilestorePath        string
 	PermsKey             string `json:"permskey"`
 	SmtpServer           string `json:"smtpserver"`
 	SmtpPort             string `json:"smtpport"`
@@ -401,6 +403,8 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 		cfg.HubDomain = cfg.Domain
 	}
 	cfg.DBpass = internal.Cfg.DBpass
+	cfg.FilestoreIP = internal.Cfg.FilestoreIP
+	cfg.FilestorePath = internal.Cfg.FilestorePath
 	cfg.SmtpServer = internal.Cfg.SmtpServer
 	cfg.SmtpPort = internal.Cfg.SmtpPort
 	cfg.SmtpUser = internal.Cfg.SmtpUser
