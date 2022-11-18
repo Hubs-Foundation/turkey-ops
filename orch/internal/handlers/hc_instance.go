@@ -295,7 +295,7 @@ func sync_load_assets(cfg hcCfg) error {
 		return err
 	}
 	token, _ := ioutil.ReadAll(resp.Body)
-	internal.Logger.Sugar().Debugf("admin-token: %v, hubId: %v", token, cfg.HubId)
+	internal.Logger.Sugar().Debugf("admin-token: %v, hubId: %v", string(token), cfg.HubId)
 
 	//load asset
 	avatarUrl := `https://hubs.mozilla.com/api/v1/avatars/JedovIG`
@@ -307,12 +307,12 @@ func sync_load_assets(cfg hcCfg) error {
 	loadReq.Header.Add("content-type", "application/json")
 	loadReq.Header.Add("authorization", "bearer "+string(token))
 
-	resp, took, err = internal.RetryHttpReq(_httpClient, tokenReq, 1*time.Second)
+	resp, took, err = internal.RetryHttpReq(_httpClient, tokenReq, 15*time.Second)
 	if err != nil {
 		return err
 	}
 	respBodyBytes, _ := ioutil.ReadAll(resp.Body)
-	internal.Logger.Sugar().Debugf("took: %v, loaded: %v, resp: %v", took, loadReq, respBodyBytes)
+	internal.Logger.Sugar().Debugf("took: %v, loaded: %v, resp: %v", took, loadReq, string(respBodyBytes))
 
 	return nil
 }
