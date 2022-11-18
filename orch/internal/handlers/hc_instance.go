@@ -119,15 +119,21 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		}
 
 		if cfg.Subdomain != "" {
-			err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]interface{}{
-					"error":  err.Error(),
-					"hub_id": cfg.HubId,
-				})
-				return
-			}
+			// err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
+			// if err != nil {
+			// 	w.WriteHeader(http.StatusInternalServerError)
+			// 	json.NewEncoder(w).Encode(map[string]interface{}{
+			// 		"error":  err.Error(),
+			// 		"hub_id": cfg.HubId,
+			// 	})
+			// 	return
+			// }
+			go func() {
+				err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
+				if err != nil {
+					internal.Logger.Error("hc_patch_subdomain FAILED: " + err.Error())
+				}
+			}()
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"msg":           "subdomain updated",
 				"new_subdomain": cfg.Subdomain,
@@ -307,7 +313,7 @@ func sync_load_assets(cfg hcCfg) error {
 	loadReq.Header.Add("content-type", "application/json")
 	loadReq.Header.Add("authorization", "bearer "+string(token))
 
-	resp, took, err = internal.RetryHttpReq(_httpClient, tokenReq, 15*time.Second)
+	resp, took, err = internal.RetryHttpReq(_httpClient, loadReq, 15*time.Second)
 	if err != nil {
 		return err
 	}
@@ -800,7 +806,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	}
 
 	// update ingress
-	time.Sleep(10 * time.Second)
+	time.Sleep(15 * time.Second)
 	internal.Logger.Sugar().Debugf("[hc_patch_subdomain.update ingress] %v => %v", oldSubdomain, Subdomain)
 	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), "turkey-https", metav1.GetOptions{})
 	if err != nil {
