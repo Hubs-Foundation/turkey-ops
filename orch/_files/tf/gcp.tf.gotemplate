@@ -289,3 +289,23 @@ resource "google_sql_database" "dashboard_db" {
   name     = "dashboard"
   instance = google_sql_database_instance.pgsql.name
 }
+######################## filestore
+
+resource "google_filestore_instance" "instance" {
+  name = "{{.Stackname}}"
+  location = "{{.Region}}-b"
+  tier = "STANDARD"
+  file_shares {
+    capacity_gb = 1000
+    name        = "vol1"
+  }
+  networks {
+    network = "{{.Stackname}}"
+    modes   = ["MODE_IPV4"]
+  }
+}
+
+
+
+
+

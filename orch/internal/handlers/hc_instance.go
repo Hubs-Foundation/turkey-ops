@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -246,6 +248,8 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
 
+	go sync_load_assets(hcCfg)
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"result":        "done",
@@ -256,6 +260,54 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		"ccu_limit":     hcCfg.CcuLimit,
 		"storage_limit": hcCfg.StorageLimit,
 	})
+}
+
+func sync_load_assets(cfg hcCfg) error {
+
+	_httpClient := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
+	//wait for ret
+	retReq, _ := http.NewRequest("GET", "https://"+cfg.Subdomain+"."+cfg.Domain+"/health", nil)
+
+	_, took, err := internal.RetryHttpReq(_httpClient, retReq, 5*time.Minute)
+	if err != nil {
+		return err
+	}
+	internal.Logger.Sugar().Debugf("tReady: %v, hubId: %v", took, cfg.HubId)
+
+	//get admin auth token
+	tokenReq, _ := http.NewRequest(
+		"POST",
+		"https://ret.hc-"+cfg.HubId+":4000/api-internal/v1/make_auth_token_for_email",
+		bytes.NewBuffer([]byte(`{"email":"`+cfg.UserEmail+`"}`)),
+	)
+	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 1*time.Minute)
+	if err != nil {
+		return err
+	}
+	token, _ := ioutil.ReadAll(resp.Body)
+	internal.Logger.Sugar().Debugf("admin-token: %v, hubId: %v", token, cfg.HubId)
+
+	//load asset
+	avatarUrl := `https://hubs.mozilla.com/api/v1/avatars/JedovIG`
+	loadReq, _ := http.NewRequest(
+		"POST",
+		"https://ret.hc-"+cfg.HubId+":4000/api/v1/avatars",
+		bytes.NewBuffer([]byte(`{"url":"`+avatarUrl+`"}`)),
+	)
+	loadReq.Header.Add("content-type", "application/json")
+	loadReq.Header.Add("authorization", "bearer "+string(token))
+
+	resp, took, err = internal.RetryHttpReq(_httpClient, tokenReq, 1*time.Second)
+	if err != nil {
+		return err
+	}
+	respBodyBytes, _ := ioutil.ReadAll(resp.Body)
+	internal.Logger.Sugar().Debugf("took: %v, loaded: %v, resp: %v", took, loadReq, respBodyBytes)
+
+	return nil
 }
 
 func hc_get(w http.ResponseWriter, r *http.Request) {

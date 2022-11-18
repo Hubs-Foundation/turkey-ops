@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	mrand "math/rand"
@@ -262,6 +263,34 @@ func FindRootDomain(fullDomain string) string {
 func IsValidDomainName(domain string) bool {
 	RegExp := regexp.MustCompile(`^(([a-zA-Z]{1})|([a-zA-Z]{1}[a-zA-Z]{1})|([a-zA-Z]{1}[0-9]{1})|([0-9]{1}[a-zA-Z]{1})|([a-zA-Z0-9][a-zA-Z0-9-_]{1,61}[a-zA-Z0-9]))\.([a-zA-Z]{2,6}|[a-zA-Z0-9-]{2,30}\.[a-zA-Z]{2,3})$`)
 	return RegExp.MatchString(domain)
+}
+
+func RetryHttpReq(client *http.Client, request *http.Request, maxRetry time.Duration) (*http.Response, time.Duration, error) {
+
+	stepWait := 10 * time.Second
+
+	tReady := 0 * time.Second
+	timeout := time.Now().Add(maxRetry)
+	tStart := time.Now()
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, tReady, err
+	}
+	for resp.StatusCode != 200 {
+		time.Sleep(stepWait)
+		ttl := time.Until(timeout)
+		if ttl < 0 {
+			return nil, tReady, errors.New("timeout")
+		}
+		Logger.Sugar().Debugf("retrying for request: %v, ttl: %v", request, ttl)
+		resp, err = client.Do(request)
+		if err != nil {
+			return nil, tReady, err
+		}
+	}
+	Logger.Sugar().Debugf("T-ready: %v", time.Since(tStart))
+
+	return resp, tReady, nil
 }
 
 /////////////////////////////////////////////////
