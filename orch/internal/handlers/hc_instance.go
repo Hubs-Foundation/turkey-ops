@@ -288,6 +288,7 @@ func sync_load_assets(cfg hcCfg) error {
 		"https://ret.hc-"+cfg.HubId+":4000/api-internal/v1/make_auth_token_for_email",
 		bytes.NewBuffer([]byte(`{"email":"`+cfg.UserEmail+`"}`)),
 	)
+	tokenReq.Header.Add("content-type", "application/json")
 	tokenReq.Header.Add("x-ret-dashboard-access-key", internal.Cfg.DASHBOARD_ACCESS_KEY)
 	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 1*time.Minute)
 	if err != nil {
