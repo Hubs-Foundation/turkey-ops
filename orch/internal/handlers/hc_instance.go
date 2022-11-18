@@ -156,7 +156,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-	fileOption := "_fs"       //default
+	fileOption := "_gfs"      //default
 	if hcCfg.Tier == "free" { //default for free tier
 		fileOption = "_nfs"
 	}
@@ -288,6 +288,7 @@ func sync_load_assets(cfg hcCfg) error {
 		"https://ret.hc-"+cfg.HubId+":4000/api-internal/v1/make_auth_token_for_email",
 		bytes.NewBuffer([]byte(`{"email":"`+cfg.UserEmail+`"}`)),
 	)
+	tokenReq.Header.Add("x-ret-dashboard-access-key", internal.Cfg.DASHBOARD_ACCESS_KEY)
 	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 1*time.Minute)
 	if err != nil {
 		return err
