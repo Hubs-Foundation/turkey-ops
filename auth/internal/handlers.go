@@ -202,9 +202,11 @@ func Oauth() http.Handler {
 
 		Logger.Sugar().Warnf("redirect: %v, r.Host: %v", redirect, r.Host)
 		// set default cookie for dev env's skooner
-		if cfg.Env == "dev" && strings.Contains(redirect, "dash.") {
-			http.SetCookie(w, jwtCookie)
-			Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
+		if cfg.Env == "dev" {
+			if strings.Contains(redirect, "dash.") || strings.Contains(redirect, "grafana.") {
+				http.SetCookie(w, jwtCookie)
+				Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
+			}
 		}
 
 		//write token to url param for external redirect
