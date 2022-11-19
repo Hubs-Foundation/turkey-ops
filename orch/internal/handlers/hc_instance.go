@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -15,6 +16,7 @@ import (
 	"regexp"
 
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -304,16 +306,51 @@ func sync_load_assets(cfg hcCfg) error {
 	internal.Logger.Sugar().Debugf("admin-token: %v, hubId: %v", string(token), cfg.HubId)
 
 	//load asset
-	avatarUrl := `https://hubs.mozilla.com/api/v1/avatars/JedovIG`
+	assetPackUrl := "https://raw.githubusercontent.com/mozilla/hubs-cloud/master/asset-packs/event.pack"
+	resp, err = http.Get(assetPackUrl)
+	if err != nil {
+		return err
+	}
+	s := bufio.NewScanner(resp.Body)
+	for s.Scan() {
+		line := s.Text()
+		url, err := url.Parse(line)
+		if err != nil {
+			return err
+		}
+		err = ret_load_asset(url, cfg.HubId, string(token))
+		if err != nil {
+			internal.Logger.Error(fmt.Sprintf("failed to load asset: %v", url))
+		}
+	}
+	return nil
+}
+
+func ret_load_asset(url *url.URL, hubId string, token string) error {
+	pathArr := strings.Split(url.Path, "/")
+	if len(pathArr) != 2 {
+		return errors.New(fmt.Sprintf("unsupported url: %v", url))
+	}
+	kind := pathArr[1]
+	id := pathArr[2]
+	if kind != "avatars" && kind != "scenes" {
+		return errors.New(fmt.Sprintf("unsupported url: %v", url))
+	}
+	assetUrl := "https://" + url.Host + "/api/v1/" + kind + "/" + id
 	loadReq, _ := http.NewRequest(
 		"POST",
-		"https://ret.hc-"+cfg.HubId+":4000/api/v1/avatars",
-		bytes.NewBuffer([]byte(`{"url":"`+avatarUrl+`"}`)),
+		"https://ret.hc-"+hubId+":4000/api/v1/avatars",
+		bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 	)
 	loadReq.Header.Add("content-type", "application/json")
 	loadReq.Header.Add("authorization", "bearer "+string(token))
 
-	resp, took, err = internal.RetryHttpReq(_httpClient, loadReq, 15*time.Second)
+	_httpClient := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
+
+	resp, took, err := internal.RetryHttpReq(_httpClient, loadReq, 15*time.Second)
 	if err != nil {
 		return err
 	}
