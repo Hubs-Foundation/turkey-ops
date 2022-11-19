@@ -314,7 +314,7 @@ func sync_load_assets(cfg hcCfg) error {
 	s := bufio.NewScanner(resp.Body)
 	for s.Scan() {
 		line := s.Text()
-		url, err := url.Parse(line)
+		url, err := url.Parse(strings.Trim(line, " "))
 		if err != nil {
 			return err
 		}
