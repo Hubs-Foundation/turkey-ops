@@ -320,7 +320,7 @@ func sync_load_assets(cfg hcCfg) error {
 		}
 		err = ret_load_asset(url, cfg.HubId, string(token))
 		if err != nil {
-			internal.Logger.Error(fmt.Sprintf("failed to load asset: %v", url))
+			internal.Logger.Error(fmt.Sprintf("failed to load asset: %v, error: %v", url, err))
 		}
 	}
 	return nil
@@ -328,18 +328,18 @@ func sync_load_assets(cfg hcCfg) error {
 
 func ret_load_asset(url *url.URL, hubId string, token string) error {
 	pathArr := strings.Split(url.Path, "/")
-	if len(pathArr) != 2 {
-		return errors.New(fmt.Sprintf("unsupported url: %v", url))
+	if len(pathArr) != 3 {
+		return fmt.Errorf("unsupported url: %v", url)
 	}
 	kind := pathArr[1]
 	id := pathArr[2]
 	if kind != "avatars" && kind != "scenes" {
-		return errors.New(fmt.Sprintf("unsupported url: %v", url))
+		return fmt.Errorf("unsupported url: %v", url)
 	}
 	assetUrl := "https://" + url.Host + "/api/v1/" + kind + "/" + id
 	loadReq, _ := http.NewRequest(
 		"POST",
-		"https://ret.hc-"+hubId+":4000/api/v1/avatars",
+		"https://ret.hc-"+hubId+":4000/api/v1/"+kind,
 		bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 	)
 	loadReq.Header.Add("content-type", "application/json")
