@@ -357,12 +357,13 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	var importResp map[string]interface{}
 	rBody, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(rBody, &importResp)
-	internal.Logger.Sugar().Debugf("### import -- took: %v, loaded: %v, resp: %v", took, assetUrl, resp.StatusCode)
+	newAssetId := importResp[kind[:len(kind)-1]+"_id"].(string)
+	internal.Logger.Sugar().Debugf("### import -- took: %v, loaded: %v, new_id: %v", took, assetUrl, newAssetId)
 
 	//approve -- aka generate <kind>_listing_sid and post to <kind>_listings
 	getReq, _ := http.NewRequest(
 		"GET",
-		"https://ret.hc-"+hubId+":4000/api/postgrest/scenes?scene_sid=ilike.*"+id+"*",
+		"https://ret.hc-"+hubId+":4000/api/postgrest/scenes?scene_sid=ilike.*"+newAssetId+"*",
 		// bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 		nil,
 	)
