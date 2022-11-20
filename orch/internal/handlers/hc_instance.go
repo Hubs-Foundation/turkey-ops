@@ -354,7 +354,9 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	if err != nil {
 		return err
 	}
-	// respBodyBytes, _ := ioutil.ReadAll(resp.Body)
+	var importResp map[string]interface{}
+	rBody, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(rBody, &importResp)
 	internal.Logger.Sugar().Debugf("### import -- took: %v, loaded: %v, resp: %v", took, assetUrl, resp.StatusCode)
 
 	//approve -- aka generate <kind>_listing_sid and post to <kind>_listings
@@ -369,7 +371,7 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	if err != nil {
 		return err
 	}
-	rBody, _ := ioutil.ReadAll(resp.Body)
+	rBody, _ = ioutil.ReadAll(resp.Body)
 
 	var asset []map[string]interface{}
 	json.Unmarshal(rBody, &asset)
