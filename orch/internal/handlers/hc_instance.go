@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strconv"
 
 	"net/http"
 	"net/url"
@@ -349,13 +350,69 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 		Timeout:   10 * time.Second,
 		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 	}
-
 	resp, took, err := internal.RetryHttpReq(_httpClient, loadReq, 15*time.Second)
 	if err != nil {
 		return err
 	}
-	respBodyBytes, _ := ioutil.ReadAll(resp.Body)
-	internal.Logger.Sugar().Debugf("took: %v, loaded: %v, resp: %v", took, loadReq, string(respBodyBytes))
+	// respBodyBytes, _ := ioutil.ReadAll(resp.Body)
+	internal.Logger.Sugar().Debugf("### import -- took: %v, loaded: %v, resp: %v", took, assetUrl, resp.StatusCode)
+
+	//approve -- aka generate <kind>_listing_sid and post to <kind>_listings
+	getReq, _ := http.NewRequest(
+		"GET",
+		"https://ret.hc-"+hubId+":4000/api/postgrest/scenes?scene_sid=ilike.*"+"z8XaMt5"+"*",
+		// bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
+		nil,
+	)
+	getReq.Header.Add("authorization", "bearer "+string(token))
+	resp, err = _httpClient.Do(getReq)
+	if err != nil {
+		return err
+	}
+	rBody, _ := ioutil.ReadAll(resp.Body)
+
+	var asset []map[string]interface{}
+	json.Unmarshal(rBody, &asset)
+
+	//feature + set default
+	listReq, _ := http.NewRequest(
+		"POST",
+		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind+"_listings",
+		bytes.NewBuffer([]byte(`
+		{
+			"scene_listing_sid": "`+internal.PwdGen(7, time.Now().Unix(), "")+`",
+			"scene_id": "`+asset[0]["_text_id"].(string)+`",
+			"slug": "`+asset[0]["slug"].(string)+`",
+			"name": "`+asset[0]["name"].(string)+`",
+			"description": null,
+			"attributions": {
+				"content": [],
+				"creator": ""
+			},
+			"tags": {
+				"tags": [
+					"default",
+					"featured"
+				]
+			},
+			"model_owned_file_id": "`+strconv.FormatFloat(asset[0]["model_owned_file_id"].(float64), 'f', -1, 64)+`",
+			"scene_owned_file_id": "`+strconv.FormatFloat(asset[0]["scene_owned_file_id"].(float64), 'f', -1, 64)+`",
+			"screenshot_owned_file_id": "`+strconv.FormatFloat(asset[0]["screenshot_owned_file_id"].(float64), 'f', -1, 64)+`",
+			"order": 10000,
+			"state": "active",
+			"inserted_at": "`+asset[0]["inserted_at"].(string)+`",
+			"updated_at": "`+asset[0]["updated_at"].(string)+`"
+		}
+		`)),
+	)
+	loadReq.Header.Add("content-type", "application/json")
+	getReq.Header.Add("authorization", "bearer "+string(token))
+	resp, err = _httpClient.Do(listReq)
+	if err != nil {
+		return err
+	}
+	rBody, _ = ioutil.ReadAll(resp.Body)
+	internal.Logger.Sugar().Debugf("### listReq -- took: %v, listReq: %v, resp: %v", took, listReq, string(rBody))
 
 	return nil
 }
