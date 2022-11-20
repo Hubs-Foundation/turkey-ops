@@ -413,7 +413,7 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 		`)),
 	)
 	loadReq.Header.Add("content-type", "application/json")
-	getReq.Header.Add("authorization", "bearer "+string(token))
+	listReq.Header.Add("authorization", "bearer "+string(token))
 	resp, err = _httpClient.Do(listReq)
 	if err != nil {
 		return err
