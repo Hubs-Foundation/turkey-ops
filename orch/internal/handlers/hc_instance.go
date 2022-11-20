@@ -354,14 +354,10 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	if err != nil {
 		return err
 	}
-	var importResp map[string]interface{}
+	var importResp map[string][]map[string]interface{}
 	rBody, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(rBody, &importResp)
-
-	var importResp_content []map[string]interface{}
-	json.Unmarshal(importResp[kind].([]byte), &importResp_content)
-
-	newAssetId := importResp_content[0][kind[:len(kind)-1]+"_id"].(string)
+	newAssetId := importResp[kind][0][kind[:len(kind)-1]+"_id"].(string)
 	internal.Logger.Sugar().Debugf("### import -- took: %v, loaded: %v, new_id: %v", took, assetUrl, newAssetId)
 
 	//approve -- aka generate <kind>_listing_sid and post to <kind>_listings
