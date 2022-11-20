@@ -360,7 +360,7 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	//approve -- aka generate <kind>_listing_sid and post to <kind>_listings
 	getReq, _ := http.NewRequest(
 		"GET",
-		"https://ret.hc-"+hubId+":4000/api/postgrest/scenes?scene_sid=ilike.*"+"z8XaMt5"+"*",
+		"https://ret.hc-"+hubId+":4000/api/postgrest/scenes?scene_sid=ilike.*"+id+"*",
 		// bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 		nil,
 	)
@@ -373,6 +373,10 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 
 	var asset []map[string]interface{}
 	json.Unmarshal(rBody, &asset)
+
+	if len(asset) < 1 {
+		return fmt.Errorf("bad resp from getReq after asset import: %v", string(rBody))
+	}
 
 	//feature + set default
 	listReq, _ := http.NewRequest(
