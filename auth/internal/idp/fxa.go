@@ -42,8 +42,8 @@ func (f *Fxa) Setup() error {
 	fxaLoginHost := "accounts.firefox.com"
 	fxaTokenHost := "api.accounts.firefox.com"
 	fxaUserHost := "profile.accounts.firefox.com"
-	fxaSubHost := "api-accounts.firefox.com"
-	f.turkey_prod_id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	fxaSubHost := "api.accounts.firefox.com"
+	f.turkey_prod_id = "prod_Mo4tS8uH9y3Mj5"
 
 	if os.Getenv("ENV") == "dev" {
 		fxaLoginHost = "accounts.stage.mozaws.net"
