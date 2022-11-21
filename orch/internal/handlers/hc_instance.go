@@ -416,7 +416,7 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind_s+"_listings",
 		bytes.NewBuffer(listReqBody),
 	)
-	loadReq.Header.Add("content-type", "application/json")
+	listReq.Header.Add("content-type", "application/json")
 	listReq.Header.Add("authorization", "bearer "+string(token))
 	resp, err = _httpClient.Do(listReq)
 	if err != nil {
