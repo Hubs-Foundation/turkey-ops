@@ -306,7 +306,7 @@ func sync_load_assets(cfg hcCfg) error {
 	internal.Logger.Sugar().Debugf("admin-token: %v, hubId: %v", string(token), cfg.HubId)
 
 	//load asset
-	assetPackUrl := "https://raw.githubusercontent.com/mozilla/hubs-cloud/master/asset-packs/event.pack"
+	assetPackUrl := internal.Cfg.HC_INIT_ASSET_PACK
 	resp, err = http.Get(assetPackUrl)
 	if err != nil {
 		return err

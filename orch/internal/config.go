@@ -38,7 +38,8 @@ type Config struct {
 	SmtpPass             string
 	DASHBOARD_ACCESS_KEY string `description:"api key for turkey DASHBOARD access"`
 
-	SKETCHFAB_API_KEY string `description:"enables reticulum's sketchfab option"`
+	SKETCHFAB_API_KEY  string `description:"enables reticulum's sketchfab option"`
+	HC_INIT_ASSET_PACK string `pre-installed asset pack for new hub instance`
 
 	DockerhubUser string
 	DockerhubPass string
@@ -107,6 +108,7 @@ func MakeCfg() {
 	Cfg.SmtpPass = os.Getenv("SMTP_PASS")
 
 	Cfg.SKETCHFAB_API_KEY = os.Getenv("SKETCHFAB_API_KEY")
+	Cfg.HC_INIT_ASSET_PACK = getEnv("HC_INIT_ASSET_PACK", "https://raw.githubusercontent.com/mozilla/hubs-cloud/master/asset-packs/turkey-init.pack")
 
 	Cfg.DockerhubUser = os.Getenv("DOCKERHUB_USER")
 	Cfg.DockerhubPass = os.Getenv("DOCKERHUB_PASS")
