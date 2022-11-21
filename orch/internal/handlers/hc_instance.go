@@ -318,7 +318,7 @@ func sync_load_assets(cfg hcCfg) error {
 		if err != nil {
 			return err
 		}
-		err = ret_load_asset(url, cfg.HubId, string(token))
+		err = ret_load_asset(url, cfg, string(token))
 		if err != nil {
 			internal.Logger.Error(fmt.Sprintf("failed to load asset: %v, error: %v", url, err))
 		}
@@ -326,7 +326,7 @@ func sync_load_assets(cfg hcCfg) error {
 	return nil
 }
 
-func ret_load_asset(url *url.URL, hubId string, token string) error {
+func ret_load_asset(url *url.URL, cfg hcCfg, token string) error {
 	pathArr := strings.Split(url.Path, "/")
 	if len(pathArr) != 3 {
 		return fmt.Errorf("unsupported url: %v", url)
@@ -342,7 +342,7 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	assetUrl := "https://" + url.Host + "/api/v1/" + kind_s + "/" + id
 	loadReq, _ := http.NewRequest(
 		"POST",
-		"https://ret.hc-"+hubId+":4000/api/v1/"+kind_s,
+		"https://ret.hc-"+cfg.HubId+":4000/api/v1/"+kind_s,
 		bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 	)
 	loadReq.Header.Add("content-type", "application/json")
@@ -365,7 +365,7 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	//post import -- generate <kind>_listing_sid and post to <kind>_listings
 	getReq, _ := http.NewRequest(
 		"GET",
-		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind_s+"?"+kind+"_sid=ilike.*"+newAssetId+"*",
+		"https://ret.hc-"+cfg.HubId+":4000/api/postgrest/"+kind_s+"?"+kind+"_sid=ilike.*"+newAssetId+"*",
 		// bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 		nil,
 	)
@@ -377,12 +377,12 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	getReqBody, _ := ioutil.ReadAll(resp.Body)
 
 	if kind == "avatar" {
-		err := ret_avatar_post_import(getReqBody, hubId, token)
+		err := ret_avatar_post_import(getReqBody, cfg.Subdomain, cfg.Domain, token)
 		if err != nil {
 			return err
 		}
 	} else if kind == "scene" {
-		err := ret_scene_post_import(getReqBody, hubId, token)
+		err := ret_scene_post_import(getReqBody, cfg.Subdomain, cfg.Domain, token)
 		if err != nil {
 			return err
 		}

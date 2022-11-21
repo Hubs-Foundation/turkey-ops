@@ -191,7 +191,7 @@ type ret_asset struct {
 	Orm_map_owned_file_id      json.Number `json:"orm_map_owned_file_id"`
 }
 
-func ret_avatar_post_import(getReqBody []byte, hubId, token string) error {
+func ret_avatar_post_import(getReqBody []byte, subdomain, domain, token string) error {
 
 	assets := []ret_asset{}
 	json.Unmarshal(getReqBody, &assets)
@@ -232,7 +232,7 @@ func ret_avatar_post_import(getReqBody []byte, hubId, token string) error {
 
 	listReq, _ := http.NewRequest(
 		"POST",
-		"https://"+hubId+".dev.myhubs.net/api/postgrest/avatar_listings",
+		"https://"+subdomain+"."+domain+"/api/postgrest/avatar_listings",
 		bytes.NewBuffer(listReqBody),
 	)
 	listReq.Header.Add("content-type", "application/json")
@@ -252,7 +252,7 @@ func ret_avatar_post_import(getReqBody []byte, hubId, token string) error {
 	return nil
 }
 
-func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
+func ret_scene_post_import(getReqBody []byte, subdomain, domain, token string) error {
 
 	assets := []ret_asset{}
 	json.Unmarshal(getReqBody, &assets)
@@ -292,7 +292,7 @@ func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
 	internal.Logger.Sugar().Debugf("listReqBody: %v", string(listReqBody))
 	listReq, _ := http.NewRequest(
 		"POST",
-		"https://"+hubId+".dev.myhubs.net/api/postgrest/scene_listings",
+		"https://"+subdomain+"."+domain+"/api/postgrest/scene_listings",
 		bytes.NewBuffer(listReqBody),
 	)
 	listReq.Header.Add("content-type", "application/json")
