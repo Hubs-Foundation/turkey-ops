@@ -257,6 +257,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
 
 	go func() {
+		time.Sleep(1 * time.Second)
 		err := sync_load_assets(hcCfg)
 		if err != nil {
 			internal.Logger.Error("sync_load_assets FAILED: " + err.Error())
