@@ -381,36 +381,38 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 		return fmt.Errorf("bad resp from getReq after asset import: %v", string(rBody))
 	}
 
+	listReqBody := []byte(`
+{
+	"scene_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
+	"scene_id": "` + asset[0]["_text_id"].(string) + `",
+	"slug": "` + asset[0]["slug"].(string) + `",
+	"name": "` + asset[0]["name"].(string) + `",
+	"description": null,
+	"attributions": {
+		"content": [],
+		"creator": ""
+	},
+	"tags": {
+		"tags": [
+			"default",
+			"featured"
+		]
+	},
+	"model_owned_file_id": "` + strconv.FormatFloat(asset[0]["model_owned_file_id"].(float64), 'f', -1, 64) + `",
+	"scene_owned_file_id": "` + strconv.FormatFloat(asset[0]["scene_owned_file_id"].(float64), 'f', -1, 64) + `",
+	"screenshot_owned_file_id": "` + strconv.FormatFloat(asset[0]["screenshot_owned_file_id"].(float64), 'f', -1, 64) + `",
+	"order": 10000,
+	"state": "active",
+	"inserted_at": "` + asset[0]["inserted_at"].(string) + `",
+	"updated_at": "` + asset[0]["updated_at"].(string) + `"
+}
+	`)
+	internal.Logger.Sugar().Debugf("listReqBody: %v", string(listReqBody))
 	//feature + set default
 	listReq, _ := http.NewRequest(
 		"POST",
 		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind+"_listings",
-		bytes.NewBuffer([]byte(`
-		{
-			"scene_listing_sid": "`+internal.PwdGen(7, time.Now().Unix(), "")+`",
-			"scene_id": "`+asset[0]["_text_id"].(string)+`",
-			"slug": "`+asset[0]["slug"].(string)+`",
-			"name": "`+asset[0]["name"].(string)+`",
-			"description": null,
-			"attributions": {
-				"content": [],
-				"creator": ""
-			},
-			"tags": {
-				"tags": [
-					"default",
-					"featured"
-				]
-			},
-			"model_owned_file_id": "`+strconv.FormatFloat(asset[0]["model_owned_file_id"].(float64), 'f', -1, 64)+`",
-			"scene_owned_file_id": "`+strconv.FormatFloat(asset[0]["scene_owned_file_id"].(float64), 'f', -1, 64)+`",
-			"screenshot_owned_file_id": "`+strconv.FormatFloat(asset[0]["screenshot_owned_file_id"].(float64), 'f', -1, 64)+`",
-			"order": 10000,
-			"state": "active",
-			"inserted_at": "`+asset[0]["inserted_at"].(string)+`",
-			"updated_at": "`+asset[0]["updated_at"].(string)+`"
-		}
-		`)),
+		bytes.NewBuffer(listReqBody),
 	)
 	loadReq.Header.Add("content-type", "application/json")
 	listReq.Header.Add("authorization", "bearer "+string(token))
