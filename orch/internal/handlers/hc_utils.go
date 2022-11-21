@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"main/internal"
@@ -162,4 +164,131 @@ func wakeupHcNs(ns string) {
 		}
 	}
 
+}
+
+//
+
+type ret_asset struct {
+	Text_id     string `json:"_text_id"`
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	Inserted_at string `json:"inserted_at"`
+	Updated_at  string `json:"updated_at"`
+	//scenes
+	Model_owned_file_id      json.Number `json:"model_owned_file_id"`
+	Scene_owned_file_id      json.Number `json:"scene_owned_file_id"`
+	Screenshot_owned_file_id json.Number `json:"screenshot_owned_file_id"`
+	//avatars
+	Gltf_owned_file_id         json.Number `json:"gltf_owned_file_id"`
+	Bin_owned_file_id          json.Number `json:"bin_owned_file_id"`
+	Thumbnail_owned_file_id    json.Number `json:"thumbnail_owned_file_id"`
+	Base_map_owned_file_id     json.Number `json:"base_map_owned_file_id"`
+	Emissive_map_owned_file_id json.Number `json:"emissive_map_owned_file_id"`
+	Normal_map_owned_file_id   json.Number `json:"normal_map_owned_file_id"`
+	Orm_map_owned_file_id      json.Number `json:"orm_map_owned_file_id"`
+}
+
+func ret_avatar_post_import(getReqBody []byte, hubId, token string) error {
+
+	assets := []ret_asset{}
+	json.Unmarshal(getReqBody, &assets)
+	asset := assets[0]
+	listReqBody := []byte(`
+	{
+		"avatar_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
+		"avatar_id": "` + asset.Text_id + `",
+		"slug": "` + asset.Slug + `",
+		"name": "` + asset.Name + `",
+		"description": null,
+		"attributions": {},							
+		"tags": {
+			"tags": [
+				"featured"
+			]
+		},
+		"parent_avatar_listing_id": null,
+		"gltf_owned_file_id": "` + asset.Gltf_owned_file_id.String() + `",
+		"bin_owned_file_id": "` + asset.Bin_owned_file_id.String() + `",
+		"thumbnail_owned_file_id": "` + asset.Thumbnail_owned_file_id.String() + `",
+		"base_map_owned_file_id": "` + asset.Base_map_owned_file_id.String() + `",
+		"emissive_map_owned_file_id": "` + asset.Emissive_map_owned_file_id.String() + `",
+		"normal_map_owned_file_id": "` + asset.Normal_map_owned_file_id.String() + `",
+		"orm_map_owned_file_id": "` + asset.Orm_map_owned_file_id.String() + `",
+		"order": 10000,
+		"state": "active",
+		"inserted_at": "` + asset.Inserted_at + `",
+		"updated_at": "` + asset.Updated_at + `"
+	}
+	`)
+
+	listReq, _ := http.NewRequest(
+		"POST",
+		"https://"+hubId+".dev.myhubs.net/api/postgrest/avatar_listings",
+		bytes.NewBuffer(listReqBody),
+	)
+	listReq.Header.Add("content-type", "application/json")
+	listReq.Header.Add("authorization", "bearer "+string(token))
+	_httpClient := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
+	resp, err := _httpClient.Do(listReq)
+	if err != nil {
+		return err
+	}
+	internal.Logger.Sugar().Debugf(" listReq resp: %v", resp)
+
+	return nil
+}
+
+func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
+
+	assets := []ret_asset{}
+	json.Unmarshal(getReqBody, &assets)
+	asset := assets[0]
+	listReqBody := []byte(`
+	{
+		"scene_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
+		"scene_id": "` + asset.Text_id + `",
+		"slug": "` + asset.Slug + `",
+		"name": "` + asset.Name + `",
+		"description": null,
+		"attributions": {
+			"content": [],
+			"creator": ""
+		},
+		"tags": {
+			"tags": [
+				"default",
+				"featured"
+			]
+		},
+		"model_owned_file_id": "` + asset.Model_owned_file_id.String() + `",
+		"scene_owned_file_id": "` + asset.Scene_owned_file_id.String() + `",
+		"screenshot_owned_file_id": "` + asset.Screenshot_owned_file_id.String() + `",
+		"order": 10000,
+		"state": "active",
+		"inserted_at": "` + asset.Inserted_at + `",
+		"updated_at": "` + asset.Updated_at + `"
+	}
+	`)
+
+	listReq, _ := http.NewRequest(
+		"POST",
+		"https://"+hubId+".dev.myhubs.net/api/postgrest/scenes_listings",
+		bytes.NewBuffer(listReqBody),
+	)
+	listReq.Header.Add("content-type", "application/json")
+	listReq.Header.Add("authorization", "bearer "+string(token))
+	_httpClient := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
+	resp, err := _httpClient.Do(listReq)
+	if err != nil {
+		return err
+	}
+	internal.Logger.Sugar().Debugf(" listReq resp: %v", resp)
+
+	return nil
 }

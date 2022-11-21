@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-	"strconv"
 
 	"net/http"
 	"net/url"
@@ -338,6 +337,8 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	if kind_s != "avatars" && kind_s != "scenes" {
 		return fmt.Errorf("unsupported url: %v", url)
 	}
+
+	//import
 	assetUrl := "https://" + url.Host + "/api/v1/" + kind_s + "/" + id
 	loadReq, _ := http.NewRequest(
 		"POST",
@@ -364,8 +365,8 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	if hubId[:4] != "gtan" {
 		return nil
 	}
-	//approve -- aka generate <kind>_listing_sid and post to <kind>_listings
 
+	//post import -- generate <kind>_listing_sid and post to <kind>_listings
 	getReq, _ := http.NewRequest(
 		"GET",
 		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind_s+"?"+kind+"_sid=ilike.*"+newAssetId+"*",
@@ -377,87 +378,21 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	if err != nil {
 		return err
 	}
-	rBody, _ = ioutil.ReadAll(resp.Body)
+	getReqBody, _ := ioutil.ReadAll(resp.Body)
 
-	var asset []map[string]interface{}
-	json.Unmarshal(rBody, &asset)
-
-	if len(asset) < 1 {
-		return fmt.Errorf("bad resp from getReq after asset import: %v", string(rBody))
-	}
-	var listReqBody []byte
-	if kind == "scene" {
-		listReqBody = []byte(`
-		{
-			"` + kind + `_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
-			"` + kind + `_id": "` + asset[0]["_text_id"].(string) + `",
-			"slug": "` + asset[0]["slug"].(string) + `",
-			"name": "` + asset[0]["name"].(string) + `",
-			"description": null,
-			"attributions": {
-				"content": [],
-				"creator": ""
-			},
-			"tags": {
-				"tags": [
-					"default",
-					"featured"
-				]
-			},
-			"model_owned_file_id": "` + strconv.FormatFloat(asset[0]["model_owned_file_id"].(float64), 'f', -1, 64) + `",
-			"` + kind + `_owned_file_id": "` + strconv.FormatFloat(asset[0][kind+"_owned_file_id"].(float64), 'f', -1, 64) + `",
-			"screenshot_owned_file_id": "` + strconv.FormatFloat(asset[0]["screenshot_owned_file_id"].(float64), 'f', -1, 64) + `",
-			"order": 10000,
-			"state": "active",
-			"inserted_at": "` + asset[0]["inserted_at"].(string) + `",
-			"updated_at": "` + asset[0]["updated_at"].(string) + `"
+	if kind == "avatar" {
+		err := ret_avatar_post_import(getReqBody, hubId, token)
+		if err != nil {
+			return err
 		}
-		`)
+	} else if kind == "scene" {
+		err := ret_scene_post_import(getReqBody, hubId, token)
+		if err != nil {
+			return err
+		}
 	} else {
-		listReqBody = []byte(`
-		{
-			"avatar_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
-			"avatar_id": "` + asset[0]["_text_id"].(string) + `",
-			"slug": "` + asset[0]["slug"].(string) + `",
-			"name": "` + asset[0]["name"].(string) + `",
-			"description": null,
-			"attributions": {},							
-			"tags": {
-				"tags": [
-					"featured"
-				]
-			},
-			"parent_avatar_listing_id": null,
-			"gltf_owned_file_id": "` + asset[0]["gltf_owned_file_id"].(string) + `",
-			"bin_owned_file_id": "` + asset[0]["bin_owned_file_id"].(string) + `",
-			"thumbnail_owned_file_id": "` + asset[0]["thumbnail_owned_file_id"].(string) + `",
-			"base_map_owned_file_id": null,
-			"emissive_map_owned_file_id": null,
-			"normal_map_owned_file_id": null,
-			"orm_map_owned_file_id": null,
-			"order": 10000,
-			"state": "active",
-			"inserted_at": "` + asset[0]["inserted_at"].(string) + `",
-			"updated_at": "` + asset[0]["updated_at"].(string) + `"
-		}		
-		`)
+		return errors.New("unexpected kind: " + kind)
 	}
-
-	internal.Logger.Sugar().Debugf("listReqBody: %v", string(listReqBody))
-	//feature + set default
-	listReq, _ := http.NewRequest(
-		"POST",
-		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind+"_listings",
-		bytes.NewBuffer(listReqBody),
-	)
-	listReq.Header.Add("content-type", "application/json")
-	listReq.Header.Add("authorization", "bearer "+string(token))
-	resp, err = _httpClient.Do(listReq)
-	if err != nil {
-		return err
-	}
-	rBody, _ = ioutil.ReadAll(resp.Body)
-	internal.Logger.Sugar().Debugf("### listReq -- took: %v, listReq: %v, resp: %v", took, listReq, string(rBody))
 
 	return nil
 }
