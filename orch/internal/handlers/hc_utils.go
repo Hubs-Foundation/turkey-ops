@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"main/internal"
 	"net/http"
 	"strings"
@@ -243,6 +244,8 @@ func ret_avatar_post_import(getReqBody []byte, hubId, token string) error {
 		return err
 	}
 	internal.Logger.Sugar().Debugf(" listReq resp: %v", resp)
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	internal.Logger.Sugar().Debugf(" listReq respBody: %v", string(respBody))
 
 	return nil
 }
@@ -300,6 +303,8 @@ func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
 		return err
 	}
 	internal.Logger.Sugar().Debugf(" listReq resp: %v", resp)
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	internal.Logger.Sugar().Debugf(" listReq respBody: %v", string(respBody))
 
 	return nil
 }
