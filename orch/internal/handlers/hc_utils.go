@@ -212,13 +212,13 @@ func ret_avatar_post_import(getReqBody []byte, hubId, token string) error {
 			]
 		},
 		"parent_avatar_listing_id": null,
-		"gltf_owned_file_id": "` + asset.Gltf_owned_file_id.String() + `",
-		"bin_owned_file_id": "` + asset.Bin_owned_file_id.String() + `",
-		"thumbnail_owned_file_id": "` + asset.Thumbnail_owned_file_id.String() + `",
-		"base_map_owned_file_id": "` + asset.Base_map_owned_file_id.String() + `",
-		"emissive_map_owned_file_id": "` + asset.Emissive_map_owned_file_id.String() + `",
-		"normal_map_owned_file_id": "` + asset.Normal_map_owned_file_id.String() + `",
-		"orm_map_owned_file_id": "` + asset.Orm_map_owned_file_id.String() + `",
+		"gltf_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Gltf_owned_file_id.String()) + `,
+		"bin_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Bin_owned_file_id.String()) + `,
+		"thumbnail_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Thumbnail_owned_file_id.String()) + `,
+		"base_map_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Base_map_owned_file_id.String()) + `,
+		"emissive_map_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Emissive_map_owned_file_id.String()) + `,
+		"normal_map_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Normal_map_owned_file_id.String()) + `,
+		"orm_map_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Orm_map_owned_file_id.String()) + `,
 		"order": 10000,
 		"state": "active",
 		"inserted_at": "` + asset.Inserted_at + `",
@@ -276,9 +276,9 @@ func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
 				"featured"
 			]
 		},
-		"model_owned_file_id": "` + asset.Model_owned_file_id.String() + `",
-		"scene_owned_file_id": "` + asset.Scene_owned_file_id.String() + `",
-		"screenshot_owned_file_id": "` + asset.Screenshot_owned_file_id.String() + `",
+		"model_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Model_owned_file_id.String()) + `,
+		"scene_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Scene_owned_file_id.String()) + `,
+		"screenshot_owned_file_id": ` + quotedString_or_nullForEmpty(asset.Screenshot_owned_file_id.String()) + `,
 		"order": 10000,
 		"state": "active",
 		"inserted_at": "` + asset.Inserted_at + `",
@@ -307,4 +307,11 @@ func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
 	internal.Logger.Sugar().Debugf(" listReq respBody: %v", string(respBody))
 
 	return nil
+}
+
+func quotedString_or_nullForEmpty(in string) string {
+	if in == "" {
+		return `null`
+	}
+	return `"` + in + `"`
 }
