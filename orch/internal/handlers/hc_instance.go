@@ -332,15 +332,16 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	if len(pathArr) != 3 {
 		return fmt.Errorf("unsupported url: %v", url)
 	}
-	kind := pathArr[1]
+	kind_s := pathArr[1]
+	kind := kind_s[:len(kind_s)-1]
 	id := pathArr[2]
-	if kind != "avatars" && kind != "scenes" {
+	if kind_s != "avatars" && kind_s != "scenes" {
 		return fmt.Errorf("unsupported url: %v", url)
 	}
-	assetUrl := "https://" + url.Host + "/api/v1/" + kind + "/" + id
+	assetUrl := "https://" + url.Host + "/api/v1/" + kind_s + "/" + id
 	loadReq, _ := http.NewRequest(
 		"POST",
-		"https://ret.hc-"+hubId+":4000/api/v1/"+kind,
+		"https://ret.hc-"+hubId+":4000/api/v1/"+kind_s,
 		bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 	)
 	loadReq.Header.Add("content-type", "application/json")
@@ -357,13 +358,14 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	var importResp map[string][]map[string]interface{}
 	rBody, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(rBody, &importResp)
-	newAssetId := importResp[kind][0][kind[:len(kind)-1]+"_id"].(string)
+	newAssetId := importResp[kind_s][0][kind+"_id"].(string)
 	internal.Logger.Sugar().Debugf("### import -- took: %v, loaded: %v, new_id: %v", took, assetUrl, newAssetId)
 
 	//approve -- aka generate <kind>_listing_sid and post to <kind>_listings
+
 	getReq, _ := http.NewRequest(
 		"GET",
-		"https://ret.hc-"+hubId+":4000/api/postgrest/scenes?scene_sid=ilike.*"+newAssetId+"*",
+		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind_s+"?"+kind+"_sid=ilike.*"+newAssetId+"*",
 		// bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 		nil,
 	)
@@ -383,8 +385,8 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 
 	listReqBody := []byte(`
 {
-	"scene_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
-	"scene_id": "` + asset[0]["_text_id"].(string) + `",
+	"` + kind + `_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
+	"` + kind + `_id": "` + asset[0]["_text_id"].(string) + `",
 	"slug": "` + asset[0]["slug"].(string) + `",
 	"name": "` + asset[0]["name"].(string) + `",
 	"description": null,
@@ -399,7 +401,7 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 		]
 	},
 	"model_owned_file_id": "` + strconv.FormatFloat(asset[0]["model_owned_file_id"].(float64), 'f', -1, 64) + `",
-	"scene_owned_file_id": "` + strconv.FormatFloat(asset[0]["scene_owned_file_id"].(float64), 'f', -1, 64) + `",
+	"` + kind + `_owned_file_id": "` + strconv.FormatFloat(asset[0][kind+"_owned_file_id"].(float64), 'f', -1, 64) + `",
 	"screenshot_owned_file_id": "` + strconv.FormatFloat(asset[0]["screenshot_owned_file_id"].(float64), 'f', -1, 64) + `",
 	"order": 10000,
 	"state": "active",
@@ -411,7 +413,7 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	//feature + set default
 	listReq, _ := http.NewRequest(
 		"POST",
-		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind+"_listings",
+		"https://ret.hc-"+hubId+":4000/api/postgrest/"+kind_s+"_listings",
 		bytes.NewBuffer(listReqBody),
 	)
 	loadReq.Header.Add("content-type", "application/json")
