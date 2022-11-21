@@ -286,7 +286,7 @@ func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
 	internal.Logger.Sugar().Debugf("listReqBody: %v", string(listReqBody))
 	listReq, _ := http.NewRequest(
 		"POST",
-		"https://"+hubId+".dev.myhubs.net/api/postgrest/scenes_listings",
+		"https://"+hubId+".dev.myhubs.net/api/postgrest/scene_listings",
 		bytes.NewBuffer(listReqBody),
 	)
 	listReq.Header.Add("content-type", "application/json")
