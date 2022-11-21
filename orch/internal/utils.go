@@ -272,13 +272,13 @@ func RetryHttpReq(client *http.Client, request *http.Request, maxRetry time.Dura
 	timeout := time.Now().Add(maxRetry)
 	tStart := time.Now()
 	resp, err := client.Do(request)
-	for err != nil || resp.StatusCode != 200 {
+	for err != nil || resp.StatusCode > 299 {
 		time.Sleep(stepWait)
 		ttl := time.Until(timeout)
 		if ttl < 0 {
 			return nil, time.Since(tStart), errors.New("timeout")
 		}
-		Logger.Sugar().Debugf("retrying for %v, ttl: %v", request.URL, ttl)
+		Logger.Sugar().Debugf("retrying for %v, ttl: %v, resp.StatusCode: %v", request.URL, ttl, resp.StatusCode)
 		resp, err = client.Do(request)
 	}
 	Logger.Sugar().Debugf("T-ready: %v", time.Since(tStart))
