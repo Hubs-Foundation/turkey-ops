@@ -318,10 +318,12 @@ func sync_load_assets(cfg hcCfg) error {
 		if err != nil {
 			return err
 		}
-		err = ret_load_asset(url, cfg, string(token))
-		if err != nil {
-			internal.Logger.Error(fmt.Sprintf("failed to load asset: %v, error: %v", url, err))
-		}
+		go func() {
+			err = ret_load_asset(url, cfg, string(token))
+			if err != nil {
+				internal.Logger.Error(fmt.Sprintf("failed to load asset: %v, error: %v", url, err))
+			}
+		}()
 	}
 	return nil
 }
@@ -349,10 +351,10 @@ func ret_load_asset(url *url.URL, cfg hcCfg, token string) error {
 	loadReq.Header.Add("authorization", "bearer "+string(token))
 
 	_httpClient := &http.Client{
-		Timeout:   10 * time.Second,
+		Timeout:   15 * time.Second,
 		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 	}
-	resp, took, err := internal.RetryHttpReq(_httpClient, loadReq, 15*time.Second)
+	resp, took, err := internal.RetryHttpReq(_httpClient, loadReq, 30*time.Second)
 	if err != nil {
 		return err
 	}
