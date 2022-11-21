@@ -256,13 +256,12 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
 
-	go func() {
-		time.Sleep(1 * time.Second)
-		err := sync_load_assets(hcCfg)
-		if err != nil {
-			internal.Logger.Error("sync_load_assets FAILED: " + err.Error())
-		}
-	}()
+	// go func() {
+	err = sync_load_assets(hcCfg)
+	if err != nil {
+		internal.Logger.Error("sync_load_assets FAILED: " + err.Error())
+	}
+	// }()
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -279,13 +278,13 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 func sync_load_assets(cfg hcCfg) error {
 
 	_httpClient := &http.Client{
-		Timeout:   10 * time.Second,
+		Timeout:   5 * time.Second,
 		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 	}
 	//wait for ret
 	retReq, _ := http.NewRequest("GET", "https://"+cfg.Subdomain+"."+cfg.Domain+"/health", nil)
 
-	_, took, err := internal.RetryHttpReq(_httpClient, retReq, 5*time.Minute)
+	_, took, err := internal.RetryHttpReq(_httpClient, retReq, 6*time.Minute)
 	if err != nil {
 		return err
 	}
@@ -299,7 +298,7 @@ func sync_load_assets(cfg hcCfg) error {
 	)
 	tokenReq.Header.Add("content-type", "application/json")
 	tokenReq.Header.Add("x-ret-dashboard-access-key", internal.Cfg.DASHBOARD_ACCESS_KEY)
-	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 1*time.Minute)
+	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 15*time.Second)
 	if err != nil {
 		return err
 	}
@@ -319,12 +318,12 @@ func sync_load_assets(cfg hcCfg) error {
 		if err != nil {
 			return err
 		}
-		go func() {
-			err = ret_load_asset(url, cfg, string(token))
-			if err != nil {
-				internal.Logger.Error(fmt.Sprintf("failed to load asset: %v, error: %v", url, err))
-			}
-		}()
+		// go func() {
+		err = ret_load_asset(url, cfg, string(token))
+		if err != nil {
+			internal.Logger.Error(fmt.Sprintf("failed to load asset: %v, error: %v", url, err))
+		}
+		// }()
 	}
 	return nil
 }

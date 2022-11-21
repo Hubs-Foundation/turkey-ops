@@ -267,7 +267,7 @@ func IsValidDomainName(domain string) bool {
 
 func RetryHttpReq(client *http.Client, request *http.Request, maxRetry time.Duration) (*http.Response, time.Duration, error) {
 
-	stepWait := 5 * time.Second
+	stepWait := 3 * time.Second
 
 	timeout := time.Now().Add(maxRetry)
 	tStart := time.Now()
@@ -278,7 +278,7 @@ func RetryHttpReq(client *http.Client, request *http.Request, maxRetry time.Dura
 		if ttl < 0 {
 			return nil, time.Since(tStart), errors.New("timeout")
 		}
-		Logger.Sugar().Debugf("retrying for RequestURI: %v, ttl: %v", request.RequestURI, ttl)
+		Logger.Sugar().Debugf("retrying for %v, ttl: %v", request.URL, ttl)
 		resp, err = client.Do(request)
 	}
 	Logger.Sugar().Debugf("T-ready: %v", time.Since(tStart))
