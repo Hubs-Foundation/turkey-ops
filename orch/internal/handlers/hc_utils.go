@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"main/internal"
 	"net/http"
@@ -245,6 +246,10 @@ func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
 
 	assets := []ret_asset{}
 	json.Unmarshal(getReqBody, &assets)
+
+	if len(assets) < 1 {
+		return errors.New("bad getReqBody: " + string(getReqBody))
+	}
 	asset := assets[0]
 	listReqBody := []byte(`
 	{
