@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"main/internal"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -198,9 +199,10 @@ func ret_avatar_post_import(getReqBody []byte, hubId, token string) error {
 		return errors.New("bad getReqBody: " + string(getReqBody))
 	}
 	asset := assets[0]
+	sid := "z" + fmt.Sprintf("%d", rand.Intn(999999))
 	listReqBody := []byte(`
 	{
-		"avatar_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
+		"avatar_listing_sid": "` + sid + `",
 		"avatar_id": "` + asset.Text_id + `",
 		"slug": "` + asset.Slug + `",
 		"name": "` + asset.Name + `",
@@ -259,9 +261,10 @@ func ret_scene_post_import(getReqBody []byte, hubId, token string) error {
 		return errors.New("bad getReqBody: " + string(getReqBody))
 	}
 	asset := assets[0]
+	sid := "z" + fmt.Sprintf("%d", rand.Intn(999999))
 	listReqBody := []byte(`
 	{
-		"scene_listing_sid": "` + internal.PwdGen(7, time.Now().Unix(), "") + `",
+		"scene_listing_sid": "` + sid + `",
 		"scene_id": "` + asset.Text_id + `",
 		"slug": "` + asset.Slug + `",
 		"name": "` + asset.Name + `",
