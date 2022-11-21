@@ -361,6 +361,9 @@ func ret_load_asset(url *url.URL, hubId string, token string) error {
 	newAssetId := importResp[kind_s][0][kind+"_id"].(string)
 	internal.Logger.Sugar().Debugf("### import -- took: %v, loaded: %v, new_id: %v", took, assetUrl, newAssetId)
 
+	if hubId[:4] != "gtan" {
+		return nil
+	}
 	//approve -- aka generate <kind>_listing_sid and post to <kind>_listings
 
 	getReq, _ := http.NewRequest(
