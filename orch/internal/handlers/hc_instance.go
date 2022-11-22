@@ -162,6 +162,18 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+	// #1.1 pre-deployment checks
+	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
+		metav1.ListOptions{LabelSelector: "hub_id=" + hcCfg.HubId})
+	if len(nsList.Items) != 0 {
+		internal.Logger.Error("hub_id already exists: " + hcCfg.HubId)
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "bounce -- hub_id already exists",
+			"hub_id": hcCfg.HubId,
+		})
+		return
+	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
 	fileOption := "_gfs"      //default
