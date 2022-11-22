@@ -282,7 +282,7 @@ func sync_load_assets(cfg hcCfg) error {
 		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 	}
 	//wait for ret
-	retReq, _ := http.NewRequest("GET", "https://"+cfg.Subdomain+"."+cfg.Domain+"/health", nil)
+	retReq, _ := http.NewRequest("GET", "https://"+cfg.Subdomain+"."+cfg.HubDomain+"/health", nil)
 
 	_, took, err := internal.RetryHttpReq(_httpClient, retReq, 6*time.Minute)
 	if err != nil {
@@ -379,12 +379,12 @@ func ret_load_asset(url *url.URL, cfg hcCfg, token string) error {
 	getReqBody, _ := ioutil.ReadAll(resp.Body)
 
 	if kind == "avatar" {
-		err := ret_avatar_post_import(getReqBody, cfg.Subdomain, cfg.Domain, token)
+		err := ret_avatar_post_import(getReqBody, cfg.Subdomain, cfg.HubDomain, token)
 		if err != nil {
 			return err
 		}
 	} else if kind == "scene" {
-		err := ret_scene_post_import(getReqBody, cfg.Subdomain, cfg.Domain, token)
+		err := ret_scene_post_import(getReqBody, cfg.Subdomain, cfg.HubDomain, token)
 		if err != nil {
 			return err
 		}
