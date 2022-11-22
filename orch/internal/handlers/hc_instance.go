@@ -268,12 +268,12 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
 
-	// go func() {
-	err = sync_load_assets(hcCfg)
-	if err != nil {
-		internal.Logger.Error("sync_load_assets FAILED: " + err.Error())
-	}
-	// }()
+	go func() {
+		err = sync_load_assets(hcCfg)
+		if err != nil {
+			internal.Logger.Error("sync_load_assets FAILED: " + err.Error())
+		}
+	}()
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
