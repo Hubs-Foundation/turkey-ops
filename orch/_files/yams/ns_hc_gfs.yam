@@ -280,12 +280,13 @@ data:
     speelycaptor_endpoint = "<SPEELYCAPTOR>"
 
     [ret."Elixir.Ret.PageOriginWarmer"]
-    hubs_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/hubs/pages"
-    spoke_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/spoke/pages"
-    admin_page_origin = "https://<SUB_DOMAIN>.assets.<DOMAIN>/hubs/pages"
+    hubs_page_origin = "https://hubs.<POD_NS>:8080/hubs/pages"
+    spoke_page_origin = "https://spoke.<POD_NS>:8080/spoke/pages"
+    admin_page_origin = "https://hubs.<POD_NS>:8080/hubs/pages"
+    insecure_ssl = true
 
     [ret."Elixir.Ret.HttpUtils"]
-    insecure_ssl = false
+    insecure_ssl = true
 
     [ret."Elixir.Ret.Storage"]
     storage_path = "/storage"
