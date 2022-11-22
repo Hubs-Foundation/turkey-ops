@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	mrand "math/rand"
@@ -276,7 +276,7 @@ func RetryHttpReq(client *http.Client, request *http.Request, maxRetry time.Dura
 		time.Sleep(stepWait)
 		ttl := time.Until(timeout)
 		if ttl < 0 {
-			return nil, time.Since(tStart), errors.New("timeout")
+			return nil, time.Since(tStart), fmt.Errorf("timeout waiting for %v", request.URL)
 		}
 
 		if err != nil {
