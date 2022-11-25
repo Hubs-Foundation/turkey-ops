@@ -42,6 +42,7 @@ stringData:
   DASHBOARD_ACCESS_KEY: {{.DASHBOARD_ACCESS_KEY}}
   HEADER_AUTHZ: {{.HEADER_AUTHZ}}
   SKETCHFAB_API_KEY: {{.SKETCHFAB_API_KEY}}
+  TENOR_API_KEY: {{.TENOR_API_KEY}}
 data:
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}  
 ---
@@ -275,6 +276,7 @@ data:
     ytdl_host = "<YTDL_HOST>"
     photomnemonic_endpoint = "<PHOTOMNEMONIC>"
     sketchfab_api_key = "<SKETCHFAB_API_KEY>"
+    tenor_api_key = "<TENOR_API_KEY>"
 
     [ret."Elixir.Ret.Speelycaptor"]
     speelycaptor_endpoint = "<SPEELYCAPTOR>"
@@ -518,7 +520,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: SKETCHFAB_API_KEY              
+              key: SKETCHFAB_API_KEY
         - name: turkeyCfg_IMG_PROXY
           value: nearspark.hc-{{.HubId}}
         - name: turkeyCfg_HEADER_AUTHZ
@@ -531,8 +533,13 @@ spec:
             secretKeyRef:
               name: configs
               key: DASHBOARD_ACCESS_KEY
+        - name: TENOR_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: TENOR_API_KEY
         - name: turkeyCfg_YTDL_HOST
-          value: "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"          
+          value: "https://hubs-ytdl-fsu7tyt32a-uc.a.run.app"
         - name: turkeyCfg_PHOTOMNEMONIC
           value: "http://photomnemonic:5000"  
         - name: turkeyCfg_SPEELYCAPTOR
