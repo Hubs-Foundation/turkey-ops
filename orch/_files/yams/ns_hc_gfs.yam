@@ -533,7 +533,7 @@ spec:
             secretKeyRef:
               name: configs
               key: DASHBOARD_ACCESS_KEY
-        - name: TENOR_API_KEY
+        - name: turkeyCfg_TENOR_API_KEY
           valueFrom:
             secretKeyRef:
               name: configs
