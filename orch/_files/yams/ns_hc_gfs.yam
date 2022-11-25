@@ -774,7 +774,7 @@ spec:
         - name: turkeyCfg_shortlink_domain
           value: {{.Subdomain}}.{{.HubDomain}}
         - name: turkeyCfg_hubs_server
-          value: {{.Subdomain}}.{{.Domain}}
+          value: {{.Subdomain}}.{{.HubDomain}}
         # - name: turkeyCfg_is_moz
         #   value: "false"
         livenessProbe:
