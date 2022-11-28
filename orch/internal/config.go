@@ -113,9 +113,9 @@ func MakeCfg() {
 
 	Cfg.SKETCHFAB_API_KEY = os.Getenv("SKETCHFAB_API_KEY")
 	Cfg.TENOR_API_KEY = os.Getenv("TENOR_API_KEY")
-	Cfg.SENTRY_DSN_RET = getEnv("SENTRY_DSN_RET", "-")
-	Cfg.SENTRY_DSN_HUBS = getEnv("SENTRY_DSN_HUBS", "-")
-	Cfg.SENTRY_DSN_SPOKE = getEnv("SENTRY_DSN_SPOKE", "-")
+	Cfg.SENTRY_DSN_RET = getEnv("SENTRY_DSN_RET", ".")
+	Cfg.SENTRY_DSN_HUBS = getEnv("SENTRY_DSN_HUBS", ".")
+	Cfg.SENTRY_DSN_SPOKE = getEnv("SENTRY_DSN_SPOKE", ".")
 	Cfg.HC_INIT_ASSET_PACK = getEnv("HC_INIT_ASSET_PACK", "https://raw.githubusercontent.com/mozilla/hubs-cloud/master/asset-packs/turkey-init.pack")
 
 	Cfg.DockerhubUser = os.Getenv("DOCKERHUB_USER")
