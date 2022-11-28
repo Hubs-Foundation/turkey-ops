@@ -63,6 +63,9 @@ type hcCfg struct {
 	DASHBOARD_ACCESS_KEY string
 	SKETCHFAB_API_KEY    string
 	TENOR_API_KEY        string
+	SENTRY_DSN_RET       string
+	SENTRY_DSN_HUBS      string
+	SENTRY_DSN_SPOKE     string
 	//generated on the fly
 	JWK          string `json:"jwk"` // encoded from PermsKey.public
 	GuardianKey  string `json:"guardiankey"`

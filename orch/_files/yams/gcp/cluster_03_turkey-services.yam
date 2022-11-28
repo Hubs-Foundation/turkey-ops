@@ -107,6 +107,10 @@ stringData:
   GCP_SA_HMAC_SECRET: {{.GCP_SA_HMAC_SECRET}}  
   DASHBOARD_ACCESS_KEY: {{.DASHBOARD_ACCESS_KEY}}
   SKETCHFAB_API_KEY: {{.SKETCHFAB_API_KEY}}
+  TENOR_API_KEY: {{.TENOR_API_KEY}}
+  SENTRY_DSN_RET: {{.SENTRY_DSN_RET}}
+  SENTRY_DSN_HUBS: {{.SENTRY_DSN_HUBS}}
+  SENTRY_DSN_SPOKE: {{.SENTRY_DSN_SPOKE}}
 data:
   AUTH_PUBLIC_KEY: {{.PERMS_KEY_PUB_b64}}
   GCP_SA_KEY: {{.GCP_SA_KEY_b64}}
@@ -627,7 +631,27 @@ spec:
           valueFrom:
             secretKeyRef:
               name: configs
-              key: SKETCHFAB_API_KEY              
+              key: SKETCHFAB_API_KEY     
+        - name: TENOR_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: TENOR_API_KEY
+        - name: SENTRY_DSN_RET
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SENTRY_DSN_RET
+        - name: SENTRY_DSN_HUBS
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SENTRY_DSN_HUBS
+        - name: SENTRY_DSN_SPOKE
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: SENTRY_DSN_SPOKE         
         livenessProbe:
           httpGet:
             path: "/_healthz"

@@ -40,6 +40,9 @@ type Config struct {
 
 	SKETCHFAB_API_KEY  string `description:"enables reticulum's sketchfab option"`
 	TENOR_API_KEY      string `description "enables reticulum's gif option"`
+	SENTRY_DSN_RET     string
+	SENTRY_DSN_HUBS    string
+	SENTRY_DSN_SPOKE   string
 	HC_INIT_ASSET_PACK string `pre-installed asset pack for new hub instance`
 
 	DockerhubUser string
@@ -110,6 +113,9 @@ func MakeCfg() {
 
 	Cfg.SKETCHFAB_API_KEY = os.Getenv("SKETCHFAB_API_KEY")
 	Cfg.TENOR_API_KEY = os.Getenv("TENOR_API_KEY")
+	Cfg.SENTRY_DSN_RET = os.Getenv("SENTRY_DSN_RET")
+	Cfg.SENTRY_DSN_HUBS = os.Getenv("SENTRY_DSN_HUBS")
+	Cfg.SENTRY_DSN_SPOKE = os.Getenv("SENTRY_DSN_SPOKE")
 	Cfg.HC_INIT_ASSET_PACK = getEnv("HC_INIT_ASSET_PACK", "https://raw.githubusercontent.com/mozilla/hubs-cloud/master/asset-packs/turkey-init.pack")
 
 	Cfg.DockerhubUser = os.Getenv("DOCKERHUB_USER")
