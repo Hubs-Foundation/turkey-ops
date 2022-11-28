@@ -576,6 +576,9 @@ func makeHcCfg(r *http.Request) (hcCfg, error) {
 	cfg.DASHBOARD_ACCESS_KEY = internal.Cfg.DASHBOARD_ACCESS_KEY
 	cfg.SKETCHFAB_API_KEY = internal.Cfg.SKETCHFAB_API_KEY
 	cfg.TENOR_API_KEY = internal.Cfg.TENOR_API_KEY
+	cfg.SENTRY_DSN_RET = internal.Cfg.SENTRY_DSN_RET
+	cfg.SENTRY_DSN_HUBS = internal.Cfg.SENTRY_DSN_HUBS
+	cfg.SENTRY_DSN_SPOKE = internal.Cfg.SENTRY_DSN_SPOKE
 
 	//produce the rest
 	if cfg.Tier == "free" || internal.Cfg.Env == "dev" {
