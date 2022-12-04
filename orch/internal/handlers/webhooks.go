@@ -59,7 +59,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	// verify if the callback url is a valid url from dockerhub
 	u, err := url.Parse(dockerJson.Callback_url)
-	if err != nil || u.Host != DOCKERHUBURL {
+	if err != nil || u.Host != DOCKERHUBURL || u.Scheme != "https" {
 		internal.Logger.Warn("invalid callback_url")
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
