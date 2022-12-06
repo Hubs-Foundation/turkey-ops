@@ -55,7 +55,7 @@ data:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: turkey-https
+  name: turkey-http
   namespace: hc-{{.HubId}}
   annotations:
     kubernetes.io/ingress.class: haproxy
@@ -65,33 +65,9 @@ metadata:
     haproxy.org/path-rewrite: /api-internal(.*) /_drop_
 spec:
   rules:
-  - host: {{.Subdomain}}.{{.HubDomain}}
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: ret
-            port: 
-              number: 4000
   - host: {{.Subdomain}}.assets.{{.Domain}}
     http:
-      paths:
-      - path: /files/
-        pathType: Prefix
-        backend:
-          service:
-            name: ret
-            port: 
-              number: 4000
-      - path: /http
-        pathType: ImplementationSpecific  # haproxy's "Begin with"
-        backend:
-          service:
-            name: ret
-            port: 
-              number: 4000                  
+      paths:            
       - path: /hubs
         pathType: Prefix
         backend:
@@ -106,6 +82,45 @@ spec:
             name: spoke
             port: 
               number: 8080
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkey-https
+  namespace: hc-{{.HubId}}
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+    haproxy.org/response-set-header: |
+      access-control-allow-origin "https://{{.Subdomain}}.{{.HubDomain}}"
+    haproxy.org/path-rewrite: /api-internal(.*) /_drop_
+spec:
+  rules:
+  - host: {{.Subdomain}}.{{.HubDomain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4001
+  - host: {{.Subdomain}}.assets.{{.Domain}}
+    http:
+      paths:
+      - path: /files/
+        pathType: Prefix
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4001
+      - path: /http
+        pathType: ImplementationSpecific  # haproxy's "Begin with"
+        backend:
+          service:
+            name: ret
+            port: 
+              number: 4001
   # - host: {{.Subdomain}}.cors.{{.Domain}}
   #   http:
   #     paths:
@@ -564,8 +579,8 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 4000
-            scheme: HTTPS
+            port: 4001
+            scheme: HTTP
           initialDelaySeconds: 30
           timeoutSeconds: 3
           periodSeconds: 30
@@ -573,8 +588,8 @@ spec:
             initialDelaySeconds: 20
             httpGet:
               path: /?skipadmin
-              port: 4000
-              scheme: HTTPS
+              port: 4001
+              scheme: HTTP
             timeoutSeconds: 5
             periodSeconds: 5
             successThreshold: 5
@@ -649,6 +664,9 @@ metadata:
 spec:
   clusterIP: None
   ports:
+  - name: http-reticulum
+    port: 4001
+    targetPort: 4001
   - name: https-reticulum
     port: 4000
     targetPort: 4000
