@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"main/internal"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
+
+const DOCKERHUBURL = "registry.hub.docker.com"
 
 var supportedChannels = map[string]bool{
 	"dev":    true,
@@ -54,7 +57,13 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//todo: verify ... docker's really lacking here, check with docker, maybe cross check with github action too?
+	// verify if the callback url is a valid url from dockerhub
+	u, err := url.Parse(dockerJson.Callback_url)
+	if err != nil || u.Host != DOCKERHUBURL || u.Scheme != "https" {
+		internal.Logger.Warn("invalid callback_url")
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
 
 	tagArr := strings.Split(dockerJson.Push_data.Tag, "-")
 
