@@ -141,23 +141,35 @@ func publishToConfigmap_label(channel string, repo_tag_map map[string]string) er
 
 func Cronjob_HcHealthchecks(interval time.Duration) {
 
-	//get list of HC namespaces
-	nsList, err := cfg.K8sClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: "hub_id"})
+	// //get list of HC namespaces
+	// nsList, err := cfg.K8sClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: "hub_id"})
+	// if err != nil {
+	// 	Logger.Error(err.Error())
+	// 	return
+	// }
+	// //check them
+	// for _, ns := range nsList.Items {
+	// 	//get local endpoints from ingress
+	// 	// Logger.Warn("comming soon -- ns: " + ns.Name)
+	// 	_ = ns
+	// }
+
+	// ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	// if err != nil {
+	// 	Logger.Error("failed to get ns: " + err.Error())
+	// }
+
+	hcHost, err := get_hc_host()
 	if err != nil {
 		Logger.Error(err.Error())
 		return
 	}
-	//check them
-	for _, ns := range nsList.Items {
-		//get local endpoints from ingress
-		// Logger.Warn("comming soon -- ns: " + ns.Name)
-		_ = ns
-	}
+	healthcheckUrl(hcHost)
 
 	//extra health checks
 	for _, url := range cfg.ExtraHealthchecks {
 		if url == "" {
-			Logger.Warn("empty url")
+			// Logger.Warn("empty url")
 			continue
 		}
 		Logger.Debug("url: " + url)
@@ -241,4 +253,23 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	StreamNodes = r
 	StreamNodeIpList = ipList
 	mu_streamNodes.Unlock()
+}
+
+func get_hc_host() (string, error) {
+	resp, err := http.Get("ret." + cfg.PodNS + ":4001/api/v1/meta")
+	if err != nil {
+		return "", err
+	}
+	rBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	rMap := make(map[string]string)
+	err = json.Unmarshal(rBody, &rMap)
+	if err != nil {
+		return "", err
+	}
+	Logger.Debug("phx_host: " + rMap["phx_host"])
+	return rMap["phx_host"], nil
+
 }

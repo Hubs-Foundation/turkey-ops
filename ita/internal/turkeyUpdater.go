@@ -163,11 +163,12 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 			}
 			Logger.Sugar().Info("updating " + img + ": " + info.containerTag + " --> " + newtag)
 
-			err := u.tryDeployNewContainer(img, newtag, info, 6)
-			if err != nil {
-				Logger.Error("tryDeployNewContainer failed: " + err.Error())
-				continue
-			}
+			go func() {
+				err := u.tryDeployNewContainer(img, newtag, info, 3)
+				if err != nil {
+					Logger.Error("tryDeployNewContainer failed: " + err.Error())
+				}
+			}()
 			u.containers[i] = turkeyContainerInfo{
 				containerRepo:        img,
 				parentDeploymentName: u.containers[i].parentDeploymentName,
@@ -179,47 +180,65 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 }
 
 func (u *TurkeyUpdater) tryDeployNewContainer(img, newtag string, info turkeyContainerInfo, maxRetry int) error {
-	err := u.deployNewContainer(img, newtag, info)
+	err := u.deployNewContainer(img, newtag, info, maxRetry)
 	for err != nil && maxRetry > 0 {
-		time.Sleep(10 * time.Second)
-		err = u.deployNewContainer(img, newtag, info)
+		err = u.deployNewContainer(img, newtag, info, maxRetry)
 		maxRetry -= 1
+		time.Sleep(1 * time.Minute)
 	}
 	return err
 }
 
-func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo turkeyContainerInfo) error {
+func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo turkeyContainerInfo, retriesRemaining int) error {
 
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), containerInfo.parentDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		Logger.Error("failed to get deployments <" + containerInfo.parentDeploymentName + "> in ns <" + cfg.PodNS + ">, err: " + err.Error())
 		return err
 	}
+	if retriesRemaining > 1 {
+		pods, err := cfg.K8sClientSet.CoreV1().Pods(d.Namespace).List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		err = k8s_waitForPods(pods, 1*time.Minute)
+		if err != nil {
+			return err
+		}
 
-	pods, err := cfg.K8sClientSet.CoreV1().Pods(d.Namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	err = k8s_waitForPods(pods, 180*time.Second)
-	if err != nil {
-		return err
-	}
-
-	d, err = k8s_waitForDeployment(d, 180*time.Second)
-	if err != nil {
-		return err
+		d, err = k8s_waitForDeployment(d, 1*time.Minute)
+		if err != nil {
+			return err
+		}
+	} else {
+		Logger.Warn("last retry, skip waitings")
 	}
 
 	for idx, c := range d.Spec.Template.Spec.Containers {
 		imgNameTagArr := strings.Split(c.Image, ":")
 		if imgNameTagArr[0] == repo {
 			d.Spec.Template.Spec.Containers[idx].Image = repo + ":" + newTag
-			d_new, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
-			if err != nil {
-				return err
+
+			if retriesRemaining > 1 {
+				d_new, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
+				Logger.Sugar().Debugf("d_new.Spec.Template.Spec.Containers[0]: %v", d_new.Spec.Template.Spec.Containers[0])
+				return nil
+			} else {
+				Logger.Warn("last retry ... (soft)forcing it")
+				errr := errors.New("dummy")
+				for errr != nil {
+					_, errr = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
+					if errr != nil {
+						Logger.Sugar().Warn("faild to set newTag <%v> to <%v>, will retry", newTag, containerInfo)
+						time.Sleep(30 * time.Second)
+					}
+				}
+				return nil
+
 			}
-			Logger.Sugar().Debugf("d_new.Spec.Template.Spec.Containers[0]: %v", d_new.Spec.Template.Spec.Containers[0])
-			return nil
 		}
 	}
 	return errors.New("did not find repo name: " + repo + ", failed to deploy newTag: " + newTag)
