@@ -163,12 +163,10 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 			}
 			Logger.Sugar().Info("updating " + img + ": " + info.containerTag + " --> " + newtag)
 
-			go func() {
-				err := u.tryDeployNewContainer(img, newtag, info, 3)
-				if err != nil {
-					Logger.Error("tryDeployNewContainer failed: " + err.Error())
-				}
-			}()
+			err := u.tryDeployNewContainer(img, newtag, info, 3)
+			if err != nil {
+				Logger.Error("tryDeployNewContainer failed: " + err.Error())
+			}
 			u.containers[i] = turkeyContainerInfo{
 				containerRepo:        img,
 				parentDeploymentName: u.containers[i].parentDeploymentName,
