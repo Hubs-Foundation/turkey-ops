@@ -138,6 +138,8 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	if !ok {
 		Logger.Error("expected type corev1.Namespace but got:" + reflect.TypeOf(obj).String())
 	}
+	ts := time.Now().Unix()
+	Logger.Sugar().Infof("started: %v", ts)
 	Logger.Sugar().Debugf("...received on <"+cfgmap.Name+"."+eventType+">: %v", cfgmap.Labels)
 	Logger.Sugar().Debugf("...current u.containers : %v", u.containers)
 
@@ -176,7 +178,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 		}
 	}
 
-	Logger.Info("done")
+	Logger.Sugar().Infof("done: %v", ts)
 }
 
 func (u *TurkeyUpdater) tryDeployNewContainer(img, newtag string, info turkeyContainerInfo, maxRetry int) error {
