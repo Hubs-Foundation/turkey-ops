@@ -164,7 +164,7 @@ func Cronjob_HcHealthchecks(interval time.Duration) {
 		Logger.Error(err.Error())
 		return
 	}
-	err = healthcheckUrl(hcHost)
+	err = healthcheckUrl("https://" + hcHost)
 	if err != nil {
 		Logger.Error("unhealthy: <" + hcHost + "> " + err.Error())
 	}
@@ -245,8 +245,8 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 	}
 
 	//it shouldn't change anyway but --- todo -- get them from GCP
-	r["35.225.11.240"] = "gke-lb"
-	r["34.111.227.97"] = "gke-ig"
+	r["35.225.11.240"] = "hmc-gke-lb"
+	r["34.111.227.97"] = "hmc-gke-ig"
 
 	ipList := ""
 	for ip, _ := range r {
