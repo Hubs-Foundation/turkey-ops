@@ -197,6 +197,8 @@ func healthcheckUrl(url string) error {
 		return errors.New("bad resp: " + resp.Status)
 	}
 
+	Logger.Debug("good url: " + url)
+
 	return nil
 }
 
@@ -269,7 +271,7 @@ func get_hc_host() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	Logger.Debug("get_hc_host -- phx_host: " + rMap["phx_host"])
+	Logger.Debug("phx_host: " + rMap["phx_host"])
 	return rMap["phx_host"], nil
 
 }
