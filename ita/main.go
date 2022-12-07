@@ -21,10 +21,12 @@ func main() {
 	cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
 	cron_15m := internal.NewCron("cron_15m", 15*time.Minute)
 
+	fmt.Println("podNS: " + internal.GetCfg().PodNS)
 	if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
 		cron_1m.Load("pauseJob", internal.Cronjob_pauseHC)
 		cron_1m.Load("HcHealthchecks", internal.Cronjob_HcHealthchecks)
 	}
+
 	if internal.GetCfg().PodNS == "turkey-services" {
 		cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
 		cron_1m.Start()

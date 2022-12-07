@@ -24,6 +24,7 @@ func NewCron(name string, interval time.Duration) *Cron {
 }
 
 func (c *Cron) Load(name string, job func(interval time.Duration)) {
+	Logger.Sugar().Infof("loaded job: %v", name)
 	c.Jobs[name] = job
 }
 

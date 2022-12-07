@@ -140,6 +140,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 	}
 	ts := time.Now().Unix()
 	Logger.Sugar().Infof("started: %v", ts)
+
 	Logger.Sugar().Debugf("...received on <"+cfgmap.Name+"."+eventType+">: %v", cfgmap.Labels)
 	Logger.Sugar().Debugf("...current u.containers : %v", u.containers)
 
@@ -174,7 +175,6 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 				parentDeploymentName: u.containers[i].parentDeploymentName,
 				containerTag:         newtag,
 			}
-
 		}
 	}
 
