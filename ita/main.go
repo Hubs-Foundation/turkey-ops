@@ -23,7 +23,7 @@ func main() {
 
 	fmt.Println("podNS: " + internal.GetCfg().PodNS)
 	if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
-		cron_1m.Load("pauseJob", internal.Cronjob_pauseHC)
+		// cron_1m.Load("pauseJob", internal.Cronjob_pauseHC)
 		cron_1m.Load("HcHealthchecks", internal.Cronjob_HcHealthchecks)
 	}
 

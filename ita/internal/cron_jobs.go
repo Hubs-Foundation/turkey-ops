@@ -256,7 +256,7 @@ func Cronjob_SurveyStreamNodes(interval time.Duration) {
 }
 
 func get_hc_host() (string, error) {
-	resp, err := http.Get("ret." + cfg.PodNS + ":4001/api/v1/meta")
+	resp, err := http.Get("http://ret." + cfg.PodNS + ":4001/api/v1/meta")
 	if err != nil {
 		return "", err
 	}
@@ -269,7 +269,7 @@ func get_hc_host() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	Logger.Debug("phx_host: " + rMap["phx_host"])
+	Logger.Debug("get_hc_host -- phx_host: " + rMap["phx_host"])
 	return rMap["phx_host"], nil
 
 }
