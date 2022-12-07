@@ -41,6 +41,13 @@ func GetCfg() *Config {
 
 func MakeCfg() {
 	cfg = &Config{}
+
+	val, retMode := os.LookupEnv("RET_MODE")
+	if retMode {
+		Logger.Info("RET_MODE: " + val)
+		return //RET_MODE==will-not-start: { turkey-updater, pauseJob }
+	}
+
 	cfg.SupportedChannels = []string{"dev", "beta", "stable"}
 
 	Hostname, err := os.Hostname()
@@ -82,12 +89,6 @@ func MakeCfg() {
 		cfg.Tier = "N/A"
 	}
 	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
-
-	val, retMode := os.LookupEnv("RET_MODE")
-	if retMode {
-		Logger.Info("RET_MODE: " + val)
-		return //RET_MODE==will-not-start: { turkey-updater, pauseJob }
-	}
 
 	//not RET_MODE => start turkey-updater
 	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")

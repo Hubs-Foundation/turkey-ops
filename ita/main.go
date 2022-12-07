@@ -29,12 +29,12 @@ func main() {
 
 	if internal.GetCfg().PodNS == "turkey-services" {
 		cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
-		cron_1m.Start()
 		cron_15m.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
 		cron_15m.Load("SurveyStreamNodes", internal.Cronjob_SurveyStreamNodes)
-		cron_15m.Start()
 		internal.Cronjob_SurveyStreamNodes(888 * time.Microsecond)
 	}
+	cron_1m.Start()
+	cron_15m.Start()
 
 	//#############################################
 	//################# server ####################
