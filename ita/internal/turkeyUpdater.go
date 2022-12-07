@@ -175,6 +175,8 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 
 		}
 	}
+
+	Logger.Info("done")
 }
 
 func (u *TurkeyUpdater) tryDeployNewContainer(img, newtag string, info turkeyContainerInfo, maxRetry int) error {
@@ -199,12 +201,12 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		if err != nil {
 			return err
 		}
-		err = k8s_waitForPods(pods, 1*time.Minute)
+		err = k8s_waitForPods(pods, 2*time.Minute)
 		if err != nil {
 			return err
 		}
 
-		d, err = k8s_waitForDeployment(d, 1*time.Minute)
+		d, err = k8s_waitForDeployment(d, 2*time.Minute)
 		if err != nil {
 			return err
 		}
@@ -235,8 +237,9 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 					}
 				}
 				return nil
-
 			}
+		} else {
+			Logger.Sugar().Debugf("skip container: this == <%v>, looking for <%v>", imgNameTagArr[0], repo)
 		}
 	}
 	return errors.New("did not find repo name: " + repo + ", failed to deploy newTag: " + newTag)
