@@ -900,28 +900,31 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 
 	// update ingress
 	time.Sleep(15 * time.Second)
-	internal.Logger.Sugar().Debugf("[hc_patch_subdomain.update ingress] %v => %v", oldSubdomain, Subdomain)
-	ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), "turkey-https", metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	for i, rule := range ingress.Spec.Rules {
-		hostArr := strings.SplitN(rule.Host, ".", 2)
-		newHost := strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
-		internal.Logger.Sugar().Debugf("hostArr[0]: %v, oldSubdomain: %v, Subdomain: %v", hostArr[0], oldSubdomain, Subdomain)
-		if hostArr[0] != oldSubdomain {
-			internal.Logger.Sugar().Warnf(" hostArr[0] != oldSubdomain,  hostArr[0]: %v, oldSubdomain: %v, Subdomain: %v", hostArr[0], oldSubdomain, Subdomain)
+
+	for _, ingressName := range []string{"turkey-https", "turkey-http"} {
+		internal.Logger.Sugar().Debugf("[hc_patch_subdomain.update ingress] %v => %v", oldSubdomain, Subdomain)
+		ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), ingressName, metav1.GetOptions{})
+		if err != nil {
+			return err
 		}
-		// newHost := Subdomain + "." + hostArr[1]
-		ingress.Spec.Rules[i].Host = newHost
-		internal.Logger.Sugar().Debugf("newHost: %v", newHost)
-	}
-	ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
-		ingress.Annotations["haproxy.org/response-set-header"],
-		`//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
-	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), ingress, metav1.UpdateOptions{})
-	if err != nil {
-		return err
+		for i, rule := range ingress.Spec.Rules {
+			hostArr := strings.SplitN(rule.Host, ".", 2)
+			newHost := strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
+			internal.Logger.Sugar().Debugf("hostArr[0]: %v, oldSubdomain: %v, Subdomain: %v", hostArr[0], oldSubdomain, Subdomain)
+			if hostArr[0] != oldSubdomain {
+				internal.Logger.Sugar().Warnf(" hostArr[0] != oldSubdomain,  hostArr[0]: %v, oldSubdomain: %v, Subdomain: %v", hostArr[0], oldSubdomain, Subdomain)
+			}
+			// newHost := Subdomain + "." + hostArr[1]
+			ingress.Spec.Rules[i].Host = newHost
+			internal.Logger.Sugar().Debugf("newHost: %v", newHost)
+		}
+		ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
+			ingress.Annotations["haproxy.org/response-set-header"],
+			`//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
+		_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), ingress, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
