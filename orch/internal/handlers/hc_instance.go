@@ -388,12 +388,14 @@ func ret_load_asset(url *url.URL, cfg hcCfg, token string) error {
 		nil,
 	)
 	getReq.Header.Add("authorization", "bearer "+string(token))
-	resp, err = _httpClient.Do(getReq)
+	// resp, err = _httpClient.Do(getReq)
+	resp, took, err = internal.RetryHttpReq(_httpClient, getReq, 30*time.Second)
 	if err != nil {
 		return err
 	}
-	getReqBody, _ := ioutil.ReadAll(resp.Body)
+	internal.Logger.Sugar().Debugf("### get -- took: %v, loaded: %v, new_id: %v", took, assetUrl, newAssetId)
 
+	getReqBody, _ := ioutil.ReadAll(resp.Body)
 	if kind == "avatar" {
 		err := ret_avatar_post_import(getReqBody, cfg.Subdomain, cfg.HubDomain, token)
 		if err != nil {

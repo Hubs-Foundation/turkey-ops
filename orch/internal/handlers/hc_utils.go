@@ -196,7 +196,7 @@ func ret_avatar_post_import(getReqBody []byte, subdomain, domain, token string) 
 	assets := []ret_asset{}
 	json.Unmarshal(getReqBody, &assets)
 	if len(assets) < 1 {
-		return errors.New("bad getReqBody: " + string(getReqBody))
+		return errors.New("(@ret_avatar_post_import)bad getReqBody: " + string(getReqBody))
 	}
 	asset := assets[0]
 	sid := "z" + fmt.Sprintf("%d", rand.Intn(999999))
@@ -258,7 +258,7 @@ func ret_scene_post_import(getReqBody []byte, subdomain, domain, token string) e
 	json.Unmarshal(getReqBody, &assets)
 
 	if len(assets) < 1 {
-		return errors.New("bad getReqBody: " + string(getReqBody))
+		return errors.New("(@ret_scene_post_import)bad getReqBody: " + string(getReqBody))
 	}
 	asset := assets[0]
 	sid := "z" + fmt.Sprintf("%d", rand.Intn(999999))
