@@ -309,7 +309,7 @@ func sync_load_assets(cfg hcCfg) error {
 	//get admin auth token
 	tokenReq, _ := http.NewRequest(
 		"POST",
-		"https://ret.hc-"+cfg.HubId+":4000/api-internal/v1/make_auth_token_for_email",
+		"http://ret.hc-"+cfg.HubId+":4001/api-internal/v1/make_auth_token_for_email",
 		bytes.NewBuffer([]byte(`{"email":"`+cfg.UserEmail+`"}`)),
 	)
 	tokenReq.Header.Add("content-type", "application/json")
@@ -334,12 +334,12 @@ func sync_load_assets(cfg hcCfg) error {
 		if err != nil {
 			return err
 		}
-		// go func() {
+		//
 		err = ret_load_asset(url, cfg, string(token))
 		if err != nil {
 			internal.Logger.Error(fmt.Sprintf("failed to load asset: %v, error: %v", url, err))
 		}
-		// }()
+
 	}
 	return nil
 }
@@ -360,7 +360,7 @@ func ret_load_asset(url *url.URL, cfg hcCfg, token string) error {
 	assetUrl := "https://" + url.Host + "/api/v1/" + kind_s + "/" + id
 	loadReq, _ := http.NewRequest(
 		"POST",
-		"https://ret.hc-"+cfg.HubId+":4000/api/v1/"+kind_s,
+		"http://ret.hc-"+cfg.HubId+":4001/api/v1/"+kind_s,
 		bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 	)
 	loadReq.Header.Add("content-type", "application/json")
@@ -383,7 +383,7 @@ func ret_load_asset(url *url.URL, cfg hcCfg, token string) error {
 	//post import -- generate <kind>_listing_sid and post to <kind>_listings
 	getReq, _ := http.NewRequest(
 		"GET",
-		"https://ret.hc-"+cfg.HubId+":4000/api/postgrest/"+kind_s+"?"+kind+"_sid=ilike.*"+newAssetId+"*",
+		"http://ret.hc-"+cfg.HubId+":4001/api/postgrest/"+kind_s+"?"+kind+"_sid=ilike.*"+newAssetId+"*",
 		// bytes.NewBuffer([]byte(`{"url":"`+assetUrl+`"}`)),
 		nil,
 	)
