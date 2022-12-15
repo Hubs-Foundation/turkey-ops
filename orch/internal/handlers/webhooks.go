@@ -60,7 +60,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// verify if the callback url is a valid url from dockerhub
 	u, err := url.Parse(dockerJson.Callback_url)
 	if err != nil || u.Host != DOCKERHUBURL || u.Scheme != "https" {
-		internal.Logger.Warn("invalid callback_url")
+		internal.Logger.Error("invalid dockerhub callback_url")
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -86,6 +86,7 @@ var Dockerhub = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	err = updateGcsTurkeyBuildReportFile(channel, dockerJson.Repository.Repo_name, dockerJson.Push_data.Tag)
 	if err != nil {
+		internal.Logger.Error("error of updating turkey build report file:")
 		internal.GetLogger().Error(err.Error())
 	}
 
