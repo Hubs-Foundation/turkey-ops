@@ -204,22 +204,24 @@ spec:
       includeHost: true
       includeProtocol: false
       includeQueryString: true
-# ---
-# apiVersion: networking.gke.io/v1beta1
-# kind: FrontendConfig
-# metadata:
-#   name: gcp-hosted-ingress
-#   namespace: ingress
-# spec:
-#   redirectToHttps:
-#     enabled: true
-#     responseCodeName: PERMANENT_REDIRECT
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: gcp-hosted-ingress
+  namespace: ingress
+spec:
+  redirectToHttps:
+    enabled: true
+    responseCodeName: PERMANENT_REDIRECT
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: gcp-hosted-ingress
   namespace: ingress
+  annotations:
+    networking.gke.io/v1beta1.FrontendConfig: "gcp-hosted-ingress"
 spec:
   tls:
   - secretName: letsencrypt-route53
