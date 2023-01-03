@@ -244,13 +244,13 @@ data:
     - name: Kubernetes
       rules:
       - alert: KubernetesPodNotHealthy
-        expr: min_over_time(sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"})[15m:1m]) > 0
+        expr: min_over_time(sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"})[5m:1m]) > 0
         for: 0m
         labels:
           severity: warning
         annotations:
           summary: Kubernetes Pod not healthy (Pod {{ $labels.pod }})
-          description: "Pod has been in a non-ready state for longer than 15 minutes.\n  Pod = {{ $labels.pod }}\n  Namespace = {{ $labels.namespace }}"
+          description: "Pod has been in a non-ready state for longer than 5 minutes.\n  Pod = {{ $labels.pod }}\n  Namespace = {{ $labels.namespace }}"
       - alert: KubernetesPodCrashLooping
         expr: increase(kube_pod_container_status_restarts_total[1m]) > 3
         for: 2m
@@ -259,6 +259,28 @@ data:
         annotations:
           summary: Kubernetes pod crash looping (Pod {{ $labels.pod }})
           description: "Pod {{ $labels.pod }} is crash looping\n  VALUE = {{ $value }}\n  Pod = {{ $labels.pod }}\n  Namespace = {{ $labels.namespace }}"
+      - alert: KubernetesPodImagePullError
+        expr: kube_pod_container_status_waiting_reason{reason=~"ErrImagePull|ImagePullBackOff"}
+        labels:
+          severity: warning
+        annotations:
+          summary: Kubernetes Pod {{ $labels.pod }} {{ $labels.reason}}
+          description: "Pod {{ $labels.pod }} is waiting due to {{ $labels.reason}}\n  VALUE = {{ $value }}\n  Pod = {{ $labels.pod }}\n  Namespace = {{ $labels.namespace }}"
+      - alert: KubernetesHPACapacity
+        expr: kube_horizontalpodautoscaler_status_current_replicas/kube_horizontalpodautoscaler_spec_max_replicas*100 > 90
+        labels:
+          severity: warning
+        annotations:
+          summary: Kubernetes HPA {{ $labels.horizontalpodautoscaler }} capacity limit 
+          description: "HPA {{ $labels.horizontalpodautoscaler }} has reached {{ $value }}% of capacity\n  HPA = {{ $labels.horizontalpodautoscaler }}\n  Namespace = {{ $labels.namespace }}"
+      - alert: KubernetesHpaScalingAbility
+        expr: kube_horizontalpodautoscaler_status_condition{status="false", condition="AbleToScale"} == 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Kubernetes HPA scaling ability (HPA {{ $labels.horizontalpodautoscaler }})
+          description: "Pod is unable to scale\n  HAP = {{ $labels.horizontalpodautoscaler }}\n  Namespace = {{ $labels.namespace }}"
       - alert: KubernetesDeploymentReplicasMismatch
         expr: kube_deployment_spec_replicas != kube_deployment_status_replicas_available
         for: 10m
@@ -291,6 +313,14 @@ data:
         annotations:
           summary: Host memory under memory pressure (Host {{ $labels.host }})
           description: "The node is under heavy memory pressure. High rate of major page faults\n  VALUE = {{ $value }}\n  Host = {{ $labels.host }}"
+      - alert: ServiceProbeFailed
+        expr: probe_success{instance!~"certbotbot-http.ingress.svc:80|nfs.hc-unfoldtheuniverse.svc:2049"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Service probe failed (Service {{ $labels.instance }}) 
+          description: "Service probe failed service = {{ $labels.instance }}\n namespace = {{ $labels.namespace }}"
   prometheus.yml: |-
     global:
       scrape_interval: 15s
@@ -354,7 +384,25 @@ data:
         - source_labels: [__meta_kubernetes_node_name]
           regex: (.+)
           target_label: __metrics_path__
-          replacement: /api/v1/nodes/${1}/proxy/metrics     
+          replacement: /api/v1/nodes/${1}/proxy/metrics
+
+      - job_name: 'blackbox-tcp'
+        scrape_timeout: 15s
+        scrape_interval: 15s
+        metrics_path: /probe
+        params:
+          module: [tcp_connect]
+        kubernetes_sd_configs:
+        - role: service
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          target_label: namespace
+        - source_labels: [__address__]
+          target_label: __param_target
+        - source_labels: [__param_target]
+          target_label: instance
+        - target_label: __address__
+          replacement: blackbox-exporter.monitoring.svc.cluster.local:9115     
       
       - job_name: 'kubernetes-pods'
 
@@ -954,20 +1002,55 @@ data:
     groups:
       - name: errors
         rules:
-          - alert: Errors with turkey_dashboard
+          - alert: Turkey Dashboard Error
             expr: |
               count_over_time({app="turkeydashboard",namespace="turkey-services"} |= "error"[10m]) > 5
             labels:
               severity: warning
             annotations:
-              summary: Number of error logs from turkeydashboard backend is more than 5 for the past 10 minutes
-          - alert: Errors with endpoint health check
+              summary: Turkeydashboard backend has more than 5 errors for the past 10 minutes
+          - alert: Unhealthy Hubs Host
             expr: |
-              count_over_time({app="ita",namespace="turkey-services"} |= "unhealthy: <"[5m]) > 2
+              count_over_time({app="ita"} |= "unhealthy: <"[5m]) > 2
             labels:
               severity: critical
             annotations:
-              summary: The health check on endpoints has failed more than 2 times for the past 5 minutes
+              summary: Hubs host is unhealthy
+          - alert: Push Turkey Build Report to configMap Error 
+            expr: |
+              count_over_time({app="ita", namespace="turkey-services"} |= "failed to publishToConfigmap_label"[5m]) > 2
+            labels:
+              severity: warning
+            annotations:
+              summary: Failed to publish turkey build report to configMap
+          - alert: Publish Turkey Build Report Error
+            expr: |
+              count_over_time({app="turkeyorch", namespace="turkey-services"} |= "error of updating turkey build report file"[5m]) > 2
+            labels:
+              severity: warning
+            annotations:
+              summary: Failed to publish turkey build report
+          - alert: Dockerhub Callback Error
+            expr: |
+              count_over_time({app="turkeyorch", namespace="turkey-services"} |= "invalid dockerhub callback_url"[5m]) > 2
+            labels:
+              severity: warning
+            annotations:
+              summary: Dockerhub's callback url is invalid
+          - alert: Gronjob publishTurkeyBuildReport Error
+            expr: |
+              count_over_time({app="ita", namespace="turkey-services"} |= `error` |= `main/internal.Cronjob_publishTurkeyBuildReport`[5m]) > 2
+            labels:
+              severity: warning
+            annotations:
+              summary: Gronjob publishTurkeyBuildReport has more than 2 errors for 5 minutes
+          - alert: Gronjob publishToConfigmap_label Error
+            expr: |
+              count_over_time({app="ita", namespace="turkey-services"} |= `error` |= `main/internal.publishToConfigmap_label`[5m]) > 2
+            labels:
+              severity: warning
+            annotations:
+              summary: Gronjob publishToConfigmap_label has more than 2 errors for 5 minutes
 ---
 apiVersion: v1
 kind: Service
@@ -1106,6 +1189,7 @@ spec:
           mountPath: /var/log/pods
           readOnly: true
       terminationGracePeriodSeconds: 4800
+      priorityClassName: system-node-critical
       volumes:
         - name: config
           configMap:
@@ -1531,3 +1615,104 @@ spec:
   ports:
     - port: 9093
       targetPort: 9093
+---
+########################################################################################################################
+################################################ blackbox ##############################################################
+########################################################################################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blackbox-exporter-config
+  namespace: monitoring
+  labels:
+    k8s-app: blackbox-exporter
+data:
+  blackbox.yaml: |
+    modules:
+      tcp_connect:
+        tcp:
+          ip_protocol_fallback: false
+          preferred_ip_protocol: ip4
+        prober: tcp
+        timeout: 15s
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+  labels:
+    k8s-app: blackbox-exporter
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9115
+      protocol: TCP
+  selector:
+    k8s-app: blackbox-exporter
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+  labels:
+    k8s-app: blackbox-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        k8s-app: blackbox-exporter
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: blackbox-exporter
+          image: "prom/blackbox-exporter:v0.23.0"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+          args:
+            - "--config.file=/config/blackbox.yaml"
+          resources:
+            {}
+          ports:
+            - containerPort: 9115
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          volumeMounts:
+            - mountPath: /config
+              name: config
+        - name: configmap-reload
+          image: "jimmidyson/configmap-reload:v0.2.2"
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          args:
+            - --volume-dir=/etc/config
+            - --webhook-url=http://localhost:9115/-/reload
+          resources:
+            {}
+          volumeMounts:
+            - mountPath: /etc/config
+              name: config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: blackbox-exporter-config
