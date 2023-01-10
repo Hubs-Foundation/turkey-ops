@@ -21,12 +21,53 @@ function get_new_cert_http(){
     echo "get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
     echo "start nginx and wait 120 sec for ingress to pick up the pod" && nginx && sleep 120
     # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
+    echo "deploy certbot-http ingress and service for http challenge"
+CERTBOTING=$(cat <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: certbotbot-http
+  namespace: ${NAMESPACE}
+spec:
+  type: ClusterIP
+  selector:
+    app: certbotbot-http
+  ports:
+  - port: 80
+    targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: certbotbot-http
+  namespace: ${NAMESPACE}
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+spec:
+  rules:
+  - host: ${DOMAIN}
+    http:
+      paths:
+      - path: /.well-known/acme-challenge
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: certbotbot-http
+            port: 
+              number: 80
+EOF
+)
+echo "${CERTBOTING}"|kubectl apply -f -
+
     certbot certonly --non-interactive --agree-tos --register-unsafely-without-email --preferred-challenges http --nginx -d $DOMAIN
     
     if [ "$?" -ne 0 ]; then
       echo "try #1 failed, retry in 300 sec ..." && sleep 300
       certbot --register-unsafely-without-email certonly --non-interactive --agree-tos --preferred-challenges http --nginx -d $DOMAIN
     fi
+
+    echo "destroy certbot-http ingress and service for http challenge"
+echo "${CERTBOTING}"|kubectl delete -f -
 }
 
 function get_kubectl(){
@@ -92,4 +133,3 @@ for ns in ${CP_TO_NS//,/ }; do save_cert $CERT_NAME $ns; done
 # if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 
 if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 36000; fi
-
