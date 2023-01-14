@@ -6,8 +6,14 @@ import (
 	"os"
 )
 
+type MonitoringCfg struct {
+	Env string
+}
+
 func DeployMonitoring() {
 	env := os.Getenv("ENV")
+
+	mCfg := MonitoringCfg{env}
 
 	if env == "" {
 		internal.Logger.Error("could not get ENV when deploying monitoring")
@@ -20,7 +26,7 @@ func DeployMonitoring() {
 		return
 	}
 
-	renderedYamls, err := internal.K8s_render_yams([]string{string(yamBytes)}, env)
+	renderedYamls, err := internal.K8s_render_yams([]string{string(yamBytes)}, mCfg)
 	if err != nil {
 		internal.Logger.Error("failed to render monitoring yam file because: " + err.Error())
 		return
