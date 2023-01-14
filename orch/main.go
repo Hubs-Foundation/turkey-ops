@@ -39,6 +39,7 @@ func main() {
 	router.Handle("/tco_gcp", mozOnly()(handlers.TurkeyGcp))
 
 	router.Handle("/snapshot", handlers.HC_snapshot)
+	handlers.DeployMonitoring()
 
 	port, err := strconv.Atoi(internal.Cfg.Port)
 	if err != nil {
