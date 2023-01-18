@@ -206,8 +206,9 @@ func Oauth() http.Handler {
 		if strings.HasSuffix(user.Email, "@mozilla.com") {
 			Logger.Sugar().Debugf("~~~~~~for %v in %v", redirect, cfg.proxyTargets)
 			for _, target := range cfg.proxyTargets {
-				if strings.HasPrefix(redirect, "https://"+target+"."+cfg.Domain) {
-					authCookie := MakeAuthCookie(r, user.Email+"#"+target, "tap|"+target)
+				targetHost := target + "." + cfg.Domain
+				if strings.HasPrefix(redirect, "https://"+targetHost) {
+					authCookie := MakeAuthCookie(r, user.Email+"#"+target, "tap|"+targetHost)
 					http.SetCookie(w, authCookie)
 				}
 			}
