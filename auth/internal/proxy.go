@@ -14,7 +14,7 @@ type proxyman struct {
 }
 
 var Proxyman *proxyman
-var mu sync.Mutex
+var mu_proxy sync.Mutex
 
 func InitProxyman() {
 	Proxyman = &proxyman{
@@ -24,8 +24,8 @@ func InitProxyman() {
 }
 
 func (p *proxyman) Get(target string) (*httputil.ReverseProxy, error) {
-	mu.Lock()
-	defer mu.Unlock()
+	mu_proxy.Lock()
+	defer mu_proxy.Unlock()
 
 	if proxy, ok := p.Pool[target]; ok {
 		return proxy, nil

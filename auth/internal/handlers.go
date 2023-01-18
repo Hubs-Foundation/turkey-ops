@@ -202,10 +202,15 @@ func Oauth() http.Handler {
 
 		Logger.Sugar().Warnf("redirect: %v, r.Host: %v", redirect, r.Host)
 		// set default cookie for dev env's skooner
-		if cfg.Env == "dev" {
-			if strings.Contains(redirect, "dash.") || strings.Contains(redirect, "grafana.") {
-				http.SetCookie(w, jwtCookie)
-				Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
+		// if cfg.Env == "dev" {
+		if strings.HasSuffix(user.Email, "@mozilla.com") {
+			Logger.Sugar().Debugf("~~~~~~for %v in %v", redirect, cfg.proxyTargets)
+			for _, target := range cfg.proxyTargets {
+				targetHost := target + "." + cfg.Domain
+				if strings.HasPrefix(redirect, "https://"+targetHost) {
+					authCookie := MakeAuthCookie(r, user.Email+"#"+target, "tap|"+targetHost)
+					http.SetCookie(w, authCookie)
+				}
 			}
 		}
 
@@ -312,15 +317,23 @@ func AuthnProxy() http.Handler {
 
 		// Logger.Sugar().Debugf("backend url: %v", backendUrl)
 
-		email, err := CheckCookie(r)
+		// email, err := CheckCookie(r)
+		// if err != nil {
+		authcookieName := "tap|" + r.Host
+		data, err := checkAuthCookie(r, authcookieName)
+
+		Logger.Sugar().Debugf("~~~checkAuthCookie (name: %v), email: %v, err: %v", authcookieName, data, err)
+
+		email := strings.Split(data, "#")[0]
+
 		if err != nil {
 			Logger.Debug("valid auth cookie not found >>> authRedirect")
 			r.URL.Host = backendUrl.Host
 			authRedirect(w, r, cfg.DefaultProvider)
 			return
 		}
-		// Logger.Sugar().Debug("allowed: " + email)
 
+		//todo: need a better authz here
 		AllowedEmailDomains := r.Header.Get("AllowedEmailDomains")
 		if AllowedEmailDomains != "" {
 			emailDomain := strings.Split(email, "@")[1]
@@ -332,6 +345,13 @@ func AuthnProxy() http.Handler {
 				return
 			}
 			// Logger.Sugar().Debugf("ALLOWED: %v, %v", email, urlStr)
+		}
+		AllowedEmails := r.Header.Get("TAP_AllowedEmails")
+		if AllowedEmails != "" {
+			if !strings.Contains(AllowedEmails, email) {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
 		}
 
 		proxy, err := Proxyman.Get(urlStr)
