@@ -320,11 +320,11 @@ func AuthnProxy() http.Handler {
 		// email, err := CheckCookie(r)
 		// if err != nil {
 		authcookieName := "tap|" + r.Host
-		email, err := checkAuthCookie(r, authcookieName)
+		data, err := checkAuthCookie(r, authcookieName)
 
-		Logger.Sugar().Debugf("~~~checkAuthCookie (name: %v), email: %v, err: %v", authcookieName, email, err)
+		Logger.Sugar().Debugf("~~~checkAuthCookie (name: %v), email: %v, err: %v", authcookieName, data, err)
 
-		email = strings.Split(email, "#")[0]
+		email := strings.Split(data, "#")[0]
 
 		if err != nil {
 			Logger.Debug("valid auth cookie not found >>> authRedirect")
@@ -333,6 +333,7 @@ func AuthnProxy() http.Handler {
 			return
 		}
 
+		//todo: need a better authz here
 		AllowedEmailDomains := r.Header.Get("AllowedEmailDomains")
 		if AllowedEmailDomains != "" {
 			emailDomain := strings.Split(email, "@")[1]
@@ -344,6 +345,13 @@ func AuthnProxy() http.Handler {
 				return
 			}
 			// Logger.Sugar().Debugf("ALLOWED: %v, %v", email, urlStr)
+		}
+		AllowedEmails := r.Header.Get("TAP_AllowedEmails")
+		if AllowedEmails != "" {
+			if !strings.Contains(AllowedEmails, email) {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
 		}
 
 		proxy, err := Proxyman.Get(urlStr)

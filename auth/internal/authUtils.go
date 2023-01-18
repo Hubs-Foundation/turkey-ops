@@ -45,7 +45,7 @@ func CheckCookie(r *http.Request) (string, error) {
 func checkAuthCookie(r *http.Request, cookieName string) (string, error) {
 	// Get auth cookie
 	if cookieName == "" {
-		cookieName = cfg.CookieName
+		return "", errors.New("missing cookieName")
 	}
 
 	c, err := r.Cookie(cookieName)
@@ -54,7 +54,7 @@ func checkAuthCookie(r *http.Request, cookieName string) (string, error) {
 		return "", errors.New("missing cookie")
 	}
 	// Validate cookie
-	email, err := ValidateCookie(r, c)
+	data, err := ValidateCookie(r, c)
 	if err != nil {
 		if err.Error() != "Cookie has expired" {
 			Logger.Sugar().Warn("Bad cookie, err: " + err.Error())
@@ -62,7 +62,7 @@ func checkAuthCookie(r *http.Request, cookieName string) (string, error) {
 		return "", err
 	}
 
-	return email, nil
+	return data, nil
 }
 
 func checkJwtCookie(c *http.Cookie) (jwt.Claims, error) {
@@ -214,11 +214,10 @@ func useAuthDomain(r *http.Request) (bool, string) {
 	return use, reqHost
 }
 
-// dev only
-func MakeAuthCookie(r *http.Request, email, cookieName string) *http.Cookie {
+func MakeAuthCookie(r *http.Request, data, cookieName string) *http.Cookie {
 	expires := cookieExpiry()
-	mac := cookieSignature(r, email, fmt.Sprintf("%d", expires.Unix()))
-	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), email)
+	mac := cookieSignature(r, data, fmt.Sprintf("%d", expires.Unix()))
+	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), data)
 
 	if cookieName == "" {
 		cookieName = cfg.CookieName
