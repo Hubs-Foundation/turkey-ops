@@ -28,9 +28,6 @@ func GetClient(r *http.Request) string {
 
 func CheckCookie(r *http.Request) (string, error) {
 
-	//auth cookie
-	// return checkAuthCookie(r)
-
 	//jwt cookie
 	for _, c := range r.Cookies() {
 		if c.Name == cfg.JwtCookieName {
@@ -43,25 +40,17 @@ func CheckCookie(r *http.Request) (string, error) {
 	}
 	Logger.Sugar().Debugf("valid jwtCookie not found: %v", r.Cookies)
 	return "", errors.New("valid jwtCookie not found")
-
-	// c, err := r.Cookie(cfg.JwtCookieName)
-	// if err != nil {
-	// 	Logger.Sugar().Debug("missing jwtCookie: " + cfg.JwtCookieName)
-	// 	return "", errors.New("missing jwtCookie")
-	// }
-	// claims, err := checkJwtCookie(c)
-	// if err != nil {
-	// 	return "", err
-	// }
-	// Logger.Sugar().Debugf("good jwt cookie, jwt.MapClaims: %v", claims)
-	// return claims.(jwt.MapClaims)["fxa_email"].(string), nil
 }
 
-func checkAuthCookie(r *http.Request) (string, error) {
+func checkAuthCookie(r *http.Request, cookieName string) (string, error) {
 	// Get auth cookie
-	c, err := r.Cookie(cfg.CookieName)
+	if cookieName == "" {
+		cookieName = cfg.CookieName
+	}
+
+	c, err := r.Cookie(cookieName)
 	if err != nil {
-		Logger.Sugar().Debug("missing cookie: " + cfg.CookieName)
+		Logger.Sugar().Debug("missing cookie: " + cookieName)
 		return "", errors.New("missing cookie")
 	}
 	// Validate cookie
@@ -226,13 +215,17 @@ func useAuthDomain(r *http.Request) (bool, string) {
 }
 
 // dev only
-func MakeAuthCookie(r *http.Request, email string) *http.Cookie {
+func MakeAuthCookie(r *http.Request, email, cookieName string) *http.Cookie {
 	expires := cookieExpiry()
 	mac := cookieSignature(r, email, fmt.Sprintf("%d", expires.Unix()))
 	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), email)
 
+	if cookieName == "" {
+		cookieName = cfg.CookieName
+	}
+
 	return &http.Cookie{
-		Name:  cfg.CookieName,
+		Name:  cookieName,
 		Value: value,
 		// Path:     "/",
 		Domain:   cookieDomain(r),

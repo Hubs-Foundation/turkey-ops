@@ -51,6 +51,8 @@ type Config struct {
 
 	PermsKey     *rsa.PrivateKey  `description:"cluster wide private key for all reticulum authentications ... used to sign jwt tokens here"`
 	PermsKey_pub crypto.PublicKey `description:"public part of PermsKey ... used to verify jwt tokens here"`
+
+	proxyTargets []string `description: skooner, grafana, prometheus, etc.`
 }
 
 func MakeCfg() {
