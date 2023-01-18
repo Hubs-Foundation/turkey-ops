@@ -321,8 +321,8 @@ func AuthnProxy() http.Handler {
 
 		email, err := CheckCookie(r)
 		// if err != nil {
-		email, err = checkAuthCookie(r, "tap|"+r.URL.Host)
-		Logger.Sugar().Debugf("~~~checkAuthCookie, email: %v, err: %v", email, err.Error())
+		email1, err1 := checkAuthCookie(r, "tap|"+r.URL.Host)
+		Logger.Sugar().Debugf("~~~checkAuthCookie, email: %v, err: %v", email1, err1.Error())
 		// if err != nil {
 		// 	email = strings.Split(email, "|")[0]
 		// }
