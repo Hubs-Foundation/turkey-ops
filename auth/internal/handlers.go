@@ -210,7 +210,7 @@ func Oauth() http.Handler {
 
 			for _, target := range cfg.proxyTargets {
 				if strings.HasPrefix(redirect, "https://"+target) {
-					authCookie := MakeAuthCookie(r, user.Email+">"+target, "tap|cookieName")
+					authCookie := MakeAuthCookie(r, user.Email+">"+target, "tap|"+target)
 					http.SetCookie(w, authCookie)
 				}
 			}
@@ -320,12 +320,13 @@ func AuthnProxy() http.Handler {
 		// Logger.Sugar().Debugf("backend url: %v", backendUrl)
 
 		email, err := CheckCookie(r)
-		if err != nil {
-			email, err = checkAuthCookie(r, "tap|"+r.URL.Host)
-			if err != nil {
-				email = strings.Split(email, "|")[0]
-			}
-		}
+		// if err != nil {
+		email, err = checkAuthCookie(r, "tap|"+r.URL.Host)
+		Logger.Sugar().Debugf("~~~checkAuthCookie, email: %v, err: %v", email, err.Error())
+		// if err != nil {
+		// 	email = strings.Split(email, "|")[0]
+		// }
+		// }
 
 		if err != nil {
 			Logger.Debug("valid auth cookie not found >>> authRedirect")
