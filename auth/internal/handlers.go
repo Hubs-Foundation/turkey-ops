@@ -202,18 +202,12 @@ func Oauth() http.Handler {
 
 		Logger.Sugar().Warnf("redirect: %v, r.Host: %v", redirect, r.Host)
 		// set default cookie for dev env's skooner
-		if cfg.Env == "dev" {
-			if strings.Contains(redirect, "dash.") || strings.Contains(redirect, "grafana.") {
-				http.SetCookie(w, jwtCookie)
-				Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
-			}
-
+		// if cfg.Env == "dev" {
+		if strings.HasSuffix(user.Email, "@mozilla.com") {
 			Logger.Sugar().Debugf("~~~~~~for %v in %v", redirect, cfg.proxyTargets)
-
-			// MakeAuthCookie(r, user.Email+">"+redirect, "tap|"+redirect)
 			for _, target := range cfg.proxyTargets {
-				if strings.HasPrefix(redirect, "https://"+target) {
-					authCookie := MakeAuthCookie(r, user.Email+">"+target, "tap|"+target)
+				if strings.HasPrefix(redirect, "https://"+target+cfg.Domain) {
+					authCookie := MakeAuthCookie(r, user.Email+"#"+target, "tap|"+target)
 					http.SetCookie(w, authCookie)
 				}
 			}
@@ -322,16 +316,14 @@ func AuthnProxy() http.Handler {
 
 		// Logger.Sugar().Debugf("backend url: %v", backendUrl)
 
-		email, err := CheckCookie(r)
+		// email, err := CheckCookie(r)
 		// if err != nil {
 		authcookieName := "tap|" + r.Host
-		email1, err1 := checkAuthCookie(r, authcookieName)
+		email, err := checkAuthCookie(r, authcookieName)
 
-		Logger.Sugar().Debugf("~~~checkAuthCookie (name: %v), email: %v, err: %v", authcookieName, email1, err1)
-		// if err != nil {
-		// 	email = strings.Split(email, "|")[0]
-		// }
-		// }
+		Logger.Sugar().Debugf("~~~checkAuthCookie (name: %v), email: %v, err: %v", authcookieName, email, err)
+
+		email = strings.Split(email, "#")[0]
 
 		if err != nil {
 			Logger.Debug("valid auth cookie not found >>> authRedirect")
