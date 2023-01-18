@@ -208,9 +208,11 @@ func Oauth() http.Handler {
 				Logger.Sugar().Warnf(" ### jwt debug ### default cookie, cfg.Domain: %v, redirect: %v", cfg.Domain, redirect)
 			}
 
-			Logger.Sugar().Debugf("for %v in %v", redirect, cfg.proxyTargets)
+			Logger.Sugar().Debugf("~~~~~~for %v in %v", redirect, cfg.proxyTargets)
+
+			// MakeAuthCookie(r, user.Email+">"+redirect, "tap|"+redirect)
 			for _, target := range cfg.proxyTargets {
-				if strings.HasPrefix(redirect, target) {
+				if strings.HasPrefix(redirect, "https://"+target) {
 					authCookie := MakeAuthCookie(r, user.Email+">"+target, "tap|"+target)
 					http.SetCookie(w, authCookie)
 				}
