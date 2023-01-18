@@ -52,7 +52,7 @@ type Config struct {
 	PermsKey     *rsa.PrivateKey  `description:"cluster wide private key for all reticulum authentications ... used to sign jwt tokens here"`
 	PermsKey_pub crypto.PublicKey `description:"public part of PermsKey ... used to verify jwt tokens here"`
 
-	proxyTargets []string `description: skooner, grafana, prometheus, etc.`
+	proxyTargets []string `description:"skooner, grafana, prometheus, etc."`
 }
 
 func MakeCfg() {
@@ -130,6 +130,8 @@ func MakeCfg() {
 	pubKeyBytes := x509.MarshalPKCS1PublicKey(&cfg.PermsKey.PublicKey)
 	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PUBLIC KEY", Bytes: pubKeyBytes})
 	Logger.Sugar().Infof("PermsKey_pub: %v", string(pemBytes))
+
+	cfg.proxyTargets = strings.Split(os.Getenv("proxyTargets"), ",")
 
 }
 
