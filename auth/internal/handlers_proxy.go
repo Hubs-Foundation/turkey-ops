@@ -18,11 +18,15 @@ func AuthnProxy() http.Handler {
 
 		Logger.Sugar().Debugf("dump r, %v", r)
 
-		clientIP := r.Header.Get("X-Forwarded-For")
-		if _, ok := authorizedUsers[clientIP]; !ok {
-			Logger.Debug("unauthorized clientIP: " + clientIP)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
+		if cfg.Env != "dev" {
+			clientIP := r.Header.Get("X-Forwarded-For")
+			if email, ok := authorizedUsers[clientIP]; !ok {
+				Logger.Debug("unauthorized clientIP: " + clientIP)
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			} else {
+				Logger.Sugar().Debugf("clientIP: %v (%v)", clientIP, email)
+			}
 		}
 
 		if r.URL.Path == "/" {
