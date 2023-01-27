@@ -184,7 +184,7 @@ func (pr *Progress) Write(p []byte) (n int, err error) {
 // Print displays the current progress of the file upload
 func (pr *Progress) Print() {
 	if pr.BytesRead == pr.TotalSize {
-		fmt.Println("DONE!")
+		fmt.Println(fmt.Sprintf("DONE! %v", pr))
 		return
 	}
 
@@ -259,6 +259,7 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
+
 		}
 
 		fmt.Fprintf(w, "Uploaded")
