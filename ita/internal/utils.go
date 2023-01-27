@@ -165,6 +165,7 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 }
 
 func k8s_mountRetNfs(targetDeploymentName string) error {
+	Logger.Debug("mounting Ret nfs for: " + targetDeploymentName)
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
 	if err != nil {

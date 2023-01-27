@@ -91,8 +91,14 @@ func MakeCfg() {
 	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
 
 	if cfg.Tier == "testing" {
-		k8s_mountRetNfs("ita")
-		k8s_mountRetNfs("hubs")
+		err := k8s_mountRetNfs("ita")
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+		err = k8s_mountRetNfs("hubs")
+		if err != nil {
+			Logger.Error(err.Error())
+		}
 	}
 
 	//not RET_MODE => start turkey-updater
