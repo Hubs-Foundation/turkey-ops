@@ -164,15 +164,15 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 	return nil
 }
 
-func k8s_mountRetNfs(targetDeploymentName string) {
+func k8s_mountRetNfs(targetDeploymentName string) error {
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
 	if err != nil {
-		Logger.Error(err.Error())
+		return err
 	}
 	d_ret, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
 	if err != nil {
-		Logger.Error(err.Error())
+		return err
 	}
 
 	targetHasVolume := false
@@ -193,7 +193,6 @@ func k8s_mountRetNfs(targetDeploymentName string) {
 					})
 			}
 		}
-
 	}
 
 	targetHasMount := false
@@ -224,4 +223,11 @@ func k8s_mountRetNfs(targetDeploymentName string) {
 		}
 	}
 
+	if !targetHasVolume || !targetHasMount {
+		_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d_target, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
