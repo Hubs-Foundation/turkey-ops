@@ -205,6 +205,7 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		Logger.Sugar().Debugf("r.MultipartForm.File: %v", r.MultipartForm.File)
 		// get a reference to the fileHeaders
 		files := r.MultipartForm.File["file"]
 
