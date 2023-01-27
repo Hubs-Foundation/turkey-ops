@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -174,21 +173,21 @@ type Progress struct {
 }
 
 // Write is used to satisfy the io.Writer interface. Instead of writing somewhere, it simply aggregates the total bytes on each read
-func (pr *Progress) Write(p []byte) (n int, err error) {
+func (pg *Progress) Write(p []byte) (n int, err error) {
 	n, err = len(p), nil
-	pr.BytesRead += int64(n)
-	pr.Print()
+	pg.BytesRead += int64(n)
+	pg.Print()
 	return
 }
 
 // Print displays the current progress of the file upload
-func (pr *Progress) Print() {
-	if pr.BytesRead == pr.TotalSize {
-		fmt.Println(fmt.Sprintf("DONE! %v", pr))
+func (pg *Progress) Print() {
+	if pg.BytesRead == pg.TotalSize {
+		Logger.Sugar().Debugf("DONE! %v", pg)
 		return
 	}
 
-	fmt.Printf("File upload in progress: %d\n", pr.BytesRead)
+	fmt.Printf("File upload in progress: %d\n", pg.BytesRead)
 }
 
 var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -244,17 +243,17 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			f, err := os.Create(fmt.Sprintf("/storage/uploads/%s", filepath.Ext(fileHeader.Filename)))
+			f, err := os.Create(fmt.Sprintf("/storage/uploads/%s", fileHeader.Filename))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 			defer f.Close()
 
-			pr := &Progress{
+			pg := &Progress{
 				TotalSize: fileHeader.Size,
 			}
-			_, err = io.Copy(f, io.TeeReader(file, pr))
+			_, err = io.Copy(f, io.TeeReader(file, pg))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
