@@ -210,9 +210,10 @@ var CustomHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		for _, fileHeader := range files {
 			if fileHeader.Size > MAX_UPLOAD_SIZE {
-				http.Error(w, fmt.Sprintf("too big: %s (max: %s)", fileHeader.Size, MAX_UPLOAD_SIZE), http.StatusBadRequest)
+				http.Error(w, fmt.Sprintf("too big: %v (max: %v)", fileHeader.Size, MAX_UPLOAD_SIZE), http.StatusBadRequest)
 				return
 			}
+			Logger.Sugar().Debugf("working on file: %v (%v)", fileHeader.Filename, fileHeader.Size)
 			file, err := fileHeader.Open()
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
