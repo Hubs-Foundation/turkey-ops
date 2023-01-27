@@ -1,7 +1,6 @@
 name: ita
 on:
   push:
-    branches: [ master ]
     paths:
     - 'ita/**'
     - '.github/workflows/ita.yml'
