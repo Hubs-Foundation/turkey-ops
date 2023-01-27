@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -158,5 +161,105 @@ var ClusterIpsList = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+
+})
+
+const MAX_UPLOAD_SIZE = 1073741824 // 1GB (1024 * 1024 * 1024)
+// Progress is used to track the progress of a file upload.
+// It implements the io.Writer interface so it can be passed
+// to an io.TeeReader()
+type Progress struct {
+	TotalSize int64
+	BytesRead int64
+}
+
+// Write is used to satisfy the io.Writer interface. Instead of writing somewhere, it simply aggregates the total bytes on each read
+func (pr *Progress) Write(p []byte) (n int, err error) {
+	n, err = len(p), nil
+	pr.BytesRead += int64(n)
+	pr.Print()
+	return
+}
+
+// Print displays the current progress of the file upload
+func (pr *Progress) Print() {
+	if pr.BytesRead == pr.TotalSize {
+		fmt.Println("DONE!")
+		return
+	}
+
+	fmt.Printf("File upload in progress: %d\n", pr.BytesRead)
+}
+
+var CustomHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/deploy/hubs" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	if r.Method == "POST" {
+
+		// 32 MB
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// get a reference to the fileHeaders
+		files := r.MultipartForm.File["file"]
+
+		for _, fileHeader := range files {
+			if fileHeader.Size > MAX_UPLOAD_SIZE {
+				http.Error(w, fmt.Sprintf("too big: %s (max: %s)", fileHeader.Size, MAX_UPLOAD_SIZE), http.StatusBadRequest)
+				return
+			}
+			file, err := fileHeader.Open()
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			defer file.Close()
+			buff := make([]byte, 512)
+			_, err = file.Read(buff)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			filetype := http.DetectContentType(buff)
+			// if filetype != "image/jpeg" && filetype != "image/png" {
+			// 	http.Error(w, "The provided file format is not allowed. Please upload a JPEG or PNG image", http.StatusBadRequest)
+			// 	return
+			// }
+			Logger.Debug("filetype: " + filetype)
+
+			_, err = file.Seek(0, io.SeekStart)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			err = os.MkdirAll("/storage/hubs", os.ModePerm)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			f, err := os.Create(fmt.Sprintf("/storage/hubs/%s", filepath.Ext(fileHeader.Filename)))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			defer f.Close()
+
+			pr := &Progress{
+				TotalSize: fileHeader.Size,
+			}
+			_, err = io.Copy(f, io.TeeReader(file, pr))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
+
+		fmt.Fprintf(w, "Uploaded")
+	}
 
 })

@@ -7,6 +7,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/strings/slices"
 )
 
 var cfg *Config
@@ -90,15 +91,15 @@ func MakeCfg() {
 	}
 	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
 
-	if cfg.Tier == "testing" {
+	if slices.Contains([]string{"testing"}, cfg.Tier) {
 		err := k8s_mountRetNfs("ita", "", "")
 		if err != nil {
 			Logger.Error(err.Error())
 		}
-		err = k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
-		if err != nil {
-			Logger.Error(err.Error())
-		}
+		// err = k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
+		// if err != nil {
+		// 	Logger.Error(err.Error())
+		// }
 	}
 
 	//not RET_MODE => start turkey-updater

@@ -42,15 +42,17 @@ func main() {
 	//legacy ita endpoints
 	router.Handle("/admin-info", internal.Ita_admin_info)
 	router.Handle("/configs/reticulum/ps", internal.Ita_cfg_ret_ps)
+	//public endpoints
+	router.Handle("/z/meta/cluster-ips", internal.ClusterIps)
+	router.Handle("/z/meta/cluster-ips/list", internal.ClusterIpsList)
 	//turkeyUpdater endpoints
 	router.Handle("/updater", internal.Updater)
 	//utility endpoints
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
-	//public endpoints
-	router.Handle("/z/meta/cluster-ips", internal.ClusterIps)
-	router.Handle("/z/meta/cluster-ips/list", internal.ClusterIpsList)
+	//feature endpoints
+	router.Handle("/deploy/hubs", internal.CustomHubs)
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
