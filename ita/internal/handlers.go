@@ -191,8 +191,8 @@ func (pr *Progress) Print() {
 	fmt.Printf("File upload in progress: %d\n", pr.BytesRead)
 }
 
-var CustomHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/deploy/hubs" {
+var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/upload" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -238,12 +238,12 @@ var CustomHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			err = os.MkdirAll("/storage/hubs", os.ModePerm)
+			err = os.MkdirAll("/storage/uploads", os.ModePerm)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			f, err := os.Create(fmt.Sprintf("/storage/hubs/%s", filepath.Ext(fileHeader.Filename)))
+			f, err := os.Create(fmt.Sprintf("/storage/uploads/%s", filepath.Ext(fileHeader.Filename)))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return

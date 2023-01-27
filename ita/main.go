@@ -52,7 +52,7 @@ func main() {
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
 	//feature endpoints
-	router.Handle("/deploy/hubs", internal.CustomHubs)
+	router.Handle("/upload", internal.Upload)
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
