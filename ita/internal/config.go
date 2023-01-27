@@ -91,11 +91,11 @@ func MakeCfg() {
 	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
 
 	if cfg.Tier == "testing" {
-		err := k8s_mountRetNfs("ita")
+		err := k8s_mountRetNfs("ita", "", "")
 		if err != nil {
 			Logger.Error(err.Error())
 		}
-		err = k8s_mountRetNfs("hubs")
+		err = k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
 		if err != nil {
 			Logger.Error(err.Error())
 		}

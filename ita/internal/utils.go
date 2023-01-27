@@ -164,7 +164,7 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 	return nil
 }
 
-func k8s_mountRetNfs(targetDeploymentName string) error {
+func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) error {
 	Logger.Debug("mounting Ret nfs for: " + targetDeploymentName)
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
@@ -190,7 +190,7 @@ func k8s_mountRetNfs(targetDeploymentName string) error {
 					d_target.Spec.Template.Spec.Volumes,
 					v1.Volume{
 						Name:         "nfs",
-						VolumeSource: v1.VolumeSource{NFS: &v1.NFSVolumeSource{Server: v.NFS.Server, Path: v.NFS.Path}},
+						VolumeSource: v1.VolumeSource{NFS: &v1.NFSVolumeSource{Server: v.NFS.Server, Path: v.NFS.Path + volPathSubdir}},
 					})
 			}
 		}
@@ -210,11 +210,14 @@ func k8s_mountRetNfs(targetDeploymentName string) error {
 			if c.Name == "reticulum" {
 				for _, vm := range c.VolumeMounts {
 					if vm.Name == "nfs" {
+						if mountPath == "" {
+							mountPath = vm.MountPath
+						}
 						d_target.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 							d_target.Spec.Template.Spec.Containers[0].VolumeMounts,
 							v1.VolumeMount{
 								Name:             vm.Name,
-								MountPath:        vm.MountPath,
+								MountPath:        mountPath,
 								MountPropagation: vm.MountPropagation,
 							},
 						)
