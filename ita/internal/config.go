@@ -90,6 +90,11 @@ func MakeCfg() {
 	}
 	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
 
+	if cfg.Tier == "testing" {
+		k8s_mountRetNfs("ita")
+		k8s_mountRetNfs("hubs")
+	}
+
 	//not RET_MODE => start turkey-updater
 	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
 	cfg.Channel, err = Get_listeningChannelLabel()

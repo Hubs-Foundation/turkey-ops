@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -161,4 +162,66 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 		}
 	}
 	return nil
+}
+
+func k8s_mountRetNfs(targetDeploymentName string) {
+
+	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		Logger.Error(err.Error())
+	}
+	d_ret, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
+	if err != nil {
+		Logger.Error(err.Error())
+	}
+
+	targetHasVolume := false
+	for _, v := range d_target.Spec.Template.Spec.Volumes {
+		if v.Name == "nfs" {
+			targetHasVolume = true
+			break
+		}
+	}
+	if !targetHasVolume {
+		for _, v := range d_ret.Spec.Template.Spec.Volumes {
+			if v.Name == "nfs" {
+				d_target.Spec.Template.Spec.Volumes = append(
+					d_target.Spec.Template.Spec.Volumes,
+					v1.Volume{
+						Name:         "nfs",
+						VolumeSource: v1.VolumeSource{NFS: &v1.NFSVolumeSource{Server: v.NFS.Server, Path: v.NFS.Path}},
+					})
+			}
+		}
+
+	}
+
+	targetHasMount := false
+	for _, c := range d_target.Spec.Template.Spec.Containers {
+		for _, vm := range c.VolumeMounts {
+			if vm.Name == "nfs" {
+				targetHasMount = true
+				break
+			}
+		}
+	}
+	if !targetHasMount {
+		for _, c := range d_ret.Spec.Template.Spec.Containers {
+			if c.Name == "reticulum" {
+				for _, vm := range c.VolumeMounts {
+					if vm.Name == "nfs" {
+						d_target.Spec.Template.Spec.Containers[0].VolumeMounts = append(
+							d_target.Spec.Template.Spec.Containers[0].VolumeMounts,
+							v1.VolumeMount{
+								Name:             vm.Name,
+								MountPath:        vm.MountPath,
+								MountPropagation: vm.MountPropagation,
+							},
+						)
+					}
+				}
+			}
+		}
+	}
+
 }
