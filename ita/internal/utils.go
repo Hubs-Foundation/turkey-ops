@@ -218,6 +218,10 @@ func k8s_mountRetNfs(targetDeploymentName string) error {
 								MountPropagation: vm.MountPropagation,
 							},
 						)
+						var_true := true
+						d_target.Spec.Template.Spec.Containers[0].SecurityContext = &v1.SecurityContext{
+							Privileged: &var_true,
+						}
 					}
 				}
 			}
