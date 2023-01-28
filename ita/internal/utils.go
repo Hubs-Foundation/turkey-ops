@@ -1,13 +1,20 @@
 package internal
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hash/fnv"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -237,5 +244,113 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 			return err
 		}
 	}
+	return nil
+}
+
+// func ExtractTarGz(gzipStream io.Reader) error {
+func UnzipTar(src, destDir string) error {
+
+	f, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open src file (%v), err: %v", src, err)
+	}
+
+	os.MkdirAll(destDir, 0755)
+
+	uncompressedStream, err := gzip.NewReader(f)
+	if err != nil {
+		return fmt.Errorf("NewReader failed")
+	}
+	tarReader := tar.NewReader(uncompressedStream)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("Next() failed: %s", err.Error())
+		}
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.Mkdir(header.Name, 0755); err != nil {
+				return fmt.Errorf("Mkdir() failed: %s", err.Error())
+			}
+		case tar.TypeReg:
+			outFile, err := os.Create(destDir + header.Name)
+			if err != nil {
+				return fmt.Errorf("Create() failed: %s", err.Error())
+			}
+			if _, err := io.Copy(outFile, tarReader); err != nil {
+				return fmt.Errorf("Copy() failed: %s", err.Error())
+			}
+			outFile.Close()
+		default:
+			return fmt.Errorf("abort -- uknown type: %v in %v", header.Typeflag, header.Name)
+		}
+	}
+	return nil
+}
+
+func UnzipZip(src, destDir string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := r.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	os.MkdirAll(destDir, 0755)
+
+	// Closure to address file descriptors issue with all the deferred .Close() methods
+	extractAndWriteFile := func(f *zip.File) error {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := rc.Close(); err != nil {
+				panic(err)
+			}
+		}()
+
+		path := filepath.Join(destDir, f.Name)
+
+		// Check for ZipSlip (Directory traversal)
+		if !strings.HasPrefix(path, filepath.Clean(destDir)+string(os.PathSeparator)) {
+			return fmt.Errorf("illegal file path: %s", path)
+		}
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, f.Mode())
+		} else {
+			os.MkdirAll(filepath.Dir(path), f.Mode())
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+			defer func() {
+				if err := f.Close(); err != nil {
+					panic(err)
+				}
+			}()
+
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	for _, f := range r.File {
+		err := extractAndWriteFile(f)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

@@ -7,16 +7,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-func dumpHeader(r *http.Request) string {
-	headerBytes, _ := json.Marshal(r.Header)
-	return string(headerBytes)
-}
 
 func Healthz() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -164,9 +160,7 @@ var ClusterIpsList = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 })
 
 const MAX_UPLOAD_SIZE = 1073741824 // 1GB (1024 * 1024 * 1024)
-// Progress is used to track the progress of a file upload.
-// It implements the io.Writer interface so it can be passed
-// to an io.TeeReader()
+// Progress is used to track the progress of a file upload.It implements the io.Writer interface so it can be passed to an io.TeeReader()
 type Progress struct {
 	TotalSize int64
 	BytesRead int64
@@ -208,60 +202,111 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// get a reference to the fileHeaders
 		files := r.MultipartForm.File["file"]
 
-		for _, fileHeader := range files {
-			if fileHeader.Size > MAX_UPLOAD_SIZE {
-				http.Error(w, fmt.Sprintf("too big: %v (max: %v)", fileHeader.Size, MAX_UPLOAD_SIZE), http.StatusBadRequest)
-				return
-			}
-			Logger.Sugar().Debugf("working on file: %v (%v)", fileHeader.Filename, fileHeader.Size)
-			file, err := fileHeader.Open()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			defer file.Close()
-			buff := make([]byte, 512)
-			_, err = file.Read(buff)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			filetype := http.DetectContentType(buff)
-			// if filetype != "image/jpeg" && filetype != "image/png" {
-			// 	http.Error(w, "The provided file format is not allowed. Please upload a JPEG or PNG image", http.StatusBadRequest)
-			// 	return
-			// }
-			Logger.Debug("filetype: " + filetype)
+		if len(files) != 1 {
+			Logger.Sugar().Errorf("unexpected file count: %v (need 1)", len(files))
+			http.Error(w, "single file please", http.StatusBadRequest)
+		}
+		// for _, fileHeader := range files {
+		fileHeader := files[0]
+		if fileHeader.Size > MAX_UPLOAD_SIZE {
+			http.Error(w, fmt.Sprintf("too big: %v (max: %v)", fileHeader.Size, MAX_UPLOAD_SIZE), http.StatusBadRequest)
+			return
+		}
+		Logger.Sugar().Debugf("working on file: %v (%v)", fileHeader.Filename, fileHeader.Size)
+		file, err := fileHeader.Open()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
+		buff := make([]byte, 512)
+		_, err = file.Read(buff)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		filetype := http.DetectContentType(buff)
+		// if filetype != "application/x-gzip" {
+		// 	http.Error(w, "The provided file format is not allowed. Please upload a JPEG or PNG image", http.StatusBadRequest)
+		// 	return
+		// }
+		Logger.Debug("filetype: " + filetype)
 
-			_, err = file.Seek(0, io.SeekStart)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			err = os.MkdirAll("/storage/uploads", os.ModePerm)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			f, err := os.Create(fmt.Sprintf("/storage/uploads/%s", fileHeader.Filename))
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			defer f.Close()
+		_, err = file.Seek(0, io.SeekStart)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		err = os.MkdirAll("/storage/ita_uploads", os.ModePerm)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		f, err := os.Create(fmt.Sprintf("/storage/ita_uploads/%s", fileHeader.Filename))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer f.Close()
 
-			pg := &Progress{
-				TotalSize: fileHeader.Size,
-			}
-			_, err = io.Copy(f, io.TeeReader(file, pg))
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
+		pg := &Progress{
+			TotalSize: fileHeader.Size,
+		}
+		_, err = io.Copy(f, io.TeeReader(file, pg))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// }
 
+		fmt.Fprintf(w, "Uploaded: %v", f.Name())
+	}
+
+})
+var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/deploy/hubs" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	if r.Method == "POST" {
+		if len(r.URL.Query()["file"]) != 1 || r.URL.Query()["file"][0] == "" {
+			http.Error(w, "missing: file", http.StatusBadRequest)
+			return
+		}
+		fileName := r.URL.Query()["file"][0]
+
+		if strings.HasSuffix(fileName, ".tar.gz") {
+			err := UnzipTar("/storage/uploads/"+fileName, "/storage/hubs/")
+			if err != nil {
+				errMsg := "failed @ UnzipTar: " + err.Error()
+				Logger.Sugar().Errorf(errMsg)
+				http.Error(w, errMsg, http.StatusBadRequest)
+			}
+		} else if strings.HasSuffix(fileName, ".zip") {
+			err := UnzipZip("/storage/uploads/"+fileName, "/storage/hubs/")
+			if err != nil {
+				errMsg := "failed @ UnzipZip: " + err.Error()
+				Logger.Sugar().Errorf(errMsg)
+				http.Error(w, errMsg, http.StatusBadRequest)
+			}
+		} else {
+			http.Error(w, "unexpected file type", http.StatusBadRequest)
+			return
 		}
 
-		fmt.Fprintf(w, "Uploaded")
+		//mount to hubs container
+		err := k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
+		if err != nil {
+			errMsg := "failed @ k8s_mountRetNfs: " + err.Error()
+			Logger.Error(errMsg)
+			http.Error(w, errMsg, http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		return
 	}
+	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 
 })
