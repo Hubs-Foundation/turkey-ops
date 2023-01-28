@@ -256,9 +256,9 @@ func receiveFileFromReq(r *http.Request) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		report += fmt.Sprintf("done: %v(%v, %v)\n", f.Name(), filetype, fileHeader.Size)
+		report += fmt.Sprintf("received: %v(%v, %v)\n", f.Name(), filetype, fileHeader.Size)
 	}
-	return fmt.Sprintf("done: %v", report), nil
+	return fmt.Sprintf("done:\n %v", report), nil
 }
 
 var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -295,12 +295,12 @@ func unzipNdeployCustomClient(appName, fileName string) error {
 
 	//unzip
 	if strings.HasSuffix(fileName, ".tar.gz") {
-		err := UnzipTar("/storage/uploads/"+fileName, "/storage/hubs/")
+		err := UnzipTar("/storage/ita_uploads/"+fileName, "/storage/hubs/")
 		if err != nil {
 			return errors.New("failed @ UnzipTar: " + err.Error())
 		}
 	} else if strings.HasSuffix(fileName, ".zip") {
-		err := UnzipZip("/storage/uploads/"+fileName, "/storage/hubs/")
+		err := UnzipZip("/storage/ita_uploads/"+fileName, "/storage/hubs/")
 		if err != nil {
 			return errors.New("failed @ UnzipZip: " + err.Error())
 		}
