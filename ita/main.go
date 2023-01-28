@@ -51,8 +51,9 @@ func main() {
 	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
-	//feature endpoints
+	//turkeyauth protected public endpoints
 	router.Handle("/upload", internal.Upload)
+	router.Handle("/deploy/hubs", internal.DeployHubs)
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
