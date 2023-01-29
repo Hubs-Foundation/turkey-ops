@@ -4,6 +4,8 @@ go 1.17
 
 require (
 	cloud.google.com/go/storage v1.10.0
+	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	go.uber.org/zap v1.19.1
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1

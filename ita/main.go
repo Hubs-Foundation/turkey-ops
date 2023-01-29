@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"main/internal"
 	"net/http"
 	"time"
@@ -48,7 +47,8 @@ func main() {
 	//turkeyUpdater endpoints
 	router.Handle("/updater", internal.Updater)
 	//utility endpoints
-	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
+	// router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
+	router.Handle("/zaplvl", internal.Atom)
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
 	//turkeyauth protected public endpoints
@@ -60,10 +60,35 @@ func main() {
 
 }
 
-func privateEndpoint(requiredRole string) func(http.Handler) http.Handler {
+//check turkeyauthtoken
+func chk_TatHdr(requiredRole string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println("~~~~~~~~~~~privateEndpoint~~~~~~~~~~~")
+			internal.Logger.Debug("~~~~~~~~~~~chk_TatHdr~~~~~~~~~~~")
+			token := r.Header.Get("turkeyauthtoken")
+			if token == "" {
+				internal.Logger.Debug("reject -- no token")
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			resp, err := http.Get("http://turkeyauth.turkey-services:9001/chk_cookie?token=" + token)
+			if err != nil {
+				internal.Logger.Sugar().Debugf("reject -- err@chk_cookie: %v", err)
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			} else if resp.StatusCode != http.StatusOK {
+				internal.Logger.Sugar().Debugf("reject -- bad resp.StatusCode: %v", resp.StatusCode)
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			email := resp.Header.Get("verified-UserEmail")
+			rootUserEmail := internal.GetCfg().RootUserEmail
+			if email != rootUserEmail {
+				internal.Logger.Sugar().Debugf("reject -- bag verified-UserEmail: %v (need: %v)", resp.StatusCode, rootUserEmail)
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}

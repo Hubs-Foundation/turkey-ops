@@ -187,6 +187,7 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 	for _, v := range d_target.Spec.Template.Spec.Volumes {
 		if v.Name == "nfs" {
 			targetHasVolume = true
+			Logger.Sugar().Debugf("nfs volume already exist for Deployment: %v", targetDeploymentName)
 			break
 		}
 	}
@@ -208,6 +209,8 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 		for _, vm := range c.VolumeMounts {
 			if vm.Name == "nfs" {
 				targetHasMount = true
+				Logger.Sugar().Debugf("nfs volumeMount already exist for Deployment: %v, Container: %v",
+					targetDeploymentName, c.Name)
 				break
 			}
 		}

@@ -35,7 +35,8 @@ type Config struct {
 
 	ExtraHealthchecks []string
 
-	Features itaFeatures
+	Features      itaFeatures
+	RootUserEmail string
 }
 
 func GetCfg() *Config {

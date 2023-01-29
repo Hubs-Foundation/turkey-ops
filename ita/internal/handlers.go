@@ -202,6 +202,7 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 })
 
+//curl -X POST -F file='@<path-to-file-ie-/tmp/file1>' ita:6000/upload
 func receiveFileFromReq(r *http.Request) (string, error) {
 
 	// 32 MB
@@ -263,6 +264,7 @@ func receiveFileFromReq(r *http.Request) (string, error) {
 	return report, nil
 }
 
+//curl -X PATCH ita:6000/deploy/hubs?file=<name-of-the-file-under-/storage/ita-uploads>
 var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/deploy/hubs" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)

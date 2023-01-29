@@ -84,6 +84,25 @@ func checkJwtCookie(c *http.Cookie) (jwt.Claims, error) {
 	return token.Claims, nil
 }
 
+func CheckJwtToken(jwtToken string) (jwt.Claims, error) {
+	// Validate cookie
+
+	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
+		// since we only use the one private key to sign the tokens,
+		// we also only use its public counter part to verify
+		return cfg.PermsKey_pub, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	Logger.Sugar().Debugf("token: %v", token)
+	if !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+	// good token
+	return token.Claims, nil
+}
+
 // Request Validation
 
 // ValidateCookie verifies that a cookie matches the expected format of:
