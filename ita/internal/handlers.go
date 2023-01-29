@@ -196,7 +196,8 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		fmt.Fprint(w, report)
+		reqId := w.Header().Get("X-Request-Id")
+		fmt.Fprintf(w, "done [reqId: %v]:\n %v", reqId, report)
 	}
 
 })
@@ -258,7 +259,8 @@ func receiveFileFromReq(r *http.Request) (string, error) {
 		}
 		report += fmt.Sprintf("received: %v(%v, %v)\n", f.Name(), filetype, fileHeader.Size)
 	}
-	return fmt.Sprintf("done:\n %v", report), nil
+
+	return report, nil
 }
 
 var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
