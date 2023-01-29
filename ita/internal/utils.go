@@ -272,7 +272,7 @@ func UnzipTar(src, destDir string) error {
 		}
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.Mkdir(destDir+header.Name, 0755); err != nil {
+			if err := os.MkdirAll(destDir+header.Name, 0755); err != nil {
 				return fmt.Errorf("Mkdir() failed: %s", err.Error())
 			}
 		case tar.TypeReg:
