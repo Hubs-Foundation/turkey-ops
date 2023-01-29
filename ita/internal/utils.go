@@ -262,7 +262,7 @@ func UnzipTar(src, destDir string) error {
 
 	uncompressedStream, err := gzip.NewReader(f)
 	if err != nil {
-		return fmt.Errorf("NewReader failed")
+		return fmt.Errorf("NewReader failed, err: %v", err)
 	}
 	tarReader := tar.NewReader(uncompressedStream)
 	for {

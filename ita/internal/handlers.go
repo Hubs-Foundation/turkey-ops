@@ -219,7 +219,7 @@ func receiveFileFromReq(r *http.Request) (string, error) {
 	for _, fileHeader := range files {
 		fileHeader = files[0]
 		if fileHeader.Size > MAX_UPLOAD_SIZE {
-			report += fmt.Sprintf("skipped(too big): %v(%v/%vmb)\n", fileHeader.Filename, fileHeader.Size, MAX_UPLOAD_SIZE/(1048576))
+			report += fmt.Sprintf("skipped(too big): %v(%v/%vMB)\n", fileHeader.Filename, fileHeader.Size, MAX_UPLOAD_SIZE/(1048576))
 			continue
 		}
 		Logger.Sugar().Debugf("working on file: %v (%v)", fileHeader.Filename, fileHeader.Size)
@@ -258,7 +258,7 @@ func receiveFileFromReq(r *http.Request) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		report += fmt.Sprintf("received: %v(%v, %v)\n", f.Name(), filetype, fileHeader.Size)
+		report += fmt.Sprintf("received: %v(%v, %vMB)\n", f.Name(), filetype, fileHeader.Size/(1024*1024))
 	}
 
 	return report, nil
