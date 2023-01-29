@@ -39,7 +39,7 @@ func main() {
 	//#############################################
 
 	router := http.NewServeMux()
-	//legacy ita endpoints
+	//legacy(dummy) ita endpoints
 	router.Handle("/admin-info", internal.Ita_admin_info)
 	router.Handle("/configs/reticulum/ps", internal.Ita_cfg_ret_ps)
 	//public endpoints

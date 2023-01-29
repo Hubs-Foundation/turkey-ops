@@ -34,6 +34,8 @@ type Config struct {
 	HostnameHash uint32
 
 	ExtraHealthchecks []string
+
+	Features itaFeatures
 }
 
 func GetCfg() *Config {
@@ -43,12 +45,21 @@ func GetCfg() *Config {
 func MakeCfg() {
 	cfg = &Config{}
 
+	// tmp hack
 	val, retMode := os.LookupEnv("RET_MODE")
 	if retMode {
 		Logger.Info("RET_MODE: " + val)
-		return //RET_MODE==will-not-start: { turkey-updater, pauseJob }
+		return //RET_MODE==just need the dummy ita endpoints
 	}
 
+	//make GCP_SA_CREDS, turkey-updater needs it to access turkeycfg bucket
+	keyStr := os.Getenv("GCP_SA_KEY")
+	f, _ := os.Create("/app/gcpkey.json")
+	defer f.Close()
+	f.WriteString(keyStr)
+	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/app/gcpkey.json")
+
+	// get values
 	cfg.SupportedChannels = []string{"dev", "beta", "stable"}
 
 	Hostname, err := os.Hostname()
@@ -91,41 +102,41 @@ func MakeCfg() {
 	}
 	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
 
-	if slices.Contains([]string{"testing"}, cfg.Tier) {
-		err := k8s_mountRetNfs("ita", "", "")
+	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
+	cfg.ExtraHealthchecks = strings.Split(os.Getenv("EXTRA_HEALTHCHECKS"), ",")
+
+	// features
+	cfg.setFeatures()
+
+	if cfg.Features.customDomain {
+		if slices.Contains([]string{"testing"}, cfg.Tier) {
+			err := k8s_mountRetNfs("ita", "", "")
+			if err != nil {
+				Logger.Error(err.Error())
+			}
+			// err = k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
+			// if err != nil {
+			// 	Logger.Error(err.Error())
+			// }
+		}
+	}
+
+	if cfg.Features.updater {
+		cfg.Channel, err = Get_listeningChannelLabel()
+		if err != nil {
+			Logger.Warn("Get_listeningChannelLabel failed: " + err.Error())
+			cfg.Channel = "unset"
+			err := Set_listeningChannelLabel("unset")
+			if err != nil {
+				Logger.Error("Set_listeningChannelLabel failed: " + err.Error())
+			}
+		}
+		cfg.TurkeyUpdater = NewTurkeyUpdater()
+		err = cfg.TurkeyUpdater.Start(cfg.Channel)
 		if err != nil {
 			Logger.Error(err.Error())
 		}
-		// err = k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
-		// if err != nil {
-		// 	Logger.Error(err.Error())
-		// }
 	}
-
-	//not RET_MODE => start turkey-updater
-	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
-	cfg.Channel, err = Get_listeningChannelLabel()
-	if err != nil {
-		Logger.Warn("Get_listeningChannelLabel failed: " + err.Error())
-		cfg.Channel = "unset"
-		err := Set_listeningChannelLabel("unset")
-		if err != nil {
-			Logger.Error("Set_listeningChannelLabel failed: " + err.Error())
-		}
-	}
-	cfg.TurkeyUpdater = NewTurkeyUpdater()
-	err = cfg.TurkeyUpdater.Start(cfg.Channel)
-	if err != nil {
-		Logger.Error(err.Error())
-	}
-	//make GCP_SA_CREDS, turkey-updater needs it to access turkeycfg bucket
-	keyStr := os.Getenv("GCP_SA_KEY")
-	f, _ := os.Create("/app/gcpkey.json")
-	defer f.Close()
-	f.WriteString(keyStr)
-	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/app/gcpkey.json")
-
-	cfg.ExtraHealthchecks = strings.Split(os.Getenv("EXTRA_HEALTHCHECKS"), ",")
 
 }
 
@@ -134,4 +145,32 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+type itaFeatures struct {
+	updater      bool
+	customDomain bool
+}
+
+func New_itaFeatures() itaFeatures {
+	return itaFeatures{
+		updater:      false,
+		customDomain: false,
+	}
+}
+
+func (cfg *Config) setFeatures() {
+	cfg.Features = New_itaFeatures()
+	//turkey-updater
+	if _, noUpdates := os.LookupEnv("NO_UPDATES"); !noUpdates {
+		cfg.Features.updater = true
+	}
+	//custom-domain
+	if slices.Contains([]string{
+		"dev",
+		"test",
+	}, cfg.Tier) {
+		cfg.Features.customDomain = true
+	}
+
 }
