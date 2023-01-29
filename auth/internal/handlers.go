@@ -315,14 +315,14 @@ func ChkCookie() http.Handler {
 
 func ChkToken() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/chk_token" || r.URL.Query().Get("token") != "" {
+		if r.URL.Path != "/chk_token" || r.URL.Query().Get("token") == "" {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
 
 		claims, err := CheckJwtToken(r.URL.Query().Get("token"))
 		if err != nil {
-			Logger.Debug("bad cookie" + err.Error())
+			Logger.Debug("bad token? err: " + err.Error())
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}
