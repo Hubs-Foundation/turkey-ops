@@ -90,9 +90,6 @@ func Get_fromNsAnnotations(key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	Logger.Sugar().Debugf("ns: %v", ns)
-	Logger.Sugar().Debugf("ns.Annotations: %v", ns.Annotations)
-
 	return ns.Annotations[key], nil
 }
 

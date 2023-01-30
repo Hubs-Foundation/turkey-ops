@@ -63,6 +63,23 @@ func MakeCfg() {
 	// prepare values
 	cfg.SupportedChannels = []string{"dev", "beta", "stable"}
 
+	cfg.PodNS = os.Getenv("POD_NS")
+	if cfg.PodNS == "" {
+		Logger.Error("POD_NS not set")
+	}
+	if strings.HasPrefix(cfg.PodNS, "hc-") {
+		cfg.Tier = getEnv("TIER", "free")
+	} else {
+		cfg.Tier = "N/A"
+	}
+	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
+	cfg.Domain = os.Getenv("DOMAIN")
+	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
+	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
+
+	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
+	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
+
 	Hostname, err := os.Hostname()
 	if err != nil {
 		Logger.Warn("failed to get Hostname")
@@ -80,12 +97,6 @@ func MakeCfg() {
 		Logger.Error(err.Error())
 	}
 
-	cfg.Domain = os.Getenv("DOMAIN")
-	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
-	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
-
-	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
-	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {
 		Logger.Sugar().Warnf("failed to parse (FreeTierIdleMax): %v, falling back to default value", os.Getenv("FreeTierIdleMax"))
@@ -93,17 +104,6 @@ func MakeCfg() {
 	}
 	Logger.Sugar().Infof("cfg.turkeyorchHost: %v", cfg.turkeyorchHost)
 	Logger.Sugar().Infof("cfg.FreeTierIdleMax: %v", cfg.FreeTierIdleMax)
-
-	cfg.PodNS = os.Getenv("POD_NS")
-	if cfg.PodNS == "" {
-		Logger.Error("POD_NS not set")
-	}
-	if strings.HasPrefix(cfg.PodNS, "hc-") {
-		cfg.Tier = getEnv("TIER", "free")
-	} else {
-		cfg.Tier = "N/A"
-	}
-	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
 
 	cfg.PodDeploymentName = getEnv("POD_DEPLOYMENT_NAME", "ita")
 	cfg.ExtraHealthchecks = strings.Split(os.Getenv("EXTRA_HEALTHCHECKS"), ",")
