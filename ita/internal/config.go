@@ -82,6 +82,7 @@ func MakeCfg() {
 
 	cfg.Domain = os.Getenv("DOMAIN")
 	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
+	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
 
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
 	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
