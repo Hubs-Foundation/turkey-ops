@@ -77,9 +77,6 @@ func MakeCfg() {
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
 	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
 
-	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
-	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
-
 	Hostname, err := os.Hostname()
 	if err != nil {
 		Logger.Warn("failed to get Hostname")
@@ -96,6 +93,9 @@ func MakeCfg() {
 	if err != nil {
 		Logger.Error(err.Error())
 	}
+
+	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
+	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
 
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {

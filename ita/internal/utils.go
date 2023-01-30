@@ -76,7 +76,6 @@ func Set_listeningChannelLabel(channel string) error {
 }
 
 func Get_fromNsLabel(key string) (string, error) {
-	//do we have channel labled on deployment?
 	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -85,7 +84,6 @@ func Get_fromNsLabel(key string) (string, error) {
 }
 
 func Get_fromNsAnnotations(key string) (string, error) {
-	//do we have channel labled on deployment?
 	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
 	if err != nil {
 		return "", err
