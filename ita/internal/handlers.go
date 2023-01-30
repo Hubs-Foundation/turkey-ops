@@ -160,7 +160,7 @@ var ClusterIpsList = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 
 })
 
-const MAX_UPLOAD_SIZE = 150 * 1024 * 1024 // 150mb
+const MAX_UPLOAD_SIZE = 1024 * 1024 * 1024 // 1GB
 // Progress is used to track the progress of a file upload.It implements the io.Writer interface so it can be passed to an io.TeeReader()
 type Progress struct {
 	TotalSize int64
@@ -276,7 +276,7 @@ func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, strin
 			continue
 		}
 		report += fmt.Sprintf("saved: %v(%v, %vMB)\n", f.Name(), filetype, fileHeader.Size/(1024*1024))
-		result = append(result, f.Name())
+		result = append(result, fileHeader.Filename)
 	}
 
 	return result, report, nil
