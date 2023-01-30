@@ -363,3 +363,7 @@ func unzipNdeployCustomHubs(fileName string) error {
 
 	return nil
 }
+
+var Handle_NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	http.NotFound(w, r)
+})

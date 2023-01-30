@@ -72,24 +72,24 @@ func chk_hat_hdr() func(http.Handler) http.Handler {
 			token := r.Header.Get("turkeyauthtoken")
 			if token == "" {
 				internal.Logger.Debug("reject -- no token")
-				http.NotFound(w, r)
+				internal.Handle_NotFound(w, r)
 				return
 			}
 			resp, err := http.Get("http://turkeyauth.turkey-services:9001/chk_token?token=" + token)
 			if err != nil {
 				internal.Logger.Sugar().Debugf("reject -- err@chk_token: %v", err)
-				http.NotFound(w, r)
+				internal.Handle_NotFound(w, r)
 				return
 			} else if resp.StatusCode != http.StatusOK {
 				internal.Logger.Sugar().Debugf("reject -- bad resp.StatusCode: %v", resp.StatusCode)
-				http.NotFound(w, r)
+				internal.Handle_NotFound(w, r)
 				return
 			}
 			email := resp.Header.Get("verified-UserEmail")
 			rootUserEmail := internal.GetCfg().RootUserEmail
 			if email != rootUserEmail {
 				internal.Logger.Sugar().Debugf("reject -- bad verified-UserEmail: %v (need: %v)", resp.StatusCode, rootUserEmail)
-				http.NotFound(w, r)
+				internal.Handle_NotFound(w, r)
 				return
 			}
 
