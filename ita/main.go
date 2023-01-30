@@ -56,8 +56,8 @@ func main() {
 	router.Handle("/upload", internal.Upload)
 	router.Handle("/deploy/hubs", internal.DeployHubs)
 	//turkeyauth protected public api endpoints
-	router.Handle("/ita/upload", chk_hat_hdr()(internal.Upload))
-	router.Handle("/ita/deploy/hubs", chk_hat_hdr()(internal.DeployHubs))
+	router.Handle("/api/ita/upload", chk_hat_hdr()(internal.Upload))
+	router.Handle("/api/ita/deploy/hubs", chk_hat_hdr()(internal.DeployHubs))
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
