@@ -112,11 +112,11 @@ func MakeCfg() {
 	cfg.setFeatures()
 
 	if cfg.Features.customDomain {
-		err := k8s_mountRetNfs("ita", "", "")
+		err = k8s_addItaApiIngressRule()
 		if err != nil {
 			Logger.Error(err.Error())
 		}
-		err = k8s_addItaApiIngressRule()
+		err := k8s_mountRetNfs("ita", "", "")
 		if err != nil {
 			Logger.Error(err.Error())
 		}

@@ -73,6 +73,7 @@ func chk_hat_hdr() func(http.Handler) http.Handler {
 			if token == "" {
 				internal.Logger.Debug("reject -- no token")
 				// internal.Handle_NotFound(w, r)
+				http.NotFound(w, r)
 				return
 			}
 			resp, err := http.Get("http://turkeyauth.turkey-services:9001/chk_token?token=" + token)

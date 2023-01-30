@@ -382,14 +382,15 @@ func k8s_addItaApiIngressRule() error {
 	for _, ig := range igs.Items {
 		if _, ok := ig.Annotations["haproxy.org/server-ssl"]; !ok {
 			if !ingressRuleAlreadyCreated(ig) {
-				itaRule, err := findIngressRuleForRetRootPath(ig)
+				retRootRule, err := findIngressRuleForRetRootPath(ig)
 				if err != nil {
 					return err
 				}
+				itaRule := retRootRule.DeepCopy()
 				itaRule.HTTP.Paths[0].Path = "/api/ita"
 				itaRule.HTTP.Paths[0].Backend.Service.Name = "ita"
 				itaRule.HTTP.Paths[0].Backend.Service.Port.Number = 6000
-				ig.Spec.Rules = append(ig.Spec.Rules, itaRule)
+				ig.Spec.Rules = append(ig.Spec.Rules, *itaRule)
 				newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), &ig, metav1.UpdateOptions{})
 				if err != nil {
 					Logger.Sugar().Errorf("failed to update ingress with itaRule: %v", err)
