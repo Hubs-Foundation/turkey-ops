@@ -186,11 +186,10 @@ func (pg *Progress) Print() {
 }
 
 var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/upload" {
+	if r.URL.Path != "/upload" && r.URL.Path != "/ita/upload" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-
 	if r.Method == "POST" {
 		_, report, err := receiveFileFromReq(r, -1)
 		if err != nil {
@@ -285,7 +284,7 @@ func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, strin
 
 //curl -X PATCH ita:6000/deploy/hubs?file=<name-of-the-file-under-/storage/ita-uploads>
 var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/deploy/hubs" {
+	if r.URL.Path != "/deploy/hubs" && r.URL.Path != "/ita/deploy/hubs" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}

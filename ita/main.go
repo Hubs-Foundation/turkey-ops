@@ -41,9 +41,10 @@ func main() {
 	//legacy(dummy) ita endpoints
 	router.Handle("/admin-info", internal.Ita_admin_info)
 	router.Handle("/configs/reticulum/ps", internal.Ita_cfg_ret_ps)
-	//public endpoints
+	//public api endpoints
 	router.Handle("/z/meta/cluster-ips", internal.ClusterIps)
 	router.Handle("/z/meta/cluster-ips/list", internal.ClusterIpsList)
+
 	//turkeyUpdater endpoints
 	router.Handle("/updater", internal.Updater)
 	//utility endpoints
@@ -51,17 +52,20 @@ func main() {
 	router.Handle("/zaplvl", internal.Atom)
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
-	//turkeyauth protected public endpoints
+	//private api endpoints
 	router.Handle("/upload", internal.Upload)
 	router.Handle("/deploy/hubs", internal.DeployHubs)
+	//turkeyauth protected public api endpoints
+	router.Handle("/ita/upload", chk_hat_hdr()(internal.Upload))
+	router.Handle("/ita/deploy/hubs", chk_hat_hdr()(internal.DeployHubs))
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
 
 }
 
-//check turkeyauthtoken
-func chk_TatHdr(requiredRole string) func(http.Handler) http.Handler {
+//check turkeyauthtoken header
+func chk_hat_hdr() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			internal.Logger.Debug("~~~~~~~~~~~chk_TatHdr~~~~~~~~~~~")
