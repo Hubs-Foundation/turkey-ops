@@ -75,9 +75,9 @@ func chk_hat_hdr() func(http.Handler) http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			resp, err := http.Get("http://turkeyauth.turkey-services:9001/chk_cookie?token=" + token)
+			resp, err := http.Get("http://turkeyauth.turkey-services:9001/chk_token?token=" + token)
 			if err != nil {
-				internal.Logger.Sugar().Debugf("reject -- err@chk_cookie: %v", err)
+				internal.Logger.Sugar().Debugf("reject -- err@chk_token: %v", err)
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			} else if resp.StatusCode != http.StatusOK {
