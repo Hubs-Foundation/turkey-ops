@@ -75,6 +75,24 @@ func Set_listeningChannelLabel(channel string) error {
 	return nil
 }
 
+func Get_fromNsLabel(key string) (string, error) {
+	//do we have channel labled on deployment?
+	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return ns.Labels[key], nil
+}
+
+func Get_fromNsAnnotations(key string) (string, error) {
+	//do we have channel labled on deployment?
+	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return ns.Annotations[key], nil
+}
+
 func hash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
@@ -374,6 +392,11 @@ func k8s_addItaApiIngressRule() error {
 				itaRule.HTTP.Paths[0].Backend.Service.Name = "ita"
 				itaRule.HTTP.Paths[0].Backend.Service.Port.Number = 6000
 				ig.Spec.Rules = append(ig.Spec.Rules, itaRule)
+				newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), &ig, metav1.UpdateOptions{})
+				if err != nil {
+					Logger.Sugar().Errorf("failed to update ingress with itaRule: %v", err)
+				}
+				Logger.Sugar().Debugf("updated ingress: %v", newIg)
 			}
 			return nil
 		}
@@ -386,6 +409,7 @@ func ingressRuleAlreadyCreated(ig networkingv1.Ingress) bool {
 	for _, rule := range ig.Spec.Rules {
 		for _, path := range rule.HTTP.Paths {
 			if path.Backend.Service.Name == "ita" {
+				Logger.Sugar().Debugf("ingressRuleAlreadyCreated: %v", rule)
 				return true
 			}
 		}

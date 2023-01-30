@@ -60,7 +60,7 @@ func MakeCfg() {
 	f.WriteString(keyStr)
 	os.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "/app/gcpkey.json")
 
-	// get values
+	// prepare values
 	cfg.SupportedChannels = []string{"dev", "beta", "stable"}
 
 	Hostname, err := os.Hostname()
@@ -81,6 +81,7 @@ func MakeCfg() {
 	}
 
 	cfg.Domain = os.Getenv("DOMAIN")
+	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
 
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
 	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
