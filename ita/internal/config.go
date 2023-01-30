@@ -110,16 +110,20 @@ func MakeCfg() {
 	cfg.setFeatures()
 
 	if cfg.Features.customDomain {
-		if slices.Contains([]string{"testing"}, cfg.Tier) {
-			err := k8s_mountRetNfs("ita", "", "")
-			if err != nil {
-				Logger.Error(err.Error())
-			}
-			// err = k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
-			// if err != nil {
-			// 	Logger.Error(err.Error())
-			// }
+		err := k8s_mountRetNfs("ita", "", "")
+		if err != nil {
+			Logger.Error(err.Error())
 		}
+		err = k8s_addItaApiIngressRule()
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+
+		// err = k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
+		// if err != nil {
+		// 	Logger.Error(err.Error())
+		// }
+
 	}
 
 	if cfg.Features.updater {

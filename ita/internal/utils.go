@@ -21,7 +21,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -196,9 +196,9 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 			if v.Name == "nfs" {
 				d_target.Spec.Template.Spec.Volumes = append(
 					d_target.Spec.Template.Spec.Volumes,
-					v1.Volume{
+					corev1.Volume{
 						Name:         "nfs",
-						VolumeSource: v1.VolumeSource{NFS: &v1.NFSVolumeSource{Server: v.NFS.Server, Path: v.NFS.Path + volPathSubdir}},
+						VolumeSource: corev1.VolumeSource{NFS: &corev1.NFSVolumeSource{Server: v.NFS.Server, Path: v.NFS.Path + volPathSubdir}},
 					})
 			}
 		}
@@ -225,14 +225,14 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 						}
 						d_target.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 							d_target.Spec.Template.Spec.Containers[0].VolumeMounts,
-							v1.VolumeMount{
+							corev1.VolumeMount{
 								Name:             vm.Name,
 								MountPath:        mountPath,
 								MountPropagation: vm.MountPropagation,
 							},
 						)
 						var_true := true
-						d_target.Spec.Template.Spec.Containers[0].SecurityContext = &v1.SecurityContext{
+						d_target.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
 							Privileged: &var_true,
 						}
 					}
@@ -356,4 +356,49 @@ func UnzipZip(src, destDir string) error {
 	}
 
 	return nil
+}
+
+func k8s_addItaApiIngressRule() error {
+	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, ig := range igs.Items {
+		if _, ok := ig.Annotations["haproxy.org/server-ssl"]; !ok {
+			if !ingressRuleAlreadyCreated(ig) {
+				itaRule, err := findIngressRuleForRetRootPath(ig)
+				if err != nil {
+					return err
+				}
+				itaRule.HTTP.Paths[0].Path = "/api/ita"
+				itaRule.HTTP.Paths[0].Backend.Service.Name = "ita"
+				itaRule.HTTP.Paths[0].Backend.Service.Port.Number = 6000
+				ig.Spec.Rules = append(ig.Spec.Rules, itaRule)
+			}
+			return nil
+		}
+	}
+
+	return errors.New("outdated arch -- did not find ingress without haproxy.org/server-ssl")
+}
+
+func ingressRuleAlreadyCreated(ig networkingv1.Ingress) bool {
+	for _, rule := range ig.Spec.Rules {
+		for _, path := range rule.HTTP.Paths {
+			if path.Backend.Service.Name == "ita" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func findIngressRuleForRetRootPath(ig networkingv1.Ingress) (networkingv1.IngressRule, error) {
+	for _, rule := range ig.Spec.Rules {
+		if rule.HTTP.Paths[0].Path == "/" && rule.HTTP.Paths[0].Backend.Service.Name == "ret" {
+			return rule, nil
+		}
+	}
+	return networkingv1.IngressRule{}, errors.New("findIngressRuleForRetRootPath: not found")
+
 }
