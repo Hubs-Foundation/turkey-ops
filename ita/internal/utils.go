@@ -293,7 +293,7 @@ func k8s_removeNfsMount(targetDeploymentName string) error {
 
 	_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d_target, metav1.UpdateOptions{})
 	if err != nil {
-		return err
+		return fmt.Errorf(fmt.Sprintf("%v --- %v", err, d_target))
 	}
 	return nil
 }
