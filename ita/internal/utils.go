@@ -273,14 +273,14 @@ func k8s_removeNfsMount(targetDeploymentName string) error {
 		return err
 	}
 
-	volumes := []corev1.Volume{}
-	for _, v := range d_target.Spec.Template.Spec.Volumes {
-		if v.Name != "nfs" {
-			volumes = append(volumes, v)
-		}
-	}
-	d_target.Spec.Template.Spec.Volumes = volumes
-	Logger.Sugar().Debugf("new volumes for deployment (%v) : %v ", d_target.Name, volumes)
+	// volumes := []corev1.Volume{}
+	// for _, v := range d_target.Spec.Template.Spec.Volumes {
+	// 	if v.Name != "nfs" {
+	// 		volumes = append(volumes, v)
+	// 	}
+	// }
+	// d_target.Spec.Template.Spec.Volumes = volumes
+	// Logger.Sugar().Debugf("new volumes for deployment (%v) : %v ", d_target.Name, volumes)
 
 	for _, c := range d_target.Spec.Template.Spec.Containers {
 		volumesMounts := []corev1.VolumeMount{}
