@@ -280,6 +280,7 @@ func k8s_removeNfsMount(targetDeploymentName string) error {
 		}
 	}
 	d_target.Spec.Template.Spec.Volumes = volumes
+	Logger.Sugar().Debugf("new volumes for deployment (%v) : %v ", d_target.Name, volumes)
 
 	for _, c := range d_target.Spec.Template.Spec.Containers {
 		volumesMounts := []corev1.VolumeMount{}
@@ -289,6 +290,7 @@ func k8s_removeNfsMount(targetDeploymentName string) error {
 			}
 		}
 		c.VolumeMounts = volumesMounts
+		Logger.Sugar().Debugf("new volumeMounts for container (%v) : %v ", c.Name, volumesMounts)
 	}
 
 	_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d_target, metav1.UpdateOptions{})
