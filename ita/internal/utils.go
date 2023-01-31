@@ -194,6 +194,11 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 	if err != nil {
 		return err
 	}
+
+	if len(d_target.Spec.Template.Spec.Containers) > 1 {
+		return errors.New("this won't work because d_target.Spec.Template.Spec.Containers != 1")
+	}
+
 	d_ret, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -273,24 +278,22 @@ func k8s_removeNfsMount(targetDeploymentName string) error {
 		return err
 	}
 
-	// volumes := []corev1.Volume{}
-	// for _, v := range d_target.Spec.Template.Spec.Volumes {
-	// 	if v.Name != "nfs" {
-	// 		volumes = append(volumes, v)
-	// 	}
-	// }
-	// d_target.Spec.Template.Spec.Volumes = volumes
-	// Logger.Sugar().Debugf("new volumes for deployment (%v) : %v ", d_target.Name, volumes)
+	volumes := []corev1.Volume{}
+	for _, v := range d_target.Spec.Template.Spec.Volumes {
+		if v.Name != "nfs" {
+			volumes = append(volumes, v)
+		}
+	}
+	d_target.Spec.Template.Spec.Volumes = volumes
 
-	for _, c := range d_target.Spec.Template.Spec.Containers {
+	for idx, c := range d_target.Spec.Template.Spec.Containers {
 		volumesMounts := []corev1.VolumeMount{}
 		for _, vm := range c.VolumeMounts {
 			if vm.Name != "nfs" {
 				volumesMounts = append(volumesMounts, vm)
 			}
 		}
-		c.VolumeMounts = volumesMounts
-		Logger.Sugar().Debugf("new volumeMounts for container (%v) : %v ", c.Name, volumesMounts)
+		d_target.Spec.Template.Spec.Containers[idx].VolumeMounts = volumesMounts
 	}
 
 	_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d_target, metav1.UpdateOptions{})
