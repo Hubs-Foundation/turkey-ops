@@ -328,9 +328,23 @@ var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "done [reqId: %v]:\n %v", reqId, report)
 		return
 	}
-
 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+})
 
+var UndeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/undeploy/hubs" && r.URL.Path != "/api/ita/undeploy/hubs" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	err := k8s_removeNfsMount("hubs")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "done")
 })
 
 func unzipNdeployCustomHubs(fileName string) error {
@@ -355,7 +369,8 @@ func unzipNdeployCustomHubs(fileName string) error {
 	} else {
 		return errors.New("unexpected file extension: " + fileName)
 	}
-	//deploy (mount)
+	//deploy
+	// ensure mounts
 	err := k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
 	if err != nil {
 		return errors.New("failed @ k8s_mountRetNfs: " + err.Error())

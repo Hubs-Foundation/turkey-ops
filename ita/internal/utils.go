@@ -266,6 +266,55 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 	return nil
 }
 
+func k8s_removeNfsMount(targetDeploymentName string) error {
+
+	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	volumes := []corev1.Volume{}
+	for _, v := range d_target.Spec.Template.Spec.Volumes {
+		if v.Name != "nfs" {
+			volumes = append(volumes, v)
+		}
+	}
+	d_target.Spec.Template.Spec.Volumes = volumes
+
+	for _, c := range d_target.Spec.Template.Spec.Containers {
+		volumesMounts := []corev1.VolumeMount{}
+		for _, vm := range c.VolumeMounts {
+			if vm.Name != "nfs" {
+				volumesMounts = append(volumesMounts, vm)
+			}
+		}
+		c.VolumeMounts = volumesMounts
+	}
+
+	_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d_target, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func k8s_KillPodsByLabel(label string) error {
+	pods, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), metav1.ListOptions{
+		LabelSelector: label, // ie: app=hubs
+	})
+	if err != nil {
+		return err
+	}
+	for _, p := range pods.Items {
+		Logger.Info("deleting pod: " + p.Name)
+		err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Delete(context.Background(), p.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // func ExtractTarGz(gzipStream io.Reader) error {
 func UnzipTar(src, destDir string) error {
 
