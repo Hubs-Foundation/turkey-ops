@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/utils/strings/slices"
 )
 
 var mu sync.Mutex
@@ -82,15 +83,15 @@ func (u *TurkeyUpdater) Start(channel string) error {
 
 	if u.stopCh != nil {
 		close(u.stopCh)
-		Logger.Info("restarting with channel: " + channel)
+		Logger.Info("restarting for channel: " + channel)
 	} else {
-		Logger.Info("starting with channel: " + channel)
+		Logger.Info("starting for channel: " + channel)
 	}
 
-	// if _, ok := cfg.SupportedChannels[channel]; !ok {
-	// 	Logger.Sugar().Warnf("bad channel %v, exiting without start", channel)
-	// 	return nil
-	// }
+	if !slices.Contains(cfg.SupportedChannels, channel) {
+		Logger.Sugar().Warnf("unexpected channel: %v, TurkeyUpdater will not start", channel)
+		return nil
+	}
 
 	u.stopCh, err = u.startWatchingPublisher(channel)
 	if err != nil {

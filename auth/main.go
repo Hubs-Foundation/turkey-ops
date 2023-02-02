@@ -24,6 +24,7 @@ func main() {
 	router.Handle("/logout", internal.Logout())
 	router.Handle("/authn", internal.Authn())
 	router.Handle("/chk_cookie", internal.ChkCookie())
+	router.Handle("/chk_token", internal.ChkToken())
 
 	//private
 	router.Handle("/_healthz", internal.Healthz())

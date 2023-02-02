@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/golang-jwt/jwt"
 )
 
 func Healthz() http.Handler {
@@ -291,8 +293,6 @@ func ChkCookie() http.Handler {
 			return
 		}
 
-		Logger.Sugar().Debugf("r.Header, %v", r.Header)
-
 		email, err := CheckCookie(r)
 		if err != nil {
 			Logger.Debug("bad cookie" + err.Error())
@@ -300,8 +300,6 @@ func ChkCookie() http.Handler {
 			return
 		}
 		Logger.Sugar().Debug("good cookie found for " + email)
-
-		// accessing := r.URL.Query()["req"]
 
 		clearCSRFcookies(w, r)
 
@@ -311,6 +309,27 @@ func ChkCookie() http.Handler {
 		// })
 
 		w.Header().Add("verified-UserEmail", email)
+		w.WriteHeader(http.StatusOK)
+	})
+}
+
+func ChkToken() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/chk_token" || r.URL.Query().Get("token") == "" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			return
+		}
+
+		claims, err := CheckJwtToken(r.URL.Query().Get("token"))
+		if err != nil {
+			Logger.Debug("bad token? err: " + err.Error())
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		Logger.Sugar().Debugf("good cookie -- claims: %v", claims)
+
+		clearCSRFcookies(w, r)
+		w.Header().Add("verified-UserEmail", claims.(jwt.MapClaims)["fxa_email"].(string))
 		w.WriteHeader(http.StatusOK)
 	})
 }

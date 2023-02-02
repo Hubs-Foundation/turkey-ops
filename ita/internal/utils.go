@@ -1,19 +1,27 @@
 package internal
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hash/fnv"
+	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -65,6 +73,22 @@ func Set_listeningChannelLabel(channel string) error {
 		return err
 	}
 	return nil
+}
+
+func Get_fromNsLabel(key string) (string, error) {
+	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return ns.Labels[key], nil
+}
+
+func Get_fromNsAnnotations(key string) (string, error) {
+	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return ns.Annotations[key], nil
 }
 
 func hash(s string) uint32 {
@@ -161,4 +185,297 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 		}
 	}
 	return nil
+}
+
+func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) error {
+	Logger.Debug("mounting Ret nfs for: " + targetDeploymentName)
+
+	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	if len(d_target.Spec.Template.Spec.Containers) > 1 {
+		return errors.New("this won't work because d_target.Spec.Template.Spec.Containers != 1")
+	}
+
+	d_ret, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	targetHasVolume := false
+	for _, v := range d_target.Spec.Template.Spec.Volumes {
+		if v.Name == "nfs" {
+			targetHasVolume = true
+			Logger.Sugar().Debugf("nfs volume already exist for Deployment: %v", targetDeploymentName)
+			break
+		}
+	}
+	if !targetHasVolume {
+		for _, v := range d_ret.Spec.Template.Spec.Volumes {
+			if v.Name == "nfs" {
+				d_target.Spec.Template.Spec.Volumes = append(
+					d_target.Spec.Template.Spec.Volumes,
+					corev1.Volume{
+						Name:         "nfs",
+						VolumeSource: corev1.VolumeSource{NFS: &corev1.NFSVolumeSource{Server: v.NFS.Server, Path: v.NFS.Path + volPathSubdir}},
+					})
+			}
+		}
+	}
+
+	targetHasMount := false
+	for _, c := range d_target.Spec.Template.Spec.Containers {
+		for _, vm := range c.VolumeMounts {
+			if vm.Name == "nfs" {
+				targetHasMount = true
+				Logger.Sugar().Debugf("nfs volumeMount already exist for Deployment: %v, Container: %v",
+					targetDeploymentName, c.Name)
+				break
+			}
+		}
+	}
+	if !targetHasMount {
+		for _, c := range d_ret.Spec.Template.Spec.Containers {
+			if c.Name == "reticulum" {
+				for _, vm := range c.VolumeMounts {
+					if vm.Name == "nfs" {
+						if mountPath == "" {
+							mountPath = vm.MountPath
+						}
+						d_target.Spec.Template.Spec.Containers[0].VolumeMounts = append(
+							d_target.Spec.Template.Spec.Containers[0].VolumeMounts,
+							corev1.VolumeMount{
+								Name:             vm.Name,
+								MountPath:        mountPath,
+								MountPropagation: vm.MountPropagation,
+							},
+						)
+						var_true := true
+						d_target.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+							Privileged: &var_true,
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if !targetHasVolume || !targetHasMount {
+		_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d_target, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func k8s_removeNfsMount(targetDeploymentName string) error {
+
+	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	volumes := []corev1.Volume{}
+	for _, v := range d_target.Spec.Template.Spec.Volumes {
+		if v.Name != "nfs" {
+			volumes = append(volumes, v)
+		}
+	}
+	d_target.Spec.Template.Spec.Volumes = volumes
+
+	for idx, c := range d_target.Spec.Template.Spec.Containers {
+		volumesMounts := []corev1.VolumeMount{}
+		for _, vm := range c.VolumeMounts {
+			if vm.Name != "nfs" {
+				volumesMounts = append(volumesMounts, vm)
+			}
+		}
+		d_target.Spec.Template.Spec.Containers[idx].VolumeMounts = volumesMounts
+	}
+
+	_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d_target, metav1.UpdateOptions{})
+	if err != nil {
+		return fmt.Errorf(fmt.Sprintf("%v --- %v", err, d_target))
+	}
+	return nil
+}
+
+func k8s_KillPodsByLabel(label string) error {
+	pods, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), metav1.ListOptions{
+		LabelSelector: label, // ie: app=hubs
+	})
+	if err != nil {
+		return err
+	}
+	for _, p := range pods.Items {
+		Logger.Info("deleting pod: " + p.Name)
+		err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Delete(context.Background(), p.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// func ExtractTarGz(gzipStream io.Reader) error {
+func UnzipTar(src, destDir string) error {
+
+	f, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open src file (%v), err: %v", src, err)
+	}
+
+	os.MkdirAll(destDir, 0755)
+
+	uncompressedStream, err := gzip.NewReader(f)
+	if err != nil {
+		return fmt.Errorf("NewReader failed, err: %v (is this a plain / non-gzipped tar ? try tar -czvf)", err)
+	}
+	tarReader := tar.NewReader(uncompressedStream)
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("Next() failed: %s", err.Error())
+		}
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(destDir+header.Name, 0755); err != nil {
+				return fmt.Errorf("Mkdir() failed: %s", err.Error())
+			}
+		case tar.TypeReg:
+			outFile, err := os.Create(destDir + header.Name)
+			if err != nil {
+				return fmt.Errorf("Create() failed: %s", err.Error())
+			}
+			if _, err := io.Copy(outFile, tarReader); err != nil {
+				return fmt.Errorf("Copy() failed: %s", err.Error())
+			}
+			outFile.Close()
+		default:
+			return fmt.Errorf("abort -- uknown type: %v in %v", header.Typeflag, header.Name)
+		}
+	}
+	return nil
+}
+
+func UnzipZip(src, destDir string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := r.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	os.MkdirAll(destDir, 0755)
+
+	// Closure to address file descriptors issue with all the deferred .Close() methods
+	extractAndWriteFile := func(f *zip.File) error {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if err := rc.Close(); err != nil {
+				panic(err)
+			}
+		}()
+
+		path := filepath.Join(destDir, f.Name)
+
+		// Check for ZipSlip (Directory traversal)
+		if !strings.HasPrefix(path, filepath.Clean(destDir)+string(os.PathSeparator)) {
+			return fmt.Errorf("illegal file path: %s", path)
+		}
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, f.Mode())
+		} else {
+			os.MkdirAll(filepath.Dir(path), f.Mode())
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+			defer func() {
+				if err := f.Close(); err != nil {
+					panic(err)
+				}
+			}()
+
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	for _, f := range r.File {
+		err := extractAndWriteFile(f)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func k8s_addItaApiIngressRule() error {
+	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, ig := range igs.Items {
+		if _, ok := ig.Annotations["haproxy.org/server-ssl"]; !ok {
+			if !ingressRuleAlreadyCreated(ig) {
+				retRootRule, err := findIngressRuleForRetRootPath(ig)
+				if err != nil {
+					return err
+				}
+				itaRule := retRootRule.DeepCopy()
+				itaRule.HTTP.Paths[0].Path = "/api/ita"
+				itaRule.HTTP.Paths[0].Backend.Service.Name = "ita"
+				itaRule.HTTP.Paths[0].Backend.Service.Port.Number = 6000
+				ig.Spec.Rules = append(ig.Spec.Rules, *itaRule)
+				newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), &ig, metav1.UpdateOptions{})
+				if err != nil {
+					Logger.Sugar().Errorf("failed to update ingress with itaRule: %v", err)
+				}
+				Logger.Sugar().Debugf("updated ingress: %v", newIg)
+			}
+			return nil
+		}
+	}
+
+	return errors.New("outdated arch -- did not find ingress without haproxy.org/server-ssl")
+}
+
+func ingressRuleAlreadyCreated(ig networkingv1.Ingress) bool {
+	for _, rule := range ig.Spec.Rules {
+		for _, path := range rule.HTTP.Paths {
+			if path.Backend.Service.Name == "ita" {
+				Logger.Sugar().Debugf("ingressRuleAlreadyCreated: %v", rule)
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func findIngressRuleForRetRootPath(ig networkingv1.Ingress) (networkingv1.IngressRule, error) {
+	for _, rule := range ig.Spec.Rules {
+		if rule.HTTP.Paths[0].Path == "/" && rule.HTTP.Paths[0].Backend.Service.Name == "ret" {
+			return rule, nil
+		}
+	}
+	return networkingv1.IngressRule{}, errors.New("findIngressRuleForRetRootPath: not found")
+
 }

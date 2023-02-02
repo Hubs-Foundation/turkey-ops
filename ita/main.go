@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"main/internal"
 	"net/http"
 	"time"
@@ -39,28 +38,65 @@ func main() {
 	//#############################################
 
 	router := http.NewServeMux()
-	//legacy ita endpoints
+	//legacy(dummy) ita endpoints
 	router.Handle("/admin-info", internal.Ita_admin_info)
 	router.Handle("/configs/reticulum/ps", internal.Ita_cfg_ret_ps)
+	//public api endpoints
+	router.Handle("/z/meta/cluster-ips", internal.ClusterIps)
+	router.Handle("/z/meta/cluster-ips/list", internal.ClusterIpsList)
+
 	//turkeyUpdater endpoints
 	router.Handle("/updater", internal.Updater)
 	//utility endpoints
-	router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
+	// router.Handle("/zaplvl", privateEndpoint("dev")(internal.Atom))
+	router.Handle("/zaplvl", internal.Atom)
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
-	//public endpoints
-	router.Handle("/z/meta/cluster-ips", internal.ClusterIps)
-	router.Handle("/z/meta/cluster-ips/list", internal.ClusterIpsList)
+	//private api endpoints
+	router.Handle("/upload", internal.Upload)
+	router.Handle("/deploy/hubs", internal.DeployHubs)
+	router.Handle("/undeploy/hubs", internal.UndeployHubs)
+	//turkeyauth protected public api endpoints
+	router.Handle("/api/ita/upload", chk_hat_hdr()(internal.Upload))
+	router.Handle("/api/ita/deploy/hubs", chk_hat_hdr()(internal.DeployHubs))
+	router.Handle("/api/ita/undeploy/hubs", chk_hat_hdr()(internal.UndeployHubs))
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
 
 }
 
-func privateEndpoint(requiredRole string) func(http.Handler) http.Handler {
+//check turkeyauthtoken header
+func chk_hat_hdr() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println("~~~~~~~~~~~privateEndpoint~~~~~~~~~~~")
+			internal.Logger.Debug("~~~~~~~~~~~chk_TatHdr~~~~~~~~~~~")
+			token := r.Header.Get("turkeyauthtoken")
+			if token == "" {
+				internal.Logger.Debug("reject -- no token")
+				// internal.Handle_NotFound(w, r)
+				http.NotFound(w, r)
+				return
+			}
+			resp, err := http.Get("http://turkeyauth.turkey-services:9001/chk_token?token=" + token)
+			if err != nil {
+				internal.Logger.Sugar().Debugf("reject -- err@chk_token: %v", err)
+				internal.Handle_NotFound(w, r)
+				return
+			} else if resp.StatusCode != http.StatusOK {
+				internal.Logger.Sugar().Debugf("reject -- bad resp.StatusCode: %v", resp.StatusCode)
+				internal.Handle_NotFound(w, r)
+				return
+			}
+			email := resp.Header.Get("verified-UserEmail")
+			rootUserEmail := internal.GetCfg().RootUserEmail
+			internal.Logger.Sugar().Debugf("verified-UserEmail: %v, rootUserEmail: %v", resp.StatusCode, rootUserEmail)
+			if email != rootUserEmail {
+				internal.Logger.Sugar().Debugf("reject -- bad verified-UserEmail -- has: %v, need: %v", email, rootUserEmail)
+				internal.Handle_NotFound(w, r)
+				return
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}
