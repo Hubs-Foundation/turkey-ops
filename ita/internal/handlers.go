@@ -191,23 +191,23 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "POST" {
-		_, report, err := receiveFileFromReq(r, -1)
+		_, err := receiveFileFromReq(r, -1)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		reqId := w.Header().Get("X-Request-Id")
-		fmt.Fprintf(w, "received [reqId: %v]:\n %v", reqId, report)
+		fmt.Fprintf(w, "done, reqId: %v", reqId)
 	}
 
 })
 
 //curl -X POST -F file='@<path-to-file-ie-/tmp/file1>' ita:6000/upload
-func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, string, error) {
+func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, error) {
 
 	// 32 MB
 	if err := r.ParseMultipartForm(32 << 20); err != nil {
 		// http.Error(w, err.Error(), http.StatusBadRequest)
-		return nil, "", err
+		return nil, err
 	}
 
 	Logger.Sugar().Debugf("r.MultipartForm.File: %v", r.MultipartForm.File)
@@ -215,7 +215,7 @@ func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, strin
 	files := r.MultipartForm.File["file"]
 
 	if expectedFileCount != -1 && len(files) != expectedFileCount {
-		return nil, "", errors.New("unexpected file count")
+		return nil, errors.New("unexpected file count")
 	}
 
 	result := []string{}
@@ -279,7 +279,8 @@ func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, strin
 		result = append(result, fileHeader.Filename)
 	}
 
-	return result, report, nil
+	Logger.Sugar().Debugf("report: %v", report)
+	return result, nil
 }
 
 //curl -X PATCH ita:6000/deploy/hubs?file=<name-of-the-file-under-/storage/ita-uploads>
@@ -307,12 +308,7 @@ var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		// if len(r.URL.Query()["file"]) != 1 || r.URL.Query()["file"][0] == "" {
-		// 	http.Error(w, "missing: file", http.StatusBadRequest)
-		// 	return
-		// }
-		// fileName := r.URL.Query()["file"][0]
-		files, report, err := receiveFileFromReq(r, 1)
+		files, err := receiveFileFromReq(r, 1)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -324,8 +320,7 @@ var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		report += "deployed: " + files[0]
-		fmt.Fprintf(w, "done [reqId: %v]:\n %v", reqId, report)
+		fmt.Fprintf(w, "done, reqId: %v", reqId)
 		return
 	}
 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
