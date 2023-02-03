@@ -140,14 +140,14 @@ func waitRetCcu() error {
 }
 
 func k8s_waitForDeployment(d *appsv1.Deployment, timeout time.Duration) (*appsv1.Deployment, error) {
-	timeoutSec := timeout
+
 	wait := 5 * time.Second
 	for k8s_isDeploymentRunning(d) {
 		Logger.Sugar().Debugf("waiting for %v -- currently: Replicas=%v, Available=%v, Ready=%v, Updated=%v",
 			d.Name, d.Status.Replicas, d.Status.AvailableReplicas, d.Status.ReadyReplicas, d.Status.UpdatedReplicas)
 		time.Sleep(wait)
-		timeoutSec -= wait
-		if timeoutSec < 0 {
+		timeout -= wait
+		if timeout < 0 {
 			return d, errors.New("timeout while waiting for deployment <" + d.Name + ">")
 		}
 	}
@@ -166,20 +166,20 @@ func k8s_isDeploymentRunning(d *appsv1.Deployment) bool {
 }
 
 func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
-	timeoutSec := timeout
+
 	wait := 5 * time.Second
 	for _, pod := range pods.Items {
 		podStatusPhase := pod.Status.Phase
 		for podStatusPhase == corev1.PodPending {
 			Logger.Sugar().Debugf("waiting for pending pod %v / %v", pod.Namespace, pod.Name)
 			time.Sleep(wait)
-			timeoutSec -= wait
+			timeout -= wait
 			pod, err := cfg.K8sClientSet.CoreV1().Pods(pod.Namespace).Get(context.Background(), pod.Name, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 			podStatusPhase = pod.Status.Phase
-			if timeoutSec < 0*time.Second {
+			if timeout < 0*time.Second {
 				return errors.New("timeout while waiting for pod: " + pod.Name + " in ns: " + pod.Namespace)
 			}
 		}
@@ -194,6 +194,7 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 	if err != nil {
 		return err
 	}
+	k8s_waitForDeployment(d_target, 300*time.Second)
 
 	if len(d_target.Spec.Template.Spec.Containers) > 1 {
 		return errors.New("this won't work because d_target.Spec.Template.Spec.Containers != 1")
