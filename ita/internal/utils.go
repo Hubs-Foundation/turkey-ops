@@ -194,10 +194,10 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 	if err != nil {
 		return err
 	}
-	d_target, err = k8s_waitForDeployment(d_target, 2*time.Minute)
-	if err != nil {
-		return err
-	}
+	// d_target, err = k8s_waitForDeployment(d_target, 2*time.Minute)
+	// if err != nil {
+	// 	return err
+	// }
 
 	if len(d_target.Spec.Template.Spec.Containers) > 1 {
 		return errors.New("this won't work because d_target.Spec.Template.Spec.Containers != 1")
