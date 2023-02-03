@@ -133,3 +133,5 @@ for ns in ${CP_TO_NS//,/ }; do save_cert $CERT_NAME $ns; done
 # if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 
 if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 36000; fi
+
+sleep 7200
