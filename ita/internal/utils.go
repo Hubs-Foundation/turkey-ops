@@ -152,6 +152,8 @@ func k8s_waitForDeployment(d *appsv1.Deployment, timeout time.Duration) (*appsv1
 		}
 	}
 	time.Sleep(wait) // time for k8s master services to sync, should be more than enough, or we'll get pending pods stuck forever
+	//return refreshed deployment
+	d, _ = cfg.K8sClientSet.AppsV1().Deployments(d.Namespace).Get(context.Background(), d.Name, metav1.GetOptions{})
 	return d, nil
 }
 
@@ -194,10 +196,10 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 	if err != nil {
 		return err
 	}
-	// d_target, err = k8s_waitForDeployment(d_target, 2*time.Minute)
-	// if err != nil {
-	// 	return err
-	// }
+	d_target, err = k8s_waitForDeployment(d_target, 2*time.Minute)
+	if err != nil {
+		return err
+	}
 
 	if len(d_target.Spec.Template.Spec.Containers) > 1 {
 		return errors.New("this won't work because d_target.Spec.Template.Spec.Containers != 1")
