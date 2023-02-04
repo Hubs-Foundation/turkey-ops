@@ -1,28 +1,28 @@
 
 function need_new_cert(){    
-    if kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
-    ls -lha tls*
-    if grep -q "$DOMAIN" <<< "$(openssl x509 -noout -subject -in tls.crt)"; then echo "bad cert CN -- need new cert"; return 0; fi
-    # 3888000 sec == 45 days
-    if openssl x509 -checkend 3888000 -noout -in tls.crt; then echo "expiring -- need new cert";return 0; else return 1; fi
+  if kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
+  ls -lha tls*
+  if grep -q "$DOMAIN" <<< "$(openssl x509 -noout -subject -in tls.crt)"; then echo "bad cert CN -- need new cert"; return 0; fi
+  # 3888000 sec == 45 days
+  if openssl x509 -checkend 3888000 -noout -in tls.crt; then echo "expiring -- need new cert";return 0; else return 1; fi
 }
 
 function get_new_cert_dns(){
-    echo "get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
-    # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
-    certbot certonly --non-interactive --agree-tos --register-unsafely-without-email \
-        --dns-$CHALLENGE --dns-$CHALLENGE-propagation-seconds 300 \
-        --debug-challenges \
-        -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d \*.assets.$DOMAIN -d \*.cors.$DOMAIN\
-        -d $HUB_DOMAIN -d \*.$HUB_DOMAIN -d \*.stream.$HUB_DOMAIN -d \*.assets.$HUB_DOMAIN -d \*.cors.$HUB_DOMAIN
+  echo "get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
+  # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
+  certbot certonly --non-interactive --agree-tos --register-unsafely-without-email \
+      --dns-$CHALLENGE --dns-$CHALLENGE-propagation-seconds 300 \
+      --debug-challenges \
+      -d $DOMAIN -d \*.$DOMAIN -d \*.stream.$DOMAIN -d \*.assets.$DOMAIN -d \*.cors.$DOMAIN\
+      -d $HUB_DOMAIN -d \*.$HUB_DOMAIN -d \*.stream.$HUB_DOMAIN -d \*.assets.$HUB_DOMAIN -d \*.cors.$HUB_DOMAIN
 }
 
 function get_new_cert_http(){
-    echo "get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
-    echo "start nginx and wait 120 sec for ingress to pick up the pod" && nginx && sleep 120
-    # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
-    echo "deploy certbot-http ingress and service for http challenge"
-CERTBOTING=$(cat <<EOF
+  echo "get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
+  echo "start nginx and wait 120 sec for ingress to pick up the pod" && nginx && sleep 120
+  # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
+  echo "deploy certbot-http ingress and service for http challenge"
+  CERTBOTING=$(cat <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -57,42 +57,41 @@ spec:
               number: 80
 EOF
 )
-echo "${CERTBOTING}"|kubectl apply -f -
+  echo "${CERTBOTING}"|kubectl apply -f -
+  certbot certonly --non-interactive --agree-tos --register-unsafely-without-email --preferred-challenges http --nginx -d $DOMAIN
+  
+  if [ "$?" -ne 0 ]; then
+    echo "try #1 failed, retry in 300 sec ..." && sleep 300
+    certbot --register-unsafely-without-email certonly --non-interactive --agree-tos --preferred-challenges http --nginx -d $DOMAIN
+  fi
 
-    certbot certonly --non-interactive --agree-tos --register-unsafely-without-email --preferred-challenges http --nginx -d $DOMAIN
-    
-    if [ "$?" -ne 0 ]; then
-      echo "try #1 failed, retry in 300 sec ..." && sleep 300
-      certbot --register-unsafely-without-email certonly --non-interactive --agree-tos --preferred-challenges http --nginx -d $DOMAIN
-    fi
-
-    echo "destroy certbot-http ingress and service for http challenge"
-echo "${CERTBOTING}"|kubectl delete -f -
+  echo "destroy certbot-http ingress and service for http challenge"
+  echo "${CERTBOTING}"|kubectl delete -f -
 }
 
 function get_kubectl(){
-    echo "getting kubectl"
-    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-    chmod +x ./kubectl && mv ./kubectl /usr/local/bin
+  # echo "getting kubectl"
+  # curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+  # chmod +x ./kubectl && mv ./kubectl /usr/local/bin
 
-    echo "making in-cluster config for kubectl"
-    kubectl config set-cluster the-cluster --server="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}" --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    kubectl config set-credentials pod-token --token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
-    kubectl config set-context pod-context --cluster=the-cluster --user=pod-token
-    kubectl config use-context pod-context
+  echo "making in-cluster config for kubectl"
+  kubectl config set-cluster the-cluster --server="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}" --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  kubectl config set-credentials pod-token --token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+  kubectl config set-context pod-context --cluster=the-cluster --user=pod-token
+  kubectl config use-context pod-context
 }
 
 function save_cert(){
-    name=$1
-    ns=$2
-    echo "saving cert: <$name> to namespace: <$ns>"
-    kubectl -n $ns create secret tls $name \
-        --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
-        --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
-        --save-config --dry-run=client -o yaml | kubectl apply -f -
-    echo "new cert: "
-    kubectl -n $ns describe secret $name
-    kubectl -n $ns get secret $name -o yaml
+  name=$1
+  ns=$2
+  echo "saving cert: <$name> to namespace: <$ns>"
+  kubectl -n $ns create secret tls $name \
+      --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
+      --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
+      --save-config --dry-run=client -o yaml | kubectl apply -f -
+  echo "new cert: "
+  kubectl -n $ns describe secret $name
+  # kubectl -n $ns get secret $name -o yaml
 }
 
 ### preps
@@ -109,6 +108,14 @@ echo "CHALLENGE=$CHALLENGE"
 echo "CERTBOT_EMAIL=$CERTBOT_EMAIL"
 echo "CERT_NAME=$CERT_NAME"
 echo "CP_TO_NS=$CP_TO_NS"
+echo "LETSENCRYPT_ACCOUNT=$LETSENCRYPT_ACCOUNT"
+
+if ! [ -z $LETSENCRYPT_ACCOUNT ]; then 
+  acctDir="/etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/"
+  mkdir -p $acctDir
+  echo $LETSENCRYPT_ACCOUNT | base64 -d > acct.tar.gz && tar -xf acct.tar.gz -C $acctDir
+  tree $acctDir
+fi
 
 ### steps
 get_kubectl
@@ -132,6 +139,14 @@ for ns in ${CP_TO_NS//,/ }; do save_cert $CERT_NAME $ns; done
 
 # if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 
+if [ -z $LETSENCRYPT_ACCOUNT ]; then 
+  cd /etc/letsencrypt/accounts/acme*/directory/ && tar -czvf acct.tar.gz
+  acct=$(cat acct.tar.gz|base64)
+  echo "reporting new letsencrypt account back to ita: $acct"
+  curl -H "letsencrypt-account:$acct" http://ita:6000/certbotbot
+fi
+
 if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 36000; fi
 
-sleep 7200
+# letsencrypt_acct=$(cat /etc/letsencrypt/accounts/acme*/directory/*/regr.json | jq '.uri')
+sleep 360000
