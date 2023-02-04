@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var Logger *zap.Logger
@@ -484,4 +485,17 @@ func findIngressRuleForRetRootPath(ig networkingv1.Ingress) (networkingv1.Ingres
 	}
 	return networkingv1.IngressRule{}, errors.New("findIngressRuleForRetRootPath: not found")
 
+}
+
+func pickLetsencryptAccountForHubId() string {
+	accts, err := cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", v1.GetOptions{})
+	if err != nil {
+		return ""
+	}
+
+	for _, v := range accts.Data {
+		return v
+
+	}
+	return ""
 }
