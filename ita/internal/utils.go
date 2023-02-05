@@ -522,10 +522,12 @@ func ret_AddSecondaryUrl(url string) error {
 
 	retCm.Data["config.toml.template"] = strings.Replace(
 		retCm.Data["config.toml.template"],
-		`[ret."Elixir.RetWeb.Endpoint".secondary_url]`,
 		`[ret."Elixir.RetWeb.Endpoint".secondary_url]
-		host = "`+url+`"
-		`, 1)
+
+[`,
+		`[ret."Elixir.RetWeb.Endpoint".secondary_url]
+host = "`+url+`"
+[`, 1)
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
 
 	return err
