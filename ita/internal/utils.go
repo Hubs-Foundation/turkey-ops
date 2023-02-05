@@ -513,21 +513,22 @@ func pickLetsencryptAccountForHubId() string {
 
 func ret_AddSecondaryUrl(url string) error {
 
-	cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
+	retCm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	Logger.Debug(`cm.Data["config.toml.template"]~~~~~~` + cm.Data["config.toml.template"])
+	Logger.Debug(`cm.Data["config.toml.template"]~~~~~~` + retCm.Data["config.toml.template"])
 
-	cm.Data["config.toml.template"] = strings.Replace(
-		cm.Data["config.toml.template"],
+	retCm.Data["config.toml.template"] = strings.Replace(
+		retCm.Data["config.toml.template"],
 		`[ret."Elixir.RetWeb.Endpoint".secondary_url]`,
 		`[ret."Elixir.RetWeb.Endpoint".secondary_url]
 		host = "`+url+`"
 		`, 1)
+	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
 
-	return nil
+	return err
 }
 
 func runCertbotbotpod(letsencryptAcct string) error {
