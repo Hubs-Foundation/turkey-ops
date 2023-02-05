@@ -133,11 +133,11 @@ func MakeCfg() {
 	}
 
 	if cfg.Features.updater {
-		cfg.Channel, err = Get_listeningChannelLabel()
+		cfg.Channel, err = Deployment_getLabel("CHANNEL")
 		if err != nil {
 			Logger.Warn("Get_listeningChannelLabel failed: " + err.Error())
 			cfg.Channel = "unset"
-			err := Set_listeningChannelLabel("unset")
+			err := Deployment_setLabel("CHANNEL", "unset")
 			if err != nil {
 				Logger.Error("Set_listeningChannelLabel failed: " + err.Error())
 			}

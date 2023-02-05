@@ -82,7 +82,7 @@ var Updater = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// }
 
 		cfg.TurkeyUpdater.Start(channel)
-		Set_listeningChannelLabel(channel) //persist to k8s-deployment-label to recover across pod reboot
+		Deployment_setLabel("CHANNEL", channel) //persist to k8s-deployment-label to recover across pod reboot
 
 		w.WriteHeader(200)
 		return

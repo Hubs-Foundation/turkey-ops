@@ -17,7 +17,7 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "bad customDomain: "+customDomain, http.StatusBadRequest)
 			return
 		}
-		err := NS_setLabel("custom-domain", customDomain)
+		err := Deployment_setLabel("custom-domain", customDomain)
 		if err != nil {
 			Logger.Error("failed to set custom-domain label on NS: " + err.Error())
 			http.Error(w, "failed to set customDomain to NS: "+err.Error(), http.StatusInternalServerError)
