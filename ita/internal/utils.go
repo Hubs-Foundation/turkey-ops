@@ -517,7 +517,10 @@ func ret_AddSecondaryUrl(url string) error {
 	if err != nil {
 		return err
 	}
-	strings.Replace(
+
+	Logger.Debug(`cm.Data["config.toml.template"]~~~~~~` + cm.Data["config.toml.template"])
+
+	cm.Data["config.toml.template"] = strings.Replace(
 		cm.Data["config.toml.template"],
 		`[ret."Elixir.RetWeb.Endpoint".secondary_url]`,
 		`[ret."Elixir.RetWeb.Endpoint".secondary_url]
