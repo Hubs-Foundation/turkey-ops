@@ -37,6 +37,7 @@ type Config struct {
 
 	Features      itaFeatures
 	RootUserEmail string
+	CustomDomain  string
 }
 
 func GetCfg() *Config {
@@ -96,6 +97,7 @@ func MakeCfg() {
 
 	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
 	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
+	cfg.CustomDomain, _ = NS_getLabel("custom-domain")
 
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {

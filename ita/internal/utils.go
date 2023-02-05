@@ -23,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var Logger *zap.Logger
@@ -76,7 +75,19 @@ func Set_listeningChannelLabel(channel string) error {
 	return nil
 }
 
-func Get_fromNsLabel(key string) (string, error) {
+func NS_setLabel(key, val string) error {
+	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ns.Labels[key] = val
+
+	_, err = cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+
+	return err
+}
+
+func NS_getLabel(key string) (string, error) {
 	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -488,7 +499,7 @@ func findIngressRuleForRetRootPath(ig networkingv1.Ingress) (networkingv1.Ingres
 }
 
 func pickLetsencryptAccountForHubId() string {
-	accts, err := cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", v1.GetOptions{})
+	accts, err := cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", metav1.GetOptions{})
 	if err != nil {
 		return ""
 	}
@@ -498,4 +509,55 @@ func pickLetsencryptAccountForHubId() string {
 
 	}
 	return ""
+}
+
+func ret_AddSecondaryUrl(url string) error {
+
+	cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	strings.Replace(
+		cm.Data["config.toml.template"],
+		`[ret."Elixir.RetWeb.Endpoint".secondary_url]`,
+		`[ret."Elixir.RetWeb.Endpoint".secondary_url]
+		host = "`+url+`"
+		`, 1)
+
+	return nil
+}
+
+func runCertbotbotpod(letsencryptAcct string) error {
+
+	customDomain := cfg.CustomDomain
+	if customDomain == "" {
+		customDomain, _ = NS_getLabel("custom_domain")
+	}
+
+	_, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Create(
+		context.Background(),
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("certbotbot-%v", time.Now().Unix()),
+				Namespace: cfg.PodNS,
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  "certbotbot",
+						Image: "mozillareality/certbotbot-http",
+						Env: []corev1.EnvVar{
+							{Name: "DOMAIN", Value: customDomain},
+							{Name: "NAMESPACE", Value: cfg.PodNS},
+							{Name: "LETSENCRYPT_ACCOUNT", Value: letsencryptAcct},
+						},
+					},
+				},
+			},
+		},
+		metav1.CreateOptions{},
+	)
+
+	return err
+
 }
