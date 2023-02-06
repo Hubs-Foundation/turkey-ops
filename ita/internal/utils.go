@@ -488,7 +488,7 @@ func ingress_addCustomDomainRule(customDomain string) error {
 		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
 		return err
 	}
-	if ingressRuleAlreadyCreated_byBackendServiceName(ig, "ita") { // ingressRuleAlreadyCreated
+	if ingressRuleAlreadyCreated_byBackendHost(ig, customDomain) { // ingressRuleAlreadyCreated
 		return nil
 	}
 	customDomainRule := retRootRule.DeepCopy()
@@ -521,6 +521,15 @@ func ingressRuleAlreadyCreated_byBackendServiceName(ig *networkingv1.Ingress, ba
 				Logger.Sugar().Debugf("ingressRuleAlreadyCreated: %v", rule)
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func ingressRuleAlreadyCreated_byBackendHost(ig *networkingv1.Ingress, host string) bool {
+	for _, rule := range ig.Spec.Rules {
+		if rule.Host == host {
+			return true
 		}
 	}
 	return false
