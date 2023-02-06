@@ -592,12 +592,13 @@ func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("certbotbot-%v", time.Now().Unix()),
 				Namespace: cfg.PodNS,
+				Labels:    map[string]string{"app": "certbotbot-http"},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
 						Name:  "certbotbot",
-						Image: "mozillareality/certbotbot_http:17",
+						Image: "mozillareality/certbotbot_http:18",
 						Env: []corev1.EnvVar{
 							{Name: "DOMAIN", Value: customDomain},
 							{Name: "NAMESPACE", Value: cfg.PodNS},
