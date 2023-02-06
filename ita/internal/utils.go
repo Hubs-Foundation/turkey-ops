@@ -616,8 +616,10 @@ func runCertbotbotpod(letsencryptAcct string) error {
 
 }
 
-func refreshPods() error {
-	pods, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+func killPods(labelSelector string) error {
+	pods, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
 	if err != nil {
 		return err
 	}

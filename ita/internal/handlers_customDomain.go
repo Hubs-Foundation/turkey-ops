@@ -47,7 +47,17 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		//
 
 		//refresh pods
-		refreshPods()
+		err = killPods("app=ita")
+		if err != nil {
+			http.Error(w, "failed to refresh ita pods: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = killPods("app=reticulum")
+		if err != nil {
+			http.Error(w, "failed to refresh reticulum pods: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "done")

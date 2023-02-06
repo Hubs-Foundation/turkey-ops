@@ -115,7 +115,7 @@ func MakeCfg() {
 
 	Logger.Sugar().Infof("cfg.Features: %+v", cfg.Features)
 
-	if cfg.Features.customDomain {
+	if cfg.Features.customClient {
 		err = ingress_addItaApiRule()
 		if err != nil {
 			Logger.Error(err.Error())
@@ -158,6 +158,8 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+///////////////////////////////////////////////////////////
+
 type itaFeatures struct {
 	updater      bool
 	customDomain bool
@@ -191,5 +193,4 @@ func (cfg *Config) setFeatures() {
 	if customDomain != "" {
 		cfg.Features.customClient = true
 	}
-
 }
