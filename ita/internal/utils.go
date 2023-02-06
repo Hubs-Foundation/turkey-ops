@@ -584,7 +584,7 @@ func runCertbotbotpod(letsencryptAcct string) error {
 
 	customDomain := cfg.CustomDomain
 	if customDomain == "" {
-		customDomain, _ = NS_getLabel("custom_domain")
+		customDomain, _ = Deployment_getLabel("custom_domain")
 	}
 
 	_, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Create(
@@ -598,7 +598,7 @@ func runCertbotbotpod(letsencryptAcct string) error {
 				Containers: []corev1.Container{
 					{
 						Name:  "certbotbot",
-						Image: "mozillareality/certbotbot_http",
+						Image: "mozillareality/certbotbot_http:17",
 						Env: []corev1.EnvVar{
 							{Name: "DOMAIN", Value: customDomain},
 							{Name: "NAMESPACE", Value: cfg.PodNS},
@@ -606,6 +606,7 @@ func runCertbotbotpod(letsencryptAcct string) error {
 						},
 					},
 				},
+				ServiceAccountName: "ita-sa",
 			},
 		},
 		metav1.CreateOptions{},
