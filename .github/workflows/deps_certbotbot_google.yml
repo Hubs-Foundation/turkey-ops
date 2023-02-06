@@ -2,7 +2,7 @@
 name: certbotbot_google
 on:
   push:
-    branches: [ master ]
+    branches:
     paths:
     - 'deps/certbotbot/Dockerfile_google'
     - 'deps/certbotbot/entrypoint.sh'
