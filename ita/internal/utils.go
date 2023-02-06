@@ -580,9 +580,8 @@ host = "`+url+`"
 	return err
 }
 
-func runCertbotbotpod(letsencryptAcct string) error {
+func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 
-	customDomain := cfg.CustomDomain
 	if customDomain == "" {
 		customDomain, _ = Deployment_getLabel("custom_domain")
 	}

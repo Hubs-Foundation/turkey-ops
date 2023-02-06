@@ -30,9 +30,10 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
+		//certbotbot
 		letsencryptAcct := pickLetsencryptAccountForHubId()
 		Logger.Sugar().Debugf("letsencryptAcct: %v", letsencryptAcct)
-		err = runCertbotbotpod(letsencryptAcct)
+		err = runCertbotbotpod(letsencryptAcct, customDomain)
 		if err != nil {
 			http.Error(w, "failed @ runCertbotbotpod: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -75,7 +76,7 @@ var UpdateCert = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	letsencryptAcct := pickLetsencryptAccountForHubId()
 	Logger.Sugar().Debugf("letsencryptAcct: %v", letsencryptAcct)
-	err := runCertbotbotpod(letsencryptAcct)
+	err := runCertbotbotpod(letsencryptAcct, "")
 	if err != nil {
 		http.Error(w, "failed @ runCertbotbotpod: "+err.Error(), http.StatusInternalServerError)
 		return
