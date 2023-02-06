@@ -39,6 +39,11 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		}
 
 		//add ingress route
+		err = ingress_addCustomDomainRule(customDomain)
+		if err != nil {
+			http.Error(w, "failed @ ingress_addCustomDomainRule: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "done")

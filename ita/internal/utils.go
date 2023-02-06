@@ -556,7 +556,7 @@ func ret_AddSecondaryUrl(url string) error {
 		return err
 	}
 
-	Logger.Debug(`cm.Data["config.toml.template"]~~~~~~` + retCm.Data["config.toml.template"])
+	// Logger.Debug(`cm.Data["config.toml.template"]~~~~~~` + retCm.Data["config.toml.template"])
 
 	retCm.Data["config.toml.template"] = strings.Replace(
 		retCm.Data["config.toml.template"],
