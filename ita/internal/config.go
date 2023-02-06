@@ -116,7 +116,7 @@ func MakeCfg() {
 	Logger.Sugar().Infof("cfg.Features: %+v", cfg.Features)
 
 	if cfg.Features.customDomain {
-		err = k8s_addItaApiIngressRule()
+		err = ingress_addItaApiRule()
 		if err != nil {
 			Logger.Error(err.Error())
 		}

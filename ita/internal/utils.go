@@ -446,40 +446,78 @@ func UnzipZip(src, destDir string) error {
 	return nil
 }
 
-func k8s_addItaApiIngressRule() error {
+func ingress_addItaApiRule() error {
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	for _, ig := range igs.Items {
-		if _, ok := ig.Annotations["haproxy.org/server-ssl"]; !ok {
-			if !ingressRuleAlreadyCreated(ig) {
-				retRootRule, err := findIngressRuleForRetRootPath(ig)
-				if err != nil {
-					return err
-				}
-				itaRule := retRootRule.DeepCopy()
-				itaRule.HTTP.Paths[0].Path = "/api/ita"
-				itaRule.HTTP.Paths[0].Backend.Service.Name = "ita"
-				itaRule.HTTP.Paths[0].Backend.Service.Port.Number = 6000
-				ig.Spec.Rules = append(ig.Spec.Rules, *itaRule)
-				newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), &ig, metav1.UpdateOptions{})
-				if err != nil {
-					Logger.Sugar().Errorf("failed to update ingress with itaRule: %v", err)
-				}
-				Logger.Sugar().Debugf("updated ingress: %v", newIg)
-			}
-			return nil
+	ig, retRootRule, err := findIngressWithRetRootRule(&igs.Items)
+	if err != nil {
+		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
+		return err
+	}
+	if ingressRuleAlreadyCreated_byBackendServiceName(ig, "ita") { // ingressRuleAlreadyCreated
+		return nil
+	}
+
+	port := int32(6000)
+	if _, ok := ig.Annotations["haproxy.org/server-ssl"]; ok {
+		port = 6001
+	}
+	itaRule := retRootRule.DeepCopy()
+	itaRule.HTTP.Paths[0].Path = "/api/ita"
+	itaRule.HTTP.Paths[0].Backend.Service.Name = "ita"
+	itaRule.HTTP.Paths[0].Backend.Service.Port.Number = port
+	ig.Spec.Rules = append(ig.Spec.Rules, *itaRule)
+	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
+	if err != nil {
+		Logger.Sugar().Errorf("failed to update ingress with itaRule: %v", err)
+		return err
+	}
+	Logger.Sugar().Debugf("updated ingress: %v", newIg)
+	return nil
+}
+
+func ingress_addCustomDomainRule(customDomain string) error {
+	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	ig, retRootRule, err := findIngressWithRetRootRule(&igs.Items)
+	if err != nil {
+		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
+		return err
+	}
+	if ingressRuleAlreadyCreated_byBackendServiceName(ig, "ita") { // ingressRuleAlreadyCreated
+		return nil
+	}
+	customDomainRule := retRootRule.DeepCopy()
+	customDomainRule.Host = customDomain
+	ig.Spec.Rules = append(ig.Spec.Rules, *customDomainRule)
+	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
+	if err != nil {
+		Logger.Sugar().Errorf("failed to update ingress with customDomainRule: %v", err)
+		return err
+	}
+	Logger.Sugar().Debugf("updated ingress: %v", newIg)
+	return nil
+}
+func findIngressWithRetRootRule(igs *[]networkingv1.Ingress) (*networkingv1.Ingress, *networkingv1.IngressRule, error) {
+	for _, ig := range *igs {
+		retRootRule, err := findIngressRuleForRetRootPath(ig)
+		if err == nil {
+			return &ig, &retRootRule, nil
 		}
 	}
 
-	return errors.New("outdated arch -- did not find ingress without haproxy.org/server-ssl")
+	return nil, nil, errors.New("findIngressWithRetRootPath: not found")
+
 }
 
-func ingressRuleAlreadyCreated(ig networkingv1.Ingress) bool {
+func ingressRuleAlreadyCreated_byBackendServiceName(ig *networkingv1.Ingress, backendServiceName string) bool {
 	for _, rule := range ig.Spec.Rules {
 		for _, path := range rule.HTTP.Paths {
-			if path.Backend.Service.Name == "ita" {
+			if path.Backend.Service.Name == backendServiceName {
 				Logger.Sugar().Debugf("ingressRuleAlreadyCreated: %v", rule)
 				return true
 			}

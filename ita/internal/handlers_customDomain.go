@@ -38,6 +38,8 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
+		//add ingress route
+
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "done")
 	}
