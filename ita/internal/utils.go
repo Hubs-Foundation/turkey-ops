@@ -615,3 +615,18 @@ func runCertbotbotpod(letsencryptAcct string) error {
 	return err
 
 }
+
+func refreshPods() error {
+	pods, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, pod := range pods.Items {
+		err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("failed while deleting <%v> %v", pod.Name, err)
+		}
+	}
+
+	return nil
+}

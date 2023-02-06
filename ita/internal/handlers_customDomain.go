@@ -44,6 +44,10 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "failed @ ingress_addCustomDomainRule: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		//
+
+		//refresh pods
+		refreshPods()
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "done")

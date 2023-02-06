@@ -161,12 +161,14 @@ func getEnv(key, fallback string) string {
 type itaFeatures struct {
 	updater      bool
 	customDomain bool
+	customClient bool
 }
 
 func New_itaFeatures() itaFeatures {
 	return itaFeatures{
 		updater:      false,
 		customDomain: false,
+		customClient: false,
 	}
 }
 
@@ -176,12 +178,18 @@ func (cfg *Config) setFeatures() {
 	if _, noUpdates := os.LookupEnv("NO_UPDATES"); !noUpdates {
 		cfg.Features.updater = true
 	}
-	//custom-domain
+	//customDomain
 	if slices.Contains([]string{
 		"dev",
 		"test",
 	}, cfg.Tier) {
 		cfg.Features.customDomain = true
+	}
+
+	//customClient
+	customDomain, _ := Deployment_getLabel("custom-domain")
+	if customDomain != "" {
+		cfg.Features.customClient = true
 	}
 
 }
