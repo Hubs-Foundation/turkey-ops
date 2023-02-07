@@ -80,10 +80,6 @@ func MakeCfg() {
 	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
 
 	err := errors.New("dummy")
-	cfg.SubDomain, err = NS_getLabel("subdomain")
-	if err != nil {
-		Logger.Error("failed to get subdomain with NS_getLabel: " + err.Error())
-	}
 
 	cfg.HubDomain = getDomainFromOrch()
 	if cfg.HubDomain == "" {
@@ -108,6 +104,11 @@ func MakeCfg() {
 	cfg.K8sClientSet, err = kubernetes.NewForConfig(cfg.K8sCfg)
 	if err != nil {
 		Logger.Error(err.Error())
+	}
+
+	cfg.SubDomain, err = NS_getLabel("subdomain")
+	if err != nil {
+		Logger.Error("failed to get subdomain with NS_getLabel: " + err.Error())
 	}
 
 	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
