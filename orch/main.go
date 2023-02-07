@@ -41,8 +41,6 @@ func main() {
 
 	router.Handle("/snapshot", handlers.HC_snapshot)
 
-	router.Handle("/snapshot", handlers.HC_snapshot)
-
 	router.Handle("/hub_domain", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, internal.Cfg.HubDomain)
 	}))
