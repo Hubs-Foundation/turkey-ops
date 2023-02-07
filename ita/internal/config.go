@@ -88,7 +88,7 @@ func MakeCfg() {
 	if cfg.HubDomain == "" {
 		Logger.Error("failed to getDomainFromOrch")
 	}
-	Logger.Info("cfg.Domain: " + cfg.HubDomain)
+	Logger.Info("cfg.HubDomain: " + cfg.HubDomain)
 
 	Hostname, err := os.Hostname()
 	if err != nil {
