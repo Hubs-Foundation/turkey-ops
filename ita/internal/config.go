@@ -81,13 +81,14 @@ func MakeCfg() {
 
 	err := errors.New("dummy")
 
+	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
+	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:888")
+
 	cfg.HubDomain = getDomainFromOrch()
 	if cfg.HubDomain == "" {
 		Logger.Error("failed to getDomainFromOrch")
 	}
 	Logger.Info("cfg.Domain: " + cfg.HubDomain)
-	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
-	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:888")
 
 	Hostname, err := os.Hostname()
 	if err != nil {
