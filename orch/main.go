@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -39,6 +40,12 @@ func main() {
 	router.Handle("/tco_gcp", mozOnly()(handlers.TurkeyGcp))
 
 	router.Handle("/snapshot", handlers.HC_snapshot)
+
+	router.Handle("/snapshot", handlers.HC_snapshot)
+
+	router.Handle("/hub_domain", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, internal.Cfg.HubDomain)
+	}))
 
 	port, err := strconv.Atoi(internal.Cfg.Port)
 	if err != nil {

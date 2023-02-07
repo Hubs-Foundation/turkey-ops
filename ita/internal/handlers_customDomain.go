@@ -24,9 +24,9 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		err = ret_AddSecondaryUrl(customDomain)
+		err = setCustomDomain(customDomain)
 		if err != nil {
-			http.Error(w, "failed @ ret_AddSecondaryUrl: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -39,7 +39,7 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		//add ingress route
+		//add ingress route -- todo: replace it?
 		err = ingress_addCustomDomainRule(customDomain)
 		if err != nil {
 			http.Error(w, "failed @ ingress_addCustomDomainRule: "+err.Error(), http.StatusInternalServerError)

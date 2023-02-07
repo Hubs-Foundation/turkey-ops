@@ -558,24 +558,37 @@ func pickLetsencryptAccountForHubId() string {
 	return ""
 }
 
-func ret_AddSecondaryUrl(url string) error {
+func setCustomDomain(customDomain string) error {
 
+	//update ret config
 	retCm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-
-	// Logger.Debug(`cm.Data["config.toml.template"]~~~~~~` + retCm.Data["config.toml.template"])
-
-	retCm.Data["config.toml.template"] = strings.Replace(
-		retCm.Data["config.toml.template"],
-		`[ret."Elixir.RetWeb.Endpoint".secondary_url]
-
-[`,
-		`[ret."Elixir.RetWeb.Endpoint".secondary_url]
-host = "`+url+`"
-[`, 1)
+	retCm.Data["config.toml.template"] =
+		strings.Replace(
+			retCm.Data["config.toml.template"], "<SUB_DOMAIN>.<HUB_DOMAIN>", customDomain, 1)
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	//update hubs and spoke's env var
+
+	for _, appName := range []string{"hubs", "spoke"} {
+		d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), appName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		for i, env := range d.Spec.Template.Spec.Containers[0].Env {
+			d.Spec.Template.Spec.Containers[0].Env[i].Value =
+				strings.Replace(env.Value, cfg.SubDomain+"."+cfg.HubDomain, customDomain, -1)
+		}
+		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
 
 	return err
 }
@@ -598,7 +611,7 @@ func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 				Containers: []corev1.Container{
 					{
 						Name:  "certbotbot",
-						Image: "mozillareality/certbotbot_http:18",
+						Image: "mozillareality/certbotbot_http:18", //todo: <channel>-latest if channel's supported
 						Env: []corev1.EnvVar{
 							{Name: "DOMAIN", Value: customDomain},
 							{Name: "NAMESPACE", Value: cfg.PodNS},

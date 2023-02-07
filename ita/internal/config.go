@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"errors"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -16,7 +19,8 @@ var cfg *Config
 type Config struct {
 	PodNS             string
 	PodDeploymentName string
-	Domain            string //turkey domain
+	SubDomain         string
+	HubDomain         string
 	Tier              string
 	FreeTierIdleMax   time.Duration
 
@@ -74,9 +78,20 @@ func MakeCfg() {
 		cfg.Tier = "N/A"
 	}
 	Logger.Sugar().Infof("cfg.Tier: %v", cfg.Tier)
-	cfg.Domain = os.Getenv("DOMAIN")
+
+	err := errors.New("dummy")
+	cfg.SubDomain, err = NS_getLabel("subdomain")
+	if err != nil {
+		Logger.Error("failed to get subdomain with NS_getLabel: " + err.Error())
+	}
+
+	cfg.HubDomain = getDomainFromOrch()
+	if cfg.HubDomain == "" {
+		Logger.Error("failed to getDomainFromOrch")
+	}
+	Logger.Info("cfg.Domain: " + cfg.HubDomain)
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
-	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:889")
+	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:888")
 
 	Hostname, err := os.Hostname()
 	if err != nil {
@@ -193,4 +208,20 @@ func (cfg *Config) setFeatures() {
 	if customDomain != "" {
 		cfg.Features.customClient = true
 	}
+}
+
+/////////////////////////////////////////////////////////////
+
+func getDomainFromOrch() string {
+	resp, err := http.Get(cfg.turkeyorchHost + "/hub_domain")
+	if err != nil {
+		return ""
+	}
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ""
+	}
+	return string(respBytes)
+
 }

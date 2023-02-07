@@ -32,7 +32,7 @@ var Ita_admin_info = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 		"using_ses":            true,
 		"worker_domain":        "N/A",
 		"assets_domain":        "N/A",
-		"server_domain":        cfg.Domain,
+		"server_domain":        cfg.HubDomain,
 		"provider":             "N/A",
 	}
 	w.Header().Set("Content-Type", "application/json")
