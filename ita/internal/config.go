@@ -215,13 +215,15 @@ func (cfg *Config) setFeatures() {
 /////////////////////////////////////////////////////////////
 
 func getDomainFromOrch() string {
-	resp, err := http.Get(cfg.turkeyorchHost + "/hub_domain")
+	resp, err := http.Get("http://" + cfg.turkeyorchHost + "/hub_domain")
 	if err != nil {
+		Logger.Error("err@getDomainFromOrch: " + err.Error())
 		return ""
 	}
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		Logger.Error("err@getDomainFromOrch: " + err.Error())
 		return ""
 	}
 	return string(respBytes)
