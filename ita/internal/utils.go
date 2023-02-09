@@ -478,30 +478,6 @@ func ingress_addItaApiRule() error {
 	return nil
 }
 
-func ingress_addCustomDomainRule(customDomain string) error {
-	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	ig, retRootRule, err := findIngressWithRetRootRule(&igs.Items)
-	if err != nil {
-		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
-		return err
-	}
-	if ingressRuleAlreadyCreated_byBackendHost(ig, customDomain) { // ingressRuleAlreadyCreated
-		return nil
-	}
-	customDomainRule := retRootRule.DeepCopy()
-	customDomainRule.Host = customDomain
-	ig.Spec.Rules = append(ig.Spec.Rules, *customDomainRule)
-	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
-	if err != nil {
-		Logger.Sugar().Errorf("failed to update ingress with customDomainRule: %v", err)
-		return err
-	}
-	Logger.Sugar().Debugf("updated ingress: %v", newIg)
-	return nil
-}
 func findIngressWithRetRootRule(igs *[]networkingv1.Ingress) (*networkingv1.Ingress, *networkingv1.IngressRule, error) {
 	for _, ig := range *igs {
 		retRootRule, err := findIngressRuleForRetRootPath(ig)
@@ -558,41 +534,6 @@ func pickLetsencryptAccountForHubId() string {
 	return ""
 }
 
-func setCustomDomain(customDomain string) error {
-
-	//update ret config
-	retCm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	retCm.Data["config.toml.template"] =
-		strings.Replace(
-			retCm.Data["config.toml.template"], "<SUB_DOMAIN>.<HUB_DOMAIN>", customDomain, 1)
-	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
-
-	//update hubs and spoke's env var
-
-	for _, appName := range []string{"hubs", "spoke"} {
-		d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), appName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		for i, env := range d.Spec.Template.Spec.Containers[0].Env {
-			d.Spec.Template.Spec.Containers[0].Env[i].Value =
-				strings.Replace(env.Value, cfg.SubDomain+"."+cfg.HubDomain, customDomain, -1)
-		}
-		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
-		if err != nil {
-			return err
-		}
-	}
-
-	return err
-}
-
 func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 
 	if customDomain == "" {
@@ -616,6 +557,7 @@ func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 							{Name: "DOMAIN", Value: customDomain},
 							{Name: "NAMESPACE", Value: cfg.PodNS},
 							{Name: "LETSENCRYPT_ACCOUNT", Value: letsencryptAcct},
+							{Name: "CERT_NAME", Value: "cert_" + customDomain},
 						},
 					},
 				},

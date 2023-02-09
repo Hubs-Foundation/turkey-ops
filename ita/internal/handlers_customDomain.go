@@ -1,8 +1,13 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"strings"
+
+	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -24,12 +29,6 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		err = setCustomDomain(customDomain)
-		if err != nil {
-			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		//certbotbot
 		letsencryptAcct := pickLetsencryptAccountForHubId()
 		Logger.Sugar().Debugf("letsencryptAcct: %v", letsencryptAcct)
@@ -39,12 +38,12 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		//add ingress route -- todo: replace it?
-		err = ingress_addCustomDomainRule(customDomain)
+		err = setCustomDomain(customDomain)
 		if err != nil {
-			http.Error(w, "failed @ ingress_addCustomDomainRule: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		//
 
 		//refresh pods
@@ -97,4 +96,92 @@ func isCustomDomainGood(customDomain string) bool {
 	//nslookup?
 
 	return true
+}
+
+func setCustomDomain(customDomain string) error {
+
+	//update ret config
+	retCm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	retCm.Data["config.toml.template"] =
+		strings.Replace(
+			retCm.Data["config.toml.template"], "<SUB_DOMAIN>.<HUB_DOMAIN>", customDomain, 1)
+	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	//update hubs and spoke's env var
+	for _, appName := range []string{"hubs", "spoke"} {
+		d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), appName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		for i, env := range d.Spec.Template.Spec.Containers[0].Env {
+			d.Spec.Template.Spec.Containers[0].Env[i].Value =
+				strings.Replace(env.Value, cfg.SubDomain+"."+cfg.HubDomain, customDomain, -1)
+		}
+		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	//add ingress route -- todo: replace it?
+	err = ingress_addCustomDomainRule(customDomain)
+	if err != nil {
+		return err
+	}
+
+	err = ingress_updateHaproxyCors("https://" + customDomain)
+
+	return err
+}
+
+func ingress_addCustomDomainRule(customDomain string) error {
+	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	ig, retRootRule, err := findIngressWithRetRootRule(&igs.Items)
+	if err != nil {
+		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
+		return err
+	}
+	if ingressRuleAlreadyCreated_byBackendHost(ig, customDomain) { // ingressRuleAlreadyCreated
+		return nil
+	}
+	customDomainRule := retRootRule.DeepCopy()
+	customDomainRule.Host = customDomain
+	ig.Spec.Rules = append(ig.Spec.Rules, *customDomainRule)
+
+	ig.Spec.TLS = append(ig.Spec.TLS, networkingv1.IngressTLS{
+		Hosts:      []string{customDomain},
+		SecretName: "cert_" + customDomain,
+	})
+
+	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
+	if err != nil {
+		Logger.Sugar().Errorf("failed to update ingress with customDomainRule: %v", err)
+		return err
+	}
+	Logger.Sugar().Debugf("updated ingress: %v", newIg)
+	return nil
+}
+
+func ingress_updateHaproxyCors(origins string) error {
+	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, ig := range igs.Items {
+		ig.Annotations["haproxy.org/response-set-header"] = origins
+		_, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), &ig, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
