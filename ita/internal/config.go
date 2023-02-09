@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -39,7 +40,9 @@ type Config struct {
 
 	ExtraHealthchecks []string
 
-	Features      itaFeatures
+	_features   hubFeatures
+	mu_features sync.Mutex
+
 	RootUserEmail string
 	CustomDomain  string
 }
@@ -128,11 +131,11 @@ func MakeCfg() {
 	cfg.ExtraHealthchecks = strings.Split(os.Getenv("EXTRA_HEALTHCHECKS"), ",")
 
 	// features
-	cfg.setFeatures()
+	features := cfg.makeFeatures()
 
-	Logger.Sugar().Infof("cfg.Features: %+v", cfg.Features)
+	Logger.Sugar().Infof("cfg.Features: %+v", features)
 
-	if cfg.Features.customClient {
+	if features.customClient {
 		err = ingress_addItaApiRule()
 		if err != nil {
 			Logger.Error(err.Error())
@@ -149,7 +152,7 @@ func MakeCfg() {
 
 	}
 
-	if cfg.Features.updater {
+	if features.updater {
 		cfg.Channel, err = Deployment_getLabel("CHANNEL")
 		if err != nil {
 			Logger.Warn("Get_listeningChannelLabel failed: " + err.Error())
@@ -177,39 +180,52 @@ func getEnv(key, fallback string) string {
 
 ///////////////////////////////////////////////////////////
 
-type itaFeatures struct {
+type hubFeatures struct {
 	updater      bool
 	customDomain bool
 	customClient bool
 }
 
-func New_itaFeatures() itaFeatures {
-	return itaFeatures{
+func New_hubFeatures() hubFeatures {
+	return hubFeatures{
 		updater:      false,
 		customDomain: false,
 		customClient: false,
 	}
 }
 
-func (cfg *Config) setFeatures() {
-	cfg.Features = New_itaFeatures()
+func (c *Config) makeFeatures() hubFeatures {
+
+	c.mu_features.Lock()
+	defer c.mu_features.Unlock()
+
+	c._features = New_hubFeatures()
 	//turkey-updater
 	if _, noUpdates := os.LookupEnv("NO_UPDATES"); !noUpdates {
-		cfg.Features.updater = true
+		c._features.updater = true
 	}
 	//customDomain
 	if slices.Contains([]string{
 		"dev",
 		"test",
 	}, cfg.Tier) {
-		cfg.Features.customDomain = true
+		c._features.customDomain = true
 	}
 
 	//customClient
 	customDomain, _ := Deployment_getLabel("custom-domain")
 	if customDomain != "" {
-		cfg.Features.customClient = true
+		c._features.customClient = true
 	}
+
+	return c._features
+}
+
+func getFeatures(c *Config) hubFeatures {
+	c.mu_features.Lock()
+	defer c.mu_features.Unlock()
+
+	return c._features
 }
 
 /////////////////////////////////////////////////////////////
