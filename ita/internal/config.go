@@ -40,8 +40,7 @@ type Config struct {
 
 	ExtraHealthchecks []string
 
-	_features   hubFeatures
-	mu_features sync.Mutex
+	Features featureMan
 
 	RootUserEmail string
 	CustomDomain  string
@@ -131,14 +130,10 @@ func MakeCfg() {
 	cfg.ExtraHealthchecks = strings.Split(os.Getenv("EXTRA_HEALTHCHECKS"), ",")
 
 	// features
-	features := cfg.determineFeatures()
-	cfg.initFeatures()
-
-	Logger.Sugar().Infof("cfg.Features: %+v", features)
-
-	if features.updater {
-
-	}
+	cfg.Features = New_featureMan()
+	cfg.Features.determineFeatures()
+	Logger.Sugar().Infof("cfg.Features: %+v", cfg.Features.Get())
+	cfg.Features.setupFeatures()
 
 }
 
@@ -151,56 +146,73 @@ func getEnv(key, fallback string) string {
 
 ///////////////////////////////////////////////////////////
 
+type featureMan struct {
+	_features hubFeatures
+	mu        sync.Mutex
+}
+
 type hubFeatures struct {
 	updater      bool
 	customDomain bool
 	customClient bool
 }
 
-func New_hubFeatures() hubFeatures {
-	return hubFeatures{
-		updater:      false,
-		customDomain: false,
-		customClient: false,
+func New_featureMan() featureMan {
+	return featureMan{
+		_features: hubFeatures{
+			updater:      false,
+			customDomain: false,
+			customClient: false,
+		},
 	}
 }
 
-func (c *Config) determineFeatures() hubFeatures {
+func (fm *featureMan) Get() hubFeatures {
+	fm.mu.Lock()
+	defer fm.mu.Unlock()
+	return fm._features
+}
 
-	c.mu_features.Lock()
-	defer c.mu_features.Unlock()
-
-	c._features = New_hubFeatures()
+func (fm *featureMan) determineFeatures() {
+	fm.mu.Lock()
+	defer fm.mu.Unlock()
 
 	if slices.Contains([]string{"dev", "test"}, cfg.Tier) {
-		c._features.updater = true
-		c._features.customDomain = true
-		c._features.customClient = true
-		return c._features
+		fm._features.updater = true
+		fm._features.customDomain = true
+		fm._features.customClient = true
+		return
 	}
 
 	if _, noUpdates := os.LookupEnv("NO_UPDATES"); !noUpdates {
-		c._features.updater = true
+		fm._features.updater = true
 
 	}
 
 	if slices.Contains([]string{"pro", "business"}, cfg.Tier) {
-		c._features.customDomain = true
+		fm._features.customDomain = true
 	}
 
 	customDomain, _ := Deployment_getLabel("custom-domain")
 	if customDomain != "" {
-		c._features.customClient = true
+		fm._features.customClient = true
 	}
-
-	return c._features
 }
 
-func (c *Config) initFeatures() {
-	c.mu_features.Lock()
-	defer c.mu_features.Unlock()
+func (fm *featureMan) enableCustomClient() {
+	fm.mu.Lock()
+	defer fm.mu.Unlock()
 
-	if c._features.updater {
+	fm._features.customClient = true
+}
+
+func (fm *featureMan) setupFeatures() {
+	fm.mu.Lock()
+	defer fm.mu.Unlock()
+
+	Logger.Sugar().Infof("initFeatures -- cfg.Features: %+v", fm._features)
+
+	if fm._features.updater {
 		cfg.TurkeyUpdater = NewTurkeyUpdater()
 		err := cfg.TurkeyUpdater.Start()
 		if err != nil {
@@ -208,7 +220,7 @@ func (c *Config) initFeatures() {
 		}
 	}
 
-	if c._features.customClient {
+	if fm._features.customClient {
 		err := ingress_addItaApiRule()
 		if err != nil {
 			Logger.Error(err.Error())
@@ -218,13 +230,6 @@ func (c *Config) initFeatures() {
 			Logger.Error(err.Error())
 		}
 	}
-}
-
-func getFeatures(c *Config) hubFeatures {
-	c.mu_features.Lock()
-	defer c.mu_features.Unlock()
-
-	return c._features
 }
 
 /////////////////////////////////////////////////////////////

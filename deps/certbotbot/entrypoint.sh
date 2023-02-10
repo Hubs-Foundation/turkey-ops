@@ -1,5 +1,6 @@
 
 function need_new_cert(){    
+  kubectl -n $NAMESPACE get secret
   if kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
   ls -lha tls*
   if grep -q "$DOMAIN" <<< "$(openssl x509 -noout -subject -in tls.crt)"; then echo "bad cert CN -- need new cert"; return 0; fi
@@ -82,6 +83,9 @@ function get_kubectl(){
   kubectl config set-credentials pod-token --token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
   kubectl config set-context pod-context --cluster=the-cluster --user=pod-token
   kubectl config use-context pod-context
+
+  sleep 30
+
 }
 
 function save_cert(){

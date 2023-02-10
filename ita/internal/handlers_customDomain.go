@@ -54,16 +54,12 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		// err = killPods("app=ita")
-		// if err != nil {
-		// 	http.Error(w, "failed to refresh ita pods: "+err.Error(), http.StatusInternalServerError)
-		// 	return
-		// }
-		//update features
-		cfg.determineFeatures()
-		defer cfg.initFeatures()
-
 		err = Deployment_setLabel("custom-domain", toDomain)
+
+		//update features
+		cfg.Features.enableCustomClient()
+		defer cfg.Features.setupFeatures()
+
 		if err != nil {
 			Logger.Error("failed to set custom-domain label on NS: " + err.Error())
 			http.Error(w, "failed to set customDomain to NS: "+err.Error(), http.StatusInternalServerError)
