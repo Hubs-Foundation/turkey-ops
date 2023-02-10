@@ -57,7 +57,8 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		// 	return
 		// }
 		//update features
-		defer cfg.makeFeatures()
+		cfg.determineFeatures()
+		defer cfg.initFeatures()
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "done")

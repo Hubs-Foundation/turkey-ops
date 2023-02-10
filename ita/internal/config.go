@@ -131,7 +131,8 @@ func MakeCfg() {
 	cfg.ExtraHealthchecks = strings.Split(os.Getenv("EXTRA_HEALTHCHECKS"), ",")
 
 	// features
-	features := cfg.makeFeatures()
+	features := cfg.determineFeatures()
+	cfg.initFeatures()
 
 	Logger.Sugar().Infof("cfg.Features: %+v", features)
 
@@ -164,34 +165,50 @@ func New_hubFeatures() hubFeatures {
 	}
 }
 
-func (c *Config) makeFeatures() hubFeatures {
+func (c *Config) determineFeatures() hubFeatures {
 
 	c.mu_features.Lock()
 	defer c.mu_features.Unlock()
 
 	c._features = New_hubFeatures()
-	//turkey-updater
+
+	if slices.Contains([]string{"dev", "test"}, cfg.Tier) {
+		c._features.updater = true
+		c._features.customDomain = true
+		c._features.customClient = true
+		return c._features
+	}
+
 	if _, noUpdates := os.LookupEnv("NO_UPDATES"); !noUpdates {
 		c._features.updater = true
 
+	}
+
+	if slices.Contains([]string{"pro", "business"}, cfg.Tier) {
+		c._features.customDomain = true
+	}
+
+	customDomain, _ := Deployment_getLabel("custom-domain")
+	if customDomain != "" {
+		c._features.customClient = true
+	}
+
+	return c._features
+}
+
+func (c *Config) initFeatures() {
+	c.mu_features.Lock()
+	defer c.mu_features.Unlock()
+
+	if c._features.updater {
 		cfg.TurkeyUpdater = NewTurkeyUpdater()
 		err := cfg.TurkeyUpdater.Start()
 		if err != nil {
 			Logger.Error(err.Error())
 		}
 	}
-	//customDomain
-	if slices.Contains([]string{
-		"dev",
-		"test",
-	}, cfg.Tier) {
-		c._features.customDomain = true
-	}
 
-	//customClient
-	customDomain, _ := Deployment_getLabel("custom-domain")
-	if customDomain != "" {
-		c._features.customClient = true
+	if c._features.customClient {
 		err := ingress_addItaApiRule()
 		if err != nil {
 			Logger.Error(err.Error())
@@ -201,8 +218,6 @@ func (c *Config) makeFeatures() hubFeatures {
 			Logger.Error(err.Error())
 		}
 	}
-
-	return c._features
 }
 
 func getFeatures(c *Config) hubFeatures {
