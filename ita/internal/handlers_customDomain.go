@@ -160,7 +160,7 @@ func ingress_addCustomDomainRule(customDomain string) error {
 
 	ig.Spec.TLS = append(ig.Spec.TLS, networkingv1.IngressTLS{
 		Hosts:      []string{customDomain},
-		SecretName: "cert_" + customDomain,
+		SecretName: "cert-" + customDomain,
 	})
 
 	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
