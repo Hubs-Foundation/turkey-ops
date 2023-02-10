@@ -149,7 +149,8 @@ if [ -z $LETSENCRYPT_ACCOUNT ]; then
   curl -H "letsencrypt-account:$acct" http://ita:6000/certbotbot
 fi
 
-if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 36000; fi
+if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 360000; fi
 
 # letsencrypt_acct=$(cat /etc/letsencrypt/accounts/acme*/directory/*/regr.json | jq '.uri')
-sleep 360000
+
+sleep 900
