@@ -77,8 +77,8 @@ var Updater = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 	return
 		// }
 
-		cfg.TurkeyUpdater.Start(channel)
-		Deployment_setLabel("CHANNEL", channel) //persist to k8s-deployment-label to recover across pod reboot
+		Deployment_setLabel("CHANNEL", channel)
+		cfg.TurkeyUpdater.Start()
 
 		w.WriteHeader(200)
 		return

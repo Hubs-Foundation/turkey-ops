@@ -135,38 +135,8 @@ func MakeCfg() {
 
 	Logger.Sugar().Infof("cfg.Features: %+v", features)
 
-	if features.customClient {
-		err = ingress_addItaApiRule()
-		if err != nil {
-			Logger.Error(err.Error())
-		}
-		err := k8s_mountRetNfs("ita", "", "")
-		if err != nil {
-			Logger.Error(err.Error())
-		}
-
-		// err = k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
-		// if err != nil {
-		// 	Logger.Error(err.Error())
-		// }
-
-	}
-
 	if features.updater {
-		cfg.Channel, err = Deployment_getLabel("CHANNEL")
-		if err != nil {
-			Logger.Warn("Get_listeningChannelLabel failed: " + err.Error())
-			cfg.Channel = "unset"
-			err := Deployment_setLabel("CHANNEL", "unset")
-			if err != nil {
-				Logger.Error("Set_listeningChannelLabel failed: " + err.Error())
-			}
-		}
-		cfg.TurkeyUpdater = NewTurkeyUpdater()
-		err = cfg.TurkeyUpdater.Start(cfg.Channel)
-		if err != nil {
-			Logger.Error(err.Error())
-		}
+
 	}
 
 }
@@ -203,6 +173,12 @@ func (c *Config) makeFeatures() hubFeatures {
 	//turkey-updater
 	if _, noUpdates := os.LookupEnv("NO_UPDATES"); !noUpdates {
 		c._features.updater = true
+
+		cfg.TurkeyUpdater = NewTurkeyUpdater()
+		err := cfg.TurkeyUpdater.Start()
+		if err != nil {
+			Logger.Error(err.Error())
+		}
 	}
 	//customDomain
 	if slices.Contains([]string{
@@ -216,6 +192,14 @@ func (c *Config) makeFeatures() hubFeatures {
 	customDomain, _ := Deployment_getLabel("custom-domain")
 	if customDomain != "" {
 		c._features.customClient = true
+		err := ingress_addItaApiRule()
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+		err = k8s_mountRetNfs("ita", "", "")
+		if err != nil {
+			Logger.Error(err.Error())
+		}
 	}
 
 	return c._features

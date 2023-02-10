@@ -17,7 +17,7 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-var mu sync.Mutex
+var mu_updater sync.Mutex
 
 type TurkeyUpdater struct {
 	// containers            map[string]turkeyContainerInfo
@@ -72,11 +72,17 @@ func (u *TurkeyUpdater) Containers() string {
 	return fmt.Sprint(u.containers)
 }
 
-func (u *TurkeyUpdater) Start(channel string) error {
-	mu.Lock()
-	defer mu.Unlock()
+func (u *TurkeyUpdater) Start() error {
+	mu_updater.Lock()
+	defer mu_updater.Unlock()
 
-	err := u.loadContainers()
+	channel, err := Deployment_getLabel("CHANNEL")
+	if err != nil {
+		Logger.Warn("failed to get channel: " + err.Error())
+		return err
+	}
+
+	err = u.loadContainers()
 	if err != nil {
 		return err
 	}
