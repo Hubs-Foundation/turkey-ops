@@ -17,28 +17,31 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	}
 	if r.Method == "PATCH" {
 
-		customDomain := r.URL.Query().Get("customDomain")
-		if !isCustomDomainGood(customDomain) {
-			http.Error(w, "bad customDomain: "+customDomain, http.StatusBadRequest)
+		fromDomain := r.URL.Query().Get("fromDomain")
+		toDomain := r.URL.Query().Get("toDomain")
+
+		if fromDomain == "" && toDomain == "" {
+			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
-		err := Deployment_setLabel("custom-domain", customDomain)
-		if err != nil {
-			Logger.Error("failed to set custom-domain label on NS: " + err.Error())
-			http.Error(w, "failed to set customDomain to NS: "+err.Error(), http.StatusInternalServerError)
-			return
+
+		if fromDomain != "" {
+			if current, _ := Deployment_getLabel("custom-domain"); fromDomain != current {
+				http.Error(w, fmt.Sprintf("expected fromDomain %v, expecting: %v", fromDomain, current), http.StatusBadRequest)
+				return
+			}
 		}
 
 		//certbotbot
 		letsencryptAcct := pickLetsencryptAccountForHubId()
 		Logger.Sugar().Debugf("letsencryptAcct: %v", letsencryptAcct)
-		err = runCertbotbotpod(letsencryptAcct, customDomain)
+		err := runCertbotbotpod(letsencryptAcct, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ runCertbotbotpod: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		err = setCustomDomain(customDomain)
+		err = setCustomDomain(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -59,6 +62,13 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		//update features
 		cfg.determineFeatures()
 		defer cfg.initFeatures()
+
+		err = Deployment_setLabel("custom-domain", toDomain)
+		if err != nil {
+			Logger.Error("failed to set custom-domain label on NS: " + err.Error())
+			http.Error(w, "failed to set customDomain to NS: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "done")
@@ -99,22 +109,41 @@ func isCustomDomainGood(customDomain string) bool {
 	return true
 }
 
-func setCustomDomain(customDomain string) error {
+// empty from/toDomain == turkey provided (sub)domain
+func setCustomDomain(fromDomain, toDomain string) error {
 
 	//update ret config
 	retCm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
+	ret_from := fromDomain
+	if ret_from == "" {
+		ret_from = "<SUB_DOMAIN>.<HUB_DOMAIN>"
+	}
+	ret_to := toDomain
+	if ret_to == "" {
+		ret_to = "<SUB_DOMAIN>.<HUB_DOMAIN>"
+	}
+
 	retCm.Data["config.toml.template"] =
 		strings.Replace(
-			retCm.Data["config.toml.template"], "<SUB_DOMAIN>.<HUB_DOMAIN>", customDomain, 1)
+			retCm.Data["config.toml.template"], ret_from, ret_to, 1)
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
 
 	//update hubs and spoke's env var
+
+	hubs_from := fromDomain
+	if hubs_from == "" {
+		hubs_from = cfg.SubDomain + "." + cfg.HubDomain
+	}
+	hubs_to := toDomain
+	if hubs_to == "" {
+		hubs_to = cfg.SubDomain + "." + cfg.HubDomain
+	}
 	for _, appName := range []string{"hubs", "spoke"} {
 		d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), appName, metav1.GetOptions{})
 		if err != nil {
@@ -122,7 +151,7 @@ func setCustomDomain(customDomain string) error {
 		}
 		for i, env := range d.Spec.Template.Spec.Containers[0].Env {
 			d.Spec.Template.Spec.Containers[0].Env[i].Value =
-				strings.Replace(env.Value, cfg.SubDomain+"."+cfg.HubDomain, customDomain, -1)
+				strings.Replace(env.Value, hubs_from, hubs_to, -1)
 		}
 		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
@@ -131,12 +160,12 @@ func setCustomDomain(customDomain string) error {
 	}
 
 	//add ingress route -- todo: replace it?
-	err = ingress_addCustomDomainRule(customDomain)
+	err = ingress_addCustomDomainRule(hubs_to)
 	if err != nil {
 		return err
 	}
 
-	err = ingress_updateHaproxyCors("https://" + customDomain)
+	err = ingress_updateHaproxyCors("https://" + hubs_to)
 
 	return err
 }

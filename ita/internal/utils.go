@@ -562,6 +562,7 @@ func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 					},
 				},
 				ServiceAccountName: "ita-sa",
+				RestartPolicy:      "Never",
 			},
 		},
 		metav1.CreateOptions{},
