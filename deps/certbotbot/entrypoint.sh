@@ -71,7 +71,7 @@ EOF
   retries=10
   while (( retries > 0 )) && ! certbot certonly --non-interactive --agree-tos --register-unsafely-without-email --preferred-challenges http --nginx -d $DOMAIN
   do
-    sleep 30
+    sleep 90
     retries=$(( retries - 1 ))
     echo "requesting cert -- retrying -- retries left: $retries"
   done
