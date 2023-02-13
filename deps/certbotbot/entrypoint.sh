@@ -157,4 +157,4 @@ if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 36000
 
 # letsencrypt_acct=$(cat /etc/letsencrypt/accounts/acme*/directory/*/regr.json | jq '.uri')
 
-sleep 900
+sleep 36000
