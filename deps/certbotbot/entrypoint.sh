@@ -103,6 +103,12 @@ function save_cert(){
   # kubectl -n $ns get secret $name -o yaml
 }
 
+function err_exit(){
+  echo "[ERROR],[certbotbot], wtb manual help pls, pod's hanging for 100 hr"
+  sleep 360000
+  exit 1
+}
+
 ### preps
 export CHALLENGE=$1
 echo $GCP_SA_KEY > GCP_SA_KEY.json
@@ -131,7 +137,7 @@ get_kubectl
 # kubectl -n $NAMESPACE patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */13 * *"}}'
 # if [ "$?" -ne 0 ]; then echo "ERROR -- can't patch cronjob, wtb rbac permision fixes"; sleep 3600; exit 1; fi
 
-if ! need_new_cert; then echo "good cert, exit in 15 min"; sleep 900; exit 0; fi
+if ! need_new_cert; then echo "good cert, exit in 5 min"; sleep 300; exit 0; fi
 
 echo "getting new cert"
 if [ "$CHALLENGE" = "http" ]; then
@@ -140,10 +146,10 @@ else
   get_new_cert_dns
 fi
 
-if [ "$?" -ne 0 ]; then echo "ERROR failed to get new cert, exit in 15 min"; sleep 900; exit 1; fi
+if [ "$?" -ne 0 ]; then echo "[ERROR] failed to get new cert"; err_exit; fi
 
 echo "saving new cert"
-if ! save_cert $CERT_NAME $NAMESPACE; then echo "ERROR failed to save cert"; sleep 300;exit 1; fi
+if ! save_cert $CERT_NAME $NAMESPACE; then echo "[ERROR] failed to save cert"; err_exit; fi
 for ns in ${CP_TO_NS//,/ }; do save_cert $CERT_NAME $ns; done
 
 # if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
@@ -152,10 +158,10 @@ if [ -z $LETSENCRYPT_ACCOUNT ]; then
   cd /etc/letsencrypt/accounts/acme*/directory/ && tar -czvf acct.tar.gz
   acct=$(cat acct.tar.gz|base64)
   echo "reporting new letsencrypt account back to ita: $acct"
-  curl -H "letsencrypt-account:$acct" http://ita:6000/certbotbot
+  curl -X POST -H "letsencrypt-account:$acct" http://ita:6000/new-letsencrypt-account
 fi
 
-if ! [[ $? ]]; then echo "[ERROR],[certbotbot],wtb manual help pls"; sleep 360000; fi
+if ! [[ $? ]]; then echo "[ERROR],[certbotbot], wtb manual help pls"; err_exit; fi
 
 # letsencrypt_acct=$(cat /etc/letsencrypt/accounts/acme*/directory/*/regr.json | jq '.uri')
 
