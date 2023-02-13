@@ -32,16 +32,16 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		//certbotbot
-		letsencryptAcct := pickLetsencryptAccountForHubId()
-		Logger.Sugar().Debugf("letsencryptAcct: %v", letsencryptAcct)
-		err := runCertbotbotpod(letsencryptAcct, toDomain)
-		if err != nil {
-			http.Error(w, "failed @ runCertbotbotpod: "+err.Error(), http.StatusInternalServerError)
-			return
+		if toDomain != "" { //certbotbot
+			letsencryptAcct := pickLetsencryptAccountForHubId()
+			Logger.Sugar().Debugf("letsencryptAcct: %v", letsencryptAcct)
+			err := runCertbotbotpod(letsencryptAcct, toDomain)
+			if err != nil {
+				http.Error(w, "failed @ runCertbotbotpod: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
-
-		err = setCustomDomain(fromDomain, toDomain)
+		err := setCustomDomain(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
