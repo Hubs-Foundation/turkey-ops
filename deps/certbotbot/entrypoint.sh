@@ -3,10 +3,13 @@ function need_new_cert(){
   kubectl -n $NAMESPACE get secret
   # if kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
   kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt;
-  ls -lha tls*
-  if grep -q "$DOMAIN" <<< "$(openssl x509 -noout -subject -in tls.crt)"; then echo "bad cert CN -- need new cert"; return 0; fi
+  ls -lha tls.crt
+  sub=$(openssl x509 -noout -subject -in tls.crt)
+  echo "cert sub: $sub"
+  if ! $sub | grep -q "$DOMAIN" ; then echo "\n bad cert sub ($sub)-- need new cert for $DOMAIN"; return 0; fi
   # 3888000 sec == 45 days
-  if openssl x509 -checkend 3888000 -noout -in tls.crt; then echo "expiring -- need new cert";return 0; else return 1; fi
+  openssl x509 -checkend 3888000 -noout -in tls.crt;
+  if ! $? then echo "expiring -- need new cert";return 0; else return 1; fi
 }
 
 function get_new_cert_dns(){
@@ -61,7 +64,7 @@ EOF
 )
   echo "${CERTBOTING}"|kubectl apply -f -
 
-  echo "start nginx and wait 120 sec for ingress to pick up the pod" && nginx && sleep 120
+  echo "start nginx and wait 60 sec for ingress to pick up the pod" && nginx && sleep 120
 
   certbot certonly --non-interactive --agree-tos --register-unsafely-without-email --preferred-challenges http --nginx -d $DOMAIN
   
@@ -90,12 +93,12 @@ function get_kubectl(){
 function save_cert(){
   name=$1
   ns=$2
-  echo "saving cert: <$name> to namespace: <$ns>"
+  echo "\n saving cert: <$name> to namespace: <$ns>"
   kubectl -n $ns create secret tls $name \
       --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
       --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
       --save-config --dry-run=client -o yaml | kubectl apply -f -
-  echo "new cert: "
+  echo "\n cert: "
   kubectl -n $ns describe secret $name
   # kubectl -n $ns get secret $name -o yaml
 }
