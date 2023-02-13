@@ -1,20 +1,20 @@
 
 function need_new_cert(){
-  echo "\n checking if we need_new_cert"
+  echo -e "\n checking if we need_new_cert"
   kubectl -n $NAMESPACE get secret
   # if kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
   kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt;
   ls -lha tls.crt
   sub=$(openssl x509 -noout -subject -in tls.crt)
   echo "cert sub: $sub"
-  if ! echo $sub | grep -q "$DOMAIN"; then echo "\n bad cert sub ($sub)-- need new cert for $DOMAIN"; return 0; fi
+  if ! echo $sub | grep -q "$DOMAIN"; then echo "  bad cert sub ($sub)-- need new cert for $DOMAIN"; return 0; fi
   # 3888000 sec == 45 days
   openssl x509 -checkend 3888000 -noout -in tls.crt;
   if ! [ $? ]; then echo "expiring -- need new cert";return 0; else return 1; fi
 }
 
 function get_new_cert_dns(){
-  echo "\n get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
+  echo -e "\n get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
   # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
   certbot certonly --non-interactive --agree-tos --register-unsafely-without-email \
       --dns-$CHALLENGE --dns-$CHALLENGE-propagation-seconds 300 \
@@ -24,7 +24,7 @@ function get_new_cert_dns(){
 }
 
 function get_new_cert_http(){
-  echo "\n get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
+  echo -e "\n get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
 
   # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
   echo "deploy certbot-http ingress and service for http challenge"
@@ -86,7 +86,7 @@ function get_kubectl(){
   # curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
   # chmod +x ./kubectl && mv ./kubectl /usr/local/bin
 
-  echo "\n making in-cluster config for kubectl"
+  echo -e "\n making in-cluster config for kubectl"
   kubectl config set-cluster the-cluster --server="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}" --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   kubectl config set-credentials pod-token --token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
   kubectl config set-context pod-context --cluster=the-cluster --user=pod-token
@@ -97,18 +97,18 @@ function get_kubectl(){
 function save_cert(){
   name=$1
   ns=$2
-  echo "\n saving cert: <$name> to namespace: <$ns>"
+  echo -e "\n saving cert: <$name> to namespace: <$ns>"
   kubectl -n $ns create secret tls $name \
       --cert=/etc/letsencrypt/live/${DOMAIN}/fullchain.pem \
       --key=/etc/letsencrypt/live/${DOMAIN}/privkey.pem \
       --save-config --dry-run=client -o yaml | kubectl apply -f -
-  echo "\n cert: "
+  echo -e "\n cert: "
   kubectl -n $ns describe secret $name
   # kubectl -n $ns get secret $name -o yaml
 }
 
 function err_exit(){
-  echo "\n\n [ERROR],[certbotbot], wtb manual help pls, pod's hanging for 100 hr"
+  echo -e "\n\n [ERROR],[certbotbot], wtb manual help pls, pod's hanging for 100 hr"
   sleep 360000
   exit 1
 }

@@ -552,7 +552,7 @@ func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 				Containers: []corev1.Container{
 					{
 						Name:  "certbotbot",
-						Image: "mozillareality/certbotbot_http:27", //todo: <channel>-latest if channel's supported
+						Image: "mozillareality/certbotbot_http:28", //todo: <channel>-latest if channel's supported
 						Env: []corev1.EnvVar{
 							{Name: "DOMAIN", Value: customDomain},
 							{Name: "NAMESPACE", Value: cfg.PodNS},
