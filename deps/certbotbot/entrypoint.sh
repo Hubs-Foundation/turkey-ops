@@ -6,7 +6,7 @@ function need_new_cert(){
   ls -lha tls.crt
   sub=$(openssl x509 -noout -subject -in tls.crt)
   echo "cert sub: $sub"
-  if ! $sub | grep -q "$DOMAIN" ; then echo "\n bad cert sub ($sub)-- need new cert for $DOMAIN"; return 0; fi
+  if ! echo $sub | grep -q "$DOMAIN"; then echo "\n bad cert sub ($sub)-- need new cert for $DOMAIN"; return 0; fi
   # 3888000 sec == 45 days
   openssl x509 -checkend 3888000 -noout -in tls.crt;
   if ! [ $? ]; then echo "expiring -- need new cert";return 0; else return 1; fi
