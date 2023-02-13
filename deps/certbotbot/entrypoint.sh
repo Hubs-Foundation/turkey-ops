@@ -1,5 +1,6 @@
 
-function need_new_cert(){    
+function need_new_cert(){
+  echo "\n checking if we need_new_cert"
   kubectl -n $NAMESPACE get secret
   # if kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt; then return 0; fi
   kubectl -n $NAMESPACE get secret $CERT_NAME -o=go-template='{{index .data "tls.crt"}}' | base64 -d > tls.crt;
@@ -13,7 +14,7 @@ function need_new_cert(){
 }
 
 function get_new_cert_dns(){
-  echo "get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
+  echo "\n get_new_cert_dns with DOMAIN=${DOMAIN}, EMAIL=$CERTBOT_EMAIL"
   # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL \
   certbot certonly --non-interactive --agree-tos --register-unsafely-without-email \
       --dns-$CHALLENGE --dns-$CHALLENGE-propagation-seconds 300 \
@@ -23,7 +24,7 @@ function get_new_cert_dns(){
 }
 
 function get_new_cert_http(){
-  echo "get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
+  echo "\n get_new_cert_http -- requires $DOMAIN/.well-known/acme-challenge* routed into this pod"
 
   # certbot certonly --non-interactive --agree-tos -m $CERTBOT_EMAIL --preferred-challenges http --nginx -d $DOMAIN
   echo "deploy certbot-http ingress and service for http challenge"
@@ -65,13 +66,16 @@ EOF
   echo "${CERTBOTING}"|kubectl apply -f -
 
   echo "start nginx and wait 60 sec for ingress to pick up the pod" && nginx && sleep 120
-
-  certbot certonly --non-interactive --agree-tos --register-unsafely-without-email --preferred-challenges http --nginx -d $DOMAIN
   
-  if [ "$?" -ne 0 ]; then
-    echo "try #1 failed, retry in 300 sec ..." && sleep 300
-    certbot --register-unsafely-without-email certonly --non-interactive --agree-tos --preferred-challenges http --nginx -d $DOMAIN
-  fi
+  echo "requesting cert"
+  retries=10
+  while (( retries > 0 )) && ! certbot certonly --non-interactive --agree-tos --register-unsafely-without-email --preferred-challenges http --nginx -d $DOMAIN
+  do
+    sleep 30
+    retries=$(( retries - 1 ))
+    echo "requesting cert -- retrying -- retries left: $retries"
+  done
+
 
   echo "destroy certbot-http ingress and service for http challenge"
   echo "${CERTBOTING}"|kubectl delete -f -
@@ -82,7 +86,7 @@ function get_kubectl(){
   # curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
   # chmod +x ./kubectl && mv ./kubectl /usr/local/bin
 
-  echo "making in-cluster config for kubectl"
+  echo "\n making in-cluster config for kubectl"
   kubectl config set-cluster the-cluster --server="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}" --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
   kubectl config set-credentials pod-token --token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
   kubectl config set-context pod-context --cluster=the-cluster --user=pod-token
@@ -104,7 +108,7 @@ function save_cert(){
 }
 
 function err_exit(){
-  echo "[ERROR],[certbotbot], wtb manual help pls, pod's hanging for 100 hr"
+  echo "\n\n [ERROR],[certbotbot], wtb manual help pls, pod's hanging for 100 hr"
   sleep 360000
   exit 1
 }
