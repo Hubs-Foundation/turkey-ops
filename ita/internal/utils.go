@@ -451,7 +451,7 @@ func ingress_addItaApiRule() error {
 	if err != nil {
 		return err
 	}
-	ig, retRootRule, err := findIngressWithRetRootRule(&igs.Items)
+	ig, retRootRules, err := findIngressWithRetRootRules(&igs.Items)
 	if err != nil {
 		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
 		return err
@@ -459,7 +459,7 @@ func ingress_addItaApiRule() error {
 	if ingressRuleAlreadyCreated_byBackendServiceName(ig, "ita") { // ingressRuleAlreadyCreated
 		return nil
 	}
-
+	retRootRule := retRootRules[0]
 	port := int32(6000)
 	if _, ok := ig.Annotations["haproxy.org/server-ssl"]; ok {
 		port = 6001
@@ -478,11 +478,11 @@ func ingress_addItaApiRule() error {
 	return nil
 }
 
-func findIngressWithRetRootRule(igs *[]networkingv1.Ingress) (*networkingv1.Ingress, *networkingv1.IngressRule, error) {
+func findIngressWithRetRootRules(igs *[]networkingv1.Ingress) (*networkingv1.Ingress, []*networkingv1.IngressRule, error) {
 	for _, ig := range *igs {
 		retRootRule, err := findIngressRuleForRetRootPath(ig)
 		if err == nil {
-			return &ig, &retRootRule, nil
+			return &ig, retRootRule, nil
 		}
 	}
 
@@ -511,14 +511,17 @@ func ingressRuleAlreadyCreated_byBackendHost(ig *networkingv1.Ingress, host stri
 	return false
 }
 
-func findIngressRuleForRetRootPath(ig networkingv1.Ingress) (networkingv1.IngressRule, error) {
+func findIngressRuleForRetRootPath(ig networkingv1.Ingress) ([]*networkingv1.IngressRule, error) {
+	r := []*networkingv1.IngressRule{}
 	for _, rule := range ig.Spec.Rules {
 		if rule.HTTP.Paths[0].Path == "/" && rule.HTTP.Paths[0].Backend.Service.Name == "ret" {
-			return rule, nil
+			r = append(r, &rule)
 		}
 	}
-	return networkingv1.IngressRule{}, errors.New("findIngressRuleForRetRootPath: not found")
-
+	if len(r) == 0 {
+		return nil, errors.New("not found")
+	}
+	return r, nil
 }
 
 func pickLetsencryptAccountForHubId() string {

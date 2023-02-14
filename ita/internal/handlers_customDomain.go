@@ -160,8 +160,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 		}
 	}
 
-	//add ingress route -- todo: replace it?
-	err = ingress_addCustomDomainRule(hubs_to)
+	err = ingress_addCustomDomainRule(hubs_to, hubs_from)
 	if err != nil {
 		return err
 	}
@@ -171,12 +170,12 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	return err
 }
 
-func ingress_addCustomDomainRule(customDomain string) error {
+func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	ig, retRootRule, err := findIngressWithRetRootRule(&igs.Items)
+	ig, retRootRules, err := findIngressWithRetRootRules(&igs.Items)
 	if err != nil {
 		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
 		return err
@@ -184,7 +183,7 @@ func ingress_addCustomDomainRule(customDomain string) error {
 	if ingressRuleAlreadyCreated_byBackendHost(ig, customDomain) { // ingressRuleAlreadyCreated
 		return nil
 	}
-	customDomainRule := retRootRule.DeepCopy()
+	customDomainRule := retRootRules[0].DeepCopy()
 	customDomainRule.Host = customDomain
 	ig.Spec.Rules = append(ig.Spec.Rules, *customDomainRule)
 
@@ -192,6 +191,10 @@ func ingress_addCustomDomainRule(customDomain string) error {
 		Hosts:      []string{customDomain},
 		SecretName: "cert-" + customDomain,
 	})
+
+	if fromDomain != cfg.SubDomain+"."+cfg.HubDomain {
+		ingress_removeRulesByDomain(ig, fromDomain)
+	}
 
 	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
 	if err != nil {
@@ -215,4 +218,31 @@ func ingress_updateHaproxyCors(origins string) error {
 		}
 	}
 	return nil
+}
+
+func ingress_removeRulesByDomain(ig *networkingv1.Ingress, domain string) error {
+
+	trimmedRules := []networkingv1.IngressRule{}
+	trimmedTlss := []networkingv1.IngressTLS{}
+
+	for _, rule := range ig.Spec.Rules {
+		if rule.Host == domain {
+			continue
+		}
+		trimmedRules = append(trimmedRules, rule)
+	}
+	for _, tls := range ig.Spec.TLS {
+		for _, host := range tls.Hosts {
+			if host == domain {
+				continue
+			}
+		}
+		trimmedTlss = append(trimmedTlss, tls)
+	}
+
+	ig.Spec.Rules = trimmedRules
+	ig.Spec.TLS = trimmedTlss
+
+	return nil
+
 }
