@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//curl -X PATCH http://ita.hc-gtan12:6000/custom-domain?fromDomain=g122.tanfarming.com&toDomain=gt12.tanfarming.com
 var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/custom-domain" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -20,8 +19,10 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 		q := r.URL.Query()
 
-		fromDomain := q.Get("fromDomain")
-		toDomain := q.Get("toDomain")
+		fromDomain := q["fromDomain"][0]
+		toDomain := q["toDomain"][0]
+
+		Logger.Sugar().Debugf("received: fromDomain: %v, toDomain: %v", fromDomain, toDomain)
 
 		if fromDomain == "" && toDomain == "" {
 			http.Error(w, "", http.StatusBadRequest)
@@ -45,7 +46,7 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		Logger.Sugar().Debugf("fromDomain: %v, toDomain: %v", fromDomain, toDomain)
+		Logger.Sugar().Debugf("calling setCustomDomain with fromDomain: %v, toDomain: %v", fromDomain, toDomain)
 		err := setCustomDomain(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
