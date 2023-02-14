@@ -17,10 +17,10 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	}
 	if r.Method == "PATCH" {
 
+		Logger.Sugar().Debugf("r.URL.RawQuery: %v", r.URL.RawQuery)
+		Logger.Sugar().Debugf("r.URL.Query(): %v", r.URL.Query())
+
 		q := r.URL.Query()
-
-		Logger.Sugar().Debugf("URL.Query: %v", q)
-
 		fromDomain := q.Get("from_domain")
 		toDomain := q.Get("to_domain")
 
