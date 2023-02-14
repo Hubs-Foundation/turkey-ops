@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//curl -X PATCH http://ita.hc-gtan12:6000/custom-domain?fromDomain=g122.tanfarming.com&toDomain=gt12.tanfarming.com
 var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/custom-domain" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -17,8 +18,10 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	}
 	if r.Method == "PATCH" {
 
-		fromDomain := r.URL.Query().Get("fromDomain")
-		toDomain := r.URL.Query().Get("toDomain")
+		q := r.URL.Query()
+
+		fromDomain := q.Get("fromDomain")
+		toDomain := q.Get("toDomain")
 
 		if fromDomain == "" && toDomain == "" {
 			http.Error(w, "", http.StatusBadRequest)
