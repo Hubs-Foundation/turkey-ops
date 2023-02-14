@@ -41,6 +41,8 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				return
 			}
 		}
+
+		Logger.Sugar().Debugf("fromDomain: %v, toDomain: %v", fromDomain, toDomain)
 		err := setCustomDomain(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
@@ -122,6 +124,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 		ret_to = "<SUB_DOMAIN>.<HUB_DOMAIN>"
 	}
 
+	Logger.Sugar().Debugf("setCustomDomain, ret_from: %v, ret_to: %v", ret_from, ret_to)
 	retCm.Data["config.toml.template"] =
 		strings.Replace(
 			retCm.Data["config.toml.template"], ret_from, ret_to, -1)
@@ -131,7 +134,6 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	}
 
 	//update hubs and spoke's env var
-
 	hubs_from := fromDomain
 	if hubs_from == "" {
 		hubs_from = cfg.SubDomain + "." + cfg.HubDomain
@@ -140,6 +142,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	if hubs_to == "" {
 		hubs_to = cfg.SubDomain + "." + cfg.HubDomain
 	}
+	Logger.Sugar().Debugf("setCustomDomain, hubs_from: %v, hubs_to: %v", hubs_from, hubs_to)
 	for _, appName := range []string{"hubs", "spoke"} {
 		d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), appName, metav1.GetOptions{})
 		if err != nil {
