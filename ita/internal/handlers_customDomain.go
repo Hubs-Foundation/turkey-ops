@@ -19,8 +19,10 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 		q := r.URL.Query()
 
-		fromDomain := q["fromDomain"][0]
-		toDomain := q["toDomain"][0]
+		Logger.Sugar().Debugf("URL.Query: %v", q)
+
+		fromDomain := q.Get("from_domain")
+		toDomain := q.Get("to_domain")
 
 		Logger.Sugar().Debugf("received: fromDomain: %v, toDomain: %v", fromDomain, toDomain)
 
