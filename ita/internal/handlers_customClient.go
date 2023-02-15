@@ -190,7 +190,7 @@ func unzipNdeployCustomHubs(fileName string) error {
 	}
 	//deploy
 	// ensure mounts
-	err := k8s_mountRetNfs("hubs", "/hubs", "/www/hubs")
+	err := k8s_mountRetNfs("hubs", "/hubs", "/www/hubs", false)
 	if err != nil {
 		return errors.New("failed @ k8s_mountRetNfs: " + err.Error())
 	}

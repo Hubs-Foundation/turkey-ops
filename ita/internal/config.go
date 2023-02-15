@@ -225,7 +225,7 @@ func (fm *featureMan) setupFeatures() {
 		if err != nil {
 			Logger.Error(err.Error())
 		}
-		err = k8s_mountRetNfs("ita", "", "")
+		err = k8s_mountRetNfs("ita", "", "", false)
 		if err != nil {
 			Logger.Error(err.Error())
 		}

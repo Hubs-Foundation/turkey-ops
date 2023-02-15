@@ -201,7 +201,7 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 	return nil
 }
 
-func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) error {
+func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, readonly bool) error {
 	Logger.Debug("mounting Ret nfs for: " + targetDeploymentName)
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
@@ -265,15 +265,16 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 						d_target.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 							d_target.Spec.Template.Spec.Containers[0].VolumeMounts,
 							corev1.VolumeMount{
-								Name:             vm.Name,
-								MountPath:        mountPath,
-								MountPropagation: vm.MountPropagation,
+								Name:      vm.Name,
+								MountPath: mountPath,
+								// MountPropagation: vm.MountPropagation,
+								ReadOnly: readonly,
 							},
 						)
-						var_true := true
-						d_target.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
-							Privileged: &var_true,
-						}
+						// var_true := true
+						// d_target.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+						// 	Privileged: &var_true,
+						// }
 					}
 				}
 			}
