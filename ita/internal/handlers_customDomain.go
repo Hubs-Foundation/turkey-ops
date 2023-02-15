@@ -188,11 +188,15 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 		// if err != nil {
 		// 	Logger.Sugar().Warnf("failed to delete fromDomain's cert: %v, err: %v", fromDomainSecretName, err)
 		// }
-		ingress_cleanupByDomain(ig, fromDomain)
+		deletedRules, deletedTlss := ingress_cleanupByDomain(ig, fromDomain)
+		if deletedRules+deletedTlss > 0 {
+			ig.ResourceVersion = ""
+			cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
+		}
 	}
 
 	if ingressRuleAlreadyCreated_byBackendHost(ig, customDomain) { // ingressRuleAlreadyCreated
-		Logger.Info("ingressRuleAlreadyCreated_byBackendHost")
+		Logger.Warn("ingressRuleAlreadyCreated_byBackendHost -- this is unexpected")
 		return nil
 	}
 	customDomainRule := retRootRules[0].DeepCopy()
@@ -229,10 +233,13 @@ func ingress_updateHaproxyCors(origins string) error {
 	return nil
 }
 
-func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) {
+func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) (int, int) {
 
 	trimmedRules := []networkingv1.IngressRule{}
 	trimmedTlss := []networkingv1.IngressTLS{}
+
+	deletedRules := 0
+	deleteTlss := 0
 
 	for _, rule := range ig.Spec.Rules {
 		if rule.Host == domain {
@@ -244,7 +251,6 @@ func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) {
 	for _, tls := range ig.Spec.TLS {
 		add := true
 		for _, host := range tls.Hosts {
-			Logger.Sugar().Debugf("host: %v, domain: %v", host, domain)
 			if host == domain {
 				Logger.Sugar().Debugf("dropping tls: %v", tls)
 				add = false
@@ -259,7 +265,7 @@ func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) {
 	ig.Spec.Rules = trimmedRules
 	ig.Spec.TLS = trimmedTlss
 
-	Logger.Sugar().Debugf("rules -- before: %v, after: %v", ig.Spec.Rules, trimmedRules)
-	Logger.Sugar().Debugf("tlss -- before: %v, after: %v", ig.Spec.TLS, trimmedTlss)
+	Logger.Sugar().Debugf("deletedRules: %v, deletedTlss: %v", deletedRules, deleteTlss)
 
+	return deletedRules, deleteTlss
 }
