@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/strings/slices"
@@ -225,7 +226,7 @@ func (fm *featureMan) setupFeatures() {
 		if err != nil {
 			Logger.Error(err.Error())
 		}
-		err = k8s_mountRetNfs("ita", "", "", false)
+		err = k8s_mountRetNfs("ita", "", "", false, corev1.MountPropagationNone)
 		if err != nil {
 			Logger.Error(err.Error())
 		}

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +192,7 @@ func unzipNdeployCustomHubs(fileName string) error {
 	}
 	//deploy
 	// ensure mounts
-	err := k8s_mountRetNfs("hubs", "/hubs", "/www/hubs", false)
+	err := k8s_mountRetNfs("hubs", "/hubs", "/www/hubs", false, corev1.MountPropagationNone)
 	if err != nil {
 		return errors.New("failed @ k8s_mountRetNfs: " + err.Error())
 	}

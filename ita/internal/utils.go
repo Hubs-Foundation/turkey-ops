@@ -201,7 +201,7 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 	return nil
 }
 
-func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, readonly bool) error {
+func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, readonly bool, propagation corev1.MountPropagationMode) error {
 	Logger.Debug("mounting Ret nfs for: " + targetDeploymentName)
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
@@ -265,10 +265,10 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, read
 						d_target.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 							d_target.Spec.Template.Spec.Containers[0].VolumeMounts,
 							corev1.VolumeMount{
-								Name:      vm.Name,
-								MountPath: mountPath,
-								// MountPropagation: vm.MountPropagation,
-								ReadOnly: readonly,
+								Name:             vm.Name,
+								MountPath:        mountPath,
+								MountPropagation: &propagation,
+								ReadOnly:         readonly,
 							},
 						)
 						// var_true := true
