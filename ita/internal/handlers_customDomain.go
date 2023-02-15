@@ -236,6 +236,7 @@ func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) {
 
 	for _, rule := range ig.Spec.Rules {
 		if rule.Host == domain {
+			Logger.Sugar().Debugf("dropping rule: %v", rule)
 			continue
 		}
 		trimmedRules = append(trimmedRules, rule)
@@ -245,7 +246,9 @@ func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) {
 		for _, host := range tls.Hosts {
 			Logger.Sugar().Debugf("host: %v, domain: %v", host, domain)
 			if host == domain {
+				Logger.Sugar().Debugf("dropping tls: %v", tls)
 				add = false
+				break
 			}
 		}
 		if add {
