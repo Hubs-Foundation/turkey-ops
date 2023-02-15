@@ -238,6 +238,7 @@ func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) {
 	}
 	for _, tls := range ig.Spec.TLS {
 		for _, host := range tls.Hosts {
+			Logger.Sugar().Debugf("host: %v, domain: %v", host, domain)
 			if host == domain {
 				continue
 			}
