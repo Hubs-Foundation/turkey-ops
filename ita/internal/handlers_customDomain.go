@@ -109,7 +109,7 @@ func isCustomDomainGood(customDomain string) bool {
 	return true
 }
 
-// empty from/toDomain == turkey provided (sub)domain
+// empty from/toDomain == turkey provided / native (sub)domain
 func setCustomDomain(fromDomain, toDomain string) error {
 
 	//update ret config
@@ -193,7 +193,12 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 	})
 
 	if fromDomain != cfg.SubDomain+"."+cfg.HubDomain {
-		ingress_removeRulesByDomain(ig, fromDomain)
+		fromDomainSecretName := "cert-" + fromDomain
+		err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Delete(context.Background(), fromDomainSecretName, metav1.DeleteOptions{})
+		if err != nil {
+			Logger.Sugar().Warnf("failed to delete fromDomain's cert: %v, err: %v", fromDomainSecretName, err)
+		}
+		ingress_cleanupByDomain(ig, fromDomain)
 	}
 
 	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
@@ -220,7 +225,7 @@ func ingress_updateHaproxyCors(origins string) error {
 	return nil
 }
 
-func ingress_removeRulesByDomain(ig *networkingv1.Ingress, domain string) error {
+func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) {
 
 	trimmedRules := []networkingv1.IngressRule{}
 	trimmedTlss := []networkingv1.IngressTLS{}
@@ -243,6 +248,7 @@ func ingress_removeRulesByDomain(ig *networkingv1.Ingress, domain string) error 
 	ig.Spec.Rules = trimmedRules
 	ig.Spec.TLS = trimmedTlss
 
-	return nil
+	Logger.Sugar().Debugf("rules -- before: %v, after: %v", ig.Spec.Rules, trimmedRules)
+	Logger.Sugar().Debugf("tlss -- before: %v, after: %v", ig.Spec.TLS, trimmedTlss)
 
 }
