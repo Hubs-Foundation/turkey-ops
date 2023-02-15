@@ -171,6 +171,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 }
 
 func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
+
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -180,7 +181,18 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
 		return err
 	}
+
+	if fromDomain != cfg.SubDomain+"."+cfg.HubDomain {
+		// fromDomainSecretName := "cert-" + fromDomain
+		// err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Delete(context.Background(), fromDomainSecretName, metav1.DeleteOptions{})
+		// if err != nil {
+		// 	Logger.Sugar().Warnf("failed to delete fromDomain's cert: %v, err: %v", fromDomainSecretName, err)
+		// }
+		ingress_cleanupByDomain(ig, fromDomain)
+	}
+
 	if ingressRuleAlreadyCreated_byBackendHost(ig, customDomain) { // ingressRuleAlreadyCreated
+		Logger.Info("ingressRuleAlreadyCreated_byBackendHost")
 		return nil
 	}
 	customDomainRule := retRootRules[0].DeepCopy()
@@ -191,22 +203,14 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 		Hosts:      []string{customDomain},
 		SecretName: "cert-" + customDomain,
 	})
-
-	if fromDomain != cfg.SubDomain+"."+cfg.HubDomain {
-		fromDomainSecretName := "cert-" + fromDomain
-		err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Delete(context.Background(), fromDomainSecretName, metav1.DeleteOptions{})
-		if err != nil {
-			Logger.Sugar().Warnf("failed to delete fromDomain's cert: %v, err: %v", fromDomainSecretName, err)
-		}
-		ingress_cleanupByDomain(ig, fromDomain)
-	}
-
+	ig.ResourceVersion = ""
 	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
 	if err != nil {
 		Logger.Sugar().Errorf("failed to update ingress with customDomainRule: %v", err)
 		return err
 	}
 	Logger.Sugar().Debugf("updated ingress: %v", newIg)
+
 	return nil
 }
 
