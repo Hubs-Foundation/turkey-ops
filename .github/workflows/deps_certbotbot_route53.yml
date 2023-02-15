@@ -2,7 +2,7 @@
 name: certbotbot_route53
 on:
   push:
-    branches: [ master ]
+    branches:
     paths:
     - 'deps/certbotbot/Dockerfile_route53'
     - 'deps/certbotbot/entrypoint.sh'

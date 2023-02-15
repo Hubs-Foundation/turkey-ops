@@ -52,22 +52,22 @@ func InitLogger() {
 
 var listeningChannelLabelName = "CHANNEL"
 
-func Get_listeningChannelLabel() (string, error) {
+func Deployment_getLabel(key string) (string, error) {
 	//do we have channel labled on deployment?
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
-	return d.Labels[listeningChannelLabelName], nil
+	return d.Labels[key], nil
 }
 
-func Set_listeningChannelLabel(channel string) error {
+func Deployment_setLabel(key, val string) error {
 	//do we have channel labled on deployment?
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	d.Labels["CHANNEL"] = channel
+	d.Labels[key] = val
 	_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 	if err != nil {
 		return err
@@ -75,7 +75,19 @@ func Set_listeningChannelLabel(channel string) error {
 	return nil
 }
 
-func Get_fromNsLabel(key string) (string, error) {
+// func NS_setLabel(key, val string) error {
+// 	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+// 	if err != nil {
+// 		return err
+// 	}
+// 	ns.Labels[key] = val
+
+// 	_, err = cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+
+// 	return err
+// }
+
+func NS_getLabel(key string) (string, error) {
 	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -189,7 +201,7 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 	return nil
 }
 
-func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) error {
+func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, readonly bool, propagation corev1.MountPropagationMode) error {
 	Logger.Debug("mounting Ret nfs for: " + targetDeploymentName)
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
@@ -255,13 +267,14 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string) erro
 							corev1.VolumeMount{
 								Name:             vm.Name,
 								MountPath:        mountPath,
-								MountPropagation: vm.MountPropagation,
+								MountPropagation: &propagation,
+								ReadOnly:         readonly,
 							},
 						)
-						var_true := true
-						d_target.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
-							Privileged: &var_true,
-						}
+						// var_true := true
+						// d_target.Spec.Template.Spec.Containers[0].SecurityContext = &corev1.SecurityContext{
+						// 	Privileged: &var_true,
+						// }
 					}
 				}
 			}
@@ -434,40 +447,54 @@ func UnzipZip(src, destDir string) error {
 	return nil
 }
 
-func k8s_addItaApiIngressRule() error {
+func ingress_addItaApiRule() error {
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	for _, ig := range igs.Items {
-		if _, ok := ig.Annotations["haproxy.org/server-ssl"]; !ok {
-			if !ingressRuleAlreadyCreated(ig) {
-				retRootRule, err := findIngressRuleForRetRootPath(ig)
-				if err != nil {
-					return err
-				}
-				itaRule := retRootRule.DeepCopy()
-				itaRule.HTTP.Paths[0].Path = "/api/ita"
-				itaRule.HTTP.Paths[0].Backend.Service.Name = "ita"
-				itaRule.HTTP.Paths[0].Backend.Service.Port.Number = 6000
-				ig.Spec.Rules = append(ig.Spec.Rules, *itaRule)
-				newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), &ig, metav1.UpdateOptions{})
-				if err != nil {
-					Logger.Sugar().Errorf("failed to update ingress with itaRule: %v", err)
-				}
-				Logger.Sugar().Debugf("updated ingress: %v", newIg)
-			}
-			return nil
+	ig, retRootRules, err := findIngressWithRetRootRules(&igs.Items)
+	if err != nil {
+		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
+		return err
+	}
+	if ingressRuleAlreadyCreated_byBackendServiceName(ig, "ita") { // ingressRuleAlreadyCreated
+		return nil
+	}
+	retRootRule := retRootRules[0]
+	port := int32(6000)
+	if _, ok := ig.Annotations["haproxy.org/server-ssl"]; ok {
+		port = 6001
+	}
+	itaRule := retRootRule.DeepCopy()
+	itaRule.HTTP.Paths[0].Path = "/api/ita"
+	itaRule.HTTP.Paths[0].Backend.Service.Name = "ita"
+	itaRule.HTTP.Paths[0].Backend.Service.Port.Number = port
+	ig.Spec.Rules = append(ig.Spec.Rules, *itaRule)
+	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
+	if err != nil {
+		Logger.Sugar().Errorf("failed to update ingress with itaRule: %v", err)
+		return err
+	}
+	Logger.Sugar().Debugf("updated ingress: %v", newIg)
+	return nil
+}
+
+func findIngressWithRetRootRules(igs *[]networkingv1.Ingress) (*networkingv1.Ingress, []*networkingv1.IngressRule, error) {
+	for _, ig := range *igs {
+		retRootRule, err := findIngressRuleForRetRootPath(ig)
+		if err == nil {
+			return &ig, retRootRule, nil
 		}
 	}
 
-	return errors.New("outdated arch -- did not find ingress without haproxy.org/server-ssl")
+	return nil, nil, errors.New("findIngressWithRetRootPath: not found")
+
 }
 
-func ingressRuleAlreadyCreated(ig networkingv1.Ingress) bool {
+func ingressRuleAlreadyCreated_byBackendServiceName(ig *networkingv1.Ingress, backendServiceName string) bool {
 	for _, rule := range ig.Spec.Rules {
 		for _, path := range rule.HTTP.Paths {
-			if path.Backend.Service.Name == "ita" {
+			if path.Backend.Service.Name == backendServiceName {
 				Logger.Sugar().Debugf("ingressRuleAlreadyCreated: %v", rule)
 				return true
 			}
@@ -476,12 +503,92 @@ func ingressRuleAlreadyCreated(ig networkingv1.Ingress) bool {
 	return false
 }
 
-func findIngressRuleForRetRootPath(ig networkingv1.Ingress) (networkingv1.IngressRule, error) {
+func ingressRuleAlreadyCreated_byBackendHost(ig *networkingv1.Ingress, host string) bool {
 	for _, rule := range ig.Spec.Rules {
-		if rule.HTTP.Paths[0].Path == "/" && rule.HTTP.Paths[0].Backend.Service.Name == "ret" {
-			return rule, nil
+		if rule.Host == host {
+			return true
 		}
 	}
-	return networkingv1.IngressRule{}, errors.New("findIngressRuleForRetRootPath: not found")
+	return false
+}
 
+func findIngressRuleForRetRootPath(ig networkingv1.Ingress) ([]*networkingv1.IngressRule, error) {
+	r := []*networkingv1.IngressRule{}
+	for _, rule := range ig.Spec.Rules {
+		if rule.HTTP.Paths[0].Path == "/" && rule.HTTP.Paths[0].Backend.Service.Name == "ret" {
+			r = append(r, &rule)
+		}
+	}
+	if len(r) == 0 {
+		return nil, errors.New("not found")
+	}
+	return r, nil
+}
+
+func pickLetsencryptAccountForHubId() string {
+	accts, err := cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", metav1.GetOptions{})
+	if err != nil {
+		return ""
+	}
+
+	for _, v := range accts.Data {
+		return v
+
+	}
+	return ""
+}
+
+func runCertbotbotpod(letsencryptAcct, customDomain string) error {
+
+	if customDomain == "" {
+		customDomain, _ = Deployment_getLabel("custom_domain")
+	}
+
+	_, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Create(
+		context.Background(),
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("certbotbot-%v", time.Now().Unix()),
+				Namespace: cfg.PodNS,
+				Labels:    map[string]string{"app": "certbotbot-http"},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name:  "certbotbot",
+						Image: "mozillareality/certbotbot_http:29", //todo: <channel>-latest if channel's supported
+						Env: []corev1.EnvVar{
+							{Name: "DOMAIN", Value: customDomain},
+							{Name: "NAMESPACE", Value: cfg.PodNS},
+							{Name: "LETSENCRYPT_ACCOUNT", Value: letsencryptAcct},
+							{Name: "CERT_NAME", Value: "cert-" + customDomain},
+						},
+					},
+				},
+				ServiceAccountName: "ita-sa",
+				RestartPolicy:      "Never",
+			},
+		},
+		metav1.CreateOptions{},
+	)
+
+	return err
+
+}
+
+func killPods(labelSelector string) error {
+	pods, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	if err != nil {
+		return err
+	}
+	for _, pod := range pods.Items {
+		err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return fmt.Errorf("failed while deleting <%v> %v", pod.Name, err)
+		}
+	}
+
+	return nil
 }
