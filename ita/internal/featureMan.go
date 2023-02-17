@@ -50,7 +50,6 @@ func (fm *featureMan) determineFeatures() {
 
 	if _, noUpdates := os.LookupEnv("NO_UPDATES"); !noUpdates {
 		fm._features.updater = true
-
 	}
 
 	if slices.Contains([]string{"pro", "business"}, cfg.Tier) {
@@ -59,6 +58,7 @@ func (fm *featureMan) determineFeatures() {
 
 	customDomain, _ := Deployment_getLabel("custom-domain")
 	if customDomain != "" {
+		Logger.Info("customClient enabled <<< customDomain: " + customDomain)
 		fm._features.customClient = true
 	}
 }
