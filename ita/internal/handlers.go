@@ -184,3 +184,7 @@ func (pg *Progress) Print() {
 var Handle_NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 })
+
+var DumpWorkLog = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%v", cfg.K8Man.DumpWorkLog())
+})

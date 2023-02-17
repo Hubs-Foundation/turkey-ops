@@ -128,8 +128,9 @@ func setCustomDomain(fromDomain, toDomain string) error {
 
 	Logger.Sugar().Debugf("setCustomDomain, ret_from: %v, ret_to: %v", ret_from, ret_to)
 	retCm.Data["config.toml.template"] =
+		//host = "g12.tanfarming.com"
 		strings.Replace(
-			retCm.Data["config.toml.template"], ret_from, ret_to, -1)
+			retCm.Data["config.toml.template"], `host = "`+ret_from, `host = "`+ret_to, -1)
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
 	if err != nil {
 		return err
