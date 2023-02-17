@@ -503,19 +503,20 @@ func ingressRuleAlreadyCreated_byBackendServiceName(ig *networkingv1.Ingress, ba
 	return false
 }
 
-func ingressRuleAlreadyCreated_byBackendHost(ig *networkingv1.Ingress, host string) bool {
+func ingressRuleAlreadyCreated_byBackendHost(ig *networkingv1.Ingress, host string) (bool, *networkingv1.IngressRule) {
 	for _, rule := range ig.Spec.Rules {
 		if rule.Host == host {
-			return true
+			return true, &rule
 		}
 	}
-	return false
+	return false, nil
 }
 
 func findIngressRuleForRetRootPath(ig networkingv1.Ingress) ([]*networkingv1.IngressRule, error) {
 	r := []*networkingv1.IngressRule{}
 	for _, rule := range ig.Spec.Rules {
 		if rule.HTTP.Paths[0].Path == "/" && rule.HTTP.Paths[0].Backend.Service.Name == "ret" {
+			Logger.Sugar().Debugf("found: %v", rule)
 			r = append(r, &rule)
 		}
 	}

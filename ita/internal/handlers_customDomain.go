@@ -187,6 +187,7 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
 		return err
 	}
+	Logger.Sugar().Debugf("retRootRules: %v", retRootRules)
 
 	if fromDomain != cfg.SubDomain+"."+cfg.HubDomain {
 		// fromDomainSecretName := "cert-" + fromDomain
@@ -201,10 +202,11 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 		}
 	}
 
-	if ingressRuleAlreadyCreated_byBackendHost(ig, customDomain) { // ingressRuleAlreadyCreated
-		Logger.Warn("ingressRuleAlreadyCreated_byBackendHost -- this is unexpected")
+	if b, rule := ingressRuleAlreadyCreated_byBackendHost(ig, customDomain); b { // ingressRuleAlreadyCreated
+		Logger.Sugar().Warnf("this is unexpected -- ingressRuleAlreadyCreated_byBackendHost: %v", rule)
 		return nil
 	}
+
 	customDomainRule := retRootRules[0].DeepCopy()
 	customDomainRule.Host = customDomain
 	ig.Spec.Rules = append(ig.Spec.Rules, *customDomainRule)
