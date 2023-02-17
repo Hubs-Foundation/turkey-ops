@@ -479,7 +479,7 @@ func ingress_addItaApiRule() error {
 	return nil
 }
 
-func findIngressWithRetRootRules(igs *[]networkingv1.Ingress) (*networkingv1.Ingress, []*networkingv1.IngressRule, error) {
+func findIngressWithRetRootRules(igs *[]networkingv1.Ingress) (*networkingv1.Ingress, []networkingv1.IngressRule, error) {
 	for _, ig := range *igs {
 		retRootRule, err := findIngressRuleForRetRootPath(ig)
 		if err == nil {
@@ -503,20 +503,21 @@ func ingressRuleAlreadyCreated_byBackendServiceName(ig *networkingv1.Ingress, ba
 	return false
 }
 
-func ingressRuleAlreadyCreated_byBackendHost(ig *networkingv1.Ingress, host string) bool {
+func ingressRuleAlreadyCreated_byBackendHost(ig *networkingv1.Ingress, host string) (bool, *networkingv1.IngressRule) {
 	for _, rule := range ig.Spec.Rules {
 		if rule.Host == host {
-			return true
+			return true, &rule
 		}
 	}
-	return false
+	return false, nil
 }
 
-func findIngressRuleForRetRootPath(ig networkingv1.Ingress) ([]*networkingv1.IngressRule, error) {
-	r := []*networkingv1.IngressRule{}
+func findIngressRuleForRetRootPath(ig networkingv1.Ingress) ([]networkingv1.IngressRule, error) {
+	r := []networkingv1.IngressRule{}
 	for _, rule := range ig.Spec.Rules {
 		if rule.HTTP.Paths[0].Path == "/" && rule.HTTP.Paths[0].Backend.Service.Name == "ret" {
-			r = append(r, &rule)
+			Logger.Sugar().Debugf("found: %v", rule)
+			r = append(r, rule)
 		}
 	}
 	if len(r) == 0 {

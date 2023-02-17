@@ -109,7 +109,7 @@ func isCustomDomainGood(customDomain string) bool {
 	return true
 }
 
-// empty from/toDomain == turkey provided (sub)domain
+// empty from/toDomain == turkey provided / native (sub)domain
 func setCustomDomain(fromDomain, toDomain string) error {
 
 	//update ret config
@@ -129,7 +129,13 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	Logger.Sugar().Debugf("setCustomDomain, ret_from: %v, ret_to: %v", ret_from, ret_to)
 	retCm.Data["config.toml.template"] =
 		strings.Replace(
-			retCm.Data["config.toml.template"], ret_from, ret_to, -1)
+			retCm.Data["config.toml.template"], `host = "`+ret_from, `host = "`+ret_to, -1)
+	retCm.Data["config.toml.template"] =
+		strings.Replace(
+			retCm.Data["config.toml.template"], `host = "https://`+ret_from, `host = "https://`+ret_to, -1)
+	retCm.Data["config.toml.template"] =
+		strings.Replace(
+			retCm.Data["config.toml.template"], `issuer = "`+ret_from, `issuer = "`+ret_to, -1)
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
 	if err != nil {
 		return err
@@ -165,12 +171,13 @@ func setCustomDomain(fromDomain, toDomain string) error {
 		return err
 	}
 
-	err = ingress_updateHaproxyCors("https://" + hubs_to)
+	err = ingress_updateHaproxyCors(hubs_from, hubs_to)
 
 	return err
 }
 
 func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
+
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -180,9 +187,26 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 		Logger.Error("findIngressWithRetRootPath failed: " + err.Error())
 		return err
 	}
-	if ingressRuleAlreadyCreated_byBackendHost(ig, customDomain) { // ingressRuleAlreadyCreated
+	Logger.Sugar().Debugf("retRootRules: %v", retRootRules)
+
+	if fromDomain != cfg.SubDomain+"."+cfg.HubDomain {
+		// fromDomainSecretName := "cert-" + fromDomain
+		// err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Delete(context.Background(), fromDomainSecretName, metav1.DeleteOptions{})
+		// if err != nil {
+		// 	Logger.Sugar().Warnf("failed to delete fromDomain's cert: %v, err: %v", fromDomainSecretName, err)
+		// }
+		deletedRules, deletedTlss := ingress_cleanupByDomain(ig, fromDomain)
+		if deletedRules+deletedTlss > 0 {
+			ig.ResourceVersion = ""
+			cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
+		}
+	}
+
+	if b, rule := ingressRuleAlreadyCreated_byBackendHost(ig, customDomain); b { // ingressRuleAlreadyCreated
+		Logger.Sugar().Warnf("this is unexpected -- ingressRuleAlreadyCreated_byBackendHost: %v", rule)
 		return nil
 	}
+
 	customDomainRule := retRootRules[0].DeepCopy()
 	customDomainRule.Host = customDomain
 	ig.Spec.Rules = append(ig.Spec.Rules, *customDomainRule)
@@ -191,27 +215,24 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 		Hosts:      []string{customDomain},
 		SecretName: "cert-" + customDomain,
 	})
-
-	if fromDomain != cfg.SubDomain+"."+cfg.HubDomain {
-		ingress_removeRulesByDomain(ig, fromDomain)
-	}
-
+	ig.ResourceVersion = ""
 	newIg, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), ig, metav1.UpdateOptions{})
 	if err != nil {
 		Logger.Sugar().Errorf("failed to update ingress with customDomainRule: %v", err)
 		return err
 	}
 	Logger.Sugar().Debugf("updated ingress: %v", newIg)
+
 	return nil
 }
 
-func ingress_updateHaproxyCors(origins string) error {
+func ingress_updateHaproxyCors(from, to string) error {
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for _, ig := range igs.Items {
-		ig.Annotations["haproxy.org/response-set-header"] = origins
+		ig.Annotations["haproxy.org/response-set-header"] = strings.Replace(ig.Annotations["haproxy.org/response-set-header"], from, to, -1)
 		_, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), &ig, metav1.UpdateOptions{})
 		if err != nil {
 			return err
@@ -220,29 +241,41 @@ func ingress_updateHaproxyCors(origins string) error {
 	return nil
 }
 
-func ingress_removeRulesByDomain(ig *networkingv1.Ingress, domain string) error {
+func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) (int, int) {
 
 	trimmedRules := []networkingv1.IngressRule{}
 	trimmedTlss := []networkingv1.IngressTLS{}
 
+	deletedRules := 0
+	deleteTlss := 0
+
 	for _, rule := range ig.Spec.Rules {
 		if rule.Host == domain {
+			Logger.Sugar().Debugf("dropping rule: %v", rule)
+			deletedRules++
 			continue
 		}
 		trimmedRules = append(trimmedRules, rule)
 	}
 	for _, tls := range ig.Spec.TLS {
+		add := true
 		for _, host := range tls.Hosts {
 			if host == domain {
-				continue
+				Logger.Sugar().Debugf("dropping tls: %v", tls)
+				add = false
+				deleteTlss++
+				break
 			}
 		}
-		trimmedTlss = append(trimmedTlss, tls)
+		if add {
+			trimmedTlss = append(trimmedTlss, tls)
+		}
 	}
 
 	ig.Spec.Rules = trimmedRules
 	ig.Spec.TLS = trimmedTlss
 
-	return nil
+	Logger.Sugar().Debugf("deletedRules: %v, deletedTlss: %v", deletedRules, deleteTlss)
 
+	return deletedRules, deleteTlss
 }
