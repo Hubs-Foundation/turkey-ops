@@ -54,13 +54,14 @@ func (fm *featureMan) determineFeatures() {
 
 	if slices.Contains([]string{"pro", "business"}, cfg.Tier) {
 		fm._features.customDomain = true
+
+		customDomain, _ := Deployment_getLabel("custom-domain")
+		if customDomain != "" {
+			Logger.Info("customClient enabled -- customDomain: " + customDomain)
+			fm._features.customClient = true
+		}
 	}
 
-	customDomain, _ := Deployment_getLabel("custom-domain")
-	if customDomain != "" {
-		Logger.Info("customClient enabled <<< customDomain: " + customDomain)
-		fm._features.customClient = true
-	}
 }
 
 func (fm *featureMan) enableCustomClient() {

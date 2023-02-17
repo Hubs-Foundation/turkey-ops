@@ -130,6 +130,12 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	retCm.Data["config.toml.template"] =
 		strings.Replace(
 			retCm.Data["config.toml.template"], `host = "`+ret_from, `host = "`+ret_to, -1)
+	retCm.Data["config.toml.template"] =
+		strings.Replace(
+			retCm.Data["config.toml.template"], `host = https://"`+ret_from, `host = https://"`+ret_to, -1)
+	retCm.Data["config.toml.template"] =
+		strings.Replace(
+			retCm.Data["config.toml.template"], `issuer = "`+ret_from, `issuer = "`+ret_to, -1)
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
 	if err != nil {
 		return err
