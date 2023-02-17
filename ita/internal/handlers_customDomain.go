@@ -165,7 +165,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 		return err
 	}
 
-	err = ingress_updateHaproxyCors("https://" + hubs_to)
+	err = ingress_updateHaproxyCors(hubs_from, hubs_to)
 
 	return err
 }
@@ -218,13 +218,13 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 	return nil
 }
 
-func ingress_updateHaproxyCors(origins string) error {
+func ingress_updateHaproxyCors(from, to string) error {
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for _, ig := range igs.Items {
-		ig.Annotations["haproxy.org/response-set-header"] = origins
+		ig.Annotations["haproxy.org/response-set-header"] = strings.Replace(ig.Annotations["haproxy.org/response-set-header"], from, to, -1)
 		_, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Update(context.Background(), &ig, metav1.UpdateOptions{})
 		if err != nil {
 			return err
