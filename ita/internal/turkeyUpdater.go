@@ -200,6 +200,9 @@ func (u *TurkeyUpdater) tryDeployNewContainer(img, newtag string, info turkeyCon
 
 func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo turkeyContainerInfo, retriesRemaining int) error {
 
+	cfg.K8Man.WorkBegin("deployNewContainer")
+	defer cfg.K8Man.WorkEnd("deployNewContainer")
+
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), containerInfo.parentDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		Logger.Error("failed to get deployments <" + containerInfo.parentDeploymentName + "> in ns <" + cfg.PodNS + ">, err: " + err.Error())

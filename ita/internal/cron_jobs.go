@@ -128,6 +128,9 @@ func Cronjob_cleanupFailedPods(interval time.Duration) {
 }
 
 func publishToConfigmap_label(channel string, repo_tag_map map[string]string) error {
+	cfg.K8Man.WorkBegin("publishToConfigmap_label")
+	defer cfg.K8Man.WorkEnd("publishToConfigmap_label")
+
 	cfgmap, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "hubsbuilds-"+channel, metav1.GetOptions{})
 	if err != nil {
 		Logger.Error(err.Error())

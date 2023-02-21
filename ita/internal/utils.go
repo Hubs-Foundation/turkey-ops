@@ -22,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,6 +63,10 @@ func Deployment_getLabel(key string) (string, error) {
 }
 
 func Deployment_setLabel(key, val string) error {
+
+	cfg.K8Man.WorkBegin("Deployment_setLabel")
+	defer cfg.K8Man.WorkEnd("Deployment_setLabel")
+
 	//do we have channel labled on deployment?
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -74,18 +79,6 @@ func Deployment_setLabel(key, val string) error {
 	}
 	return nil
 }
-
-// func NS_setLabel(key, val string) error {
-// 	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	ns.Labels[key] = val
-
-// 	_, err = cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
-
-// 	return err
-// }
 
 func NS_getLabel(key string) (string, error) {
 	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
@@ -202,6 +195,10 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 }
 
 func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, readonly bool, propagation corev1.MountPropagationMode) error {
+
+	cfg.K8Man.WorkBegin("k8s_mountRetNfs")
+	defer cfg.K8Man.WorkEnd("k8s_mountRetNfs")
+
 	Logger.Debug("mounting Ret nfs for: " + targetDeploymentName)
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
@@ -291,6 +288,9 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, read
 }
 
 func k8s_removeNfsMount(targetDeploymentName string) error {
+
+	cfg.K8Man.WorkBegin("k8s_removeNfsMount")
+	defer cfg.K8Man.WorkEnd("k8s_removeNfsMount")
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -448,6 +448,10 @@ func UnzipZip(src, destDir string) error {
 }
 
 func ingress_addItaApiRule() error {
+
+	cfg.K8Man.WorkBegin("ingress_addItaApiRule")
+	defer cfg.K8Man.WorkEnd("ingress_addItaApiRule")
+
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -529,14 +533,19 @@ func findIngressRuleForRetRootPath(ig networkingv1.Ingress) ([]networkingv1.Ingr
 func pickLetsencryptAccountForHubId() string {
 	accts, err := cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", metav1.GetOptions{})
 	if err != nil {
+		Logger.Error("failed to get letsencrypt-accounts CM, err: " + err.Error())
+		return ""
+	}
+	if len(accts.Data) < 10 {
+		Logger.Sugar().Warnf("will be making new letsencrypt acccount, %v is not enough", len(accts.Data))
 		return ""
 	}
 
-	for _, v := range accts.Data {
+	for _, v := range accts.Data { // random?
 		return v
-
 	}
 	return ""
+
 }
 
 func runCertbotbotpod(letsencryptAcct, customDomain string) error {
@@ -556,8 +565,9 @@ func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{
 					{
-						Name:  "certbotbot",
-						Image: "mozillareality/certbotbot_http:29", //todo: <channel>-latest if channel's supported
+						Name:            "certbotbot",
+						Image:           "mozillareality/certbotbot_http:stable-latest", //todo: <channel>-latest if channel's supported ?
+						ImagePullPolicy: corev1.PullAlways,
 						Env: []corev1.EnvVar{
 							{Name: "DOMAIN", Value: customDomain},
 							{Name: "NAMESPACE", Value: cfg.PodNS},
@@ -592,4 +602,120 @@ func killPods(labelSelector string) error {
 	}
 
 	return nil
+}
+
+//curl -X POST -F file='@<path-to-file-ie-/tmp/file1>' ita:6000/upload
+func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, error) {
+
+	// 32 MB
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		// http.Error(w, err.Error(), http.StatusBadRequest)
+		return nil, err
+	}
+
+	Logger.Sugar().Debugf("r.MultipartForm.File: %v", r.MultipartForm.File)
+	// get a reference to the fileHeaders
+	files := r.MultipartForm.File["file"]
+
+	if expectedFileCount != -1 && len(files) != expectedFileCount {
+		return nil, errors.New("unexpected file count")
+	}
+
+	result := []string{}
+	report := ""
+	for _, fileHeader := range files {
+		fileHeader = files[0]
+		if fileHeader.Size > MAX_UPLOAD_SIZE {
+			report += fmt.Sprintf("skipped(too big): %v(%v/%vMB)\n", fileHeader.Filename, fileHeader.Size, MAX_UPLOAD_SIZE/(1048576))
+			result = append(result, "(skipped)"+fileHeader.Filename)
+			continue
+		}
+		Logger.Sugar().Debugf("working on file: %v (%v)", fileHeader.Filename, fileHeader.Size)
+		file, err := fileHeader.Open()
+		if err != nil {
+			report += fmt.Sprintf("failed to open %v, err: %v \n", fileHeader.Filename, err)
+			result = append(result, "(failed to open)"+fileHeader.Filename)
+			continue
+		}
+		defer file.Close()
+		buff := make([]byte, 512)
+		_, err = file.Read(buff)
+		if err != nil {
+			report += fmt.Sprintf("failed to read %v, err: %v \n", fileHeader.Filename, err)
+			result = append(result, "(failed to read)"+fileHeader.Filename)
+			continue
+		}
+		filetype := http.DetectContentType(buff)
+
+		Logger.Debug("filetype: " + filetype)
+
+		_, err = file.Seek(0, io.SeekStart)
+		if err != nil {
+			report += fmt.Sprintf("failed to seek %v, err: %v \n", fileHeader.Filename, err)
+			result = append(result, "(failed to seek)"+fileHeader.Filename)
+			continue
+		}
+		err = os.MkdirAll("/storage/ita_uploads", os.ModePerm)
+		if err != nil {
+			report += fmt.Sprintf("failed to makeDir %v, err: %v \n", fileHeader.Filename, err)
+			result = append(result, "(failed to makeDir)"+fileHeader.Filename)
+			continue
+		}
+		f, err := os.Create(fmt.Sprintf("/storage/ita_uploads/%s", fileHeader.Filename))
+		if err != nil {
+			report += fmt.Sprintf("failed to create %v, err: %v \n", fileHeader.Filename, err)
+			result = append(result, "(failed to create)"+fileHeader.Filename)
+			continue
+		}
+		defer f.Close()
+
+		pg := &Progress{
+			TotalSize: fileHeader.Size,
+		}
+		_, err = io.Copy(f, io.TeeReader(file, pg))
+		if err != nil {
+			report += fmt.Sprintf("failed to copy %v, err: %v \n", fileHeader.Filename, err)
+			result = append(result, "(failed to copy)"+fileHeader.Filename)
+			continue
+		}
+		report += fmt.Sprintf("saved: %v(%v, %vMB)\n", f.Name(), filetype, fileHeader.Size/(1024*1024))
+		result = append(result, fileHeader.Filename)
+	}
+
+	Logger.Sugar().Debugf("report: %v", report)
+	return result, nil
+}
+
+func blockEgress(appName string) error {
+
+	cfg.K8Man.WorkBegin("blockEgress for " + appName)
+	defer cfg.K8Man.WorkEnd("blockEgress for " + appName)
+
+	npName := "egblock-" + appName
+
+	_, err := cfg.K8sClientSet.NetworkingV1().NetworkPolicies(cfg.PodNS).Get(context.Background(), npName, metav1.GetOptions{})
+	if err == nil {
+		Logger.Info("already done: blockEgress for " + appName)
+	}
+
+	if err != nil && !k8errors.IsNotFound(err) {
+		return err
+	}
+
+	_, err = cfg.K8sClientSet.NetworkingV1().NetworkPolicies(cfg.PodNS).Create(
+		context.Background(),
+		&networkingv1.NetworkPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "egblock-" + appName,
+				Namespace: cfg.PodNS,
+			},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{"app": "app=" + appName}},
+				PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeEgress},
+			},
+		},
+		metav1.CreateOptions{},
+	)
+
+	return err
 }

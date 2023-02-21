@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	networkingv1 "k8s.io/api/networking/v1"
@@ -11,7 +12,8 @@ import (
 )
 
 var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/custom-domain" {
+	features := cfg.Features.Get()
+	if !features.customDomain || (r.URL.Path != "/custom-domain" && r.URL.Path != "/api/ita/custom-domain") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -28,10 +30,11 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		}
 
 		if fromDomain != "" {
-			if current, _ := Deployment_getLabel("custom-domain"); fromDomain != current {
-				http.Error(w, fmt.Sprintf("expected fromDomain %v, expecting: %v", fromDomain, current), http.StatusBadRequest)
-				return
-			}
+			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
+		}
+		if current, _ := Deployment_getLabel("custom-domain"); fromDomain != current {
+			http.Error(w, fmt.Sprintf("expected fromDomain %v, expecting: %v", fromDomain, current), http.StatusBadRequest)
+			return
 		}
 
 		if toDomain != "" { //certbotbot
@@ -42,10 +45,24 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				http.Error(w, "failed @ runCertbotbotpod: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
+		} else {
+			toDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 
 		Logger.Sugar().Debugf("calling setCustomDomain with fromDomain: %v, toDomain: %v", fromDomain, toDomain)
 		err := setCustomDomain(fromDomain, toDomain)
+		if err != nil {
+			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = ingress_addCustomDomainRule(fromDomain, toDomain)
+		if err != nil {
+			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = ingress_updateHaproxyCors(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -77,9 +94,37 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	http.Error(w, "", http.StatusMethodNotAllowed)
 
 })
+var LetsencryptAccountCollect = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	features := cfg.Features.Get()
+	if !features.customDomain || (r.URL.Path != "/letsencrypt-account-collect") {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	letsencryptAcct := r.Header.Get("letsencrypt-account")
+	cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", metav1.GetOptions{})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	acctName := "acct-" + strconv.Itoa(len(cm.Data))
+	cm.Data[acctName] = letsencryptAcct
+	cm.ResourceVersion = ""
+	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Update(context.Background(), cm, metav1.UpdateOptions{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	Logger.Sugar().Debugf("collected letsencryptAcct: %v", letsencryptAcct)
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "collected: "+acctName)
+})
 
 var UpdateCert = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/update-cert" {
+	features := cfg.Features.Get()
+	if !features.customDomain || (r.URL.Path != "/update-cert" && r.URL.Path != "/api/ita/update-cert") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -112,17 +157,20 @@ func isCustomDomainGood(customDomain string) bool {
 // empty from/toDomain == turkey provided / native (sub)domain
 func setCustomDomain(fromDomain, toDomain string) error {
 
+	cfg.K8Man.WorkBegin("setCustomDomain")
+	defer cfg.K8Man.WorkEnd("setCustomDomain")
+
 	//update ret config
 	retCm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	ret_from := fromDomain
-	if ret_from == "" {
+	if ret_from == cfg.SubDomain+"."+cfg.HubDomain {
 		ret_from = "<SUB_DOMAIN>.<HUB_DOMAIN>"
 	}
 	ret_to := toDomain
-	if ret_to == "" {
+	if ret_to == cfg.SubDomain+"."+cfg.HubDomain {
 		ret_to = "<SUB_DOMAIN>.<HUB_DOMAIN>"
 	}
 
@@ -142,15 +190,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	}
 
 	//update hubs and spoke's env var
-	hubs_from := fromDomain
-	if hubs_from == "" {
-		hubs_from = cfg.SubDomain + "." + cfg.HubDomain
-	}
-	hubs_to := toDomain
-	if hubs_to == "" {
-		hubs_to = cfg.SubDomain + "." + cfg.HubDomain
-	}
-	Logger.Sugar().Debugf("setCustomDomain, hubs_from: %v, hubs_to: %v", hubs_from, hubs_to)
+	Logger.Sugar().Debugf("setCustomDomain, hubs_from: %v, hubs_to: %v", fromDomain, toDomain)
 	for _, appName := range []string{"hubs", "spoke"} {
 		d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), appName, metav1.GetOptions{})
 		if err != nil {
@@ -158,25 +198,20 @@ func setCustomDomain(fromDomain, toDomain string) error {
 		}
 		for i, env := range d.Spec.Template.Spec.Containers[0].Env {
 			d.Spec.Template.Spec.Containers[0].Env[i].Value =
-				strings.Replace(env.Value, hubs_from, hubs_to, -1)
+				strings.Replace(env.Value, fromDomain, toDomain, -1)
 		}
 		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
 	}
-
-	err = ingress_addCustomDomainRule(hubs_to, hubs_from)
-	if err != nil {
-		return err
-	}
-
-	err = ingress_updateHaproxyCors(hubs_from, hubs_to)
-
-	return err
+	return nil
 }
 
-func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
+func ingress_addCustomDomainRule(fromDomain, customDomain string) error {
+
+	cfg.K8Man.WorkBegin("ingress_addCustomDomainRule")
+	defer cfg.K8Man.WorkEnd("ingress_addCustomDomainRule")
 
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -227,6 +262,10 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 }
 
 func ingress_updateHaproxyCors(from, to string) error {
+
+	cfg.K8Man.WorkBegin("ingress_updateHaproxyCors")
+	defer cfg.K8Man.WorkEnd("ingress_updateHaproxyCors")
+
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err

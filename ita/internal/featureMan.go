@@ -97,6 +97,8 @@ func (fm *featureMan) setupFeatures() {
 		if err != nil {
 			Logger.Error(err.Error())
 		}
+		blockEgress("hubs")
+		blockEgress("spoke")
 	}
 }
 
