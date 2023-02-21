@@ -537,6 +537,7 @@ func pickLetsencryptAccountForHubId() string {
 		return ""
 	}
 	if len(accts.Data) < 10 {
+		Logger.Sugar().Warnf("will be making new letsencrypt acccount, %v is not enough", len(accts.Data))
 		return ""
 	}
 
