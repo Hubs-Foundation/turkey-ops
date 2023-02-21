@@ -57,7 +57,7 @@ func main() {
 	router.Handle("/deploy/hubs", internal.DeployHubs)
 	router.Handle("/undeploy/hubs", internal.UndeployHubs)
 	router.Handle("/custom-domain", internal.CustomDomain)
-	router.Handle("/dumpWorkLog", internal.DumpWorkLog)
+	router.Handle("/dump-worklog", internal.DumpWorkLog)
 
 	//turkeyauth protected public api endpoints
 	router.Handle("/api/ita/upload", chk_hat_hdr()(internal.Upload))

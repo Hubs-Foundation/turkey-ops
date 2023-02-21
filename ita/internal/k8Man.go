@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -38,10 +39,16 @@ func (k *k8Man) WriteWorkLog(entry k8WorklogEntry) {
 	k.worklog = append(k.worklog, entry)
 }
 
-func (k *k8Man) DumpWorkLog() []k8WorklogEntry {
+func (k *k8Man) DumpWorkLog() []string {
 	k.mu_worklog.Lock()
 	defer k.mu_worklog.Unlock()
-	return k.worklog
+
+	dump := []string{}
+	for _, e := range k.worklog {
+		dump = append(dump, fmt.Sprintf("[%v] %v at %v", e.event, e.work, e.at))
+	}
+
+	return dump
 }
 func (k *k8Man) WorkBegin(work string) {
 	k.wantToStart(work)
