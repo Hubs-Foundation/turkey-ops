@@ -39,13 +39,13 @@ func (k *k8Man) WriteWorkLog(entry k8WorklogEntry) {
 	k.worklog = append(k.worklog, entry)
 }
 
-func (k *k8Man) DumpWorkLog() []string {
+func (k *k8Man) DumpWorkLog() string {
 	k.mu_worklog.Lock()
 	defer k.mu_worklog.Unlock()
 
-	dump := []string{}
+	dump := ""
 	for _, e := range k.worklog {
-		dump = append(dump, fmt.Sprintf("[%v] %v at %v", e.event, e.work, e.at))
+		dump += fmt.Sprintf("\n  [%v] %v at %v", e.event, e.work, e.at)
 	}
 
 	return dump
