@@ -33,6 +33,8 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				http.Error(w, fmt.Sprintf("expected fromDomain %v, expecting: %v", fromDomain, current), http.StatusBadRequest)
 				return
 			}
+		} else {
+			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 
 		if toDomain != "" { //certbotbot
@@ -43,10 +45,24 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				http.Error(w, "failed @ runCertbotbotpod: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
+		} else {
+			toDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 
 		Logger.Sugar().Debugf("calling setCustomDomain with fromDomain: %v, toDomain: %v", fromDomain, toDomain)
 		err := setCustomDomain(fromDomain, toDomain)
+		if err != nil {
+			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = ingress_addCustomDomainRule(fromDomain, toDomain)
+		if err != nil {
+			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = ingress_updateHaproxyCors(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -123,11 +139,11 @@ func setCustomDomain(fromDomain, toDomain string) error {
 		return err
 	}
 	ret_from := fromDomain
-	if ret_from == "" {
+	if ret_from == cfg.SubDomain+"."+cfg.HubDomain {
 		ret_from = "<SUB_DOMAIN>.<HUB_DOMAIN>"
 	}
 	ret_to := toDomain
-	if ret_to == "" {
+	if ret_to == cfg.SubDomain+"."+cfg.HubDomain {
 		ret_to = "<SUB_DOMAIN>.<HUB_DOMAIN>"
 	}
 
@@ -147,15 +163,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	}
 
 	//update hubs and spoke's env var
-	hubs_from := fromDomain
-	if hubs_from == "" {
-		hubs_from = cfg.SubDomain + "." + cfg.HubDomain
-	}
-	hubs_to := toDomain
-	if hubs_to == "" {
-		hubs_to = cfg.SubDomain + "." + cfg.HubDomain
-	}
-	Logger.Sugar().Debugf("setCustomDomain, hubs_from: %v, hubs_to: %v", hubs_from, hubs_to)
+	Logger.Sugar().Debugf("setCustomDomain, hubs_from: %v, hubs_to: %v", fromDomain, toDomain)
 	for _, appName := range []string{"hubs", "spoke"} {
 		d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), appName, metav1.GetOptions{})
 		if err != nil {
@@ -163,22 +171,14 @@ func setCustomDomain(fromDomain, toDomain string) error {
 		}
 		for i, env := range d.Spec.Template.Spec.Containers[0].Env {
 			d.Spec.Template.Spec.Containers[0].Env[i].Value =
-				strings.Replace(env.Value, hubs_from, hubs_to, -1)
+				strings.Replace(env.Value, fromDomain, toDomain, -1)
 		}
 		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
 	}
-
-	err = ingress_addCustomDomainRule(hubs_to, hubs_from)
-	if err != nil {
-		return err
-	}
-
-	err = ingress_updateHaproxyCors(hubs_from, hubs_to)
-
-	return err
+	return nil
 }
 
 func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
