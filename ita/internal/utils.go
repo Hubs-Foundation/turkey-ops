@@ -536,6 +536,9 @@ func pickLetsencryptAccountForHubId() string {
 		Logger.Error("failed to get letsencrypt-accounts CM, err: " + err.Error())
 		return ""
 	}
+	if len(accts.Data) < 10 {
+		return ""
+	}
 
 	for _, v := range accts.Data { // random?
 		return v
