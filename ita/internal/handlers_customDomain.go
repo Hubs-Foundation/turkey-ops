@@ -112,6 +112,9 @@ func isCustomDomainGood(customDomain string) bool {
 // empty from/toDomain == turkey provided / native (sub)domain
 func setCustomDomain(fromDomain, toDomain string) error {
 
+	cfg.K8Man.WorkBegin("setCustomDomain")
+	defer cfg.K8Man.WorkEnd("setCustomDomain")
+
 	//update ret config
 	retCm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "ret-config", metav1.GetOptions{})
 	if err != nil {
@@ -178,6 +181,9 @@ func setCustomDomain(fromDomain, toDomain string) error {
 
 func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 
+	cfg.K8Man.WorkBegin("ingress_addCustomDomainRule")
+	defer cfg.K8Man.WorkEnd("ingress_addCustomDomainRule")
+
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
@@ -227,6 +233,10 @@ func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
 }
 
 func ingress_updateHaproxyCors(from, to string) error {
+
+	cfg.K8Man.WorkBegin("ingress_updateHaproxyCors")
+	defer cfg.K8Man.WorkEnd("ingress_updateHaproxyCors")
+
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
