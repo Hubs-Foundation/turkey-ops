@@ -30,12 +30,11 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		}
 
 		if fromDomain != "" {
-			if current, _ := Deployment_getLabel("custom-domain"); fromDomain != current {
-				http.Error(w, fmt.Sprintf("expected fromDomain %v, expecting: %v", fromDomain, current), http.StatusBadRequest)
-				return
-			}
-		} else {
 			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
+		}
+		if current, _ := Deployment_getLabel("custom-domain"); fromDomain != current {
+			http.Error(w, fmt.Sprintf("expected fromDomain %v, expecting: %v", fromDomain, current), http.StatusBadRequest)
+			return
 		}
 
 		if toDomain != "" { //certbotbot
