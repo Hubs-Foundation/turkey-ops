@@ -181,7 +181,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	return nil
 }
 
-func ingress_addCustomDomainRule(customDomain, fromDomain string) error {
+func ingress_addCustomDomainRule(fromDomain, customDomain string) error {
 
 	cfg.K8Man.WorkBegin("ingress_addCustomDomainRule")
 	defer cfg.K8Man.WorkEnd("ingress_addCustomDomainRule")
