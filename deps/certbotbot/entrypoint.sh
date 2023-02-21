@@ -162,7 +162,7 @@ if [ -z $LETSENCRYPT_ACCOUNT ]; then
   cd /etc/letsencrypt/accounts/acme*/directory/ && tar -czvf acct.tar.gz
   acct=$(cat acct.tar.gz|base64)
   echo "reporting new letsencrypt account back to ita: $acct"
-  curl -X POST -H "letsencrypt-account:$acct" http://ita:6000/new-letsencrypt-account
+  curl -X POST -H "letsencrypt-account:$acct" http://ita:6000/letsencrypt-account-collect
 fi
 
 if ! [[ $? ]]; then echo "[ERROR],[certbotbot], wtb manual help pls"; err_exit; fi

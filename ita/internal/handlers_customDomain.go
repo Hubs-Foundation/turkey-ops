@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	networkingv1 "k8s.io/api/networking/v1"
@@ -93,6 +94,33 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 	http.Error(w, "", http.StatusMethodNotAllowed)
 
+})
+var LetsencryptAccountCollect = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	features := cfg.Features.Get()
+	if !features.customDomain || (r.URL.Path != "/letsencrypt-account-collect") {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	letsencryptAcct := r.Header.Get("letsencrypt-account")
+	cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", metav1.GetOptions{})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	acctName := "acct-" + strconv.Itoa(len(cm.Data))
+	cm.Data[acctName] = letsencryptAcct
+	cm.ResourceVersion = ""
+	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Update(context.Background(), cm, metav1.UpdateOptions{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	Logger.Sugar().Debugf("collected letsencryptAcct: %v", letsencryptAcct)
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "collected: "+acctName)
 })
 
 var UpdateCert = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

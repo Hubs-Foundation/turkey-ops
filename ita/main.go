@@ -57,6 +57,7 @@ func main() {
 	router.Handle("/deploy/hubs", internal.DeployHubs)
 	router.Handle("/undeploy/hubs", internal.UndeployHubs)
 	router.Handle("/custom-domain", internal.CustomDomain)
+	router.Handle("/letsencrypt-account-collect", internal.LetsencryptAccountCollect)
 	router.Handle("/dump-worklog", internal.DumpWorkLog)
 
 	//turkeyauth protected public api endpoints

@@ -533,14 +533,15 @@ func findIngressRuleForRetRootPath(ig networkingv1.Ingress) ([]networkingv1.Ingr
 func pickLetsencryptAccountForHubId() string {
 	accts, err := cfg.K8sClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", metav1.GetOptions{})
 	if err != nil {
+		Logger.Error("failed to get letsencrypt-accounts CM, err: " + err.Error())
 		return ""
 	}
 
-	for _, v := range accts.Data {
+	for _, v := range accts.Data { // random?
 		return v
-
 	}
 	return ""
+
 }
 
 func runCertbotbotpod(letsencryptAcct, customDomain string) error {
