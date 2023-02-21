@@ -11,7 +11,8 @@ import (
 )
 
 var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/upload" && r.URL.Path != "/api/ita/upload" {
+	features := cfg.Features.Get()
+	if !features.customClient || (r.URL.Path != "/upload" && r.URL.Path != "/api/ita/upload") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -28,7 +29,8 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 //curl -X PATCH ita:6000/deploy/hubs?file=<name-of-the-file-under-/storage/ita-uploads>
 var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/deploy/hubs" && r.URL.Path != "/api/ita/deploy/hubs" {
+	features := cfg.Features.Get()
+	if !features.customClient || (r.URL.Path != "/deploy/hubs" && r.URL.Path != "/api/ita/deploy/hubs") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -70,7 +72,8 @@ var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 })
 
 var UndeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/undeploy/hubs" && r.URL.Path != "/api/ita/undeploy/hubs" {
+	features := cfg.Features.Get()
+	if !features.customClient || (r.URL.Path != "/undeploy/hubs" && r.URL.Path != "/api/ita/undeploy/hubs") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}

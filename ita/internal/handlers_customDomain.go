@@ -11,7 +11,8 @@ import (
 )
 
 var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/custom-domain" {
+	features := cfg.Features.Get()
+	if !features.customDomain || (r.URL.Path != "/custom-domain" && r.URL.Path != "/api/ita/custom-domain") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -79,7 +80,8 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 })
 
 var UpdateCert = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/update-cert" {
+	features := cfg.Features.Get()
+	if !features.customDomain || (r.URL.Path != "/update-cert" && r.URL.Path != "/api/ita/update-cert") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
