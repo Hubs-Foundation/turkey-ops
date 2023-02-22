@@ -28,12 +28,8 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
-
-		if fromDomain == "" {
-			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
-		}
 		if current, _ := Deployment_getLabel("custom-domain"); fromDomain != current {
-			http.Error(w, fmt.Sprintf("expected fromDomain %v, expecting: %v", fromDomain, current), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("mismatch: from_domain %v, current: %v", fromDomain, current), http.StatusBadRequest)
 			return
 		}
 
@@ -49,25 +45,25 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			toDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 
-		Logger.Sugar().Debugf("calling setCustomDomain with fromDomain: %v, toDomain: %v", fromDomain, toDomain)
+		if fromDomain == "" {
+			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
+		}
+		Logger.Sugar().Debugf("setting custom domain with fromDomain: %v, toDomain: %v", fromDomain, toDomain)
 		err := setCustomDomain(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 		err = ingress_addCustomDomainRule(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 		err = ingress_updateHaproxyCors(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-
 		//refresh ret pods
 		err = killPods("app=reticulum")
 		if err != nil {
