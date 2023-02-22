@@ -50,7 +50,7 @@ func (k *k8Man) DumpWorkLog() string {
 	k.mu_worklog.Lock()
 	defer k.mu_worklog.Unlock()
 
-	dump := ""
+	dump := "\n{"
 	ele := k.worklog.Front()
 	for ele != nil {
 		entry := ele.Value.(k8WorklogEntry)
@@ -58,7 +58,7 @@ func (k *k8Man) DumpWorkLog() string {
 		ele = ele.Next()
 	}
 
-	return dump
+	return dump + "}  \n\n"
 }
 func (k *k8Man) WorkBegin(work string) {
 	k.wantToStart(work)
@@ -66,7 +66,7 @@ func (k *k8Man) WorkBegin(work string) {
 	defer k.mu.Unlock()
 	k._busy = true
 	k.WriteWorkLog(
-		k8WorklogEntry{work: work, event: "WorkBegin", at: time.Now()},
+		k8WorklogEntry{work: work, event: "WorkOp", at: time.Now()},
 	)
 }
 
@@ -75,7 +75,7 @@ func (k *k8Man) WorkEnd(work string) {
 	defer k.mu.Unlock()
 	k._busy = false
 	k.WriteWorkLog(
-		k8WorklogEntry{work: work, event: "WorkEnd", at: time.Now()},
+		k8WorklogEntry{work: work, event: "WorkEd", at: time.Now()},
 	)
 }
 
@@ -84,7 +84,7 @@ func (k *k8Man) wantToStart(work string) {
 		return
 	}
 	k.WriteWorkLog(
-		k8WorklogEntry{work: work, event: "WantToStart", at: time.Now()},
+		k8WorklogEntry{work: work, event: "waiting", at: time.Now()},
 	)
 	for k.IsBusy() {
 		time.Sleep(1 * time.Second)

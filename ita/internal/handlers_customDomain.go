@@ -29,7 +29,7 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		if fromDomain != "" {
+		if fromDomain == "" {
 			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 		if current, _ := Deployment_getLabel("custom-domain"); fromDomain != current {
@@ -45,7 +45,7 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				http.Error(w, "failed @ runCertbotbotpod: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
-		} else {
+		} else { //toDomain == ""
 			toDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 
