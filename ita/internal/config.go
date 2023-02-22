@@ -39,7 +39,7 @@ type Config struct {
 	ExtraHealthchecks []string
 
 	Features featureMan
-	K8Man    k8Man
+	K8Man    *k8Man
 
 	RootUserEmail string
 	CustomDomain  string
@@ -99,7 +99,7 @@ func MakeCfg() {
 	}
 	cfg.HostnameHash = hash(Hostname)
 
-	cfg.K8Man = *New_k8Man()
+	cfg.K8Man = New_k8Man()
 
 	cfg.K8sCfg, err = rest.InClusterConfig()
 	if err != nil {

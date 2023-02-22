@@ -58,7 +58,7 @@ func (k *k8Man) DumpWorkLog() string {
 		ele = ele.Next()
 	}
 
-	return dump + "}  \n\n"
+	return dump + "\n}  \n\n"
 }
 func (k *k8Man) WorkBegin(work string) {
 	k.wantToStart(work)
