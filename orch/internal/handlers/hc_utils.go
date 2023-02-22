@@ -11,10 +11,11 @@ import (
 	"main/internal"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var Ita_admin_info = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +151,7 @@ func wakeupHcNs(ns string) {
 	//todo: get and handle tier configs
 
 	//scale things back up in this namespace
-	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), v1.ListOptions{})
+	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		internal.Logger.Error("wakeupHcNs - failed to list deployments: " + err.Error())
 	}
@@ -161,7 +162,7 @@ func wakeupHcNs(ns string) {
 	scaleUpTo := 1
 	for _, d := range ds.Items {
 		d.Spec.Replicas = pointerOfInt32(scaleUpTo)
-		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, v1.UpdateOptions{})
+		_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
 			internal.Logger.Error("wakeupHcNs -- failed to scale <ns: " + ns + ", deployment: " + d.Name + "> back up: " + err.Error())
 		}
@@ -318,3 +319,30 @@ func quotedString_or_nullForEmpty(in string) string {
 	}
 	return `"` + in + `"`
 }
+
+var LetsencryptAccountCollect = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/letsencrypt-account-collect" || r.Method != "POST" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	letsencryptAcct := r.Header.Get("letsencrypt-account")
+	cm, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", metav1.GetOptions{})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	acctName := "acct-" + strconv.Itoa(len(cm.Data))
+	cm.Data[acctName] = letsencryptAcct
+	cm.ResourceVersion = ""
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps("turkey-services").Update(context.Background(), cm, metav1.UpdateOptions{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	internal.Logger.Sugar().Debugf("collected letsencryptAcct: %v", letsencryptAcct)
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "collected: "+acctName)
+})

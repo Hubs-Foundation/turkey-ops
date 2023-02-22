@@ -45,6 +45,9 @@ func main() {
 		fmt.Fprintf(w, internal.Cfg.HubDomain)
 	}))
 
+	router.Handle("/letsencrypt-account-collect", handlers.LetsencryptAccountCollect)
+
+	//start listening
 	port, err := strconv.Atoi(internal.Cfg.Port)
 	if err != nil {
 		internal.GetLogger().Panic("bad port: " + err.Error())
