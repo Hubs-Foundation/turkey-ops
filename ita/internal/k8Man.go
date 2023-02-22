@@ -40,8 +40,6 @@ func (k *k8Man) IsBusy() bool {
 func (k *k8Man) WriteWorkLog(entry k8WorklogEntry) {
 	k.mu_worklog.Lock()
 	defer k.mu_worklog.Unlock()
-	Logger.Sugar().Debugf("writing -- %v", entry)
-	Logger.Sugar().Debugf("current worklog.Len -- %v", k.worklog.Len())
 	k.worklog.PushBack(entry)
 	if k.worklog.Len() > 100 {
 		k.worklog.Remove(k.worklog.Front())

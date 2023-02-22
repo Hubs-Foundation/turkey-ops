@@ -99,6 +99,8 @@ func MakeCfg() {
 	}
 	cfg.HostnameHash = hash(Hostname)
 
+	cfg.K8Man = *New_k8Man()
+
 	cfg.K8sCfg, err = rest.InClusterConfig()
 	if err != nil {
 		Logger.Error(err.Error())
@@ -133,9 +135,6 @@ func MakeCfg() {
 	cfg.Features.determineFeatures()
 	Logger.Sugar().Infof("cfg.Features: %+v", cfg.Features.Get())
 	cfg.Features.setupFeatures()
-
-	// k8Man
-	cfg.K8Man = *New_k8Man()
 
 }
 
