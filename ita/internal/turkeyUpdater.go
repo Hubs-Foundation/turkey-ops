@@ -200,7 +200,7 @@ func (u *TurkeyUpdater) tryDeployNewContainer(img, newtag string, info turkeyCon
 
 func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo turkeyContainerInfo, retriesRemaining int) error {
 
-	cfg.K8Man.WorkBegin("deployNewContainer")
+	cfg.K8Man.WorkBegin(fmt.Sprintf("deployNewContainer for repo %v, newTagL %v, containerInfo: %v, retriesRemaining: %v", repo, newTag, containerInfo, retriesRemaining))
 	defer cfg.K8Man.WorkEnd("deployNewContainer")
 
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), containerInfo.parentDeploymentName, metav1.GetOptions{})

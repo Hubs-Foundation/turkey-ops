@@ -153,7 +153,7 @@ func isCustomDomainGood(customDomain string) bool {
 // empty from/toDomain == turkey provided / native (sub)domain
 func setCustomDomain(fromDomain, toDomain string) error {
 
-	cfg.K8Man.WorkBegin("setCustomDomain")
+	cfg.K8Man.WorkBegin(fmt.Sprintf("setCustomDomain from %v to %v", fromDomain, toDomain))
 	defer cfg.K8Man.WorkEnd("setCustomDomain")
 
 	//update ret config
@@ -206,7 +206,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 
 func ingress_addCustomDomainRule(fromDomain, customDomain string) error {
 
-	cfg.K8Man.WorkBegin("ingress_addCustomDomainRule")
+	cfg.K8Man.WorkBegin(fmt.Sprintf("ingress_addCustomDomainRule from %v to %v", fromDomain, customDomain))
 	defer cfg.K8Man.WorkEnd("ingress_addCustomDomainRule")
 
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
@@ -259,7 +259,7 @@ func ingress_addCustomDomainRule(fromDomain, customDomain string) error {
 
 func ingress_updateHaproxyCors(from, to string) error {
 
-	cfg.K8Man.WorkBegin("ingress_updateHaproxyCors")
+	cfg.K8Man.WorkBegin(fmt.Sprintf("ingress_updateHaproxyCors from %v to %v", from, to))
 	defer cfg.K8Man.WorkEnd("ingress_updateHaproxyCors")
 
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})

@@ -64,7 +64,7 @@ func Deployment_getLabel(key string) (string, error) {
 
 func Deployment_setLabel(key, val string) error {
 
-	cfg.K8Man.WorkBegin("Deployment_setLabel")
+	cfg.K8Man.WorkBegin(fmt.Sprintf("Deployment_setLabel: %v=%v", key, val))
 	defer cfg.K8Man.WorkEnd("Deployment_setLabel")
 
 	//do we have channel labled on deployment?
@@ -196,7 +196,7 @@ func k8s_waitForPods(pods *corev1.PodList, timeout time.Duration) error {
 
 func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, readonly bool, propagation corev1.MountPropagationMode) error {
 
-	cfg.K8Man.WorkBegin("k8s_mountRetNfs")
+	cfg.K8Man.WorkBegin(fmt.Sprintf("k8s_mountRetNfs to %v, volPathSubdir: %v, mountPath: %v", targetDeploymentName, volPathSubdir, mountPath))
 	defer cfg.K8Man.WorkEnd("k8s_mountRetNfs")
 
 	Logger.Debug("mounting Ret nfs for: " + targetDeploymentName)
@@ -289,7 +289,7 @@ func k8s_mountRetNfs(targetDeploymentName, volPathSubdir, mountPath string, read
 
 func k8s_removeNfsMount(targetDeploymentName string) error {
 
-	cfg.K8Man.WorkBegin("k8s_removeNfsMount")
+	cfg.K8Man.WorkBegin("k8s_removeNfsMount for: " + targetDeploymentName)
 	defer cfg.K8Man.WorkEnd("k8s_removeNfsMount")
 
 	d_target, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), targetDeploymentName, metav1.GetOptions{})
@@ -689,7 +689,7 @@ func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, error
 func blockEgress(appName string) error {
 
 	cfg.K8Man.WorkBegin("blockEgress for " + appName)
-	defer cfg.K8Man.WorkEnd("blockEgress for " + appName)
+	defer cfg.K8Man.WorkEnd("blockEgress")
 
 	npName := "egblock-" + appName
 

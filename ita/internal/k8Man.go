@@ -54,7 +54,7 @@ func (k *k8Man) DumpWorkLog() string {
 	ele := k.worklog.Front()
 	for ele != nil {
 		entry := ele.Value.(k8WorklogEntry)
-		dump += fmt.Sprintf("\n  [%v]***%v***at %v", entry.event, entry.work, entry.at.Format(time.RFC822))
+		dump += fmt.Sprintf("\n  [%v] %v (%v)", entry.event, entry.work, entry.at.Format("060102-03:04:05"))
 		ele = ele.Next()
 	}
 
