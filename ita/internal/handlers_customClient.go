@@ -103,7 +103,7 @@ var Undeploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 func unzipNdeployCustomClient(app, fileName string) error {
 
 	dir := "/storage/" + app
-	Logger.Debug("unzipNdeployCustomClient to dir: " + dir)
+	Logger.Sugar().Debugf("unzipNdeployCustomClient, dir: %v, fileName: %v", dir, fileName)
 
 	os.RemoveAll(dir)
 

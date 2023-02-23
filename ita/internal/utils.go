@@ -341,6 +341,7 @@ func k8s_KillPodsByLabel(label string) error {
 
 // func ExtractTarGz(gzipStream io.Reader) error {
 func UnzipTar(src, destDir string) error {
+	Logger.Debug("UnzipTar: " + src + ", destDir: " + destDir)
 
 	f, err := os.Open(src)
 	if err != nil {
@@ -364,10 +365,12 @@ func UnzipTar(src, destDir string) error {
 		}
 		switch header.Typeflag {
 		case tar.TypeDir:
+			Logger.Debug("TypeDir: " + destDir + header.Name)
 			if err := os.MkdirAll(destDir+header.Name, 0755); err != nil {
 				return fmt.Errorf("Mkdir() failed: %s", err.Error())
 			}
 		case tar.TypeReg:
+			Logger.Debug("TypeReg: " + destDir + header.Name)
 			outFile, err := os.Create(destDir + header.Name)
 			if err != nil {
 				return fmt.Errorf("Create() failed: %s", err.Error())
