@@ -27,11 +27,16 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 })
 
-//curl -X PATCH ita:6000/deploy/hubs?file=<name-of-the-file-under-/storage/ita-uploads>
-var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//curl -X PATCH ita:6000/deploy?app=hubs?file=<name-of-the-file-under-/storage/ita-uploads>
+var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	features := cfg.Features.Get()
-	if !features.customClient || (r.URL.Path != "/deploy/hubs" && r.URL.Path != "/api/ita/deploy/hubs") {
+	if !features.customClient || (r.URL.Path != "/deploy" && r.URL.Path != "/api/ita/deploy") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	app := r.URL.Query().Get("app")
+	if app != "hubs" && app != "spoke" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
@@ -42,7 +47,7 @@ var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		fileName := r.URL.Query()["file"][0]
 
-		err := unzipNdeployCustomHubs(fileName)
+		err := unzipNdeployCustomClient(app, fileName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -59,7 +64,7 @@ var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		reqId := w.Header().Get("X-Request-Id")
 
-		err = unzipNdeployCustomHubs(files[0])
+		err = unzipNdeployCustomClient(app, files[0])
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -71,14 +76,19 @@ var DeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 })
 
-var UndeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var Undeploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	features := cfg.Features.Get()
-	if !features.customClient || (r.URL.Path != "/undeploy/hubs" && r.URL.Path != "/api/ita/undeploy/hubs") {
+	if !features.customClient || (r.URL.Path != "/undeploy" && r.URL.Path != "/api/ita/undeploy") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+	app := r.URL.Query().Get("app")
+	if app != "hubs" && app != "spoke" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
-	err := k8s_removeNfsMount("hubs")
+	err := k8s_removeNfsMount(app)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -90,22 +100,20 @@ var UndeployHubs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func unzipNdeployCustomHubs(fileName string) error {
+func unzipNdeployCustomClient(app, fileName string) error {
 
-	// if appName != "hubs" && appName != "spoke" {
-	// 	return errors.New("bad appName: " + appName)
-	// }
+	dir := "/storage/" + app
 
-	os.RemoveAll("/storage/hubs/")
+	os.RemoveAll(dir)
 
 	//unzip
 	if strings.HasSuffix(fileName, ".tar.gz") {
-		err := UnzipTar("/storage/ita_uploads/"+fileName, "/storage/hubs/")
+		err := UnzipTar("/storage/ita_uploads/"+fileName, dir)
 		if err != nil {
 			return errors.New("failed @ UnzipTar: " + err.Error())
 		}
 	} else if strings.HasSuffix(fileName, ".zip") {
-		err := UnzipZip("/storage/ita_uploads/"+fileName, "/storage/hubs/")
+		err := UnzipZip("/storage/ita_uploads/"+fileName, dir)
 		if err != nil {
 			return errors.New("failed @ UnzipZip: " + err.Error())
 		}
@@ -114,7 +122,7 @@ func unzipNdeployCustomHubs(fileName string) error {
 	}
 	//deploy
 	// ensure mounts
-	err := k8s_mountRetNfs("hubs", "/hubs", "/www/hubs", false, corev1.MountPropagationNone)
+	err := k8s_mountRetNfs(app, "/"+app, "/www/"+app, false, corev1.MountPropagationNone)
 	if err != nil {
 		return errors.New("failed @ k8s_mountRetNfs: " + err.Error())
 	}

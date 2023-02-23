@@ -54,16 +54,16 @@ func main() {
 	router.Handle("/hub_status", internal.HubInfraStatus())
 	//private api endpoints
 	router.Handle("/upload", internal.Upload)
-	router.Handle("/deploy/hubs", internal.DeployHubs)
-	router.Handle("/undeploy/hubs", internal.UndeployHubs)
+	router.Handle("/deploy", internal.Deploy)
+	router.Handle("/undeploy", internal.Undeploy)
 	router.Handle("/custom-domain", internal.CustomDomain)
 	router.Handle("/letsencrypt-account-collect", internal.LetsencryptAccountCollect)
 	router.Handle("/dump-worklog", internal.DumpWorkLog)
 
 	//turkeyauth protected public api endpoints
 	router.Handle("/api/ita/upload", chk_hat_hdr()(internal.Upload))
-	router.Handle("/api/ita/deploy/hubs", chk_hat_hdr()(internal.DeployHubs))
-	router.Handle("/api/ita/undeploy/hubs", chk_hat_hdr()(internal.UndeployHubs))
+	router.Handle("/api/ita/deploy/hubs", chk_hat_hdr()(internal.Deploy))
+	router.Handle("/api/ita/undeploy/hubs", chk_hat_hdr()(internal.Undeploy))
 	router.Handle("/api/ita/custom-domain", chk_hat_hdr()(internal.CustomDomain))
 
 	go internal.StartNewServer(router, 6000, false)

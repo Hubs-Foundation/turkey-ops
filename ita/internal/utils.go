@@ -582,9 +582,7 @@ func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 		},
 		metav1.CreateOptions{},
 	)
-
 	return err
-
 }
 
 func killPods(labelSelector string) error {
