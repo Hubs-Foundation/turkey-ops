@@ -62,8 +62,8 @@ func main() {
 
 	//turkeyauth protected public api endpoints
 	router.Handle("/api/ita/upload", chk_hat_hdr()(internal.Upload))
-	router.Handle("/api/ita/deploy/hubs", chk_hat_hdr()(internal.Deploy))
-	router.Handle("/api/ita/undeploy/hubs", chk_hat_hdr()(internal.Undeploy))
+	router.Handle("/api/ita/deploy", chk_hat_hdr()(internal.Deploy))
+	router.Handle("/api/ita/undeploy", chk_hat_hdr()(internal.Undeploy))
 	router.Handle("/api/ita/custom-domain", chk_hat_hdr()(internal.CustomDomain))
 
 	go internal.StartNewServer(router, 6000, false)
