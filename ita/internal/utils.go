@@ -363,6 +363,9 @@ func UnzipTar(src, destDir string) error {
 		if err != nil {
 			return fmt.Errorf("Next() failed: %s", err.Error())
 		}
+		if strings.HasPrefix(header.Name, `./`) {
+			header.Name = header.Name[1:]
+		}
 		switch header.Typeflag {
 		case tar.TypeDir:
 			Logger.Debug("TypeDir: " + destDir + header.Name)
