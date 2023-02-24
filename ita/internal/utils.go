@@ -758,7 +758,7 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 		ts := time.Now().Unix()
 		stamp := fmt.Sprint(ts)
 		//write the file to the fs
-		dst, err := os.Create("./media/" + mediaName[0] + "_" + stamp + "." + mediaName[1])
+		dst, err := os.Create("/storage/ita_uploads/" + mediaName[0] + "_" + stamp + "." + mediaName[1])
 		defer dst.Close()
 
 		if err != nil {
