@@ -17,7 +17,7 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "POST" {
-		_, err := receiveFileFromReq(r, -1)
+		_, err := receiveFileFromReqBody(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -58,13 +58,13 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		files, err := receiveFileFromReq(r, 1)
+		fileName, err := receiveFileFromReqBody(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		reqId := w.Header().Get("X-Request-Id")
 
-		err = unzipNdeployCustomClient(app, files[0])
+		err = unzipNdeployCustomClient(app, fileName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

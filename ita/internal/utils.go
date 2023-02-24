@@ -612,7 +612,7 @@ func killPods(labelSelector string) error {
 }
 
 //curl -X POST -F file='@<path-to-file-ie-/tmp/file1>' ita:6000/upload
-func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, error) {
+func receiveFileFromReqForm(r *http.Request, expectedFileCount int) ([]string, error) {
 
 	// 32 MB
 	if err := r.ParseMultipartForm(32 << 20); err != nil {
@@ -725,4 +725,50 @@ func blockEgress(appName string) error {
 	)
 
 	return err
+}
+func receiveFileFromReqBody(r *http.Request) (string, error) {
+	startTime := time.Now()
+	Logger.Sugar().Debug("handling an upload post")
+	multipartReader, err := r.MultipartReader()
+
+	if err != nil {
+		Logger.Sugar().Debugf("failed to get a multipart reader %v", err)
+		return "", err
+	}
+
+	partBytes := int64(0)
+	partCount := int64(0)
+	err = os.MkdirAll("/storage/ita_uploads", os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+	fileName := "tmp"
+	for {
+		part, err := multipartReader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		f, err := os.Create(fmt.Sprintf("/storage/ita_uploads/%s", fileName))
+
+		if err != nil {
+			return "", err
+		}
+		defer f.Close()
+
+		_, err = io.Copy(f, part)
+		if err != nil {
+			break
+		}
+	}
+	stopTime := time.Now()
+	timeDiff := (stopTime.UnixNano()-startTime.UnixNano())/(1000*1000) + 1
+	throughput := (1000 * partBytes) / timeDiff
+	partSize := int64(0)
+	if partCount <= 0 {
+		partSize = 0
+	} else {
+		partSize = partBytes / partCount
+	}
+	Logger.Sugar().Debugf("Upload: time = %dms, size = %d B, throughput = %d B/s, partSize = %d B", timeDiff, partBytes, throughput, partSize)
+	return fileName, nil
 }
