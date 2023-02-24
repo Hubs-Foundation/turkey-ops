@@ -66,9 +66,9 @@ func (s *Server) Start() {
 	server := &http.Server{
 		Addr:         s.listenAddr,
 		Handler:      s.tracing(nextRequestID)(s.logging()(s.router)),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 0 * time.Second,
-		IdleTimeout:  3600 * time.Second,
+		ReadTimeout:  600 * time.Minute,
+		WriteTimeout: 600 * time.Minute,
+		IdleTimeout:  60 * time.Minute,
 	}
 	if s.isHttps {
 		server.TLSConfig = &tls.Config{
