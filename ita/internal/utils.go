@@ -726,9 +726,10 @@ func blockEgress(appName string) error {
 
 	return err
 }
+
 func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 	Tstart := time.Now()
-	Logger.Sugar().Debug("handling an upload post")
+	Logger.Sugar().Debugf("handling an upload post")
 	reader, err := r.MultipartReader()
 
 	if err != nil {
@@ -736,7 +737,7 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 		return nil, err
 	}
 
-	err = os.MkdirAll("/storage/ita_uploads", os.ModePerm)
+	// err = os.MkdirAll("/storage/ita_uploads", os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -746,19 +747,21 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 		part, err := reader.NextPart()
 		//no more files to process when io.EOF is found
 		if err == io.EOF {
+			Logger.Sugar().Debugf("EOF")
 			break
 		}
 
 		//if part.FileName() is empty, skip this iteration.
 		if part.FileName() == "" {
+			Logger.Sugar().Debugf("empty filename, skip")
 			continue
 		}
-		mediaName := strings.SplitN(part.FileName(), ".", 2)
 		//create a timestamp
-		ts := time.Now().Unix()
-		stamp := fmt.Sprint(ts)
 		//write the file to the fs
-		dst, err := os.Create("/storage/ita_uploads/" + mediaName[0] + "_" + stamp + "." + mediaName[1])
+		dst, err := os.Create("./" + part.FileName())
+		if err != nil {
+			return nil, err
+		}
 		defer dst.Close()
 
 		if err != nil {
@@ -768,10 +771,11 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 		if _, err := io.Copy(dst, part); err != nil {
 			return nil, err
 		}
+		files = append(files, part.FileName())
 	}
-	Logger.Sugar().Debugf("took: %v", time.Since(Tstart))
+	Logger.Sugar().Debugf("took: %v, file count: %v", time.Since(Tstart), len(files))
 
-	if len(files) == 0 {
+	if len(files) < 1 {
 		return nil, errors.New("file not found")
 	}
 
