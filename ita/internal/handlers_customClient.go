@@ -58,13 +58,13 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		fileName, err := receiveFileFromReqBody(r)
+		files, err := receiveFileFromReqBody(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		reqId := w.Header().Get("X-Request-Id")
 
-		err = unzipNdeployCustomClient(app, fileName)
+		err = unzipNdeployCustomClient(app, files[0])
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
