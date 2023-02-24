@@ -726,49 +726,57 @@ func blockEgress(appName string) error {
 
 	return err
 }
-func receiveFileFromReqBody(r *http.Request) (string, error) {
-	startTime := time.Now()
+func receiveFileFromReqBody(r *http.Request) ([]string, error) {
+	Tstart := time.Now()
 	Logger.Sugar().Debug("handling an upload post")
-	multipartReader, err := r.MultipartReader()
+	reader, err := r.MultipartReader()
 
 	if err != nil {
 		Logger.Sugar().Debugf("failed to get a multipart reader %v", err)
-		return "", err
+		return nil, err
 	}
 
-	partBytes := int64(0)
-	partCount := int64(0)
 	err = os.MkdirAll("/storage/ita_uploads", os.ModePerm)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	fileName := "tmp"
+	files := []string{}
+
+	//copy each part to destination.
 	for {
-		part, err := multipartReader.NextPart()
+		part, err := reader.NextPart()
 		if err == io.EOF {
 			break
 		}
-		f, err := os.Create(fmt.Sprintf("/storage/ita_uploads/%s", fileName))
+
+		// if part.FormName() == "path" {
+		// 	j, err := ioutil.ReadAll(part)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	log.Println(string(j))
+		// }
+
+		if part.FileName() == "" {
+			continue
+		}
+		dst, err := os.Create("/storage/ita_uploads/" + part.FileName())
+		defer dst.Close()
 
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		defer f.Close()
 
-		_, err = io.Copy(f, part)
-		if err != nil {
-			break
+		if _, err := io.Copy(dst, part); err != nil {
+			return nil, err
 		}
+		files = append(files, part.FileName())
 	}
-	stopTime := time.Now()
-	timeDiff := (stopTime.UnixNano()-startTime.UnixNano())/(1000*1000) + 1
-	throughput := (1000 * partBytes) / timeDiff
-	partSize := int64(0)
-	if partCount <= 0 {
-		partSize = 0
-	} else {
-		partSize = partBytes / partCount
+	Logger.Sugar().Debugf("took: %v", time.Since(Tstart))
+
+	if len(files) == 0 {
+		return nil, errors.New("file not found")
 	}
-	Logger.Sugar().Debugf("Upload: time = %dms, size = %d B, throughput = %d B/s, partSize = %d B", timeDiff, partBytes, throughput, partSize)
-	return fileName, nil
+
+	return files, nil
 }
