@@ -65,6 +65,7 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqId := w.Header().Get("X-Request-Id")
 
 		if len(files) < 1 {
+			Logger.Sugar().Debug("didn't receive any file")
 			http.Error(w, "got no file, want file", http.StatusInternalServerError)
 			return
 		}
