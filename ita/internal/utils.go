@@ -742,25 +742,23 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 	}
 	files := []string{}
 
-	//copy each part to destination.
 	for {
 		part, err := reader.NextPart()
+		//no more files to process when io.EOF is found
 		if err == io.EOF {
 			break
 		}
 
-		// if part.FormName() == "path" {
-		// 	j, err := ioutil.ReadAll(part)
-		// 	if err != nil {
-		// 		return nil, err
-		// 	}
-		// 	log.Println(string(j))
-		// }
-
+		//if part.FileName() is empty, skip this iteration.
 		if part.FileName() == "" {
 			continue
 		}
-		dst, err := os.Create("/storage/ita_uploads/" + part.FileName())
+		mediaName := strings.SplitN(part.FileName(), ".", 2)
+		//create a timestamp
+		ts := time.Now().Unix()
+		stamp := fmt.Sprint(ts)
+		//write the file to the fs
+		dst, err := os.Create("./media/" + mediaName[0] + "_" + stamp + "." + mediaName[1])
 		defer dst.Close()
 
 		if err != nil {
@@ -770,7 +768,6 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 		if _, err := io.Copy(dst, part); err != nil {
 			return nil, err
 		}
-		files = append(files, part.FileName())
 	}
 	Logger.Sugar().Debugf("took: %v", time.Since(Tstart))
 
