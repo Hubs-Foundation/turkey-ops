@@ -10,6 +10,8 @@
 
 FROM python:slim-bullseye
 
+WORKDIR /app
+
 RUN pip3 install google-cloud-run google-cloud-logging
 RUN pip3 install flask gunicorn requests redis
 
@@ -17,6 +19,6 @@ RUN pip3 install flask gunicorn requests redis
 run apt update && apt install -y git && \ 
     git clone https://github.com/ytdl-org/youtube-dl.git && \
     cd youtube-dl
-COPY main.py .
+COPY main.py /app/youtube_dl/main.py
 
 cmd gunicorn main:app -w 1 --threads 2 -b 0.0.0.0:8080
