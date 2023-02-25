@@ -17,7 +17,7 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "POST" {
-		_, err := receiveFileFromReqBody(r)
+		_, err := receiveFileFromReqForm(r, 1)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -58,7 +58,7 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		files, err := receiveFileFromReqBody(r)
+		files, err := receiveFileFromReqForm(r, 1)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
