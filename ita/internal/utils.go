@@ -612,7 +612,7 @@ func killPods(labelSelector string) error {
 }
 
 //curl -X POST -F file='@<path-to-file-ie-/tmp/file1>' ita:6000/upload
-func receiveFileFromReq(r *http.Request, expectedFileCount int) ([]string, error) {
+func receiveFileFromReqForm(r *http.Request, expectedFileCount int) ([]string, error) {
 
 	// 32 MB
 	if err := r.ParseMultipartForm(32 << 20); err != nil {
@@ -725,4 +725,59 @@ func blockEgress(appName string) error {
 	)
 
 	return err
+}
+
+func receiveFileFromReqBody(r *http.Request) ([]string, error) {
+	Tstart := time.Now()
+	Logger.Sugar().Debugf("handling an upload post")
+	reader, err := r.MultipartReader()
+
+	if err != nil {
+		Logger.Sugar().Debugf("failed to get a multipart reader %v", err)
+		return nil, err
+	}
+
+	err = os.MkdirAll("/storage/ita_uploads", os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	files := []string{}
+
+	for {
+		part, err := reader.NextPart()
+		//no more files to process when io.EOF is found
+		if err == io.EOF {
+			Logger.Sugar().Debugf("EOF")
+			break
+		}
+
+		//if part.FileName() is empty, skip this iteration.
+		if part.FileName() == "" {
+			Logger.Sugar().Debugf("empty filename, skip")
+			continue
+		}
+		//create a timestamp
+		//write the file to the fs
+		dst, err := os.Create("/storage/ita_uploads/" + part.FileName())
+		if err != nil {
+			return nil, err
+		}
+		defer dst.Close()
+
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err := io.Copy(dst, part); err != nil {
+			return nil, err
+		}
+		files = append(files, part.FileName())
+	}
+	Logger.Sugar().Debugf("took: %v, file count: %v", time.Since(Tstart), len(files))
+
+	if len(files) < 1 {
+		return nil, errors.New("file not found")
+	}
+
+	return files, nil
 }

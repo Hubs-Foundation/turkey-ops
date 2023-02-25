@@ -17,7 +17,7 @@ var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "POST" {
-		_, err := receiveFileFromReq(r, -1)
+		_, err := receiveFileFromReqForm(r, 1)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -58,12 +58,17 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		files, err := receiveFileFromReq(r, 1)
+		files, err := receiveFileFromReqForm(r, 1)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		reqId := w.Header().Get("X-Request-Id")
 
+		if len(files) < 1 {
+			Logger.Sugar().Debug("didn't receive any file")
+			http.Error(w, "got no file, want file", http.StatusInternalServerError)
+			return
+		}
 		err = unzipNdeployCustomClient(app, files[0])
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
