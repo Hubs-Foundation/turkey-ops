@@ -7,6 +7,7 @@ import (
 
 //concurrent cached/map for hubs cloud namespace bookkeeping
 type HcNsMan struct {
+	mu sync.Mutex
 	// nsName : HcNsNotes
 	hcNsTable map[string]HcNsNotes
 	// subdomain : nsName
@@ -19,33 +20,38 @@ var HC_NS_MAN = &HcNsMan{
 	hcSubdomainNsLookupTable: make(map[string]string),
 }
 
-var mu sync.Mutex
-
 type HcNsNotes struct {
 	Lastchecked time.Time
 	Labels      map[string]string
 }
 
-func (t HcNsMan) Get(nsName string) HcNsNotes {
-	mu.Lock()
-	defer mu.Unlock()
+func (t *HcNsMan) Get(nsName string) HcNsNotes {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	return t.hcNsTable[nsName]
 }
 
-func (t HcNsMan) Set(nsName string, notes HcNsNotes) {
-	mu.Lock()
-	defer mu.Unlock()
+func (t *HcNsMan) Set(nsName string, notes HcNsNotes) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	t.hcNsTable[nsName] = notes
 	t.hcSubdomainNsLookupTable[notes.Labels["subdomain"]] = nsName
 }
 
-func (t HcNsMan) Del(nsName string) {
-	mu.Lock()
-	defer mu.Unlock()
+func (t *HcNsMan) Del(nsName string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	delete(t.hcNsTable, nsName)
+}
+
+func (t *HcNsMan) Dump() map[string]HcNsNotes {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return t.hcNsTable
 }
 
 // func (t HcNsMan) HasSubdomain(subdomain string) bool {
@@ -56,9 +62,9 @@ func (t HcNsMan) Del(nsName string) {
 // 	return has
 // }
 
-func (t HcNsMan) GetNsName(subdomain string) string {
-	mu.Lock()
-	defer mu.Unlock()
+func (t *HcNsMan) GetNsName(subdomain string) string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	return t.hcSubdomainNsLookupTable[subdomain]
 }

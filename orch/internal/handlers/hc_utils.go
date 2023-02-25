@@ -346,3 +346,12 @@ var LetsencryptAccountCollect = http.HandlerFunc(func(w http.ResponseWriter, r *
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "collected: "+acctName)
 })
+
+var Dump_HcNsTable = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/dump_hcnstable" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	fmt.Fprintf(w, fmt.Sprintf("%v", internal.HC_NS_MAN.Dump()))
+})
