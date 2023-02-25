@@ -46,6 +46,7 @@ func main() {
 	}))
 
 	router.Handle("/letsencrypt-account-collect", handlers.LetsencryptAccountCollect)
+	router.Handle("/dump_hcnstable", handlers.Dump_HcNsTable)
 
 	//start listening
 	port, err := strconv.Atoi(internal.Cfg.Port)
