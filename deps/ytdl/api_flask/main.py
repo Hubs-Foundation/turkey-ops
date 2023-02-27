@@ -212,7 +212,7 @@ def cloudrun_rollout_restart():
                     ]}}]}}}}}}}}
     '''.format(**args)
 
-    # logging.debug(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
+    logging.debug(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
 
     res=requests.put(
         knativeBase+"namespaces/{}/services/{}".format(projectId, svcName), 
@@ -263,6 +263,8 @@ def ytdl_api_info():
     
     #update ip usage count, redeploy at high usage
     cnt = redis_client.zscore(rkey, inst_ip)
+    logging.debug(" >>>>> youtube usage cnt:", cnt)
+
     # logging.debug( "NOT redeploying -- " + inst_ip + ", cnt=" + str(cnt)+ ", redeploy_at="+ str(redeploy_at))
     if cnt >=redeploy_at :
         logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
