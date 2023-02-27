@@ -15,7 +15,7 @@ from datetime import datetime
 
 def lambda_handler(event, context):
     # event['url']="http://whatever/?url=https://www.youtube.com/watch?v=zjMuIxRvygQ&moreparams=values"
-    # logging.info"Received event: " + json.dumps(event, indent=2))
+    # logging.debug"Received event: " + json.dumps(event, indent=2))
     params=event['url'].split('?',1)[1]
     ytdl_params=dict(item.split('=',1) for item in params.split('&'))
     ytdl_url=ytdl_params['url']
@@ -187,7 +187,7 @@ def cloudrun_rollout_restart():
         'redeploy_at': str(redeploy_at)
         }
 
-    logging.info(args)
+    print(args)
     
     knativeJsonStr='''
     {{"apiVersion": "serving.knative.dev/v1",
@@ -214,14 +214,14 @@ def cloudrun_rollout_restart():
                     ]}}]}}}}}}}}
     '''.format(**args)
 
-    logging.info(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
+    print(" >>>>>> knativeJsonStr: \n"+knativeJsonStr)
 
     res=requests.put(
         knativeBase+"namespaces/{}/services/{}".format(projectId, svcName), 
         headers={"Content-type":"application/json", "Authorization":"Bearer "+inst_sa_token,},
         json=json.loads(knativeJsonStr))
 
-    # logging.info(" >>>>>> put-res.text"+res.text)
+    # print(" >>>>>> put-res.text"+res.text)
     if res.status_code !=200:
         logging.warning("problem @ cloudrun_rollout_restart, res.status_code: "+str(res.status_code) + ", body: " + res.text)
     else:
@@ -251,7 +251,7 @@ app = Flask(__name__)
 def ytdl_api_info():
     url = request.args['url']
 
-    logging.info("[/api/info] url: ", url)
+    print("[/api/info] url: ", url)
 
     result = get_result()
     key = 'info'
@@ -267,13 +267,13 @@ def ytdl_api_info():
     
     #update ip usage count, redeploy at high usage
     cnt = redis_client.zscore(rkey, inst_ip)
-    logging.info(" >>>>> youtube usage cnt:", cnt)
+    print(" >>>>> youtube usage cnt:", cnt)
 
-    # logging.info( "NOT redeploying -- " + inst_ip + ", cnt=" + str(cnt)+ ", redeploy_at="+ str(redeploy_at))
+    # print( "NOT redeploying -- " + inst_ip + ", cnt=" + str(cnt)+ ", redeploy_at="+ str(redeploy_at))
     if cnt >=redeploy_at :
         logging.warning( "redeploying -- " + inst_ip + " with cnt=" + str(cnt)+ " exceeded "+ str(redeploy_at))
         r=cloudrun_rollout_restart()
-        logging.info("and cloudrun_rollout_restart says: " + str(r))
+        print("and cloudrun_rollout_restart says: " + str(r))
 
     return jsonify(result)
 
@@ -317,7 +317,7 @@ except Exception as e:
     logging.info("gcp logging failed to init" + str(e))
 
 metadataUrl=os.environ.get('metadataUrl', "http://metadata.google.internal/computeMetadata/v1/")
-logging.info("metadataUrl="+metadataUrl)
+print("metadataUrl="+metadataUrl)
 
 svcName=os.environ.get("svcName","hubs-ytdl")
 full_sa=os.environ.get("fullSaNAme", "hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com")
@@ -348,7 +348,7 @@ sys.stdout.flush()
 ##################################### local debug only ###########################################
 ##################################################################################################
 if __name__ == "__main__":
-    # logging.info(os.environ.items)
+    # logging.debug(os.environ.items)
     # os.environ.setdefault('SERVICE_NAME', 'hubs-ytdl')
     # cloudrun_rollout_restart()
     port = int(os.environ.get("PORT", 5000))
