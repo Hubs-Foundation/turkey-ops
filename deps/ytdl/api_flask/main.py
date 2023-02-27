@@ -196,6 +196,7 @@ def cloudrun_rollout_restart():
         "metadata": {{
             "name": "{revisionName}",
             "annotations": {{
+                "run.googleapis.com/ingress": "internal",
                 "run.googleapis.com/vpc-access-egress": "private-ranges-only",
                 "autoscaling.knative.dev/minScale": "1",
                 "autoscaling.knative.dev/maxScale": "100",
@@ -257,7 +258,8 @@ def ytdl_api_info():
         'url': url,
         key: result,
     }
-    redis_client.zincrby(rkey, 1, inst_ip)
+    if "youtube" in url:
+        redis_client.zincrby(rkey, 1, inst_ip)
     
     #update ip usage count, redeploy at high usage
     cnt = redis_client.zscore(rkey, inst_ip)
