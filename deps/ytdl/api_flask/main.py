@@ -184,7 +184,8 @@ def cloudrun_rollout_restart():
         'maxScale':reqJson["spec"]["template"]["metadata"]["annotations"]["autoscaling.knative.dev/maxScale"],
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
         'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"],
-        'redeploy_at': str(redeploy_at)
+        'redeploy_at': str(redeploy_at),
+        'svcName': reqJson["spec"]["template"]["spec"]["env"]["svcName"]
         }
 
     print(args)
@@ -210,6 +211,7 @@ def cloudrun_rollout_restart():
                 "resources": {{ "limits":{{ "memory":"2Gi", "cpu":"2000m" }} }},
                 "env": [
                     {{"name": "dummy","value": "dummy"}},
+                    {{"name": "svcName","value": "{svcName}"}},
                     {{"name": "REDEPLOY_AT","value": "{redeploy_at}"}}
                     ]}}]}}}}}}}}
     '''.format(**args)
@@ -319,7 +321,7 @@ except Exception as e:
 metadataUrl=os.environ.get('metadataUrl', "http://metadata.google.internal/computeMetadata/v1/")
 print("metadataUrl="+metadataUrl)
 
-svcName=os.environ.get("svcName","hubs-ytdl")
+svcName=os.environ.get("svcName","hubs-ytdl-2")
 full_sa=os.environ.get("fullSaNAme", "hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com")
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
 redeploy_at = int(os.environ.get('REDEPLOY_AT', 88))
