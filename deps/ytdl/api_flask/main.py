@@ -184,10 +184,10 @@ def cloudrun_rollout_restart():
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
         'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"],
         'redeploy_at': str(redeploy_at),
-        'svcName': reqJson["spec"]["template"]["spec"]["env"]["svcName"]
+        'svcName': svcName
         }
 
-    print(args)
+    print(" >>>>> args: ",args)
     
     knativeJsonStr='''
     {{"apiVersion": "serving.knative.dev/v1",
