@@ -174,7 +174,7 @@ def cloudrun_rollout_restart():
     ###
 
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
-
+    print("new revisionName: " + revisionName)
     args = {
         'ServiceName':svcName, 
         'revisionName':revisionName,         
@@ -193,7 +193,7 @@ def cloudrun_rollout_restart():
     knativeJsonStr='''
     {{"apiVersion": "serving.knative.dev/v1",
     "kind": "Service",
-    "metadata": {{"name": "{ServiceName}","namespace": "{projectId}"}},
+    "metadata": {{"name": "{svcName}","namespace": "{projectId}"}},
     "spec": {{
         "template": {{
         "metadata": {{
@@ -324,7 +324,7 @@ print("metadataUrl="+metadataUrl)
 svcName=os.environ.get("svcName","hubs-ytdl-2")
 full_sa=os.environ.get("fullSaNAme", "hubs-ytdl@hubs-dev-333333.iam.gserviceaccount.com")
 inst_ip = requests.get('https://ipinfo.io/ip').content.decode('utf8')
-redeploy_at = int(os.environ.get('REDEPLOY_AT', 88))
+redeploy_at = int(os.environ.get('REDEPLOY_AT', 1999))
 
 projectId=getGcpMetadata(metadataUrl+"project/project-id")
 inst_id = getGcpMetadata(metadataUrl+"instance/id")
@@ -343,18 +343,6 @@ except:
     logging.warn("bad redis config")
 
 logging.info(" @@@@@@ IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
-
-#################
-knativeBase="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/"
-getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(projectId, svcName)
-inst_sa_token_res = getGcpMetadata(metadataUrl+"instance/service-accounts/"+full_sa+"/token")
-inst_sa_token=json.loads(inst_sa_token_res)['access_token']
-res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
-print("cloudrun_rollout_restart~~~get_knative_res.text: " + res.text)
-reqJson=json.loads(res.text)
-#####################
-
-
 
 sys.stdout.flush()
 
