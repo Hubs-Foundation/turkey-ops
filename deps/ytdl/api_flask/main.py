@@ -180,6 +180,8 @@ def cloudrun_rollout_restart():
         'revisionName':revisionName,         
         'projectId':reqJson["metadata"]["namespace"], 
         'vpcConn':reqJson["spec"]["template"]["metadata"]["annotations"]["run.googleapis.com/vpc-access-connector"],
+        'minScale':reqJson["spec"]["template"]["metadata"]["annotations"]["autoscaling.knative.dev/minScale"],
+        'maxScale':reqJson["spec"]["template"]["metadata"]["annotations"]["autoscaling.knative.dev/maxScale"],
         'sa':reqJson["spec"]["template"]["spec"]["serviceAccountName"], 
         'image':reqJson["spec"]["template"]["spec"]["containers"][0]["image"],
         'redeploy_at': str(redeploy_at)
@@ -198,8 +200,8 @@ def cloudrun_rollout_restart():
             "annotations": {{
                 "run.googleapis.com/ingress": "internal",
                 "run.googleapis.com/vpc-access-egress": "private-ranges-only",
-                "autoscaling.knative.dev/minScale": "1",
-                "autoscaling.knative.dev/maxScale": "100",
+                "autoscaling.knative.dev/minScale": "{minScale}",
+                "autoscaling.knative.dev/maxScale": "{maxScale}",
                 "run.googleapis.com/vpc-access-connector": "{vpcConn}"}}}},
         "spec": {{
             "serviceAccountName": "{sa}",
