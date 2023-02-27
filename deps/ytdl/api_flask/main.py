@@ -192,13 +192,16 @@ def cloudrun_rollout_restart():
     knativeJsonStr='''
     {{"apiVersion": "serving.knative.dev/v1",
     "kind": "Service",
-    "metadata": {{"name": "{svcName}","namespace": "{projectId}"}},
+    "metadata": {{
+        "name": "{svcName}",
+        "namespace": "{projectId}"}},
+        "annotations": {{
+            "run.googleapis.com/ingress": "internal"}}
     "spec": {{
         "template": {{
         "metadata": {{
             "name": "{revisionName}",
             "annotations": {{
-                "run.googleapis.com/ingress": "internal",
                 "run.googleapis.com/vpc-access-egress": "private-ranges-only",
                 "autoscaling.knative.dev/minScale": "{minScale}",
                 "autoscaling.knative.dev/maxScale": "{maxScale}",
