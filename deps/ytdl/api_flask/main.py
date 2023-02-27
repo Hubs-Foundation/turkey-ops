@@ -344,6 +344,18 @@ except:
 
 logging.info(" @@@@@@ IP: "+inst_ip +", rkey: " + rkey +", hostname: " + socket.gethostname() + ", id: " + inst_id)
 
+#################
+knativeBase="https://us-central1-run.googleapis.com/apis/serving.knative.dev/v1/"
+getSvcUrl=knativeBase+"namespaces/{}/services/{}".format(projectId, svcName)
+inst_sa_token_res = getGcpMetadata(metadataUrl+"instance/service-accounts/"+full_sa+"/token")
+inst_sa_token=json.loads(inst_sa_token_res)['access_token']
+res=requests.get(getSvcUrl, headers={"Authorization":"Bearer "+inst_sa_token})
+print("cloudrun_rollout_restart~~~get_knative_res.text: " + res.text)
+reqJson=json.loads(res.text)
+#####################
+
+
+
 sys.stdout.flush()
 
 ################################################################################################## 
