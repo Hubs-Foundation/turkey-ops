@@ -251,6 +251,8 @@ app = Flask(__name__)
 def ytdl_api_info():
     url = request.args['url']
 
+    logging.debug("[/api/info] url: ", url)
+
     result = get_result()
     key = 'info'
     if query_bool(request.args.get('flatten'), 'flatten', False):
