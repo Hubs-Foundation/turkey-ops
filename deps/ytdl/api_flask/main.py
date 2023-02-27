@@ -176,7 +176,6 @@ def cloudrun_rollout_restart():
     revisionName=svcName + "-" + datetime.today().strftime("%Y%m%d%H%M%S")
     print("new revisionName: " + revisionName)
     args = {
-        'ServiceName':svcName, 
         'revisionName':revisionName,         
         'projectId':reqJson["metadata"]["namespace"], 
         'vpcConn':reqJson["spec"]["template"]["metadata"]["annotations"]["run.googleapis.com/vpc-access-connector"],
