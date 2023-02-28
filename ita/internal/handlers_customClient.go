@@ -133,5 +133,11 @@ func unzipNdeployCustomClient(app, fileName string) error {
 		return errors.New("failed @ k8s_mountRetNfs: " + err.Error())
 	}
 
+	//refresh nfs mount, prevent stale file handle error
+	err = killPods("app=" + app)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

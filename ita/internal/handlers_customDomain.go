@@ -180,6 +180,9 @@ func setCustomDomain(fromDomain, toDomain string) error {
 	retCm.Data["config.toml.template"] =
 		strings.Replace(
 			retCm.Data["config.toml.template"], `issuer = "`+ret_from, `issuer = "`+ret_to, -1)
+	retCm.Data["config.toml.template"] =
+		strings.Replace(
+			retCm.Data["config.toml.template"], `host = "hubs-proxy.com"`, `host = "<SUB_DOMAIN>.cors.<DOMAIN>"`, -1)
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), retCm, metav1.UpdateOptions{})
 	if err != nil {
 		return err
@@ -193,8 +196,9 @@ func setCustomDomain(fromDomain, toDomain string) error {
 			return err
 		}
 		for i, env := range d.Spec.Template.Spec.Containers[0].Env {
-			d.Spec.Template.Spec.Containers[0].Env[i].Value =
-				strings.Replace(env.Value, fromDomain, toDomain, -1)
+			val := strings.Replace(env.Value, fromDomain, toDomain, -1)
+			val = strings.Replace(val, "hubs-proxy.com", cfg.SubDomain+".cors."+cfg.HubDomain, -1)
+			d.Spec.Template.Spec.Containers[0].Env[i].Value = val
 		}
 		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
@@ -241,6 +245,12 @@ func ingress_addCustomDomainRule(fromDomain, customDomain string) error {
 	customDomainRule := retRootRules[0].DeepCopy()
 	customDomainRule.Host = customDomain
 	ig.Spec.Rules = append(ig.Spec.Rules, *customDomainRule)
+
+	if !ingressContainsRetCorsRule(ig) {
+		customDomainCorsRule := retRootRules[0].DeepCopy()
+		customDomainCorsRule.Host = cfg.SubDomain + ".cors." + cfg.HubDomain
+		ig.Spec.Rules = append(ig.Spec.Rules, *customDomainCorsRule)
+	}
 
 	ig.Spec.TLS = append(ig.Spec.TLS, networkingv1.IngressTLS{
 		Hosts:      []string{customDomain},
@@ -313,4 +323,13 @@ func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) (int, int)
 	Logger.Sugar().Debugf("deletedRules: %v, deletedTlss: %v", deletedRules, deleteTlss)
 
 	return deletedRules, deleteTlss
+}
+
+func ingressContainsRetCorsRule(ig *networkingv1.Ingress) bool {
+	for _, rule := range ig.Spec.Rules {
+		if rule.Host == cfg.SubDomain+".cors."+cfg.HubDomain {
+			return true
+		}
+	}
+	return false
 }
