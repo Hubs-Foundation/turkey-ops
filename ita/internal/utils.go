@@ -595,6 +595,7 @@ func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 }
 
 func killPods(labelSelector string) error {
+	Logger.Debug("killPods: " + labelSelector)
 	pods, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})

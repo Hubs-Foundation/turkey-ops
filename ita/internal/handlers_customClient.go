@@ -136,7 +136,9 @@ func unzipNdeployCustomClient(app, fileName string) error {
 	}
 
 	go func() {
-		time.Sleep(15 * time.Second)
+		wait := 15 * time.Second
+		Logger.Sugar().Debugf("respawning %v pods in %v", app, wait)
+		time.Sleep(wait)
 		//refresh nfs mount, prevent stale file handle error
 		err = killPods("app=" + app)
 		if err != nil {
