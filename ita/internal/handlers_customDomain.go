@@ -46,6 +46,11 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		}
 
 		if fromDomain == "" {
+			if b, _ := Deployment_getLabel("custom-client"); b != "" {
+				w.WriteHeader(http.StatusBadRequest)
+				fmt.Fprintf(w, "custom client + native domain is not allowed")
+				return
+			}
 			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 		Logger.Sugar().Debugf("setting custom domain with fromDomain: %v, toDomain: %v", fromDomain, toDomain)
@@ -71,20 +76,22 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
+		//post deployment jobs
+		if toDomain == cfg.SubDomain+"."+cfg.HubDomain {
+			toDomain = ""
+		}
 		err = Deployment_setLabel("custom-domain", toDomain)
-
-		//update features
-		cfg.Features.enableCustomClient()
-		defer cfg.Features.setupFeatures()
-
 		if err != nil {
 			Logger.Error("failed to set custom-domain label on NS: " + err.Error())
 			http.Error(w, "failed to set customDomain to NS: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		cfg.Features.enableCustomClient()
+		defer cfg.Features.setupFeatures()
+
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "done")
+		fmt.Fprintf(w, fmt.Sprintf("done: [%v] -> [%v]", fromDomain, toDomain))
 	}
 
 	http.Error(w, "", http.StatusMethodNotAllowed)

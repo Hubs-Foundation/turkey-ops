@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -40,7 +41,8 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == "PATCH" {
+	switch r.Method {
+	case "PATCH":
 		if len(r.URL.Query()["file"]) != 1 || r.URL.Query()["file"][0] == "" {
 			http.Error(w, "missing: file", http.StatusBadRequest)
 			return
@@ -54,10 +56,7 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "deployed: "+fileName)
-		return
-	}
-
-	if r.Method == "POST" {
+	case "POST":
 		files, err := receiveFileFromReqBody(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -76,9 +75,11 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "done, reqId: %v", reqId)
+	default:
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	Deployment_setLabel("custom-client", "T")
 })
 
 var Undeploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +100,7 @@ var Undeploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	Deployment_setLabel("custom-client", "")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "done")
 })
@@ -133,11 +135,14 @@ func unzipNdeployCustomClient(app, fileName string) error {
 		return errors.New("failed @ k8s_mountRetNfs: " + err.Error())
 	}
 
-	//refresh nfs mount, prevent stale file handle error
-	err = killPods("app=" + app)
-	if err != nil {
-		return err
-	}
+	go func() {
+		time.Sleep(15 * time.Second)
+		//refresh nfs mount, prevent stale file handle error
+		err = killPods("app=" + app)
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+	}()
 
 	return nil
 }
