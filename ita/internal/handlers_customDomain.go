@@ -42,15 +42,15 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				return
 			}
 		} else { //toDomain == ""
-			toDomain = cfg.SubDomain + "." + cfg.HubDomain
-		}
-
-		if fromDomain == "" {
 			if b, _ := Deployment_getLabel("custom-client"); b != "" {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintf(w, "custom client + native domain is not allowed")
 				return
 			}
+			toDomain = cfg.SubDomain + "." + cfg.HubDomain
+		}
+
+		if fromDomain == "" {
 			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 		Logger.Sugar().Debugf("setting custom domain with fromDomain: %v, toDomain: %v", fromDomain, toDomain)
