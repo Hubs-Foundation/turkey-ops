@@ -53,6 +53,7 @@ func main() {
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
 	//private api endpoints
+	router.Handle("/refresh", internal.Refresh)
 	router.Handle("/upload", internal.Upload)
 	router.Handle("/deploy", internal.Deploy)
 	router.Handle("/undeploy", internal.Undeploy)
@@ -61,6 +62,7 @@ func main() {
 	router.Handle("/dump-worklog", internal.DumpWorkLog)
 
 	//turkeyauth protected public api endpoints
+	router.Handle("/api/ita/refresh", chk_hat_hdr()(internal.Refresh))
 	router.Handle("/api/ita/upload", chk_hat_hdr()(internal.Upload))
 	router.Handle("/api/ita/deploy", chk_hat_hdr()(internal.Deploy))
 	router.Handle("/api/ita/undeploy", chk_hat_hdr()(internal.Undeploy))

@@ -188,3 +188,14 @@ var Handle_NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 var DumpWorkLog = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%v", cfg.K8Man.DumpWorkLog())
 })
+
+var Refresh = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := killPods("")
+	if err != nil {
+		Logger.Error(err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "err: "+err.Error())
+		return
+	}
+	fmt.Fprintf(w, "done")
+})
