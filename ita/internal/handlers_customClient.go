@@ -81,7 +81,7 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	Deployment_setLabel("custom-client", "T")
 	go func() {
-		wait := 15 * time.Second
+		wait := 35 * time.Second
 		Logger.Sugar().Debugf("respawning %v pods in %v", app, wait)
 		time.Sleep(wait)
 		//refresh nfs mount, prevent stale file handle error
@@ -113,7 +113,7 @@ var Undeploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	Deployment_setLabel("custom-client", "")
 
 	go func() {
-		wait := 15 * time.Second
+		wait := 35 * time.Second
 		Logger.Sugar().Debugf("respawning %v pods in %v", app, wait)
 		time.Sleep(wait)
 		//refresh nfs mount, prevent stale file handle error
