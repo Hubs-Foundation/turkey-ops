@@ -80,6 +80,16 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Deployment_setLabel("custom-client", "T")
+	go func() {
+		wait := 15 * time.Second
+		Logger.Sugar().Debugf("respawning %v pods in %v", app, wait)
+		time.Sleep(wait)
+		//refresh nfs mount, prevent stale file handle error
+		err := killPods("app=" + app)
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+	}()
 })
 
 var Undeploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +111,18 @@ var Undeploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Deployment_setLabel("custom-client", "")
+
+	go func() {
+		wait := 15 * time.Second
+		Logger.Sugar().Debugf("respawning %v pods in %v", app, wait)
+		time.Sleep(wait)
+		//refresh nfs mount, prevent stale file handle error
+		err := killPods("app=" + app)
+		if err != nil {
+			Logger.Error(err.Error())
+		}
+	}()
+
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "done")
 })
@@ -134,17 +156,6 @@ func unzipNdeployCustomClient(app, fileName string) error {
 	if err != nil {
 		return errors.New("failed @ k8s_mountRetNfs: " + err.Error())
 	}
-
-	go func() {
-		wait := 15 * time.Second
-		Logger.Sugar().Debugf("respawning %v pods in %v", app, wait)
-		time.Sleep(wait)
-		//refresh nfs mount, prevent stale file handle error
-		err = killPods("app=" + app)
-		if err != nil {
-			Logger.Error(err.Error())
-		}
-	}()
 
 	return nil
 }
