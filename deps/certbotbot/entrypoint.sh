@@ -159,7 +159,7 @@ for ns in ${CP_TO_NS//,/ }; do save_cert $CERT_NAME $ns; done
 # if [ "$NAMESPACE" == "ingress" ]; then kubectl -n $NAMESPACE rollout restart deployment haproxy; fi
 
 if [ -z $LETSENCRYPT_ACCOUNT ]; then 
-  cd /etc/letsencrypt/accounts/acme*/directory/ && tar -czvf acct.tar.gz
+  cd /etc/letsencrypt/accounts/acme*/directory/ && tar -czvf acct.tar.gz .
   acct=$(cat acct.tar.gz|base64)
   echo "reporting new letsencrypt account back to ita: $acct"
   curl -X POST -H "letsencrypt-account:$acct" http://turkeyorch.turkey-services:888/letsencrypt-account-collect
