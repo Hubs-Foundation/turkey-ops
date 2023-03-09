@@ -326,7 +326,9 @@ var LetsencryptAccountCollect = http.HandlerFunc(func(w http.ResponseWriter, r *
 		return
 	}
 
-	letsencryptAcct := r.Header.Get("letsencrypt-account")
+	// letsencryptAcct := r.Header.Get("letsencrypt-account")
+	rbodyBytes, _ := ioutil.ReadAll(r.Body)
+	letsencryptAcct := string(rbodyBytes)
 	cm, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps("turkey-services").Get(context.Background(), "letsencrypt-accounts", metav1.GetOptions{})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
