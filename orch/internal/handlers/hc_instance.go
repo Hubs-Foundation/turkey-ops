@@ -904,14 +904,11 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	time.Sleep(15 * time.Second)
 
 	// todo -- loop through all haproxy ingress in this namespace prefixed with "turkey-"
-	for _, ingressName := range []string{"ret", "assets"} {
+	for _, ingressName := range []string{"ret", "assets", "turkey-http", "turkey-https"} {
 		internal.Logger.Sugar().Debugf("[hc_patch_subdomain.update ingress] %v => %v", oldSubdomain, Subdomain)
 		ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), ingressName, metav1.GetOptions{})
 		if err != nil {
-			if ingressName == "assets" {
-				return nil
-			}
-			return err
+			continue
 		}
 		for i, rule := range ingress.Spec.Rules {
 			hostArr := strings.SplitN(rule.Host, ".", 2)
