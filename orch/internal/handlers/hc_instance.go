@@ -889,27 +889,14 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 			return err
 		}
 	}
-	// update ns label
-	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	ns.Labels["subdomain"] = Subdomain
-	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
-
 	// update ingress
-	time.Sleep(15 * time.Second)
-
-	// todo -- loop through all haproxy ingress in this namespace prefixed with "turkey-"
-	for _, ingressName := range []string{"ret", "assets", "turkey-http", "turkey-https"} {
-		internal.Logger.Sugar().Debugf("[hc_patch_subdomain.update ingress] %v => %v", oldSubdomain, Subdomain)
-		ingress, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Get(context.Background(), ingressName, metav1.GetOptions{})
-		if err != nil {
-			continue
-		}
+	time.Sleep(5 * time.Second)
+	ingresses, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, ingress := range ingresses.Items {
+		internal.Logger.Sugar().Debugf("updating ingress: " + ingress.Name)
 		for i, rule := range ingress.Spec.Rules {
 			hostArr := strings.SplitN(rule.Host, ".", 2)
 			newHost := strings.Replace(hostArr[0], oldSubdomain, Subdomain, 1) + "." + hostArr[1]
@@ -924,10 +911,20 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
 			ingress.Annotations["haproxy.org/response-set-header"],
 			`//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
-		_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), ingress, metav1.UpdateOptions{})
+		_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), &ingress, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
+	}
+	// update ns label
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ns.Labels["subdomain"] = Subdomain
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
 	}
 
 	return nil
