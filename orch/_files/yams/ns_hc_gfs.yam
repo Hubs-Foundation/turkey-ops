@@ -1052,54 +1052,54 @@ spec:
     targetPort: 5000
   selector:
     app: speelycaptor
----
-########################################################################
-######################   photomnemonic   ###############################
-########################################################################
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: photomnemonic
-  namespace: hc-{{.HubId}}
-  annotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: photomnemonic
-  minReadySeconds: 2
-  template:
-    metadata:
-      labels:
-        app: photomnemonic
-    spec:
-      nodeSelector:
-        turkey: {{.NodePool}}
-      containers:
-      - name: photomnemonic
-        image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
-        imagePullPolicy: IfNotPresent        
-        resources:
-          requests:
-            memory: 20Mi
-            cpu: 0.01
-          limits:
-            memory: 2Gi
-            cpu: 1
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: photomnemonic
-  namespace: hc-{{.HubId}}
-spec:
-  ports:
-  - name: photomnemonic
-    port: 5000
-    targetPort: 5000
-  selector:
-    app: photomnemonic
+# ---
+# ########################################################################
+# ######################   photomnemonic   ###############################
+# ########################################################################
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: photomnemonic
+#   namespace: hc-{{.HubId}}
+#   annotations:
+#     cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: photomnemonic
+#   minReadySeconds: 2
+#   template:
+#     metadata:
+#       labels:
+#         app: photomnemonic
+#     spec:
+#       nodeSelector:
+#         turkey: {{.NodePool}}
+#       containers:
+#       - name: photomnemonic
+#         image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
+#         imagePullPolicy: IfNotPresent        
+#         resources:
+#           requests:
+#             memory: 20Mi
+#             cpu: 0.01
+#           limits:
+#             memory: 2Gi
+#             cpu: 1
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: photomnemonic
+#   namespace: hc-{{.HubId}}
+# spec:
+#   ports:
+#   - name: photomnemonic
+#     port: 5000
+#     targetPort: 5000
+#   selector:
+#     app: photomnemonic
 # ---
 # ########################################################################
 # ######################   nfs   ###############################
