@@ -720,7 +720,7 @@ spec:
           value: hubs-proxy.com
         - name: turkeyCfg_shortlink_domain
           value: {{.Subdomain}}.{{.HubDomain}}
-        - name: turkeyCfg_TIER
+        - name: turkeyCfg_tier
           value: {{.Tier}}
         - name: turkeyCfg_sentry_dsn
           valueFrom:
