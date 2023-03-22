@@ -141,7 +141,7 @@ get_kubectl
 # kubectl -n $NAMESPACE patch cronjob certbotbot -p '{"spec":{"schedule": "0 0 */13 * *"}}'
 # if [ "$?" -ne 0 ]; then echo "ERROR -- can't patch cronjob, wtb rbac permision fixes"; sleep 3600; exit 1; fi
 
-if ! need_new_cert; then echo "good cert, exit in 5 min"; sleep 300; exit 0; fi
+if need_new_cert; then echo "good cert, exit in 5 min"; sleep 300; exit 0; fi
 
 echo "getting new cert"
 if [ "$CHALLENGE" = "http" ]; then
