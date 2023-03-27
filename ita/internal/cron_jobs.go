@@ -5,13 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/PagerDuty/go-pagerduty"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -206,6 +210,66 @@ func healthcheckUrl(url string) error {
 	Logger.Debug("good url: " + url)
 
 	return nil
+}
+
+func Cronjob_RetHealthCheck(interval time.Duration) {
+	secret, err := cfg.K8sClientSet.CoreV1().Secrets("monitoring").Get(context.Background(), "pagerduty-key", metav1.GetOptions{})
+	if err != nil {
+		Logger.Error(fmt.Sprintf("Error of retrieving secret: %v", err))
+		return
+	}
+
+	service_key := secret.StringData["apikey"]
+	if service_key == "" {
+		Logger.Error("empty pagerduty key in the secret")
+		return
+	}
+
+	ns := os.Getenv("POD_NS")
+	if ns == "" {
+		Logger.Error("empty namespace name")
+		return
+	}
+
+	incident_key := fmt.Sprintf("%s:%s", "ret", ns)
+
+	backoffSchedule := []time.Duration{
+		1 * time.Second,
+		3 * time.Second,
+		10 * time.Second,
+	}
+	url := "http://ret:4001"
+
+	for _, backoff := range backoffSchedule {
+		err := healthcheckUrl(url)
+
+		if err == nil {
+			break
+		}
+
+		Logger.Error(fmt.Sprintf("Request error: %+v\n", err))
+		Logger.Error(fmt.Sprintf("Retrying in %v\n", backoff))
+		time.Sleep(backoff)
+	}
+
+	if err != nil {
+		pagingIncident(incident_key, service_key, ns)
+	}
+}
+
+func pagingIncident(incident_key, service_key, ns string) {
+	event := pagerduty.Event{
+		Type:        "trigger",
+		ServiceKey:  service_key,
+		Description: fmt.Sprintf("Service ret from %s has failed.", ns),
+		IncidentKey: incident_key,
+	}
+	resp, err := pagerduty.CreateEvent(event)
+	if err != nil {
+		log.Println(resp)
+		log.Fatalln("ERROR:", err)
+	}
+	log.Println("Incident key:", resp.IncidentKey)
 }
 
 var StreamNodes map[string]string

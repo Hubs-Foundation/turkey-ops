@@ -3,6 +3,7 @@ package main
 import (
 	"main/internal"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -19,10 +20,11 @@ func main() {
 	cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
 	cron_15m := internal.NewCron("cron_15m", 15*time.Minute)
 
-	// if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
-	// 	// cron_1m.Load("pauseJob", internal.Cronjob_pauseHC)
-	// 	// cron_1m.Load("HcHealthchecks", internal.Cronjob_HcHealthchecks)
-	// }
+	if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
+		// cron_1m.Load("pauseJob", internal.Cronjob_pauseHC)
+		// cron_1m.Load("HcHealthchecks", internal.Cronjob_HcHealthchecks)
+		cron_1m.Load("HcHealthchecks", internal.Cronjob_RetHealthCheck)
+	}
 
 	if internal.GetCfg().PodNS == "turkey-services" {
 		cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
@@ -73,7 +75,7 @@ func main() {
 
 }
 
-//check turkeyauthtoken header
+// check turkeyauthtoken header
 func chk_hat_hdr() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
