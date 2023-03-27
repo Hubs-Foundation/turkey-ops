@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 
@@ -31,7 +32,7 @@ func main() {
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
 
-	router.Handle("/hc_instance", handlers.HC_instance)
+	router.Handle("/hc_instance", filterSource("turkeydashboard")(handlers.HC_instance))
 
 	router.Handle("/", handlers.TurkeyReturnCenter)
 	router.Handle("/turkey-return-center/", handlers.TurkeyReturnCenter)
@@ -39,14 +40,14 @@ func main() {
 	router.Handle("/tco_aws", mozOnly()(handlers.TurkeyAws))
 	router.Handle("/tco_gcp", mozOnly()(handlers.TurkeyGcp))
 
-	router.Handle("/snapshot", handlers.HC_snapshot)
+	// router.Handle("/snapshot", handlers.HC_snapshot)
 
 	router.Handle("/hub_domain", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, internal.Cfg.HubDomain)
 	}))
 
 	router.Handle("/letsencrypt-account-collect", handlers.LetsencryptAccountCollect)
-	router.Handle("/dump_hcnstable", handlers.Dump_HcNsTable)
+	router.Handle("/dump_hcnstable", filterSource("turkeydashboard")(handlers.Dump_HcNsTable))
 
 	//start listening
 	port, err := strconv.Atoi(internal.Cfg.Port)
@@ -70,6 +71,21 @@ func mozOnly() func(http.Handler) http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func filterSource(allowed string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			addr, err := net.LookupAddr("198.252.206.16")
+			if err != nil {
+				internal.GetLogger().Sugar().Errorf("err: %v", err)
+			}
+			internal.GetLogger().Sugar().Debugf("[accessControl for %v] accessed from: %v,%v", allowed, addr, err)
+
 			next.ServeHTTP(w, r)
 		})
 	}
