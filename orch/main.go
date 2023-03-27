@@ -80,11 +80,12 @@ func filterSource(allowed string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			addr, err := net.LookupAddr("198.252.206.16")
+			sourceIp := r.RemoteAddr
+			addr, err := net.LookupAddr(sourceIp)
 			if err != nil {
 				internal.GetLogger().Sugar().Errorf("err: %v", err)
 			}
-			internal.GetLogger().Sugar().Debugf("[accessControl for %v] accessed from: %v,%v", allowed, addr, err)
+			internal.GetLogger().Sugar().Debugf("[accessControl for %v] accessed from: %v (%v)", allowed, addr, sourceIp)
 
 			next.ServeHTTP(w, r)
 		})
