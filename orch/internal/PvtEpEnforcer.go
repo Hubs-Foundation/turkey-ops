@@ -23,12 +23,12 @@ func NewPvtEpEnforcer(epWatchList []string) *PvtEpEnforcer {
 	}
 }
 
-func (p *PvtEpEnforcer) Filter(allowedKubeSvc string) func(http.Handler) http.Handler {
+func (p *PvtEpEnforcer) Filter(allowedKubeSvcs []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sourceIp := r.RemoteAddr
 			Logger.Debug("accessed from: " + sourceIp)
-			if p.shoudAllow(sourceIp, allowedKubeSvc) {
+			if p.shoudAllow(sourceIp, allowedKubeSvcs) {
 				next.ServeHTTP(w, r)
 			}
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -37,22 +37,26 @@ func (p *PvtEpEnforcer) Filter(allowedKubeSvc string) func(http.Handler) http.Ha
 	}
 }
 
-func (p *PvtEpEnforcer) shoudAllow(rawIp, allowedKubeSvc string) bool {
+func (p *PvtEpEnforcer) shoudAllow(rawIp string, allowedKubeSvcs []string) bool {
 
 	ip := strings.Split(rawIp, ":")[0]
 	if !net.ParseIP(ip).IsPrivate() {
 		GetLogger().Warn("!!! private endpoint accessed by non-private-ip:" + ip)
 		return false
 	}
-	if allowedKubeSvc == "*" {
+	// * == allow all internal ips
+	if allowedKubeSvcs[0] == "*" {
+		Logger.Sugar().Debugf("allowed: %v", ip)
 		return true
 	}
-
-	svcData, ok := p.epData[allowedKubeSvc]
-	if ok && slices.Contains(svcData, ip) {
-		return true
+	//
+	for _, allowedKubeSvc := range allowedKubeSvcs {
+		svcData, ok := p.epData[allowedKubeSvc]
+		if ok && slices.Contains(svcData, ip) {
+			Logger.Sugar().Debugf("allowed: [%v]: %v", allowedKubeSvc, ip)
+			return true
+		}
 	}
-
 	return false
 }
 
