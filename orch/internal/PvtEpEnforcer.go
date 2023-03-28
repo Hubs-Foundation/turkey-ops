@@ -78,16 +78,19 @@ func (p *PvtEpEnforcer) StartWatching() error {
 			0,
 			cache.ResourceEventHandlerFuncs{
 				AddFunc: func(obj interface{}) {
-					GetLogger().Sugar().Debugf("added: %v", obj)
-					p.refreshEpData(v, obj.(*corev1.Endpoints))
+					ep := obj.(*corev1.Endpoints)
+					GetLogger().Sugar().Debugf("added: %v", ep)
+					p.refreshEpData(ep.Name+"."+ep.Namespace, ep)
 				},
 				UpdateFunc: func(oldObj, newObj interface{}) {
-					GetLogger().Sugar().Debugf("updated: %v", newObj)
-					p.refreshEpData(v, newObj.(*corev1.Endpoints))
+					ep := newObj.(*corev1.Endpoints)
+					GetLogger().Sugar().Debugf("updated: %v", ep)
+					p.refreshEpData(ep.Name+"."+ep.Namespace, ep)
 				},
 				DeleteFunc: func(obj interface{}) {
-					GetLogger().Sugar().Debugf("deleted: %v", obj)
-					delete(p.epData, v)
+					ep := obj.(*corev1.Endpoints)
+					GetLogger().Sugar().Debugf("deleted: %v", ep)
+					delete(p.epData, ep.Name+"."+ep.Namespace)
 				},
 			},
 		)
