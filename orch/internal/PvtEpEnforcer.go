@@ -37,7 +37,9 @@ func (p *PvtEpEnforcer) Filter(allowedKubeSvc string) func(http.Handler) http.Ha
 	}
 }
 
-func (p *PvtEpEnforcer) shoudAllow(ip, allowedKubeSvc string) bool {
+func (p *PvtEpEnforcer) shoudAllow(rawIp, allowedKubeSvc string) bool {
+
+	ip := strings.Split(rawIp, ":")[0]
 	if !net.ParseIP(ip).IsPrivate() {
 		GetLogger().Warn("!!! private endpoint accessed by non-private-ip:" + ip)
 		return false
