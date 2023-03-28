@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net"
 	"net/http"
 	"strconv"
 
@@ -15,14 +14,20 @@ func main() {
 	internal.MakeCfg()
 	internal.MakePgxPool()
 
-	//++++++++++++++++++++++++ testing...
+	pvtEpEnforcer := internal.NewPvtEpEnforcer(
+		[]string{
+			"turkeydashboard.turkey-services",
+			"turkeyauth.turkey-services",
+		},
+	)
+
 	if internal.Cfg.K8ss_local != nil {
 		// internal.StartLruCache()
 		internal.Cfg.K8ss_local.StartWatching_HcNs()
+		pvtEpEnforcer.StartWatching()
 	}
 
 	router := http.NewServeMux()
-
 	//public endpoints
 	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
 
@@ -32,7 +37,7 @@ func main() {
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
 
-	router.Handle("/hc_instance", filterSource("turkeydashboard")(handlers.HC_instance))
+	router.Handle("/hc_instance", pvtEpEnforcer.Filter("*")(handlers.HC_instance))
 
 	router.Handle("/", handlers.TurkeyReturnCenter)
 	router.Handle("/turkey-return-center/", handlers.TurkeyReturnCenter)
@@ -47,7 +52,7 @@ func main() {
 	}))
 
 	router.Handle("/letsencrypt-account-collect", handlers.LetsencryptAccountCollect)
-	router.Handle("/dump_hcnstable", filterSource("turkeydashboard")(handlers.Dump_HcNsTable))
+	router.Handle("/dump_hcnstable", pvtEpEnforcer.Filter("*")(handlers.Dump_HcNsTable))
 
 	//start listening
 	port, err := strconv.Atoi(internal.Cfg.Port)
@@ -71,22 +76,6 @@ func mozOnly() func(http.Handler) http.Handler {
 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 				return
 			}
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-func filterSource(allowed string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-			sourceIp := r.RemoteAddr
-			addr, err := net.LookupAddr(sourceIp)
-			if err != nil {
-				internal.GetLogger().Sugar().Errorf("err: %v", err)
-			}
-			internal.GetLogger().Sugar().Debugf("[accessControl for %v] accessed from: %v (%v)", allowed, addr, sourceIp)
-
 			next.ServeHTTP(w, r)
 		})
 	}
