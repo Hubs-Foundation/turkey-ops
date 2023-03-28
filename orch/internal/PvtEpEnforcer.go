@@ -79,26 +79,30 @@ func (p *PvtEpEnforcer) StartWatching() error {
 			cache.ResourceEventHandlerFuncs{
 				AddFunc: func(obj interface{}) {
 					GetLogger().Sugar().Debugf("added: %v", obj)
-					// ns := obj.(*corev1.Namespace)
-					// HC_NS_MAN.Set(ns.Name, HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
+					p.refreshEpData(v, obj.(*corev1.Endpoints))
 				},
 				UpdateFunc: func(oldObj, newObj interface{}) {
 					GetLogger().Sugar().Debugf("updated: %v", newObj)
-					// ns := newObj.(*corev1.Namespace)
-					// if ns.Annotations["deleting"] == "true" {
-					// 	HC_NS_MAN.Del(ns.Name)
-					// 	return
-					// }
-					// HC_NS_MAN.Set(ns.Name, HcNsNotes{Labels: ns.Labels, Lastchecked: time.Now()})
+					p.refreshEpData(v, newObj.(*corev1.Endpoints))
 				},
 				DeleteFunc: func(obj interface{}) {
 					GetLogger().Sugar().Debugf("deleted: %v", obj)
-					// ns := obj.(*corev1.Namespace)
-					// HC_NS_MAN.Del(ns.Name)
+					delete(p.epData, v)
 				},
 			},
 		)
 		go controller.Run(make(chan struct{}))
 	}
 	return nil
+}
+
+func (p *PvtEpEnforcer) refreshEpData(allowedKubeSvc string, ep *corev1.Endpoints) {
+	ips := []string{}
+	for _, sub := range ep.Subsets {
+		for _, addr := range sub.Addresses {
+			ips = append(ips, addr.IP)
+		}
+	}
+	p.epData[allowedKubeSvc] = ips
+	GetLogger().Sugar().Debugf("refreshed: epData[%v]=%v", allowedKubeSvc, ips)
 }
