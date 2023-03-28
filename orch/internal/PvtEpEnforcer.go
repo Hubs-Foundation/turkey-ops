@@ -74,7 +74,7 @@ func (p *PvtEpEnforcer) StartWatching() error {
 		)
 		_, controller := cache.NewInformer(
 			watchlist,
-			&corev1.Namespace{},
+			&corev1.Endpoints{},
 			0,
 			cache.ResourceEventHandlerFuncs{
 				AddFunc: func(obj interface{}) {
