@@ -30,6 +30,7 @@ func (p *PvtEpEnforcer) Filter(allowedKubeSvcs []string) func(http.Handler) http
 			Logger.Debug("accessed from: " + sourceIp)
 			if p.shoudAllow(sourceIp, allowedKubeSvcs) {
 				next.ServeHTTP(w, r)
+				return
 			}
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
