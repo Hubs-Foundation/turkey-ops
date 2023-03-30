@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,6 +17,11 @@ type PvtEpEnforcer struct {
 	epData      map[string][]string
 }
 
+type ipData struct {
+	ShouldAllow bool
+	BestBy      time.Time
+}
+
 func NewPvtEpEnforcer(epWatchList []string) *PvtEpEnforcer {
 	return &PvtEpEnforcer{
 		epWatchList: epWatchList,
@@ -26,27 +32,28 @@ func NewPvtEpEnforcer(epWatchList []string) *PvtEpEnforcer {
 func (p *PvtEpEnforcer) Filter(allowedKubeSvcs []string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			sourceIp := r.RemoteAddr
+			sourceIp := strings.Split(r.RemoteAddr, ":")[0]
 			Logger.Debug("accessed from: " + sourceIp)
+
 			if p.shoudAllow(sourceIp, allowedKubeSvcs) {
 				next.ServeHTTP(w, r)
 				return
 			}
+			Logger.Sugar().Debugf("NOT allowed: %v", sourceIp)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		})
 	}
 }
 
-func (p *PvtEpEnforcer) shoudAllow(rawIp string, allowedKubeSvcs []string) bool {
+func (p *PvtEpEnforcer) shoudAllow(ip string, allowedKubeSvcs []string) bool {
 
-	ip := strings.Split(rawIp, ":")[0]
 	if !net.ParseIP(ip).IsPrivate() {
 		GetLogger().Warn("!!! private endpoint accessed by non-private-ip:" + ip)
 		return false
 	}
 	// * == allow all internal ips
-	if allowedKubeSvcs[0] == "*" {
+	if slices.Contains(allowedKubeSvcs, "*") {
 		Logger.Sugar().Debugf("allowed: %v", ip)
 		return true
 	}

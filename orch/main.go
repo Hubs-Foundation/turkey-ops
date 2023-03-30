@@ -38,6 +38,7 @@ func main() {
 	router.Handle("/LogStream", handlers.LogStream)
 
 	router.Handle("/hc_instance", pvtEpEnforcer.Filter([]string{
+		"*",
 		"turkeydashboard.turkey-services",
 		"turkeyauth.turkey-services",
 	})(handlers.HC_instance))
