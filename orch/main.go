@@ -39,8 +39,8 @@ func main() {
 
 	router.Handle("/hc_instance", pvtEpEnforcer.Filter([]string{
 		"*",
-		"turkeydashboard.turkey-services",
-		"turkeyauth.turkey-services",
+		// "turkeydashboard.turkey-services",
+		// "turkeyauth.turkey-services",
 	})(handlers.HC_instance))
 
 	router.Handle("/", handlers.TurkeyReturnCenter)
