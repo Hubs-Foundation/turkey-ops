@@ -10,9 +10,8 @@ var inta = 6
 
 var authorizedUsers = map[string]string{
 	"107.139.213.232": "gtan@mozilla.com",
-	"107.223.91.17": "bpatterson@mozilla.com",
-	"222.153.126.253": "you@mozilla.com",
-
+	"107.223.91.17":   "bpatterson@mozilla.com",
+	"125.239.195.41":  "you@mozilla.com",
 }
 
 func AuthnProxy() http.Handler {
