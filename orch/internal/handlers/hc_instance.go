@@ -346,7 +346,7 @@ func sync_load_assets(cfg hcCfg) error {
 
 func ret_load_asset(url *url.URL, cfg hcCfg, token string) error {
 	pathArr := strings.Split(url.Path, "/")
-	if len(pathArr) != 3 {
+	if len(pathArr) < 3 {
 		return fmt.Errorf("unsupported url: %v", url)
 	}
 	kind_s := pathArr[1]
