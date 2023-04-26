@@ -211,6 +211,7 @@ func ret_avatar_post_import(getReqBody []byte, subdomain, domain, token string) 
 		"attributions": {},							
 		"tags": {
 			"tags": [
+				"default",
 				"featured"
 			]
 		},
