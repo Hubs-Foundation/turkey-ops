@@ -364,6 +364,7 @@ func post_creation_hacks(cfg hcCfg) error {
 		return err
 	}
 	app_configs_req.Header.Set("Content-Type", "application/json")
+	app_configs_req.Header.Add("authorization", "bearer "+string(token))
 	client := &http.Client{}
 	app_configs_resp, err := client.Do(app_configs_req)
 	if err != nil {
