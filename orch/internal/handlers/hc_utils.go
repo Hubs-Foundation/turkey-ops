@@ -421,5 +421,5 @@ func ret_upload_file(subdomain, domain, filePath string) (origin, token string, 
 	if err != nil {
 		return "", "", fmt.Errorf("decoder.Decode(&respMap): %v", err)
 	}
-	return respMap["origin"].(string), respMap["meta"].(map[string]string)["access_token"], nil
+	return respMap["origin"].(string), respMap["meta"].(map[string]interface{})["access_token"].(string), nil
 }
