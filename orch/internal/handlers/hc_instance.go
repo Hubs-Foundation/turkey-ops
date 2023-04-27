@@ -273,7 +273,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
 
 	go func() {
-		err = sync_load_assets(hcCfg)
+		err = post_creation_hacks(hcCfg)
 		if err != nil {
 			internal.Logger.Error("sync_load_assets FAILED: " + err.Error())
 		}
@@ -291,7 +291,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func sync_load_assets(cfg hcCfg) error {
+func post_creation_hacks(cfg hcCfg) error {
 
 	_httpClient := &http.Client{
 		Timeout:   5 * time.Second,
@@ -321,7 +321,57 @@ func sync_load_assets(cfg hcCfg) error {
 	token, _ := ioutil.ReadAll(resp.Body)
 	internal.Logger.Sugar().Debugf("admin-token: %v, hubId: %v", string(token), cfg.HubId)
 
-	//load asset
+	//load default theme file
+	themeBytes, err := ioutil.ReadFile("./_files/hc_assets/theme.json")
+	if err != nil {
+		return err
+	}
+
+	//upload default logos
+	logo_files := map[string]string{
+		"./_files/hc_assets/HubLogo.jpg":            "",
+		"./_files/hc_assets/HubLogoForDarkMode.jpg": "",
+		"./_files/hc_assets/Favicon.ico":            "",
+		"./_files/hc_assets/HomePageImage.jpg":      "",
+		"./_files/hc_assets/CompanyLogo.png":        "",
+		"./_files/hc_assets/ShortcutIcon.png":       "",
+		"./_files/hc_assets/SocialMediaCard.png":    "",
+	}
+	logo_files, err = ret_upload_files(cfg.Subdomain, cfg.HubDomain, logo_files)
+	if err != nil {
+		return err
+	}
+	internal.Logger.Sugar().Debugf("logo_files: %v", logo_files)
+
+	//post app_configs
+	appConfigsJsonBytes, err := json.Marshal(map[string]interface{}{
+		"theme": map[string]string{
+			"themes": string(themeBytes)},
+		"images": map[string]string{
+			"logo_dark":       logo_files["./_files/hc_assets/HubLogoForDarkMode.jpg"],
+			"logo":            logo_files["./_files/hc_assets/HubLogo.jpg"],
+			"home_background": logo_files["./_files/hc_assets/HomePageImage.jpg"],
+			"favicon":         logo_files["./_files/hc_assets/HubLogo.jpg"],
+			"app_thumbnail":   logo_files["./_files/hc_assets/HubLogo.jpg"],
+			"app_icon":        logo_files["./_files/hc_assets/HubLogo.jpg"],
+		},
+	})
+	if err != nil {
+		return err
+	}
+	app_configs_req, err := http.NewRequest("POST", "https://"+cfg.Subdomain+"."+cfg.HubDomain+"/api/v1/app_configs", bytes.NewBuffer(appConfigsJsonBytes))
+	if err != nil {
+		return err
+	}
+	app_configs_req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	app_configs_resp, err := client.Do(app_configs_req)
+	if err != nil {
+		return err
+	}
+	internal.Logger.Sugar().Debugf("app_configs_resp: ", app_configs_resp)
+
+	//load assets
 	assetPackUrl := internal.Cfg.HC_INIT_ASSET_PACK
 	resp, err = http.Get(assetPackUrl)
 	if err != nil {

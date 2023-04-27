@@ -7,10 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"main/internal"
 	"math/rand"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -358,3 +361,70 @@ var Dump_HcNsTable = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 
 	fmt.Fprintf(w, fmt.Sprintf("%v", internal.HC_NS_MAN.Dump()))
 })
+
+func ret_upload_files(subdomain, domain string, files map[string]string) (map[string]string, error) {
+	for k, _ := range files {
+		origin, _, err := ret_upload_file(subdomain, domain, k)
+		if err != nil {
+			return nil, err
+		}
+		files[k] = origin
+	}
+	return files, nil
+}
+
+func ret_upload_file(subdomain, domain, filePath string) (origin, token string, err error) {
+	url := "https://" + subdomain + "." + domain + "/api/v1/media"
+	method := "POST"
+
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+
+	// Add the media file to the request
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", "", err
+	}
+	defer file.Close()
+	internal.Logger.Debug("file.Name(): " + file.Name())
+
+	part, err := writer.CreateFormFile("media", file.Name())
+	if err != nil {
+		return "", "", err
+	}
+	part.Write([]byte(""))
+
+	if _, err := io.Copy(part, file); err != nil {
+		return "", "", err
+	}
+
+	// Add the promotion_mode field to the request
+	_ = writer.WriteField("promotion_mode", "with_token")
+
+	err = writer.Close()
+	if err != nil {
+		return "", "", err
+	}
+
+	req, err := http.NewRequest(method, url, payload)
+	if err != nil {
+		return "", "", err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+
+	// Handle the response here
+	decoder := json.NewDecoder(resp.Body)
+	respMap := make(map[string]interface{})
+	err = decoder.Decode(&respMap)
+	if err != nil {
+		return "", "", err
+	}
+	return respMap["origin"].(string), respMap["meta"].(map[string]string)["access_token"], nil
+}
