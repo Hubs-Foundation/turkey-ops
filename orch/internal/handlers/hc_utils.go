@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"main/internal"
 	"math/rand"
@@ -375,56 +374,52 @@ func ret_upload_files(subdomain, domain string, files map[string]string) (map[st
 
 func ret_upload_file(subdomain, domain, filePath string) (origin, token string, err error) {
 	url := "https://" + subdomain + "." + domain + "/api/v1/media"
-	method := "POST"
 
+	// Create the multipart/form-data payload
 	payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(payload)
-
 	// Add the media file to the request
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("os.Open(filePath): %v", err)
 	}
 	defer file.Close()
-	internal.Logger.Debug("file.Name(): " + file.Name())
 
-	part, err := writer.CreateFormFile("media", file.Name())
+	part, err := writer.CreateFormFile("media", filePath)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("writer.CreateFormFile: %v", err)
 	}
-	part.Write([]byte(""))
-
-	if _, err := io.Copy(part, file); err != nil {
-		return "", "", err
+	partBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return "", "", fmt.Errorf("ioutil.ReadAll(file): %v", err)
 	}
-
-	// Add the promotion_mode field to the request
+	part.Write(partBytes)
+	_ = writer.WriteField("type", "image/jpeg")
 	_ = writer.WriteField("promotion_mode", "with_token")
-
 	err = writer.Close()
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("writer.Close(): %v", err)
 	}
-
-	req, err := http.NewRequest(method, url, payload)
+	req, err := http.NewRequest("POST", url, payload)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("http.NewRequest: %v", err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("decoder.Decode(&respMap): %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Handle the response here
+	// bodyBytes, _ := io.ReadAll(resp.Body)
+	// fmt.Println("bodyBytes", string(bodyBytes))
+
 	decoder := json.NewDecoder(resp.Body)
 	respMap := make(map[string]interface{})
 	err = decoder.Decode(&respMap)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("decoder.Decode(&respMap): %v", err)
 	}
 	return respMap["origin"].(string), respMap["meta"].(map[string]string)["access_token"], nil
 }
