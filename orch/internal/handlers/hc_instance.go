@@ -328,14 +328,14 @@ func post_creation_hacks(cfg hcCfg) error {
 	}
 
 	//upload default logos
-	logo_files := map[string]string{
-		"./_files/hc_assets/HubLogo.jpg":            "",
-		"./_files/hc_assets/HubLogoForDarkMode.jpg": "",
-		"./_files/hc_assets/Favicon.ico":            "",
-		"./_files/hc_assets/HomePageImage.jpg":      "",
-		"./_files/hc_assets/CompanyLogo.png":        "",
-		"./_files/hc_assets/ShortcutIcon.png":       "",
-		"./_files/hc_assets/SocialMediaCard.png":    "",
+	logo_files := map[string]interface{}{
+		"./_files/hc_assets/HubLogo.jpg":            nil,
+		"./_files/hc_assets/HubLogoForDarkMode.jpg": nil,
+		"./_files/hc_assets/Favicon.ico":            nil,
+		"./_files/hc_assets/HomePageImage.jpg":      nil,
+		"./_files/hc_assets/CompanyLogo.png":        nil,
+		"./_files/hc_assets/ShortcutIcon.png":       nil,
+		"./_files/hc_assets/SocialMediaCard.png":    nil,
 	}
 	logo_files, err = ret_upload_files(cfg.Subdomain, cfg.HubDomain, logo_files)
 	if err != nil {
@@ -347,13 +347,13 @@ func post_creation_hacks(cfg hcCfg) error {
 	appConfigsJsonBytes, err := json.Marshal(map[string]interface{}{
 		"theme": map[string]string{
 			"themes": string(themeBytes)},
-		"images": map[string]string{
+		"images": map[string]interface{}{
 			"logo_dark":       logo_files["./_files/hc_assets/HubLogoForDarkMode.jpg"],
 			"logo":            logo_files["./_files/hc_assets/HubLogo.jpg"],
 			"home_background": logo_files["./_files/hc_assets/HomePageImage.jpg"],
-			"favicon":         logo_files["./_files/hc_assets/HubLogo.jpg"],
-			"app_thumbnail":   logo_files["./_files/hc_assets/HubLogo.jpg"],
-			"app_icon":        logo_files["./_files/hc_assets/HubLogo.jpg"],
+			"favicon":         logo_files["./_files/hc_assets/Favicon.ico"],
+			"app_thumbnail":   logo_files["./_files/hc_assets/CompanyLogo.png"],
+			"app_icon":        logo_files["./_files/hc_assets/ShortcutIcon.png"],
 		},
 	})
 	if err != nil {
