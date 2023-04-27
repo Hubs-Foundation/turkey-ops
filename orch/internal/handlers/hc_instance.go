@@ -352,8 +352,9 @@ func post_creation_hacks(cfg hcCfg) error {
 			"logo":            logo_files["./_files/hc_assets/HubLogo.jpg"],
 			"home_background": logo_files["./_files/hc_assets/HomePageImage.jpg"],
 			"favicon":         logo_files["./_files/hc_assets/Favicon.ico"],
-			"app_thumbnail":   logo_files["./_files/hc_assets/CompanyLogo.png"],
+			"app_thumbnail":   logo_files["./_files/hc_assets/SocialMediaCard.png"],
 			"app_icon":        logo_files["./_files/hc_assets/ShortcutIcon.png"],
+			"company_logo":    logo_files["./_files/hc_assets/CompanyLogo.png"],
 		},
 	})
 	if err != nil {
