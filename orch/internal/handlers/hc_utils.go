@@ -361,18 +361,19 @@ var Dump_HcNsTable = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 	fmt.Fprintf(w, fmt.Sprintf("%v", internal.HC_NS_MAN.Dump()))
 })
 
-func ret_upload_files(subdomain, domain string, files map[string]string) (map[string]string, error) {
+func ret_upload_files(subdomain, domain string, files map[string]interface{}) (map[string]interface{}, error) {
 	for k, _ := range files {
-		origin, _, err := ret_upload_file(subdomain, domain, k)
+		respMap, err := ret_upload_file(subdomain, domain, k)
 		if err != nil {
-			return nil, err
+			// return nil, err
+			files[k] = err
 		}
-		files[k] = origin
+		files[k] = respMap
 	}
 	return files, nil
 }
 
-func ret_upload_file(subdomain, domain, filePath string) (origin, token string, err error) {
+func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]interface{}, err error) {
 	url := "https://" + subdomain + "." + domain + "/api/v1/media"
 
 	// Create the multipart/form-data payload
@@ -381,34 +382,34 @@ func ret_upload_file(subdomain, domain, filePath string) (origin, token string, 
 	// Add the media file to the request
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", "", fmt.Errorf("os.Open(filePath): %v", err)
+		return nil, fmt.Errorf("os.Open(filePath): %v", err)
 	}
 	defer file.Close()
 
 	part, err := writer.CreateFormFile("media", filePath)
 	if err != nil {
-		return "", "", fmt.Errorf("writer.CreateFormFile: %v", err)
+		return nil, fmt.Errorf("writer.CreateFormFile: %v", err)
 	}
 	partBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return "", "", fmt.Errorf("ioutil.ReadAll(file): %v", err)
+		return nil, fmt.Errorf("ioutil.ReadAll(file): %v", err)
 	}
 	part.Write(partBytes)
 	_ = writer.WriteField("type", "image/jpeg")
 	_ = writer.WriteField("promotion_mode", "with_token")
 	err = writer.Close()
 	if err != nil {
-		return "", "", fmt.Errorf("writer.Close(): %v", err)
+		return nil, fmt.Errorf("writer.Close(): %v", err)
 	}
 	req, err := http.NewRequest("POST", url, payload)
 	if err != nil {
-		return "", "", fmt.Errorf("http.NewRequest: %v", err)
+		return nil, fmt.Errorf("http.NewRequest: %v", err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", "", fmt.Errorf("decoder.Decode(&respMap): %v", err)
+		return nil, fmt.Errorf("decoder.Decode(&respMap): %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -416,10 +417,12 @@ func ret_upload_file(subdomain, domain, filePath string) (origin, token string, 
 	// fmt.Println("bodyBytes", string(bodyBytes))
 
 	decoder := json.NewDecoder(resp.Body)
-	respMap := make(map[string]interface{})
+
+	respMap = make(map[string]interface{})
 	err = decoder.Decode(&respMap)
 	if err != nil {
-		return "", "", fmt.Errorf("decoder.Decode(&respMap): %v", err)
+		return nil, fmt.Errorf("decoder.Decode(&respMap): %v", err)
 	}
-	return respMap["origin"].(string), respMap["meta"].(map[string]interface{})["access_token"].(string), nil
+	// return respMap["origin"].(string), respMap["meta"].(map[string]interface{})["access_token"].(string), nil
+	return respMap, nil
 }
