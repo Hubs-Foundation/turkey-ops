@@ -299,7 +299,7 @@ resource "google_filestore_instance" "instance" {
   location = "{{.Region}}-b"
   tier = "STANDARD"
   file_shares {
-    capacity_gb = 1000
+    capacity_gb = 1024
     name        = "vol1"
   }
   networks {
