@@ -293,7 +293,17 @@ resource "google_sql_database" "dashboard_db" {
 
 resource "google_filestore_instance" "instance" {
   name = "{{.Stackname}}"
-  location = "{{.Region}}-b"
+  {{ if ne .Env "dev" }}
+  variable "location" {
+    type= string
+    default   = "{{.Region}}"
+  }
+  {{ else }}
+  variable "location" {
+    type= string
+    default   = "{{.Region}}-b"
+  }
+  {{ end }}
   tier = "STANDARD"
   file_shares {
     capacity_gb = 1000
