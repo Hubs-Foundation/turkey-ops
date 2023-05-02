@@ -5,7 +5,10 @@ terraform {
         prefix  = "tf-backend/{{.Stackname}}"
     }
 }
-
+provider "google" {
+  project = "{{.ProjectId}}"
+  region  = "{{.Region}}"
+}
 provider "google-beta" {
   project = "{{.ProjectId}}"
   region  = "{{.Region}}"
