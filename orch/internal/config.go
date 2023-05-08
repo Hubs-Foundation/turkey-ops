@@ -66,6 +66,7 @@ func MakeCfg() {
 	Cfg = &Config{}
 
 	Cfg.ClusterName = os.Getenv("CLUSTER_NAME")
+	Logger.Info("Cfg.ClusterName: " + Cfg.ClusterName)
 	Cfg.ImgRepo = "mozillareality"
 
 	Cfg.AuthProxyUrl = os.Getenv("AUTH_PROXY_URL")
