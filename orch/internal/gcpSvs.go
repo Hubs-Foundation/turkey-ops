@@ -284,14 +284,18 @@ func (g *GcpSvs) PubSub_PublishMsg(topic string, data []byte) error {
 }
 
 func (g *GcpSvs) PubSub_Pulling(subscriptionName string, f func(ctx context.Context, msg *pubsub.Message)) error {
+	Logger.Debug("pulling subscription: " + subscriptionName)
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, g.ProjectId)
 	if err != nil {
+		Logger.Error(err.Error())
 		return err
 	}
 	sub := client.Subscription(subscriptionName)
-
 	err = sub.Receive(ctx, f)
+	if err != nil {
+		Logger.Error(err.Error())
+	}
 
 	return err
 }
