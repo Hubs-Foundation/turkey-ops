@@ -83,8 +83,8 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// TODO -- get filestore ip and vol name and add to cfg
-		fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname)
+		// get filestore ip and vol name and add to cfg
+		fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname, cfg.Region)
 		if err != nil {
 			internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "post tf deployment: failed to get Filestore_GetIP, err: " + err.Error())
 			return
@@ -157,7 +157,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 				"\r\n******for https://dash."+cfg.Domain+"******"+
 				"\r\n- sknoonerToken: "+report["skoonerToken"]+
 				"\r\n******get: kubeconfig******"+
-				"\r\n - gcloud container clusters get-credentials --region us-east1 "+cfg.Stackname+
+				"\r\n - gcloud container clusters get-credentials --region "+cfg.Region+" "+cfg.Stackname+
 				"\r\n******get: cluster https cert******"+
 				"\r\n - kubectl -n ingress get secret letsencrypt -o yaml"+
 				// "\r\n******clusterCfg dump******"+

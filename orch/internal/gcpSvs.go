@@ -283,7 +283,7 @@ func (g *GcpSvs) PubSub_PublishMsg(topic string, data []byte) error {
 	return err
 }
 
-func (g *GcpSvs) Filestore_GetIP(name string) (string, error) {
+func (g *GcpSvs) Filestore_GetIP(name, location string) (string, error) {
 	ctx := context.Background()
 	client, err := filestore.NewCloudFilestoreManagerClient(ctx)
 	if err != nil {
@@ -291,7 +291,7 @@ func (g *GcpSvs) Filestore_GetIP(name string) (string, error) {
 	}
 
 	req := &filestorepb.GetInstanceRequest{
-		Name: name,
+		Name: `projects/` + g.ProjectId + `/locations/` + location + `/instances/` + name,
 	}
 	fs, err := client.GetInstance(ctx, req)
 	if err != nil {
