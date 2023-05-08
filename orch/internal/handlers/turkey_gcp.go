@@ -83,15 +83,18 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// *** wip ***
 		// get filestore ip and vol name and add to cfg
-		fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname, cfg.Region)
+		fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname, "global")
 		if err != nil {
 			internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "post tf deployment: failed to get Filestore_GetIP, err: " + err.Error())
-			return
+			// return
+			fsip = "0.0.0.0"
 		}
-
 		cfg.FilestoreIP = fsip
 		cfg.FilestorePath = "vol1"
+		// *** wip ***
+
 		cfg.DB_HOST = dbIps["PRIVATE"] //+ ":5432"
 		cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 		cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
