@@ -283,6 +283,22 @@ func (g *GcpSvs) PubSub_PublishMsg(topic string, data []byte) error {
 	return err
 }
 
+func (g *GcpSvs) PubSub_Pulling(subscriptionName string) ([]byte, error) {
+	ctx := context.Background()
+	client, err := pubsub.NewClient(ctx, g.ProjectId)
+	if err != nil {
+		return nil, err
+	}
+	sub := client.Subscription(subscriptionName)
+
+	msgBytes := []byte{}
+	err = sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		msgBytes = msg.Data
+		msg.Ack()
+	})
+
+	return msgBytes, err
+}
 func (g *GcpSvs) Filestore_GetIP(name, location string) (string, error) {
 	ctx := context.Background()
 	client, err := filestore.NewCloudFilestoreManagerClient(ctx)

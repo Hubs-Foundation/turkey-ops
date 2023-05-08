@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"main/internal"
 	"main/internal/handlers"
@@ -28,6 +29,11 @@ func main() {
 		pvtEpEnforcer.StartWatching()
 	}
 
+	if internal.Cfg.ClusterName != "" {
+		cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
+		cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_TurkeyJobQueue)
+		cron_1m.Start()
+	}
 	router := http.NewServeMux()
 	//public endpoints
 	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)

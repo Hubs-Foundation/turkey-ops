@@ -10,6 +10,8 @@ import (
 )
 
 type Config struct {
+	ClusterName string
+
 	Port         string
 	PodIp        string
 	PodNS        string
@@ -63,6 +65,7 @@ var Cfg *Config
 func MakeCfg() {
 	Cfg = &Config{}
 
+	Cfg.ClusterName = os.Getenv("CLUSTER_NAME")
 	Cfg.ImgRepo = "mozillareality"
 
 	Cfg.AuthProxyUrl = os.Getenv("AUTH_PROXY_URL")

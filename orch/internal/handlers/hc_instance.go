@@ -44,6 +44,7 @@ type hcCfg struct {
 	//optional inputs
 	Options       string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
 	TargetCluster string `json:"target_cluster"`
+	OrchMethod    string `json:"orch_method"`
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain               string `json:"domain"`
@@ -96,10 +97,13 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	switch r.Method {
 	case "POST":
 		hc_create(w, r)
+
 	case "GET":
 		hc_get(w, r)
+
 	case "DELETE":
 		hc_delete(w, r)
+
 	case "PATCH":
 		cfg, err := getHcCfg(r)
 		if err != nil {
@@ -159,7 +163,6 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 func hc_create(w http.ResponseWriter, r *http.Request) {
 
 	// sess := internal.GetSession(r.Cookie)
-
 	// #1 prepare configs
 	hcCfg, err := makeHcCfg(r)
 	if err != nil {
@@ -167,9 +170,10 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	// #1.0.1 -- bounce to foreign cluster if request
-	if hcCfg.TargetCluster != "" {
+	// #1.0.1 -- do we need to bounce it to a foreign cluster
+	if hcCfg.TargetCluster != "" && hcCfg.TargetCluster != internal.Cfg.ClusterName {
 		internal.Logger.Debug("hcCfg.TargetCluster: " + hcCfg.TargetCluster)
+		hcCfg.OrchMethod = "POST"
 		hcCfgJsonBytes, _ := json.Marshal(hcCfg)
 		err := internal.Cfg.Gcps.PubSub_PublishMsg("turkey_job_queue_"+hcCfg.TargetCluster, hcCfgJsonBytes)
 		if err != nil {
@@ -179,7 +183,6 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 	// #1.1 pre-deployment checks
 	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
 		metav1.ListOptions{LabelSelector: "hub_id=" + hcCfg.HubId})
@@ -190,6 +193,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 			"result": "bounce -- hub_id already exists",
 			"hub_id": hcCfg.HubId,
 		})
+
 		return
 	}
 
@@ -217,6 +221,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 			"result": "error @ getting k8s chart file: " + err.Error(),
 			"hub_id": hcCfg.HubId,
 		})
+
 		return
 	}
 
@@ -228,6 +233,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 			"result": "error @ rendering k8s chart file: " + err.Error(),
 			"hub_id": hcCfg.HubId,
 		})
+
 		return
 	}
 	k8sChartYaml := renderedYamls[0]

@@ -1,70 +1,80 @@
 package internal
 
 import (
+	"fmt"
 	"time"
 )
 
 type Cron struct {
 	Name      string
-	Interval  string
+	Interval  time.Duration
 	IsRunning bool
-	Jobs      map[string]func()
+	Jobs      map[string]func(interval time.Duration)
 }
 
-var defaultCronInterval = "10m"
+var defaultCronInterval = 10 * time.Minute
 
-func NewCron(name, interval string) *Cron {
+func NewCron(name string, interval time.Duration) *Cron {
 	return &Cron{
 		Name:      name,
 		Interval:  interval,
 		IsRunning: false,
-		Jobs:      make(map[string]func()),
+		Jobs:      make(map[string]func(interval time.Duration)),
 	}
 }
 
-func (c *Cron) Load(name string, job func()) {
+func (c *Cron) Load(name string, job func(interval time.Duration)) {
+	Logger.Sugar().Infof("loaded job: %v", name)
 	c.Jobs[name] = job
 }
 
-func (c *Cron) Start() {
+func (c *Cron) Start() *time.Ticker {
 	if c.IsRunning {
 		Logger.Warn("already running")
-		return
+		return nil
 	}
 	if len(c.Jobs) == 0 {
 		Logger.Warn("no jobs")
-		return
+		return nil
 	}
-	// cron, non-stop, no way to stop it really ... add wrapper in future in case we need to stop it
-	if c.Interval == "" {
-		Logger.Warn("empty envVar CRON_INTERVAL, falling back to default: " + defaultCronInterval)
+
+	if c.Interval <= 10*time.Second {
+		Logger.Sugar().Warnf("c.Interval too small -- will use default: %v", defaultCronInterval)
 		c.Interval = defaultCronInterval
 	}
-	interval, err := time.ParseDuration(c.Interval)
-	if err != nil {
-		Logger.Warn("bad CRON_INTERVAL: " + c.Interval + " -- falling back to default: " + defaultCronInterval)
-		c.Interval = defaultCronInterval
-		interval, _ = time.ParseDuration(defaultCronInterval)
-	}
-	Logger.Info("starting cron jobs for -- name: " + c.Name + ", interval:" + c.Interval)
+	Logger.Info("starting cron jobs, interval = " + c.Interval.String() + ", jobs: " + fmt.Sprint(len(c.Jobs)))
+	ticker := time.NewTicker(c.Interval)
 	go func() {
-		time.Sleep(interval)
-		t := time.Tick(interval)
+		// t := time.Tick(c.Interval)
+		t := ticker.C
 		for next := range t {
-			Logger.Debug("Cron job: <" + c.Name + "," + c.Interval + "> tick @ " + next.String())
+			Logger.Debug("Cron ... name: <" + c.Name + ", interval: " + c.Interval.String() + ", jobs: " + fmt.Sprint(len(c.Jobs)) + ", tick @ " + next.String())
 			for name, job := range c.Jobs {
 				Logger.Debug("running: " + name)
-				job()
+				go job(c.Interval)
 			}
 		}
+		time.Sleep(c.Interval)
 	}()
 	c.IsRunning = true
+	return ticker
 }
 
 // ############################################################################################
 // ############################################# jobs #########################################
 // ############################################################################################
 
-func Cronjob_dummy() {
+func Cronjob_dummy(interval time.Duration) {
 	Logger.Debug("hello from Cronjob_dummy")
+}
+
+func Cronjob_TurkeyJobQueue(interval time.Duration) {
+	Logger.Debug("hello from Cronjob_TurkeyJobQueue")
+
+	msgBytes, err := Cfg.Gcps.PubSub_Pulling("turkey_job_queue_" + Cfg.ClusterName + "_sub")
+	if err != nil {
+		Logger.Sugar().Errorf("failed -- err: ", err)
+	}
+	Logger.Sugar().Debugf("msg received: %v", msgBytes)
+
 }

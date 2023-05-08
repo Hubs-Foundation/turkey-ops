@@ -1,10 +1,9 @@
 package handlers
 
 import (
+	"main/internal"
 	"net/http"
 	"text/template"
-
-	"main/internal"
 )
 
 type consoleCfg struct {
