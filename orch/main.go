@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	//inits
 	internal.InitLogger()
 	internal.MakeCfg()
 	internal.MakePgxPool()

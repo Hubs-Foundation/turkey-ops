@@ -69,7 +69,7 @@ spec:
         - --configmap-tcp-services=ingress/haproxy-tcp-config
         - --ingress.class=haproxy
         - --log=warning #error warning info debug trace
-        - --default-ssl-certificate=ingress/letsencrypt
+        - --default-ssl-certificate=ingress/letsencrypt-route53
         securityContext:
           runAsUser:  1000
           runAsGroup: 1000

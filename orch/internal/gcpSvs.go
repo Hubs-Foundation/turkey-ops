@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/dns/v1"
@@ -262,4 +263,20 @@ func (g *GcpSvs) Dns_createRecordSet(zoneName, recSetName, recType string, recSe
 		return err
 	}
 	return nil
+}
+
+func (g *GcpSvs) Publish_PubSub(topic string, data []byte) error {
+	ctx := context.Background()
+	client, err := pubsub.NewClient(ctx, g.ProjectId)
+	if err != nil {
+		return err
+	}
+	msg := &pubsub.Message{
+		Data: data,
+	}
+
+	res := client.Topic(topic).Publish(ctx, msg)
+	_, err = res.Get(ctx)
+
+	return err
 }

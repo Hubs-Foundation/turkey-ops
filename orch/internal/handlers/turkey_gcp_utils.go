@@ -103,10 +103,15 @@ type clusterCfg struct {
 	GCP_SA_HMAC_KEY         string `json:"GCP_SA_HMAC_KEY"`         //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.GOOG1EGPHPZU7F3GUTJCVQWLTYCY747EUAVHHEHQBN4WXSMPXJU4488888888
 	GCP_SA_HMAC_SECRET      string `json:"GCP_SA_HMAC_SECRET"`      //https://cloud.google.com/storage/docs/authentication/hmackeys, ie.0EWCp6g4j+MXn32RzOZ8eugSS5c0fydT88888888
 	SKETCHFAB_API_KEY       string `json:"SKETCHFAB_API_KEY"`       //
-	ItaChan                 string `json:"itachan"`                 //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
-	CLOUD                   string `json:"cloud"`                   //aws or gcp or azure or something else like nope or local etc
-	FXA_SERVER              string `json:"FXA_SERVER"`              // for turkeydashboard
-	REGCRED_b64             string `json:"regcred_b64"`             //private container registry creds for k8s/secret/.dockerconfigjson
+	TENOR_API_KEY           string `json:"TENOR_API_KEY"`           //
+	SENTRY_DSN_RET          string `json:"SENTRY_DSN_RET"`          //
+	SENTRY_DSN_HUBS         string `json:"SENTRY_DSN_HUBS"`         //
+	SENTRY_DSN_SPOKE        string `json:"SENTRY_DSN_SPOKE"`        //
+
+	ItaChan     string `json:"itachan"`     //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
+	CLOUD       string `json:"cloud"`       //aws or gcp or azure or something else like nope or local etc
+	FXA_SERVER  string `json:"FXA_SERVER"`  // for turkeydashboard
+	REGCRED_b64 string `json:"regcred_b64"` //private container registry creds for k8s/secret/.dockerconfigjson
 
 	//optional inputs
 	DeploymentPrefix     string `json:"name"`                 //t-
@@ -283,6 +288,22 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	if cfg.GCP_SA_HMAC_SECRET == "" {
 		internal.Logger.Warn("GCP_SA_HMAC_SECRET not supplied, falling back to local value")
 		cfg.GCP_SA_HMAC_SECRET = internal.Cfg.GCP_SA_HMAC_SECRET
+	}
+	if cfg.SKETCHFAB_API_KEY == "" {
+		internal.Logger.Warn("SKETCHFAB_API_KEY not supplied, falling back to local value")
+		cfg.SKETCHFAB_API_KEY = internal.Cfg.SKETCHFAB_API_KEY
+	}
+	if cfg.TENOR_API_KEY == "" {
+		internal.Logger.Warn("TENOR_API_KEY not supplied, falling back to local value")
+		cfg.TENOR_API_KEY = internal.Cfg.TENOR_API_KEY
+	}
+	if cfg.SENTRY_DSN_RET == "" {
+		internal.Logger.Warn("SENTRY_DSN_RET not supplied, falling back to local value")
+		cfg.SENTRY_DSN_RET = internal.Cfg.SENTRY_DSN_RET
+	}
+	if cfg.SENTRY_DSN_SPOKE == "" {
+		internal.Logger.Warn("SENTRY_DSN_SPOKE not supplied, falling back to local value")
+		cfg.SENTRY_DSN_SPOKE = internal.Cfg.SENTRY_DSN_SPOKE
 	}
 	if cfg.SKETCHFAB_API_KEY == "" {
 		internal.Logger.Warn("SKETCHFAB_API_KEY not supplied, falling back to local value")
