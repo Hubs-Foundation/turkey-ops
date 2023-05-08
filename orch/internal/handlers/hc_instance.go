@@ -42,7 +42,8 @@ type hcCfg struct {
 	NodePool     string `json:"nodepool"`      // default == spot
 
 	//optional inputs
-	Options string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
+	Options       string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
+	TargetCluster string `json:"target_cluster"`
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain               string `json:"domain"`
@@ -166,6 +167,19 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+	// #1.0.1 -- bounce to foreign cluster if request
+	if hcCfg.TargetCluster != "" {
+		internal.Logger.Debug("hcCfg.TargetCluster: " + hcCfg.TargetCluster)
+		hcCfgJsonBytes, _ := json.Marshal(hcCfg)
+		err := internal.Cfg.Gcps.PubSub_PublishMsg("turkey_job_queue_"+hcCfg.TargetCluster, hcCfgJsonBytes)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed, err:= ", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "err: %v", err)
+		}
+		return
+	}
+
 	// #1.1 pre-deployment checks
 	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
 		metav1.ListOptions{LabelSelector: "hub_id=" + hcCfg.HubId})

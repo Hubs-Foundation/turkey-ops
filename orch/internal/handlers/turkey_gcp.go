@@ -85,7 +85,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 		// *** wip ***
 		// get filestore ip and vol name and add to cfg
-		fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname, "global")
+		fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname, cfg.Region+"-b")
 		if err != nil {
 			internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "post tf deployment: failed to get Filestore_GetIP, err: " + err.Error())
 			// return
