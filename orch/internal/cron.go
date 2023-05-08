@@ -68,13 +68,13 @@ func Cronjob_dummy(interval time.Duration) {
 	Logger.Debug("hello from Cronjob_dummy")
 }
 
-func Cronjob_TurkeyJobQueue(interval time.Duration) {
-	Logger.Debug("hello from Cronjob_TurkeyJobQueue")
+// func Cronjob_TurkeyJobQueue(interval time.Duration) {
+// 	Logger.Debug("hello from Cronjob_TurkeyJobQueue")
 
-	msgBytes, err := Cfg.Gcps.PubSub_Pulling("turkey_job_queue_" + Cfg.ClusterName + "_sub")
-	if err != nil {
-		Logger.Sugar().Errorf("failed -- err: ", err)
-	}
-	Logger.Sugar().Debugf("msg received: %v", msgBytes)
+// 	msgBytes, err := Cfg.Gcps.PubSub_Pulling("turkey_job_queue_" + Cfg.ClusterName + "_sub")
+// 	if err != nil {
+// 		Logger.Sugar().Errorf("failed -- err: ", err)
+// 	}
+// 	Logger.Sugar().Debugf("msg received: %v", msgBytes)
 
-}
+// }

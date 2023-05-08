@@ -1,13 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"main/internal"
 	"main/internal/handlers"
+
+	"cloud.google.com/go/pubsub"
 )
 
 func main() {
@@ -30,9 +32,17 @@ func main() {
 	}
 
 	if internal.Cfg.ClusterName != "" {
-		cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
-		cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_TurkeyJobQueue)
-		cron_1m.Start()
+		// cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
+		// cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_TurkeyJobQueue)
+		// cron_1m.Start()
+		internal.Cfg.Gcps.PubSub_Pulling(
+			"turkey_job_queue_"+internal.Cfg.ClusterName+"_sub",
+			func(_ context.Context, msg *pubsub.Message) {
+				internal.Logger.Sugar().Debugf("Got message, msg.Data :%v\n", string(msg.Data))
+				internal.Logger.Sugar().Debugf("Got message, msg.Attributes :%v\n", msg.Attributes)
+				msg.Ack()
+			},
+		)
 	}
 	router := http.NewServeMux()
 	//public endpoints
