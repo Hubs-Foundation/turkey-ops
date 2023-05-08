@@ -149,8 +149,8 @@ document.getElementById("btn_sampleCfg_minDev").onclick = function(){
 
 document.getElementById("btn_sampleCfg_minProd").onclick = function(){
   document.getElementById("cluster_cfg").value = `{
-  "domain":"changeMe.myhubs.net",
-  "hubdomain":"changeMe.myhubs.dev",
+  "domain":"changeMe.myhubs.dev",
+  "hubdomain":"changeMe.myhubs.net",
   "region":"us-central1",
   "env":"prod",
   "OAUTH_CLIENT_ID_FXA":"changeMe",
@@ -160,8 +160,8 @@ document.getElementById("btn_sampleCfg_minProd").onclick = function(){
 
 document.getElementById("btn_sampleCfg_fullBlown").onclick = function(){
   document.getElementById("cluster_cfg").value = `{
-  "domain":"changeMe.myhubs.net",
-  "hubdomain":"changeMe.myhubs.dev",
+  "domain":"changeMe.myhubs.dev",
+  "hubdomain":"changeMe.myhubs.net",
   "region":"us-central1",
   "env":"prod",
   "OAUTH_CLIENT_ID_FXA":"changeMe",

@@ -127,6 +127,8 @@ type clusterCfg struct {
 	PERMS_KEY            string `json:"PERMS_KEY"`     //-----BEGIN RSA PRIVATE KEY-----\\nMIIEpgIBA...AKCAr7LWeuIb\\n-----END RSA PRIVATE KEY-----
 	PERMS_KEY_PUB_b64    string `json:"PERMS_KEY_PUB_b64"`
 	DASHBOARD_ACCESS_KEY string `json:"DASHBOARD_ACCESS_KEY"` // api key for DASHBOARD access
+	FilestoreIP          string `json: "FilestoreIP"`         //
+	FilestorePath        string `json: "FilestorePath"`       // default: vol1
 
 	//initiated pre-infra-deploy, generated post-infra-deploy
 	DB_HOST string `json:"DB_HOST"` //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com

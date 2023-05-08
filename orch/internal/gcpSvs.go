@@ -19,6 +19,8 @@ import (
 
 	gkev1 "google.golang.org/api/container/v1"
 
+	filestore "cloud.google.com/go/filestore/apiv1"
+	filestorepb "cloud.google.com/go/filestore/apiv1/filestorepb"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
@@ -265,7 +267,7 @@ func (g *GcpSvs) Dns_createRecordSet(zoneName, recSetName, recType string, recSe
 	return nil
 }
 
-func (g *GcpSvs) Publish_PubSub(topic string, data []byte) error {
+func (g *GcpSvs) PubSub_PublishMsg(topic string, data []byte) error {
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, g.ProjectId)
 	if err != nil {
@@ -279,4 +281,25 @@ func (g *GcpSvs) Publish_PubSub(topic string, data []byte) error {
 	_, err = res.Get(ctx)
 
 	return err
+}
+
+func (g *GcpSvs) Filestore_GetIP(name string) (string, error) {
+	ctx := context.Background()
+	client, err := filestore.NewCloudFilestoreManagerClient(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	req := &filestorepb.GetInstanceRequest{
+		Name: name,
+	}
+	fs, err := client.GetInstance(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	GetLogger().Sugar().Debugf("fs: %v", fs)
+
+	ip := fs.Networks[0].IpAddresses[0]
+	GetLogger().Debug("Filestore_GetIP: " + ip)
+	return ip, err
 }

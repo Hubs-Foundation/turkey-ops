@@ -84,7 +84,9 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// TODO -- get filestore ip and vol name and add to cfg
-
+		fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname)
+		cfg.FilestoreIP = fsip
+		cfg.FilestorePath = "vol1"
 		cfg.DB_HOST = dbIps["PRIVATE"] //+ ":5432"
 		cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
 		cfg.PSQL = "postgresql://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST + "/ret_dev"
