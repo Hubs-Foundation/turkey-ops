@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/gob"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -28,7 +27,7 @@ import (
 	"main/internal"
 )
 
-type hcCfg struct {
+type HCcfg struct {
 
 	//required input
 	UserEmail string `json:"useremail"`
@@ -45,7 +44,6 @@ type hcCfg struct {
 	//optional inputs
 	Options       string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
 	TargetCluster string `json:"target_cluster"`
-	// OrchMethod    string `json:"orch_method"`
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain               string `json:"domain"`
@@ -86,6 +84,9 @@ type hcCfg struct {
 	Img_photomnemonic string
 	// Img_nearspark string
 	// Img_ytdl string
+
+	//control fields
+	JobQueueReqMethod string `json:"job_queue_req_method"`
 }
 
 var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -161,50 +162,13 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 })
 
-func hc_create(w http.ResponseWriter, r *http.Request) {
-
-	// sess := internal.GetSession(r.Cookie)
-	// #1 prepare configs
-	hcCfg, err := makeHcCfg(r)
-	if err != nil {
-		internal.Logger.Error("bad hcCfg: " + err.Error())
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	// #1.0.1 -- do we need to bounce it to a foreign cluster
-	if hcCfg.TargetCluster != "" && hcCfg.TargetCluster != internal.Cfg.ClusterName {
-		internal.Logger.Debug("hcCfg.TargetCluster: " + hcCfg.TargetCluster)
-		// hcCfg.OrchMethod = "POST"
-		// msgBytes, _ := json.Marshal(hcCfg)
-
-		var buffer bytes.Buffer
-		err := gob.NewEncoder(&buffer).Encode(r)
-		if err != nil {
-			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed to encode r, err:= ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "err: %v", err)
-		}
-		msgBytes := buffer.Bytes()
-		err = internal.Cfg.Gcps.PubSub_PublishMsg("turkey_job_queue_"+hcCfg.TargetCluster, msgBytes)
-		if err != nil {
-			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed, err:= ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "err: %v", err)
-		}
-		return
-	}
+func CreateHubsCloudInstance(hcCfg HCcfg) error {
 	// #1.1 pre-deployment checks
 	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
 		metav1.ListOptions{LabelSelector: "hub_id=" + hcCfg.HubId})
 	if len(nsList.Items) != 0 {
 		internal.Logger.Error("hub_id already exists: " + hcCfg.HubId)
-		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "bounce -- hub_id already exists",
-			"hub_id": hcCfg.HubId,
-		})
-
-		return
+		return fmt.Errorf("bounce -- hub_id already exists")
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
@@ -226,25 +190,13 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	yamBytes, err := ioutil.ReadFile("./_files/yams/ns_hc" + fileOption + ".yam")
 	if err != nil {
 		internal.Logger.Error("failed to get ns_hc yam file because: " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "error @ getting k8s chart file: " + err.Error(),
-			"hub_id": hcCfg.HubId,
-		})
-
-		return
+		return errors.New("error @ getting k8s chart file: " + err.Error())
 	}
 
 	renderedYamls, err := internal.K8s_render_yams([]string{string(yamBytes)}, hcCfg)
 	if err != nil {
 		internal.Logger.Error("failed to render ns_hc yam file because: " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "error @ rendering k8s chart file: " + err.Error(),
-			"hub_id": hcCfg.HubId,
-		})
-
-		return
+		return errors.New("error @ rendering k8s chart file: " + err.Error())
 	}
 	k8sChartYaml := renderedYamls[0]
 
@@ -272,12 +224,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	err = internal.Ssa_k8sChartYaml(hcCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
 	if err != nil {
 		internal.Logger.Error("error @ k8s deploy: " + err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "error @ k8s deploy: " + err.Error(),
-			"hub_id": hcCfg.HubId,
-		})
-		return
+		return errors.New("error @ k8s deploy: " + err.Error())
 	}
 
 	// // quality of life improvement for /console people
@@ -293,14 +240,61 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 			internal.Logger.Debug("db already exists: " + hcCfg.DBname)
 		} else {
 			internal.Logger.Error("error @ create hub db: " + err.Error())
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"result": "error @ create hub db: " + err.Error(),
-				"hub_id": hcCfg.HubId,
-			})
-			return
+			return errors.New("error @ create hub db: " + err.Error())
 		}
 	}
 	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
+	return nil
+}
+
+func hc_create(w http.ResponseWriter, r *http.Request) {
+
+	// sess := internal.GetSession(r.Cookie)
+	// #1 prepare configs
+	hcCfg, err := makeHcCfg(r)
+	if err != nil {
+		internal.Logger.Error("bad hcCfg: " + err.Error())
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	// #1.0.1 -- do we need to bounce it to a foreign cluster
+	if hcCfg.TargetCluster != "" && hcCfg.TargetCluster != internal.Cfg.ClusterName {
+		internal.Logger.Debug("hcCfg.TargetCluster: " + hcCfg.TargetCluster)
+		hcCfg.JobQueueReqMethod = "POST"
+		msgBytes, _ := json.Marshal(hcCfg)
+
+		// var buffer bytes.Buffer
+		// err := gob.NewEncoder(&buffer).Encode(r)
+		// if err != nil {
+		// 	internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed to encode r, err:= ", err)
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	fmt.Fprintf(w, "err: %v", err)
+		// }
+		// msgBytes := buffer.Bytes()
+
+		jobQueueTopic := "turkey_job_queue_" + hcCfg.TargetCluster
+		err = internal.Cfg.Gcps.PubSub_PublishMsg(jobQueueTopic, msgBytes)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed, err:= ", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "err: %v", err)
+		}
+		w.WriteHeader(http.StatusAccepted)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "cross cluster/region req --> published to: " + jobQueueTopic,
+			"hub_id": hcCfg.HubId,
+		})
+		return
+	}
+	err = CreateHubsCloudInstance(hcCfg)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": err.Error(),
+			"hub_id": hcCfg.HubId,
+		})
+		return
+	}
 
 	go func() {
 		err = post_creation_hacks(hcCfg)
@@ -321,7 +315,7 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func post_creation_hacks(cfg hcCfg) error {
+func post_creation_hacks(cfg HCcfg) error {
 
 	_httpClient := &http.Client{
 		Timeout:   5 * time.Second,
@@ -426,7 +420,7 @@ func post_creation_hacks(cfg hcCfg) error {
 	return nil
 }
 
-func ret_load_asset(url *url.URL, cfg hcCfg, token string) error {
+func ret_load_asset(url *url.URL, cfg HCcfg, token string) error {
 	pathArr := strings.Split(url.Path, "/")
 	if len(pathArr) < 3 {
 		return fmt.Errorf("unsupported url: %v", url)
@@ -535,8 +529,8 @@ func hc_get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getHcCfg(r *http.Request) (hcCfg, error) {
-	var cfg hcCfg
+func getHcCfg(r *http.Request) (HCcfg, error) {
+	var cfg HCcfg
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		internal.Logger.Error("ERROR @ reading r.body, error = " + err.Error())
@@ -550,8 +544,8 @@ func getHcCfg(r *http.Request) (hcCfg, error) {
 	return cfg, nil
 }
 
-func makeHcCfg(r *http.Request) (hcCfg, error) {
-	var cfg hcCfg
+func makeHcCfg(r *http.Request) (HCcfg, error) {
+	var cfg HCcfg
 	rBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		internal.Logger.Error("ERROR @ reading r.body, error = " + err.Error())
@@ -811,7 +805,7 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func pg_kick_all(cfg hcCfg) error {
+func pg_kick_all(cfg HCcfg) error {
 	sqatterCount := -1
 	tries := 0
 	for sqatterCount != 0 && tries < 3 {

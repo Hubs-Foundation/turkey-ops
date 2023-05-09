@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -40,9 +41,18 @@ func main() {
 				err := internal.Cfg.Gcps.PubSub_Pulling(
 					"turkey_job_queue_"+internal.Cfg.ClusterName+"_sub",
 					func(_ context.Context, msg *pubsub.Message) {
-						internal.Logger.Sugar().Debugf("Got message, msg.Data :%v\n", string(msg.Data))
-						internal.Logger.Sugar().Debugf("Got message, msg.Attributes :%v\n", msg.Attributes)
+						internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", string(msg.Data))
+						internal.Logger.Sugar().Debugf("received message, msg.Attributes :%v\n", msg.Attributes)
 
+						var hcCfg handlers.HCcfg
+						err := json.Unmarshal(msg.Data, &hcCfg)
+						if err != nil {
+							internal.Logger.Error("bad hcmsg.DataCfg: " + string(msg.Data))
+						}
+						err = handlers.CreateHubsCloudInstance(hcCfg)
+						if err != nil {
+							internal.Logger.Error("failed to create for: " + string(msg.Data))
+						}
 						msg.Ack()
 					},
 				)
