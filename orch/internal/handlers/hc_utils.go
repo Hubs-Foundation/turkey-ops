@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -425,4 +426,137 @@ func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]int
 	}
 	// return respMap["origin"].(string), respMap["meta"].(map[string]interface{})["access_token"].(string), nil
 	return respMap, nil
+}
+
+func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
+	//load default theme file
+	themeBytes, err := ioutil.ReadFile("./_files/hc_assets/theme.json")
+	if err != nil {
+		return err
+	}
+
+	//upload default logos
+	logo_files := map[string]interface{}{
+		"./_files/hc_assets/HubLogo.jpg":            nil,
+		"./_files/hc_assets/HubLogoForDarkMode.jpg": nil,
+		"./_files/hc_assets/Favicon.ico":            nil,
+		"./_files/hc_assets/HomePageImage.jpg":      nil,
+		"./_files/hc_assets/CompanyLogo.png":        nil,
+		"./_files/hc_assets/ShortcutIcon.png":       nil,
+		"./_files/hc_assets/SocialMediaCard.png":    nil,
+	}
+	logo_files, err = ret_upload_files(cfg.Subdomain, cfg.HubDomain, logo_files)
+	if err != nil {
+		return err
+	}
+	internal.Logger.Sugar().Debugf("logo_files: %v", logo_files)
+
+	//post app_configs
+	appConfigsJsonBytes, err := json.Marshal(map[string]interface{}{
+		"theme": map[string]string{
+			"themes": string(themeBytes)},
+		"images": map[string]interface{}{
+			"logo_dark":       logo_files["./_files/hc_assets/HubLogoForDarkMode.jpg"],
+			"logo":            logo_files["./_files/hc_assets/HubLogo.jpg"],
+			"home_background": logo_files["./_files/hc_assets/HomePageImage.jpg"],
+			"favicon":         logo_files["./_files/hc_assets/Favicon.ico"],
+			"app_thumbnail":   logo_files["./_files/hc_assets/SocialMediaCard.png"],
+			"app_icon":        logo_files["./_files/hc_assets/ShortcutIcon.png"],
+			"company_logo":    logo_files["./_files/hc_assets/CompanyLogo.png"],
+		},
+	})
+	if err != nil {
+		return err
+	}
+	app_configs_req, err := http.NewRequest("POST", "https://"+cfg.Subdomain+"."+cfg.HubDomain+"/api/v1/app_configs", bytes.NewBuffer(appConfigsJsonBytes))
+	if err != nil {
+		return err
+	}
+	app_configs_req.Header.Set("Content-Type", "application/json")
+	app_configs_req.Header.Add("authorization", "bearer "+string(token))
+	client := &http.Client{}
+	app_configs_resp, err := client.Do(app_configs_req)
+	if err != nil {
+		return err
+	}
+	internal.Logger.Sugar().Debugf("app_configs_resp: ", app_configs_resp)
+	return nil
+}
+
+func ret_getAdminToken(cfg HCcfg) ([]byte, error) {
+
+	_httpClient := &http.Client{
+		Timeout:   5 * time.Second,
+		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
+	}
+
+	tokenReq, _ := http.NewRequest(
+		"POST",
+		"http://ret.hc-"+cfg.HubId+":4001/api-internal/v1/make_auth_token_for_email",
+		bytes.NewBuffer([]byte(`{"email":"`+cfg.UserEmail+`"}`)),
+	)
+	tokenReq.Header.Add("content-type", "application/json")
+	tokenReq.Header.Add("x-ret-dashboard-access-key", internal.Cfg.DASHBOARD_ACCESS_KEY)
+	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 15*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	token, _ := ioutil.ReadAll(resp.Body)
+	internal.Logger.Sugar().Debugf("admin-token: %v, hubId: %v", string(token), cfg.HubId)
+
+	return token, nil
+
+}
+
+func hc_updateTier(cfg HCcfg) error {
+
+	nsName := "hc-" + cfg.HubId
+
+	// flush envVar to all containers
+	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, d := range ds.Items {
+		for _, c := range d.Spec.Template.Spec.Containers {
+			gotTIER := false
+			for idx, envVar := range c.Env {
+				if envVar.Name == "TIER" {
+					c.Env[idx].Value = cfg.Tier
+					gotTIER = true
+					break
+				}
+			}
+			if !gotTIER {
+				c.Env = append(c.Env, corev1.EnvVar{Name: "TIER", Value: cfg.Tier})
+			}
+			gotTurkeyCfg_tier := false
+			for idx, envVar := range c.Env {
+				if envVar.Name == "turkeyCfg_tier" {
+					c.Env[idx].Value = cfg.Tier
+					gotTurkeyCfg_tier = true
+					break
+				}
+			}
+			if !gotTurkeyCfg_tier {
+				c.Env = append(c.Env, corev1.EnvVar{Name: "turkeyCfg_tier", Value: cfg.Tier})
+			}
+		}
+		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), &d, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	//reset theme for p0/free tier
+	if cfg.Tier == "p0" || cfg.Tier == "free" {
+		token, err := ret_getAdminToken(cfg)
+		if err != nil {
+			return err
+		}
+		ret_setDefaultTheme(token, cfg)
+	}
+
+	return nil
 }

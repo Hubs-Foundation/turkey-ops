@@ -112,7 +112,8 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, http.StatusText(http.StatusBadRequest)+":"+err.Error(), http.StatusBadRequest)
 			return
 		}
-		//
+
+		// pause
 		status := r.URL.Query().Get("status")
 		if status == "down" || status == "up" {
 			err := hc_switch(cfg.HubId, status)
@@ -131,6 +132,7 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 
+		// subdomain updates
 		if cfg.Subdomain != "" {
 			// err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
 			// if err != nil {
@@ -154,6 +156,19 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			})
 			return
 		}
+
+		// tier change
+		if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
+			err := hc_updateTier(cfg)
+			if err != nil {
+				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
+				http.Error(w, http.StatusText(http.StatusBadRequest)+":"+err.Error(), http.StatusBadRequest)
+				return
+			}
+			return
+		}
+
+		//resp
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"msg":    "",
 			"hub_id": cfg.HubId,
@@ -331,75 +346,19 @@ func post_creation_hacks(cfg HCcfg) error {
 	internal.Logger.Sugar().Debugf("tReady: %v, hubId: %v", took, cfg.HubId)
 
 	//get admin auth token
-	tokenReq, _ := http.NewRequest(
-		"POST",
-		"http://ret.hc-"+cfg.HubId+":4001/api-internal/v1/make_auth_token_for_email",
-		bytes.NewBuffer([]byte(`{"email":"`+cfg.UserEmail+`"}`)),
-	)
-	tokenReq.Header.Add("content-type", "application/json")
-	tokenReq.Header.Add("x-ret-dashboard-access-key", internal.Cfg.DASHBOARD_ACCESS_KEY)
-	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 15*time.Second)
-	if err != nil {
-		return err
-	}
-	token, _ := ioutil.ReadAll(resp.Body)
-	internal.Logger.Sugar().Debugf("admin-token: %v, hubId: %v", string(token), cfg.HubId)
-
-	//load default theme file
-	themeBytes, err := ioutil.ReadFile("./_files/hc_assets/theme.json")
+	token, err := ret_getAdminToken(cfg)
 	if err != nil {
 		return err
 	}
 
-	//upload default logos
-	logo_files := map[string]interface{}{
-		"./_files/hc_assets/HubLogo.jpg":            nil,
-		"./_files/hc_assets/HubLogoForDarkMode.jpg": nil,
-		"./_files/hc_assets/Favicon.ico":            nil,
-		"./_files/hc_assets/HomePageImage.jpg":      nil,
-		"./_files/hc_assets/CompanyLogo.png":        nil,
-		"./_files/hc_assets/ShortcutIcon.png":       nil,
-		"./_files/hc_assets/SocialMediaCard.png":    nil,
-	}
-	logo_files, err = ret_upload_files(cfg.Subdomain, cfg.HubDomain, logo_files)
+	err = ret_setDefaultTheme(token, cfg)
 	if err != nil {
 		return err
 	}
-	internal.Logger.Sugar().Debugf("logo_files: %v", logo_files)
-
-	//post app_configs
-	appConfigsJsonBytes, err := json.Marshal(map[string]interface{}{
-		"theme": map[string]string{
-			"themes": string(themeBytes)},
-		"images": map[string]interface{}{
-			"logo_dark":       logo_files["./_files/hc_assets/HubLogoForDarkMode.jpg"],
-			"logo":            logo_files["./_files/hc_assets/HubLogo.jpg"],
-			"home_background": logo_files["./_files/hc_assets/HomePageImage.jpg"],
-			"favicon":         logo_files["./_files/hc_assets/Favicon.ico"],
-			"app_thumbnail":   logo_files["./_files/hc_assets/SocialMediaCard.png"],
-			"app_icon":        logo_files["./_files/hc_assets/ShortcutIcon.png"],
-			"company_logo":    logo_files["./_files/hc_assets/CompanyLogo.png"],
-		},
-	})
-	if err != nil {
-		return err
-	}
-	app_configs_req, err := http.NewRequest("POST", "https://"+cfg.Subdomain+"."+cfg.HubDomain+"/api/v1/app_configs", bytes.NewBuffer(appConfigsJsonBytes))
-	if err != nil {
-		return err
-	}
-	app_configs_req.Header.Set("Content-Type", "application/json")
-	app_configs_req.Header.Add("authorization", "bearer "+string(token))
-	client := &http.Client{}
-	app_configs_resp, err := client.Do(app_configs_req)
-	if err != nil {
-		return err
-	}
-	internal.Logger.Sugar().Debugf("app_configs_resp: ", app_configs_resp)
 
 	//load assets
 	assetPackUrl := internal.Cfg.HC_INIT_ASSET_PACK
-	resp, err = http.Get(assetPackUrl)
+	resp, err := http.Get(assetPackUrl)
 	if err != nil {
 		return err
 	}
