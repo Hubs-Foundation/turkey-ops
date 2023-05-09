@@ -42,6 +42,7 @@ func main() {
 					func(_ context.Context, msg *pubsub.Message) {
 						internal.Logger.Sugar().Debugf("Got message, msg.Data :%v\n", string(msg.Data))
 						internal.Logger.Sugar().Debugf("Got message, msg.Attributes :%v\n", msg.Attributes)
+
 						msg.Ack()
 					},
 				)
