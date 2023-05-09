@@ -198,10 +198,10 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
-	fileOption := "_gfs"      //default
-	if hcCfg.Tier == "free" { //default for free tier
-		fileOption = "_nfs"
-	}
+	fileOption := "_gfs" //default
+	// if hcCfg.Tier == "free" { //default for free tier
+	// 	fileOption = "_nfs"
+	// }
 	//override
 	if hcCfg.Options != "" {
 		fileOption = hcCfg.Options

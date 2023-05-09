@@ -36,15 +36,15 @@ func main() {
 		// cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_TurkeyJobQueue)
 		// cron_1m.Start()
 		go func() {
-			err := internal.Cfg.Gcps.PubSub_Pulling(
-				"turkey_job_queue_"+internal.Cfg.ClusterName+"_sub",
-				func(_ context.Context, msg *pubsub.Message) {
-					internal.Logger.Sugar().Debugf("Got message, msg.Data :%v\n", string(msg.Data))
-					internal.Logger.Sugar().Debugf("Got message, msg.Attributes :%v\n", msg.Attributes)
-					msg.Ack()
-				},
-			)
-			if err != nil {
+			for {
+				err := internal.Cfg.Gcps.PubSub_Pulling(
+					"turkey_job_queue_"+internal.Cfg.ClusterName+"_sub",
+					func(_ context.Context, msg *pubsub.Message) {
+						internal.Logger.Sugar().Debugf("Got message, msg.Data :%v\n", string(msg.Data))
+						internal.Logger.Sugar().Debugf("Got message, msg.Attributes :%v\n", msg.Attributes)
+						msg.Ack()
+					},
+				)
 				internal.Logger.Sugar().Errorf("err: %v", err)
 			}
 		}()
