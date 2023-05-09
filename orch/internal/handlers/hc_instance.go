@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/gob"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -44,7 +45,7 @@ type hcCfg struct {
 	//optional inputs
 	Options       string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
 	TargetCluster string `json:"target_cluster"`
-	OrchMethod    string `json:"orch_method"`
+	// OrchMethod    string `json:"orch_method"`
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain               string `json:"domain"`
@@ -173,9 +174,18 @@ func hc_create(w http.ResponseWriter, r *http.Request) {
 	// #1.0.1 -- do we need to bounce it to a foreign cluster
 	if hcCfg.TargetCluster != "" && hcCfg.TargetCluster != internal.Cfg.ClusterName {
 		internal.Logger.Debug("hcCfg.TargetCluster: " + hcCfg.TargetCluster)
-		hcCfg.OrchMethod = "POST"
-		hcCfgJsonBytes, _ := json.Marshal(hcCfg)
-		err := internal.Cfg.Gcps.PubSub_PublishMsg("turkey_job_queue_"+hcCfg.TargetCluster, hcCfgJsonBytes)
+		// hcCfg.OrchMethod = "POST"
+		// msgBytes, _ := json.Marshal(hcCfg)
+
+		var buffer bytes.Buffer
+		err := gob.NewEncoder(&buffer).Encode(r)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed to encode r, err:= ", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "err: %v", err)
+		}
+		msgBytes := buffer.Bytes()
+		err = internal.Cfg.Gcps.PubSub_PublishMsg("turkey_job_queue_"+hcCfg.TargetCluster, msgBytes)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed, err:= ", err)
 			w.WriteHeader(http.StatusInternalServerError)
