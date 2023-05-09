@@ -40,21 +40,7 @@ func main() {
 			for {
 				err := internal.Cfg.Gcps.PubSub_Pulling(
 					"turkey_job_queue_"+internal.Cfg.ClusterName+"_sub",
-					func(_ context.Context, msg *pubsub.Message) {
-						internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", string(msg.Data))
-						internal.Logger.Sugar().Debugf("received message, msg.Attributes :%v\n", msg.Attributes)
-
-						var hcCfg handlers.HCcfg
-						err := json.Unmarshal(msg.Data, &hcCfg)
-						if err != nil {
-							internal.Logger.Error("bad hcmsg.DataCfg: " + string(msg.Data))
-						}
-						err = handlers.CreateHubsCloudInstance(hcCfg)
-						if err != nil {
-							internal.Logger.Error("failed to create for: " + string(msg.Data))
-						}
-						msg.Ack()
-					},
+					TurkeyJobHandler,
 				)
 				internal.Logger.Sugar().Errorf("err: %v", err)
 			}
@@ -208,3 +194,24 @@ func mozOnly() func(http.Handler) http.Handler {
 // 		})
 // 	}
 // }
+
+var TurkeyJobHandler = func(_ context.Context, msg *pubsub.Message) {
+	internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", string(msg.Data))
+	internal.Logger.Sugar().Debugf("received message, msg.Attributes :%v\n", msg.Attributes)
+
+	var hcCfg handlers.HCcfg
+	err := json.Unmarshal(msg.Data, &hcCfg)
+	if err != nil {
+		internal.Logger.Error("bad hcmsg.DataCfg: " + string(msg.Data))
+	}
+	switch hcCfg.JobQueueReqMethod {
+	case "POST":
+		err = handlers.CreateHubsCloudInstance(hcCfg)
+		if err != nil {
+			internal.Logger.Error("failed to create for: " + string(msg.Data))
+		}
+	default:
+		internal.Logger.Error("bad hcCfg.JobQueueReqMethod: " + hcCfg.JobQueueReqMethod)
+	}
+	msg.Ack()
+}
