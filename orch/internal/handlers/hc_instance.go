@@ -21,8 +21,6 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
 	"main/internal"
 )
@@ -86,7 +84,8 @@ type HCcfg struct {
 	// Img_ytdl string
 
 	//control fields
-	JobQueueReqMethod string `json:"job_queue_req_method"`
+	JobQueueReqMethod          string `json:"job_queue_req_method"`
+	JobQueueReqCallbackWebhook string `json:"job_queue_req_callback_webhook"`
 }
 
 var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -95,24 +94,76 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+	cfg, err := getHcCfg(r)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest)+":"+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// do we need to bounce it to a foreign cluster
+	if cfg.TargetCluster != "" && cfg.TargetCluster != internal.Cfg.ClusterName {
+		internal.Logger.Debug("hcCfg.TargetCluster: " + cfg.TargetCluster)
+		cfg.JobQueueReqMethod = r.Method
+		msgBytes, _ := json.Marshal(cfg)
+
+		jobQueueTopic := "turkey_job_queue_" + cfg.TargetCluster
+		err = internal.Cfg.Gcps.PubSub_PublishMsg(jobQueueTopic, msgBytes)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed, err:= ", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "err: %v", err)
+		}
+		w.WriteHeader(http.StatusAccepted)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "cross cluster/region req --> published to: " + jobQueueTopic,
+			"hub_id": cfg.HubId,
+		})
+		return
+	}
 
 	switch r.Method {
 	case "POST":
-		hc_create(w, r)
+		err = CreateHubsCloudInstance(cfg)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"result": err.Error(),
+				"hub_id": cfg.HubId,
+			})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result":        "done",
+			"useremail":     cfg.UserEmail,
+			"hub_id":        cfg.HubId,
+			"subdomain":     cfg.Subdomain,
+			"tier":          cfg.Tier,
+			"ccu_limit":     cfg.CcuLimit,
+			"storage_limit": cfg.StorageLimit,
+		})
 
-	case "GET":
-		hc_get(w, r)
+	// case "GET":
+	// 	hc_get(w, r)
 
 	case "DELETE":
-		hc_delete(w, r)
-
-	case "PATCH":
-		cfg, err := getHcCfg(r)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest)+":"+err.Error(), http.StatusBadRequest)
+		// hc_delete(w, r)
+		// sess := internal.GetSession(r.Cookie)
+		if cfg.HubId == "" {
+			internal.Logger.Error("missing hcCfg.HubId")
 			return
 		}
 
+		DeleteHubsCloudInstance(cfg)
+
+		//return
+		w.WriteHeader(http.StatusAccepted)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "deleted",
+			"hub_id": cfg.HubId,
+		})
+
+	case "PATCH":
 		// pause
 		status := r.URL.Query().Get("status")
 		if status == "down" || status == "up" {
@@ -131,51 +182,50 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			})
 			return
 		}
-
-		// subdomain updates
-		if cfg.Subdomain != "" {
-			// err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
-			// if err != nil {
-			// 	w.WriteHeader(http.StatusInternalServerError)
-			// 	json.NewEncoder(w).Encode(map[string]interface{}{
-			// 		"error":  err.Error(),
-			// 		"hub_id": cfg.HubId,
-			// 	})
-			// 	return
-			// }
-			go func() {
-				err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
-				if err != nil {
-					internal.Logger.Error("hc_patch_subdomain FAILED: " + err.Error())
-				}
-			}()
+		// update
+		msg, err := UpdateHubsCloudInstance(cfg)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]interface{}{
-				"msg":           "subdomain updated",
-				"new_subdomain": cfg.Subdomain,
-				"hub_id":        cfg.HubId,
+				"error":  err.Error(),
+				"hub_id": cfg.HubId,
 			})
-			return
-		}
-
-		// tier change
-		if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
-			err := hc_updateTier(cfg)
-			if err != nil {
-				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
-				http.Error(w, http.StatusText(http.StatusBadRequest)+":"+err.Error(), http.StatusBadRequest)
-				return
-			}
 			return
 		}
 
 		//resp
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"msg":    "",
+			"msg":    msg,
 			"hub_id": cfg.HubId,
 		})
 	}
 
 })
+
+func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
+
+	// subdomain updates
+	if cfg.Subdomain != "" {
+		go func() {
+			err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
+			if err != nil {
+				internal.Logger.Error("hc_patch_subdomain FAILED: " + err.Error())
+			}
+		}()
+		return "subdomain updated started for: " + cfg.HubId, nil
+	}
+	// tier change
+	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
+		go func() {
+			err := hc_updateTier(cfg)
+			if err != nil {
+				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
+			}
+		}()
+		return "subdomain updated started for: " + cfg.HubId, nil
+	}
+	return "bad request", errors.New("bad request")
+}
 
 func CreateHubsCloudInstance(hcCfg HCcfg) error {
 	// #1.1 pre-deployment checks
@@ -259,75 +309,16 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 		}
 	}
 	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
-	return nil
-}
 
-func hc_create(w http.ResponseWriter, r *http.Request) {
-
-	// sess := internal.GetSession(r.Cookie)
-	// #1 prepare configs
-	hcCfg, err := makeHcCfg(r)
-	if err != nil {
-		internal.Logger.Error("bad hcCfg: " + err.Error())
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	// #1.0.1 -- do we need to bounce it to a foreign cluster
-	if hcCfg.TargetCluster != "" && hcCfg.TargetCluster != internal.Cfg.ClusterName {
-		internal.Logger.Debug("hcCfg.TargetCluster: " + hcCfg.TargetCluster)
-		hcCfg.JobQueueReqMethod = "POST"
-		msgBytes, _ := json.Marshal(hcCfg)
-
-		// var buffer bytes.Buffer
-		// err := gob.NewEncoder(&buffer).Encode(r)
-		// if err != nil {
-		// 	internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed to encode r, err:= ", err)
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// 	fmt.Fprintf(w, "err: %v", err)
-		// }
-		// msgBytes := buffer.Bytes()
-
-		jobQueueTopic := "turkey_job_queue_" + hcCfg.TargetCluster
-		err = internal.Cfg.Gcps.PubSub_PublishMsg(jobQueueTopic, msgBytes)
-		if err != nil {
-			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed, err:= ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "err: %v", err)
-		}
-		w.WriteHeader(http.StatusAccepted)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "cross cluster/region req --> published to: " + jobQueueTopic,
-			"hub_id": hcCfg.HubId,
-		})
-		return
-	}
-	err = CreateHubsCloudInstance(hcCfg)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": err.Error(),
-			"hub_id": hcCfg.HubId,
-		})
-		return
-	}
-
+	// temporary api-automation hacks for until this is properly implemented in reticulum
 	go func() {
 		err = post_creation_hacks(hcCfg)
 		if err != nil {
-			internal.Logger.Error("sync_load_assets FAILED: " + err.Error())
+			internal.Logger.Error("post_creation_hacks FAILED: " + err.Error())
 		}
 	}()
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"result":        "done",
-		"useremail":     hcCfg.UserEmail,
-		"hub_id":        hcCfg.HubId,
-		"subdomain":     hcCfg.Subdomain,
-		"tier":          hcCfg.Tier,
-		"ccu_limit":     hcCfg.CcuLimit,
-		"storage_limit": hcCfg.StorageLimit,
-	})
+	return nil
 }
 
 func post_creation_hacks(cfg HCcfg) error {
@@ -448,45 +439,45 @@ func ret_load_asset(url *url.URL, cfg HCcfg, token string) error {
 	return nil
 }
 
-func hc_get(w http.ResponseWriter, r *http.Request) {
-	// sess := internal.GetSession(r.Cookie)
+// func hc_get(w http.ResponseWriter, r *http.Request) {
+// 	// sess := internal.GetSession(r.Cookie)
 
-	cfg, err := getHcCfg(r)
-	if err != nil {
-		internal.Logger.Debug("bad hcCfg: " + err.Error())
-		return
-	}
+// 	cfg, err := getHcCfg(r)
+// 	if err != nil {
+// 		internal.Logger.Debug("bad hcCfg: " + err.Error())
+// 		return
+// 	}
 
-	//getting k8s config
-	internal.Logger.Debug("&#9989; ... using InClusterConfig")
-	k8sCfg, err := rest.InClusterConfig()
-	// }
-	if k8sCfg == nil {
-		internal.Logger.Debug("ERROR" + err.Error())
-		internal.Logger.Error(err.Error())
-		return
-	}
-	internal.Logger.Debug("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
-	clientset, err := kubernetes.NewForConfig(k8sCfg)
-	if err != nil {
-		internal.Logger.Error(err.Error())
-		return
-	}
-	//list ns
-	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
-		metav1.ListOptions{
-			LabelSelector: "hub_id" + cfg.HubId,
-		})
-	if err != nil {
-		internal.Logger.Error(err.Error())
-		return
-	}
-	internal.Logger.Debug("GET --- user <" + cfg.AccountId + "> owns: ")
-	for _, ns := range nsList.Items {
-		internal.Logger.Debug("......ObjectMeta.GetName: " + ns.ObjectMeta.GetName())
-		internal.Logger.Debug("......ObjectMeta.Labels.dump: " + fmt.Sprint(ns.ObjectMeta.Labels))
-	}
-}
+// 	//getting k8s config
+// 	internal.Logger.Debug("&#9989; ... using InClusterConfig")
+// 	k8sCfg, err := rest.InClusterConfig()
+// 	// }
+// 	if k8sCfg == nil {
+// 		internal.Logger.Debug("ERROR" + err.Error())
+// 		internal.Logger.Error(err.Error())
+// 		return
+// 	}
+// 	internal.Logger.Debug("&#129311; k8s.k8sCfg.Host == " + k8sCfg.Host)
+// 	clientset, err := kubernetes.NewForConfig(k8sCfg)
+// 	if err != nil {
+// 		internal.Logger.Error(err.Error())
+// 		return
+// 	}
+// 	//list ns
+// 	nsList, err := clientset.CoreV1().Namespaces().List(context.TODO(),
+// 		metav1.ListOptions{
+// 			LabelSelector: "hub_id" + cfg.HubId,
+// 		})
+// 	if err != nil {
+// 		internal.Logger.Error(err.Error())
+// 		return
+// 	}
+// 	internal.Logger.Debug("GET --- user <" + cfg.AccountId + "> owns: ")
+// 	for _, ns := range nsList.Items {
+// 		internal.Logger.Debug("......ObjectMeta.GetName: " + ns.ObjectMeta.GetName())
+// 		internal.Logger.Debug("......ObjectMeta.Labels.dump: " + fmt.Sprint(ns.ObjectMeta.Labels))
+// 	}
+// }
 
 func getHcCfg(r *http.Request) (HCcfg, error) {
 	var cfg HCcfg
@@ -671,23 +662,14 @@ func makeHcCfg(r *http.Request) (HCcfg, error) {
 	return cfg, nil
 }
 
-func hc_delete(w http.ResponseWriter, r *http.Request) {
-	// sess := internal.GetSession(r.Cookie)
-	hcCfg, err := getHcCfg(r)
-	if err != nil {
-		internal.Logger.Error("bad hcCfg: " + err.Error())
-		return
-	}
-	if hcCfg.HubId == "" {
-		internal.Logger.Error("missing hcCfg.HubId")
-		return
-	}
+func DeleteHubsCloudInstance(hcCfg HCcfg) error {
+
 	//mark the hc- namespace for the cleanup cronjob (todo)
 	nsName := "hc-" + hcCfg.HubId
-	err = internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
+	err := internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
 	if err != nil {
 		internal.Logger.Error("failed @PatchNsAnnotation, err: " + err.Error())
-		return
+		return errors.New("failed @PatchNsAnnotation, err: " + err.Error())
 	}
 	//remove ingress route
 	err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{})
@@ -755,13 +737,7 @@ func hc_delete(w http.ResponseWriter, r *http.Request) {
 			os.RemoveAll("/turkeyfs/hc-" + hcCfg.HubId)
 		}
 	}()
-
-	//return
-	w.WriteHeader(http.StatusAccepted)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"result": "deleted",
-		"hub_id": hcCfg.HubId,
-	})
+	return nil
 }
 
 func pg_kick_all(cfg HCcfg) error {
