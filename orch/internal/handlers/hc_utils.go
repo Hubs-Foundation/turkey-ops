@@ -437,8 +437,8 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 
 	//upload default logos
 	logo_files := map[string]interface{}{
-		"./_files/hc_assets/HubLogo.jpg":            nil,
-		"./_files/hc_assets/HubLogoForDarkMode.jpg": nil,
+		"./_files/hc_assets/HubLogo.svg":            nil,
+		"./_files/hc_assets/HubLogoForDarkMode.svg": nil,
 		"./_files/hc_assets/Favicon.ico":            nil,
 		"./_files/hc_assets/HomePageImage.jpg":      nil,
 		"./_files/hc_assets/CompanyLogo.png":        nil,
