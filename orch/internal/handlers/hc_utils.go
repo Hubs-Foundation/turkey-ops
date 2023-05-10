@@ -520,26 +520,31 @@ func hc_updateTier(cfg HCcfg) error {
 
 	for _, d := range ds.Items {
 		for _, c := range d.Spec.Template.Spec.Containers {
-			gotTIER := false
+			internal.Logger.Sugar().Debugf("updating container -- c.Name: ", c.Name)
+			hasTIER := false
 			for idx, envVar := range c.Env {
 				if envVar.Name == "TIER" {
+					internal.Logger.Sugar().Debugf("updating TIER to: %v", cfg.Tier)
 					c.Env[idx].Value = cfg.Tier
-					gotTIER = true
+					hasTIER = true
 					break
 				}
 			}
-			if !gotTIER {
+			if !hasTIER {
+				internal.Logger.Sugar().Debugf("adding: TIER=%v", cfg.Tier)
 				c.Env = append(c.Env, corev1.EnvVar{Name: "TIER", Value: cfg.Tier})
 			}
-			gotTurkeyCfg_tier := false
+			hasTurkeyCfg_tier := false
 			for idx, envVar := range c.Env {
 				if envVar.Name == "turkeyCfg_tier" {
+					internal.Logger.Sugar().Debugf("updating turkeyCfg_tier to: %v", cfg.Tier)
 					c.Env[idx].Value = cfg.Tier
-					gotTurkeyCfg_tier = true
+					hasTurkeyCfg_tier = true
 					break
 				}
 			}
-			if !gotTurkeyCfg_tier {
+			if !hasTurkeyCfg_tier {
+				internal.Logger.Sugar().Debugf("adding: turkeyCfg_tier=%v", cfg.Tier)
 				c.Env = append(c.Env, corev1.EnvVar{Name: "turkeyCfg_tier", Value: cfg.Tier})
 			}
 		}
@@ -551,6 +556,7 @@ func hc_updateTier(cfg HCcfg) error {
 
 	//reset theme for p0/free tier
 	if cfg.Tier == "p0" || cfg.Tier == "free" {
+		internal.Logger.Sugar().Debugf("reset theme for p0/free tier")
 		token, err := ret_getAdminToken(cfg)
 		if err != nil {
 			return err
