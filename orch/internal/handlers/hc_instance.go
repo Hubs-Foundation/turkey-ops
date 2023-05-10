@@ -123,24 +123,30 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 	switch r.Method {
 	case "POST":
-		err = CreateHubsCloudInstance(cfg)
+		hcCfg, err := makeHcCfg(r)
+		if err != nil {
+			internal.Logger.Error("bad hcCfg: " + err.Error())
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		err = CreateHubsCloudInstance(hcCfg)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"result": err.Error(),
-				"hub_id": cfg.HubId,
+				"hub_id": hcCfg.HubId,
 			})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"result":        "done",
-			"useremail":     cfg.UserEmail,
-			"hub_id":        cfg.HubId,
-			"subdomain":     cfg.Subdomain,
-			"tier":          cfg.Tier,
-			"ccu_limit":     cfg.CcuLimit,
-			"storage_limit": cfg.StorageLimit,
+			"useremail":     hcCfg.UserEmail,
+			"hub_id":        hcCfg.HubId,
+			"subdomain":     hcCfg.Subdomain,
+			"tier":          hcCfg.Tier,
+			"ccu_limit":     hcCfg.CcuLimit,
+			"storage_limit": hcCfg.StorageLimit,
 		})
 
 	case "GET":
