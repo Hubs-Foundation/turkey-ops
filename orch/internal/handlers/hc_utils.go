@@ -519,7 +519,7 @@ func hc_updateTier(cfg HCcfg) error {
 	}
 
 	for _, d := range ds.Items {
-		for _, c := range d.Spec.Template.Spec.Containers {
+		for c_idx, c := range d.Spec.Template.Spec.Containers {
 			internal.Logger.Sugar().Debugf("updating container -- c.Name: ", c.Name)
 			hasTIER := false
 			for idx, envVar := range c.Env {
@@ -547,6 +547,7 @@ func hc_updateTier(cfg HCcfg) error {
 				internal.Logger.Sugar().Debugf("adding: turkeyCfg_tier=%v", cfg.Tier)
 				c.Env = append(c.Env, corev1.EnvVar{Name: "turkeyCfg_tier", Value: cfg.Tier})
 			}
+			d.Spec.Template.Spec.Containers[c_idx] = c
 		}
 		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
