@@ -123,7 +123,7 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 	switch r.Method {
 	case "POST":
-		hcCfg, err := makeHcCfg(r)
+		hcCfg, err := makeHcCfg(cfg)
 		if err != nil {
 			internal.Logger.Error("bad hcCfg: " + err.Error())
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -502,23 +502,12 @@ func getHcCfg(r *http.Request) (HCcfg, error) {
 	return cfg, nil
 }
 
-func makeHcCfg(r *http.Request) (HCcfg, error) {
-	var cfg HCcfg
-	rBodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		internal.Logger.Error("ERROR @ reading r.body, error = " + err.Error())
-		return cfg, err
-	}
-	err = json.Unmarshal(rBodyBytes, &cfg)
-	if err != nil {
-		internal.Logger.Error("bad hcCfg: " + string(rBodyBytes))
-		return cfg, err
-	}
-
-	//userEmail supplied?
-	if cfg.UserEmail == "" {
-		cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail") //try fallback to authenticated useremail
-	} //verify format?
+func makeHcCfg(cfg HCcfg) (HCcfg, error) {
+	// //userEmail supplied?
+	// if cfg.UserEmail == "" {
+	// 	cfg.UserEmail = r.Header.Get("X-Forwarded-UserEmail") //try fallback to authenticated useremail
+	// }
+	//verify format?
 	if cfg.UserEmail == "" { // can't create without email
 		return cfg, errors.New("bad input, missing UserEmail or X-Forwarded-UserEmail")
 		// cfg.UserEmail = "fooooo@barrrr.com"
