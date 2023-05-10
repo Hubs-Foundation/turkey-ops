@@ -143,8 +143,10 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			"storage_limit": cfg.StorageLimit,
 		})
 
-	// case "GET":
-	// 	hc_get(w, r)
+	case "GET":
+		// 	hc_get(w, r)
+		w.WriteHeader(http.StatusNotImplemented)
+		fmt.Fprint(w, "todo -- what's the req? also for cross cluster req provide JobQueueReqCallbackWebhook to receive resp on webhook")
 
 	case "DELETE":
 		// hc_delete(w, r)
