@@ -511,6 +511,9 @@ func ret_getAdminToken(cfg HCcfg) ([]byte, error) {
 func hc_updateTier(cfg HCcfg) error {
 
 	nsName := "hc-" + cfg.HubId
+	tier := cfg.Tier
+	// ccu := cfg.CcuLimit
+	storage := cfg.StorageLimit
 
 	// flush envVar to all containers
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).List(context.Background(), metav1.ListOptions{})
@@ -521,31 +524,38 @@ func hc_updateTier(cfg HCcfg) error {
 	for _, d := range ds.Items {
 		for c_idx, c := range d.Spec.Template.Spec.Containers {
 			internal.Logger.Sugar().Debugf("updating container -- c.Name: ", c.Name)
+			//TIER
 			hasTIER := false
 			for idx, envVar := range c.Env {
 				if envVar.Name == "TIER" {
-					internal.Logger.Sugar().Debugf("updating TIER to: %v", cfg.Tier)
-					c.Env[idx].Value = cfg.Tier
+					internal.Logger.Sugar().Debugf("updating TIER to: %v", tier)
+					c.Env[idx].Value = tier
 					hasTIER = true
-					break
 				}
 			}
 			if !hasTIER {
-				internal.Logger.Sugar().Debugf("adding: TIER=%v", cfg.Tier)
-				c.Env = append(c.Env, corev1.EnvVar{Name: "TIER", Value: cfg.Tier})
+				internal.Logger.Sugar().Debugf("adding: TIER=%v", tier)
+				c.Env = append(c.Env, corev1.EnvVar{Name: "TIER", Value: tier})
 			}
+			//turkeyCfg_tier
 			hasTurkeyCfg_tier := false
 			for idx, envVar := range c.Env {
 				if envVar.Name == "turkeyCfg_tier" {
-					internal.Logger.Sugar().Debugf("updating turkeyCfg_tier to: %v", cfg.Tier)
-					c.Env[idx].Value = cfg.Tier
+					internal.Logger.Sugar().Debugf("updating turkeyCfg_tier to: %v", tier)
+					c.Env[idx].Value = tier
 					hasTurkeyCfg_tier = true
-					break
 				}
 			}
 			if !hasTurkeyCfg_tier {
-				internal.Logger.Sugar().Debugf("adding: turkeyCfg_tier=%v", cfg.Tier)
-				c.Env = append(c.Env, corev1.EnvVar{Name: "turkeyCfg_tier", Value: cfg.Tier})
+				internal.Logger.Sugar().Debugf("adding: turkeyCfg_tier=%v", tier)
+				c.Env = append(c.Env, corev1.EnvVar{Name: "turkeyCfg_tier", Value: tier})
+			}
+			// storage
+			for idx, envVar := range c.Env {
+				if envVar.Name == "turkeyCfg_STORAGE_QUOTA_GB" {
+					internal.Logger.Sugar().Debugf("updating turkeyCfg_STORAGE_QUOTA_GB to: %v", storage)
+					c.Env[idx].Value = storage
+				}
 			}
 			d.Spec.Template.Spec.Containers[c_idx] = c
 		}
@@ -556,7 +566,7 @@ func hc_updateTier(cfg HCcfg) error {
 	}
 
 	//reset theme for p0/free tier
-	if cfg.Tier == "p0" || cfg.Tier == "free" {
+	if tier == "p0" || tier == "free" {
 		internal.Logger.Sugar().Debugf("reset theme for p0/free tier")
 		token, err := ret_getAdminToken(cfg)
 		if err != nil {
