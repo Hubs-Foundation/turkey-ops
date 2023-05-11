@@ -41,7 +41,7 @@ func (fm *featureMan) determineFeatures() {
 	fm.mu.Lock()
 	defer fm.mu.Unlock()
 
-	if slices.Contains([]string{"dev", "test"}, cfg.Tier) {
+	if slices.Contains([]string{"dev"}, cfg.Tier) {
 		fm._features.updater = true
 		fm._features.customDomain = true
 		fm._features.customClient = true
@@ -52,7 +52,7 @@ func (fm *featureMan) determineFeatures() {
 		fm._features.updater = true
 	}
 
-	if slices.Contains([]string{"pro", "business"}, cfg.Tier) {
+	if slices.Contains([]string{"pro", "business", "b1"}, cfg.Tier) {
 		fm._features.customDomain = true
 
 		customDomain, _ := Deployment_getLabel("custom-domain")
