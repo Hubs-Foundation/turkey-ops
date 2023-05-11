@@ -575,5 +575,16 @@ func hc_updateTier(cfg HCcfg) error {
 		ret_setDefaultTheme(token, cfg)
 	}
 
+	// update ns label
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ns.Labels["tier"] = tier
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
