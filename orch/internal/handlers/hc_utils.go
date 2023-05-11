@@ -443,7 +443,7 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 		"./_files/hc_assets/HomePageImage.jpg":      nil,
 		"./_files/hc_assets/CompanyLogo.png":        nil,
 		"./_files/hc_assets/ShortcutIcon.png":       nil,
-		"./_files/hc_assets/SocialMediaCard.jpg":    nil,
+		"./_files/hc_assets/SocialMediaCard.png":    nil,
 	}
 	logo_files, err = ret_upload_files(cfg.Subdomain, cfg.HubDomain, logo_files)
 	if err != nil {
@@ -460,7 +460,7 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 			"logo":            logo_files["./_files/hc_assets/HubLogo.svg"],
 			"home_background": logo_files["./_files/hc_assets/HomePageImage.jpg"],
 			"favicon":         logo_files["./_files/hc_assets/Favicon.ico"],
-			"app_thumbnail":   logo_files["./_files/hc_assets/SocialMediaCard.jpg"],
+			"app_thumbnail":   logo_files["./_files/hc_assets/SocialMediaCard.png"],
 			"app_icon":        logo_files["./_files/hc_assets/ShortcutIcon.png"],
 			"company_logo":    logo_files["./_files/hc_assets/CompanyLogo.png"],
 		},
