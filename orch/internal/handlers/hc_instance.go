@@ -220,7 +220,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 				internal.Logger.Error("hc_patch_subdomain FAILED: " + err.Error())
 			}
 		}()
-		return "subdomain updated started for: " + cfg.HubId, nil
+		return "subdomain update started for: " + cfg.HubId, nil
 	}
 	// tier change
 	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
@@ -230,7 +230,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
 			}
 		}()
-		return "subdomain updated started for: " + cfg.HubId, nil
+		return "tier update started for: " + cfg.HubId, nil
 	}
 	return "bad request", errors.New("bad request")
 }
