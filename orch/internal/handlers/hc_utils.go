@@ -18,6 +18,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -509,12 +510,30 @@ func ret_getAdminToken(cfg HCcfg) ([]byte, error) {
 }
 
 func hc_updateTier(cfg HCcfg) error {
-
+	// ### preps
 	nsName := "hc-" + cfg.HubId
 	tier := cfg.Tier
 	// ccu := cfg.CcuLimit
 	storage := cfg.StorageLimit
 
+	if tier == "free" {
+		tier = "p0"
+	}
+
+	// reousrce quotas, in: {"cpu req", "ram req", "cpu limit", "ram limit"}
+	map_tiers_retCpuRam := map[string][]string{
+		"p0": []string{"250m", "250Mi", "500m", "512Mi"},
+		"p1": []string{"250m", "250Mi", "500m", "512Mi"},
+		"b1": []string{"1500m", "1500Mi", "2500m", "2500Mi"},
+	}
+	// pod counts
+	map_tiers_retPodCnt := map[string]int{
+		"p0": 1,
+		"p1": 2,
+		"b1": 3,
+	}
+
+	// ### k8s updates
 	// flush envVar to all containers
 	ds, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -550,23 +569,40 @@ func hc_updateTier(cfg HCcfg) error {
 				internal.Logger.Sugar().Debugf("adding: turkeyCfg_tier=%v", tier)
 				c.Env = append(c.Env, corev1.EnvVar{Name: "turkeyCfg_tier", Value: tier})
 			}
-			// storage
-			for idx, envVar := range c.Env {
-				if envVar.Name == "turkeyCfg_STORAGE_QUOTA_GB" {
-					internal.Logger.Sugar().Debugf("updating turkeyCfg_STORAGE_QUOTA_GB to: %v", storage)
-					c.Env[idx].Value = storage
+
+			// ret
+			if d.Name == "reticulum" && c.Name == "reticulum" {
+				// set storage
+				for idx, envVar := range c.Env {
+					if envVar.Name == "turkeyCfg_STORAGE_QUOTA_GB" {
+						internal.Logger.Sugar().Debugf("updating turkeyCfg_STORAGE_QUOTA_GB to: %v", storage)
+						c.Env[idx].Value = storage
+					}
+				}
+				//set resource quotas
+				c.Resources = corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse(map_tiers_retCpuRam[tier][0]),
+						corev1.ResourceMemory: resource.MustParse(map_tiers_retCpuRam[tier][1]),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse(map_tiers_retCpuRam[tier][2]),
+						corev1.ResourceMemory: resource.MustParse(map_tiers_retCpuRam[tier][3]),
+					},
 				}
 			}
+
 			d.Spec.Template.Spec.Containers[c_idx] = c
 		}
+
 		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
 	}
 
-	//reset theme for p0/free tier
-	if tier == "p0" || tier == "free" {
+	// reset theme for p0 (free) tier
+	if tier == "p0" {
 		internal.Logger.Sugar().Debugf("reset theme for p0/free tier")
 		token, err := ret_getAdminToken(cfg)
 		if err != nil {
@@ -582,6 +618,20 @@ func hc_updateTier(cfg HCcfg) error {
 	}
 	ns.Labels["tier"] = tier
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	//set hpa
+	retHpa, err := internal.Cfg.K8ss_local.ClientSet.AutoscalingV1().HorizontalPodAutoscalers(nsName).Get(context.Background(), "ret-hpa", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	retHpa.Spec.MinReplicas = pointerOfInt32(map_tiers_retPodCnt[tier])
+	retHpa.Spec.MaxReplicas = int32(map_tiers_retPodCnt[tier])
+
+	_, err = internal.Cfg.K8ss_local.ClientSet.AutoscalingV1().HorizontalPodAutoscalers(nsName).Update(context.Background(), retHpa, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
