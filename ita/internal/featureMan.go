@@ -3,6 +3,7 @@ package internal
 import (
 	"os"
 	"sync"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/strings/slices"
@@ -55,9 +56,8 @@ func (fm *featureMan) determineFeatures() {
 	if slices.Contains([]string{"pro", "business", "b1"}, cfg.Tier) {
 		fm._features.customDomain = true
 
-		customDomain, _ := Deployment_getLabel("custom-domain")
-		if customDomain != "" {
-			Logger.Info("customClient enabled -- customDomain: " + customDomain)
+		if cfg.CustomDomain != "" {
+			Logger.Info("customClient enabled -- customDomain: " + cfg.CustomDomain)
 			fm._features.customClient = true
 		}
 	}
@@ -99,6 +99,12 @@ func (fm *featureMan) setupFeatures() {
 		}
 		blockEgress("hubs")
 		blockEgress("spoke")
+
+		// customClient enabled == hosted in on customDomain == need to maintain cert
+		cron_24h := NewCron("cron_1m", 24*time.Hour)
+		cron_24h.Load("customDomainCertMan", Cronjob_customDomainCert)
+		cron_24h.Start()
+
 	}
 }
 

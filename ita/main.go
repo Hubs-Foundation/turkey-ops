@@ -16,22 +16,17 @@ func main() {
 	//#############################################
 	//################# cron jobs #################
 	//#############################################
-	cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
-	cron_15m := internal.NewCron("cron_15m", 15*time.Minute)
-
-	// if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
-	// 	// cron_1m.Load("pauseJob", internal.Cronjob_pauseHC)
-	// 	// cron_1m.Load("HcHealthchecks", internal.Cronjob_HcHealthchecks)
-	// }
-
 	if internal.GetCfg().PodNS == "turkey-services" {
+		cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
+
 		cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
+		cron_1m.Start()
+		cron_15m := internal.NewCron("cron_15m", 15*time.Minute)
 		cron_15m.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
 		cron_15m.Load("SurveyStreamNodes", internal.Cronjob_SurveyStreamNodes)
-		internal.Cronjob_SurveyStreamNodes(888 * time.Microsecond)
+
+		cron_15m.Start()
 	}
-	cron_1m.Start()
-	cron_15m.Start()
 
 	//#############################################
 	//################# server ####################
