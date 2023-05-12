@@ -54,6 +54,9 @@ func InitLogger() {
 var listeningChannelLabelName = "CHANNEL"
 
 func Deployment_getLabel(key string) (string, error) {
+	if cfg.PodDeploymentName == "" {
+		return "", errors.New("cfg.PodDeploymentName is empty")
+	}
 	//do we have channel labled on deployment?
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
 	if err != nil {
