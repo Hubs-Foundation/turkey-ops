@@ -438,10 +438,10 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 
 	//upload default logos
 	logo_files := map[string]interface{}{
-		"./_files/hc_assets/HubLogo.jpg":            nil,
-		"./_files/hc_assets/HubLogoForDarkMode.jpg": nil,
+		"./_files/hc_assets/HubLogo.svg":            nil,
+		"./_files/hc_assets/HubLogoForDarkMode.svg": nil,
 		"./_files/hc_assets/Favicon.ico":            nil,
-		"./_files/hc_assets/HomePageImage.jpg":      nil,
+		"./_files/hc_assets/HomePageImage.png":      nil,
 		"./_files/hc_assets/CompanyLogo.png":        nil,
 		"./_files/hc_assets/ShortcutIcon.png":       nil,
 		"./_files/hc_assets/SocialMediaCard.png":    nil,
@@ -457,9 +457,9 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 		"theme": map[string]string{
 			"themes": string(themeBytes)},
 		"images": map[string]interface{}{
-			"logo_dark":       logo_files["./_files/hc_assets/HubLogoForDarkMode.jpg"],
-			"logo":            logo_files["./_files/hc_assets/HubLogo.jpg"],
-			"home_background": logo_files["./_files/hc_assets/HomePageImage.jpg"],
+			"logo_dark":       logo_files["./_files/hc_assets/HubLogoForDarkMode.svg"],
+			"logo":            logo_files["./_files/hc_assets/HubLogo.svg"],
+			"home_background": logo_files["./_files/hc_assets/HomePageImage.png"],
 			"favicon":         logo_files["./_files/hc_assets/Favicon.ico"],
 			"app_thumbnail":   logo_files["./_files/hc_assets/SocialMediaCard.png"],
 			"app_icon":        logo_files["./_files/hc_assets/ShortcutIcon.png"],
