@@ -57,6 +57,7 @@ func Deployment_getLabel(key string) (string, error) {
 	//do we have channel labled on deployment?
 	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
 	if err != nil {
+		Logger.Sugar().Debugf("Deployment_getLabel failed: %v (cfg.PodDeploymentName: %v)", err, cfg.PodDeploymentName)
 		return "", err
 	}
 	return d.Labels[key], nil
