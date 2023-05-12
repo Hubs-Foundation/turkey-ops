@@ -118,6 +118,7 @@ func MakeCfg() {
 	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
 	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
 	cfg.CustomDomain, _ = Deployment_getLabel("custom-domain")
+	Logger.Sugar().Infof("cfg.CustomDomain: %v", cfg.CustomDomain)
 
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {

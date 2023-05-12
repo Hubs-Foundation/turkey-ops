@@ -90,6 +90,11 @@ func (fm *featureMan) setupFeatures() {
 		if err != nil {
 			Logger.Error(err.Error())
 		}
+		if cfg.CustomDomain != "" { // customClient enabled == hosted in on customDomain == need to maintain cert
+			cron_24h := NewCron("cron_1m", 24*time.Hour)
+			cron_24h.Load("customDomainCertMan", Cronjob_customDomainCert)
+			cron_24h.Start()
+		}
 	}
 
 	if fm._features.customClient {
@@ -99,12 +104,6 @@ func (fm *featureMan) setupFeatures() {
 		}
 		blockEgress("hubs")
 		blockEgress("spoke")
-
-		// customClient enabled == hosted in on customDomain == need to maintain cert
-		cron_24h := NewCron("cron_1m", 24*time.Hour)
-		cron_24h.Load("customDomainCertMan", Cronjob_customDomainCert)
-		cron_24h.Start()
-
 	}
 }
 
