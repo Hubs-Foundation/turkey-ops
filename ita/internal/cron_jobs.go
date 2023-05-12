@@ -309,7 +309,7 @@ func Cronjob_customDomainCert(interval time.Duration) {
 	expirationDate := cert.NotAfter
 	certTtl := time.Until(expirationDate)
 	Logger.Sugar().Infof("customDomain cert (cert-%v) Ttl: %v", cfg.CustomDomain, certTtl)
-	if certTtl < 300*24*time.Hour {
+	if certTtl < 30*24*time.Hour {
 		Logger.Sugar().Infof("renewing CustomDomain cert: cert-%v", cfg.CustomDomain)
 		err := CustomDomain_UpdateCert()
 		if err != nil {
