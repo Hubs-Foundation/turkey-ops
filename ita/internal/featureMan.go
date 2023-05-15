@@ -81,14 +81,14 @@ func (fm *featureMan) setupFeatures() {
 		cfg.TurkeyUpdater = NewTurkeyUpdater()
 		err := cfg.TurkeyUpdater.Start()
 		if err != nil {
-			Logger.Error(err.Error())
+			Logger.Panic(err.Error())
 		}
 	}
 
 	if fm._features.customDomain {
 		err := ingress_addItaApiRule()
 		if err != nil {
-			Logger.Error(err.Error())
+			Logger.Panic(err.Error())
 		}
 		if cfg.CustomDomain != "" { // customClient enabled == hosted in on customDomain == need to maintain cert
 			cron_24h := NewCron("cron_1m", 24*time.Hour)
@@ -100,7 +100,7 @@ func (fm *featureMan) setupFeatures() {
 	if fm._features.customClient {
 		err := k8s_mountRetNfs("ita", "", "", false, corev1.MountPropagationNone)
 		if err != nil {
-			Logger.Error(err.Error())
+			Logger.Panic(err.Error())
 		}
 		blockEgress("hubs")
 		blockEgress("spoke")
