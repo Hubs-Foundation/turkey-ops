@@ -41,8 +41,9 @@ type Config struct {
 	Features featureMan
 	K8Man    *k8Man
 
-	RootUserEmail string
-	CustomDomain  string
+	RootUserEmail       string
+	CustomDomain        string
+	CustomDomainCertExp time.Time
 }
 
 func GetCfg() *Config {

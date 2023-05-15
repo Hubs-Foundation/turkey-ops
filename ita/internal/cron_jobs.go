@@ -283,37 +283,46 @@ func get_hc_host() (string, error) {
 	return rMap["phx_host"], nil
 
 }
+
 func Cronjob_customDomainCert(interval time.Duration) {
-	secret, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Get(context.Background(), "cert-"+cfg.CustomDomain, metav1.GetOptions{})
-	if err != nil {
-		Logger.Sugar().Errorf("failed to get secret: cert-%v. features: %+v", cfg.CustomDomain, cfg.Features.Get())
-		return
-	}
-	certData, ok := secret.Data["tls.crt"]
-	if !ok {
-		Logger.Sugar().Errorf("failed to find cert in  secret.Data[\"tls.crt\"] (%v)", string(certData))
-		return
+
+	if cfg.CustomDomainCertExp.IsZero() {
+		secret, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Get(context.Background(), "cert-"+cfg.CustomDomain, metav1.GetOptions{})
+		if err != nil {
+			Logger.Sugar().Errorf("failed to get secret: cert-%v. features: %+v", cfg.CustomDomain, cfg.Features.Get())
+			return
+		}
+		certData, ok := secret.Data["tls.crt"]
+		if !ok {
+			Logger.Sugar().Errorf("failed to find cert in  secret.Data[\"tls.crt\"] (%v)", string(certData))
+			return
+		}
+
+		// Parse the certificate
+		block, _ := pem.Decode(certData)
+		if block == nil {
+			panic("Failed to decode certificate data")
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			panic(err)
+		}
+
+		// Get the expiration date of the certificate
+		cfg.CustomDomainCertExp = cert.NotAfter
+		Logger.Sugar().Infof("cfg.CustomDomainCertExp refreshed to: ", cfg.CustomDomainCertExp)
 	}
 
-	// Parse the certificate
-	block, _ := pem.Decode(certData)
-	if block == nil {
-		panic("Failed to decode certificate data")
-	}
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		panic(err)
-	}
-
-	// Get the expiration date of the certificate
-	expirationDate := cert.NotAfter
-	certTtl := time.Until(expirationDate)
+	certTtl := time.Until(cfg.CustomDomainCertExp)
 	Logger.Sugar().Infof("customDomain cert (cert-%v) Ttl: %v", cfg.CustomDomain, certTtl)
+
 	if certTtl < 30*24*time.Hour {
 		Logger.Sugar().Infof("renewing CustomDomain cert: cert-%v", cfg.CustomDomain)
 		err := CustomDomain_UpdateCert()
 		if err != nil {
 			Logger.Sugar().Errorf("failed @ CustomDomain_UpdateCert: %v", err)
 		}
+		cfg.CustomDomainCertExp = time.Time{}
 	}
+
 }

@@ -91,9 +91,9 @@ func (fm *featureMan) setupFeatures() {
 			Logger.Panic(err.Error())
 		}
 		if cfg.CustomDomain != "" { // customClient enabled == hosted in on customDomain == need to maintain cert
-			cron_24h := NewCron("cron_1m", 24*time.Hour)
-			cron_24h.Load("customDomainCertMan", Cronjob_customDomainCert)
-			cron_24h.Start()
+			cron_12h := NewCron("cron_1m", 12*time.Hour)
+			cron_12h.Load("customDomainCertMan", Cronjob_customDomainCert)
+			cron_12h.Start()
 		}
 	}
 
