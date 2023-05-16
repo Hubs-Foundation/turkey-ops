@@ -232,7 +232,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		}()
 		return "tier update started for: " + cfg.HubId, nil
 	}
-	return "bad request", errors.New("bad request")
+	return "bad request", fmt.Errorf("bad req -- cfg: %v", cfg)
 }
 
 func CreateHubsCloudInstance(hcCfg HCcfg) error {
