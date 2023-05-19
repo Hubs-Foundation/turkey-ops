@@ -295,7 +295,7 @@ func ret_scene_post_import(getReqBody []byte, subdomain, domain, token string) e
 	}
 	`)
 
-	internal.Logger.Sugar().Debugf("listReqBody: %v", string(listReqBody))
+	// internal.Logger.Sugar().Debugf("listReqBody: %v", string(listReqBody))
 	listReq, _ := http.NewRequest(
 		"POST",
 		"https://"+subdomain+"."+domain+"/api/postgrest/scene_listings",
