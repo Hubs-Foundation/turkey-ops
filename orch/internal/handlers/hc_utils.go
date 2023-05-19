@@ -522,8 +522,8 @@ func hc_updateTier(cfg HCcfg) error {
 
 	// reousrce quotas, in: {"cpu req", "ram req", "cpu limit", "ram limit"}
 	map_tiers_retCpuRam := map[string][]string{
-		"p0": []string{"250m", "250Mi", "500m", "512Mi"},
-		"p1": []string{"250m", "250Mi", "500m", "512Mi"},
+		"p0": []string{"250m", "250Mi", "500m", "500Mi"},
+		"p1": []string{"250m", "250Mi", "500m", "500Mi"},
 		"b1": []string{"1500m", "1500Mi", "2500m", "2500Mi"},
 	}
 	// pod counts
@@ -594,7 +594,7 @@ func hc_updateTier(cfg HCcfg) error {
 
 			d.Spec.Template.Spec.Containers[c_idx] = c
 		}
-
+		d.ResourceVersion = ""
 		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
 			return err

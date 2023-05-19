@@ -318,14 +318,16 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 	}
 	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
 
-	// temporary api-automation hacks for until this is properly implemented in reticulum
+	// #6 enforce tiers
+	hc_updateTier(hcCfg)
+
 	go func() {
+		// temporary api-automation hacks for until this is properly implemented in reticulum
 		err = post_creation_hacks(hcCfg)
 		if err != nil {
 			internal.Logger.Error("post_creation_hacks FAILED: " + err.Error())
 		}
 	}()
-
 	return nil
 }
 
