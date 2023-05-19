@@ -722,6 +722,8 @@ spec:
           value: {{.Subdomain}}.{{.HubDomain}}
         - name: turkeyCfg_tier
           value: {{.Tier}}
+        - name: TIER
+          value: {{.Tier}}
         - name: turkeyCfg_sentry_dsn
           valueFrom:
             secretKeyRef:
@@ -792,6 +794,10 @@ spec:
         image: mozillareality/spoke:{{.Img_spoke}}
         imagePullPolicy: IfNotPresent
         env:
+        - name: turkeyCfg_tier
+          value: {{.Tier}}
+        - name: TIER
+          value: {{.Tier}}
         - name: turkeyCfg_thumbnail_server
           value: nearspark.reticulum.io
         - name: turkeyCfg_base_assets_path
@@ -929,6 +935,8 @@ spec:
               fieldPath: metadata.namespace
         - name: POD_DEPLOYMENT_NAME
           value: ita
+        - name: turkeyCfg_tier
+          value: {{.Tier}}
         - name: TIER
           value: {{.Tier}}
         # - name: CHANNEL
@@ -1020,6 +1028,10 @@ spec:
         imagePullPolicy: IfNotPresent
         name: speelycaptor
         env:
+        - name: turkeyCfg_tier
+          value: {{.Tier}}
+        - name: TIER
+          value: {{.Tier}}
         - name: scratchBucketId
           value: turkey-speelycaptor-scratch-bucket
         - name: CLOUD

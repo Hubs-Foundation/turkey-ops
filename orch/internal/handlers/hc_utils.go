@@ -252,8 +252,8 @@ func ret_avatar_post_import(getReqBody []byte, subdomain, domain, token string) 
 		return err
 	}
 	internal.Logger.Sugar().Debugf(" listReq resp: %v", resp)
-	respBody, _ := ioutil.ReadAll(resp.Body)
-	internal.Logger.Sugar().Debugf(" listReq respBody: %v", string(respBody))
+	// respBody, _ := ioutil.ReadAll(resp.Body)
+	// internal.Logger.Sugar().Debugf(" listReq respBody: %v", string(respBody))
 
 	return nil
 }
