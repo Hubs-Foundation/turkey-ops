@@ -414,7 +414,7 @@ func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]int
 		return nil, fmt.Errorf("decoder.Decode(&respMap): %v", err)
 	}
 	defer resp.Body.Close()
-
+	internal.Logger.Sugar().Debugf("resp.code: %v", resp.StatusCode)
 	// bodyBytes, _ := io.ReadAll(resp.Body)
 	// fmt.Println("bodyBytes", string(bodyBytes))
 
@@ -476,11 +476,23 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 	app_configs_req.Header.Set("Content-Type", "application/json")
 	app_configs_req.Header.Add("authorization", "bearer "+string(token))
 	client := &http.Client{}
-	app_configs_resp, err := client.Do(app_configs_req)
-	if err != nil {
-		return err
+
+	app_configs_resp_code := 0
+	tries := 6
+	for tries > 0 && app_configs_resp_code != http.StatusOK {
+		app_configs_resp, err := client.Do(app_configs_req)
+		if err != nil {
+			return err
+		}
+		internal.Logger.Sugar().Debugf("tries: %v, app_configs_resp: %v", app_configs_resp)
+
+		app_configs_resp_code = app_configs_resp.StatusCode
+		tries--
+		if tries == 0 {
+			internal.Logger.Sugar().Errorf("timeout -- app_configs_resp: %v", app_configs_resp)
+		}
+		time.Sleep(5 * time.Second)
 	}
-	internal.Logger.Sugar().Debugf("app_configs_resp: ", app_configs_resp)
 	return nil
 }
 
