@@ -484,7 +484,7 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 		if err != nil {
 			return err
 		}
-		internal.Logger.Sugar().Debugf("tries: %v, app_configs_resp: %v", app_configs_resp)
+		internal.Logger.Sugar().Debugf("tries: %v, app_configs_resp: %v", tries, app_configs_resp)
 
 		app_configs_resp_code = app_configs_resp.StatusCode
 		tries--
