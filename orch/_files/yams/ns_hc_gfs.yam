@@ -654,7 +654,7 @@ spec:
     kind: Deployment
     name: reticulum
   minReplicas: 1
-  maxReplicas: 3
+  maxReplicas: 1
   targetCPUUtilizationPercentage: 75
 ---
 apiVersion: v1
