@@ -234,7 +234,7 @@ func ret_avatar_post_import(getReqBody []byte, subdomain, domain, token string) 
 	}
 	`)
 
-	internal.Logger.Sugar().Debugf("listReqBody: %v", string(listReqBody))
+	// internal.Logger.Sugar().Debugf("listReqBody: %v", string(listReqBody))
 
 	listReq, _ := http.NewRequest(
 		"POST",
@@ -311,9 +311,9 @@ func ret_scene_post_import(getReqBody []byte, subdomain, domain, token string) e
 	if err != nil {
 		return err
 	}
-	internal.Logger.Sugar().Debugf(" listReq resp: %v", resp)
-	respBody, _ := ioutil.ReadAll(resp.Body)
-	internal.Logger.Sugar().Debugf(" listReq respBody: %v", string(respBody))
+	internal.Logger.Sugar().Debugf(" listReq resp.code: %v", resp.StatusCode)
+	// respBody, _ := ioutil.ReadAll(resp.Body)
+	// internal.Logger.Sugar().Debugf(" listReq respBody: %v", string(respBody))
 
 	return nil
 }
