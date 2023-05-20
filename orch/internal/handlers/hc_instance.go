@@ -528,7 +528,10 @@ func makeHcCfg(cfg HCcfg) (HCcfg, error) {
 	}
 	//default Tier is free
 	if cfg.Tier == "" {
-		cfg.Tier = "free"
+		cfg.Tier = "p0"
+	}
+	if cfg.Tier == "early_access" {
+		cfg.Tier = "p1"
 	}
 	//default CcuLimit is 20
 	if cfg.CcuLimit == "" {
