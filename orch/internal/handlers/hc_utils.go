@@ -409,10 +409,16 @@ func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]int
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	client := &http.Client{}
-	resp, err := client.Do(req)
+	// resp, err := client.Do(req)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed: %v", err)
+	// }
+
+	resp, _, err := internal.RetryHttpReq(client, req, 3*time.Minute)
 	if err != nil {
-		return nil, fmt.Errorf("decoder.Decode(&respMap): %v", err)
+		return nil, err
 	}
+
 	defer resp.Body.Close()
 	internal.Logger.Sugar().Debugf("resp.code: %v", resp.StatusCode)
 	// bodyBytes, _ := io.ReadAll(resp.Body)

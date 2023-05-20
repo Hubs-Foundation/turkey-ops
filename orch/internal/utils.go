@@ -267,7 +267,7 @@ func IsValidDomainName(domain string) bool {
 
 func RetryHttpReq(client *http.Client, request *http.Request, maxRetry time.Duration) (*http.Response, time.Duration, error) {
 
-	stepWait := 3 * time.Second
+	stepWait := 8 * time.Second
 
 	timeout := time.Now().Add(maxRetry)
 	tStart := time.Now()
