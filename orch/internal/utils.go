@@ -34,59 +34,60 @@ func InitLogger() {
 		AtomLvl.SetLevel(zap.InfoLevel)
 	}
 
-	// encoderCfg := zap.NewProductionEncoderConfig()
-	// encoderCfg.TimeKey = "t"
-	// encoderCfg.EncodeTime = zapcore.TimeEncoderOfLayout("060102.03:04:05MST") //wanted to use time.Kitchen so much
-	// encoderCfg.CallerKey = "c"
+	encoderCfg := zap.NewProductionEncoderConfig()
+	encoderCfg.TimeKey = "t"
+	encoderCfg.EncodeTime = zapcore.TimeEncoderOfLayout("060102.03:04:05MST") //wanted to use time.Kitchen so much
+	encoderCfg.CallerKey = "c"
+	encoderCfg.FunctionKey = "f"
+	encoderCfg.MessageKey = "m"
 	// encoderCfg.FunctionKey = "f"
-	// encoderCfg.MessageKey = "m"
-	// // encoderCfg.FunctionKey = "f"
-
-	zapCfg := &zap.Config{
-		Level:    AtomLvl,
-		Encoding: "json",
-		EncoderConfig: zapcore.EncoderConfig{
-			FunctionKey:   "func",
-			TimeKey:       "time",
-			LevelKey:      "severity",
-			NameKey:       "logger",
-			CallerKey:     "caller",
-			MessageKey:    "message",
-			StacktraceKey: "stacktrace",
-			LineEnding:    zapcore.DefaultLineEnding,
-			EncodeLevel: func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
-				switch l {
-				case zapcore.DebugLevel:
-					enc.AppendString("DEBUG")
-				case zapcore.InfoLevel:
-					enc.AppendString("INFO")
-				case zapcore.WarnLevel:
-					enc.AppendString("WARNING")
-				case zapcore.ErrorLevel:
-					enc.AppendString("ERROR")
-				case zapcore.DPanicLevel:
-					enc.AppendString("CRITICAL")
-				case zapcore.PanicLevel:
-					enc.AppendString("ALERT")
-				case zapcore.FatalLevel:
-					enc.AppendString("EMERGENCY")
-				}
-			},
-			EncodeTime:     zapcore.RFC3339TimeEncoder,
-			EncodeDuration: zapcore.MillisDurationEncoder,
-			EncodeCaller:   zapcore.ShortCallerEncoder,
-		},
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
-	}
 
 	// Logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), AtomLvl), zap.AddCaller())
-	// err := errors.New("-_-")
-	var err error
-	Logger, err = zapCfg.Build(zap.AddCaller())
-	if err != nil {
-		panic(err)
-	}
+	Logger = zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), zapcore.Lock(os.Stdout), AtomLvl), zap.AddCaller())
+
+	// zapCfg := &zap.Config{
+	// 	Level:    AtomLvl,
+	// 	Encoding: "json",
+	// 	EncoderConfig: zapcore.EncoderConfig{
+	// 		FunctionKey:   "func",
+	// 		TimeKey:       "time",
+	// 		LevelKey:      "severity",
+	// 		NameKey:       "logger",
+	// 		CallerKey:     "caller",
+	// 		MessageKey:    "message",
+	// 		StacktraceKey: "stacktrace",
+	// 		LineEnding:    zapcore.DefaultLineEnding,
+	// 		EncodeLevel: func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+	// 			switch l {
+	// 			case zapcore.DebugLevel:
+	// 				enc.AppendString("DEBUG")
+	// 			case zapcore.InfoLevel:
+	// 				enc.AppendString("INFO")
+	// 			case zapcore.WarnLevel:
+	// 				enc.AppendString("WARNING")
+	// 			case zapcore.ErrorLevel:
+	// 				enc.AppendString("ERROR")
+	// 			case zapcore.DPanicLevel:
+	// 				enc.AppendString("CRITICAL")
+	// 			case zapcore.PanicLevel:
+	// 				enc.AppendString("ALERT")
+	// 			case zapcore.FatalLevel:
+	// 				enc.AppendString("EMERGENCY")
+	// 			}
+	// 		},
+	// 		EncodeTime:     zapcore.RFC3339TimeEncoder,
+	// 		EncodeDuration: zapcore.MillisDurationEncoder,
+	// 		EncodeCaller:   zapcore.ShortCallerEncoder,
+	// 	},
+	// 	OutputPaths:      []string{"stdout"},
+	// 	ErrorOutputPaths: []string{"stderr"},
+	// }
+
+	// var err error
+	// Logger, err = zapCfg.Build(zap.AddCaller())
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	defer Logger.Sync()
 
