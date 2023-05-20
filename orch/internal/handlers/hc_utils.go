@@ -414,7 +414,7 @@ func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]int
 	// 	return nil, fmt.Errorf("failed: %v", err)
 	// }
 
-	resp, _, err := internal.RetryHttpReq(client, req, 3*time.Minute)
+	resp, _, err := internal.RetryHttpReq(client, req, 30*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -483,22 +483,12 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 	app_configs_req.Header.Add("authorization", "bearer "+string(token))
 	client := &http.Client{}
 
-	app_configs_resp_code := 0
-	tries := 6
-	for tries > 0 && app_configs_resp_code != http.StatusOK {
-		app_configs_resp, err := client.Do(app_configs_req)
-		if err != nil {
-			return err
-		}
-		internal.Logger.Sugar().Debugf("tries: %v, app_configs_resp: %v", tries, app_configs_resp)
-
-		app_configs_resp_code = app_configs_resp.StatusCode
-		tries--
-		if tries == 0 {
-			internal.Logger.Sugar().Errorf("timeout -- app_configs_resp: %v", app_configs_resp)
-		}
-		time.Sleep(5 * time.Second)
+	app_configs_resp, _, err := internal.RetryHttpReq(client, app_configs_req, 30*time.Second)
+	if err != nil {
+		return err
 	}
+	internal.Logger.Sugar().Debugf("app_configs_resp.code: %v", app_configs_resp.StatusCode)
+
 	return nil
 }
 
@@ -516,7 +506,7 @@ func ret_getAdminToken(cfg HCcfg) ([]byte, error) {
 	)
 	tokenReq.Header.Add("content-type", "application/json")
 	tokenReq.Header.Add("x-ret-dashboard-access-key", internal.Cfg.DASHBOARD_ACCESS_KEY)
-	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 15*time.Second)
+	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 30*time.Second)
 	if err != nil {
 		return nil, err
 	}

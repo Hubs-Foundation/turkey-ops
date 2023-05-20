@@ -354,7 +354,8 @@ func post_creation_hacks(cfg HCcfg) error {
 
 	err = ret_setDefaultTheme(token, cfg)
 	if err != nil {
-		return err
+		internal.Logger.Error("ret_setDefaultTheme failed: " + err.Error())
+		//return
 	}
 
 	//load assets
