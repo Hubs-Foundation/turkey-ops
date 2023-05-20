@@ -43,7 +43,7 @@ func InitLogger() {
 	// // encoderCfg.FunctionKey = "f"
 
 	zapCfg := &zap.Config{
-		Level:    zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		Level:    AtomLvl,
 		Encoding: "json",
 		EncoderConfig: zapcore.EncoderConfig{
 			FunctionKey:   "func",
