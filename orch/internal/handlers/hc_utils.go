@@ -528,8 +528,6 @@ func hc_updateTier(cfg HCcfg) error {
 		tier = "p0"
 	}
 
-	internal.Logger.Sugar().Infof("%v --> tier: %v (storage: %v, ccu: %v)", cfg.HubId, cfg.Tier, cfg.StorageLimit, cfg.CcuLimit)
-
 	// reousrce quotas, in: {"cpu req", "ram req", "cpu limit", "ram limit"}
 	map_tiers_retCpuRam := map[string][]string{
 		"p0": []string{"250m", "250Mi", "500m", "500Mi"},
@@ -542,6 +540,13 @@ func hc_updateTier(cfg HCcfg) error {
 		"p1": 2,
 		"b1": 3,
 	}
+
+	if _, ok := map_tiers_retPodCnt[cfg.Tier]; !ok {
+		internal.Logger.Error("bad tier: " + cfg.Tier)
+		return errors.New("bad tier: " + cfg.Tier)
+	}
+
+	internal.Logger.Sugar().Infof("%v --> tier: %v (storage: %v, ccu: %v)", cfg.HubId, cfg.Tier, cfg.StorageLimit, cfg.CcuLimit)
 
 	// ### k8s updates
 	// flush envVar to all containers
