@@ -358,7 +358,9 @@ func post_creation_hacks(cfg HCcfg) error {
 	}
 
 	//load assets
-	assetPackUrl := internal.Cfg.HC_INIT_ASSET_PACK
+	p := strings.Split(internal.Cfg.HC_INIT_ASSET_PACK, ".")
+	assetPackUrl := p[0] + "-" + cfg.Tier + "." + p[1]
+	internal.Logger.Debug("loading assetPackUrl: " + assetPackUrl)
 	resp, err := http.Get(assetPackUrl)
 	if err != nil {
 		return err
