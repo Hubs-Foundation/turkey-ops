@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	fmt.Println("init")
 	//inits
 	internal.InitLogger()
 	internal.MakeCfg()
@@ -46,6 +47,8 @@ func main() {
 			}
 		}()
 	}
+	fmt.Println("router")
+
 	router := http.NewServeMux()
 	//public endpoints
 	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)

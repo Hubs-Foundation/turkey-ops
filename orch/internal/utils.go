@@ -76,8 +76,8 @@ func InitLogger() {
 			EncodeDuration: zapcore.MillisDurationEncoder,
 			EncodeCaller:   zapcore.ShortCallerEncoder,
 		},
-		// OutputPaths:      []string{"stdout"},
-		// ErrorOutputPaths: []string{"stderr"},
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
 	}
 
 	// Logger = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderCfg), zapcore.Lock(os.Stdout), AtomLvl), zap.AddCaller())
