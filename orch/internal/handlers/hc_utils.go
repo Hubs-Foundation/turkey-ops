@@ -528,6 +528,8 @@ func hc_updateTier(cfg HCcfg) error {
 		tier = "p0"
 	}
 
+	internal.Logger.Sugar().Infof("%v --> tier: %v (storage: %v, ccu: %v)", cfg.HubId, cfg.Tier, cfg.StorageLimit, cfg.CcuLimit)
+
 	// reousrce quotas, in: {"cpu req", "ram req", "cpu limit", "ram limit"}
 	map_tiers_retCpuRam := map[string][]string{
 		"p0": []string{"250m", "250Mi", "500m", "500Mi"},
