@@ -436,6 +436,10 @@ func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]int
 }
 
 func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
+	if cfg.HubDomain == "" {
+		cfg.HubDomain = internal.Cfg.HubDomain
+	}
+
 	//load default theme file
 	themeBytes, err := ioutil.ReadFile("./_files/hc_assets/theme.json")
 	if err != nil {
@@ -451,10 +455,6 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 		"./_files/hc_assets/CompanyLogo.png":        nil,
 		"./_files/hc_assets/ShortcutIcon.png":       nil,
 		"./_files/hc_assets/SocialMediaCard.png":    nil,
-	}
-
-	if cfg.HubDomain == "" {
-		cfg.HubDomain = internal.Cfg.HubDomain
 	}
 
 	logo_files, err = ret_upload_files(cfg.Subdomain, cfg.HubDomain, logo_files)
@@ -504,6 +504,7 @@ func ret_getAdminToken(cfg HCcfg) ([]byte, error) {
 		Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 	}
 
+	internal.Logger.Sugar().Debugf("ret_getAdminToken with: %v", cfg.UserEmail)
 	tokenReq, _ := http.NewRequest(
 		"POST",
 		"http://ret.hc-"+cfg.HubId+":4001/api-internal/v1/make_auth_token_for_email",
@@ -646,6 +647,10 @@ func hc_updateTier(cfg HCcfg) error {
 	// reset theme for p0 (free) tier
 	if tier == "p0" {
 		internal.Logger.Sugar().Debugf("reset theme for p0/free tier")
+		if cfg.UserEmail == "" {
+			ns, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), "hc-"+cfg.HubId, metav1.GetOptions{})
+			cfg.UserEmail = ns.Annotations["adm"]
+		}
 		token, err := ret_getAdminToken(cfg)
 		if err != nil {
 			return err
