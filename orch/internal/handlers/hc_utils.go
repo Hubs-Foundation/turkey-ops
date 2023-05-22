@@ -376,7 +376,7 @@ func ret_upload_files(subdomain, domain string, files map[string]interface{}) (m
 }
 
 func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]interface{}, err error) {
-	url := "http://" + subdomain + "." + domain + "/api/v1/media"
+	url := "https://" + subdomain + "." + domain + "/api/v1/media"
 
 	// Create the multipart/form-data payload
 	payload := &bytes.Buffer{}
@@ -452,7 +452,12 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 		"./_files/hc_assets/ShortcutIcon.png":       nil,
 		"./_files/hc_assets/SocialMediaCard.png":    nil,
 	}
-	logo_files, err = ret_upload_files("ret", "hc-"+cfg.HubId+":4001", logo_files)
+
+	if cfg.HubDomain == "" {
+		cfg.HubDomain = internal.Cfg.HubDomain
+	}
+
+	logo_files, err = ret_upload_files(cfg.Subdomain, cfg.HubDomain, logo_files)
 	if err != nil {
 		return err
 	}
