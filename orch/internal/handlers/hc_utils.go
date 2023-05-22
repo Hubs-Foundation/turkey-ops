@@ -376,7 +376,7 @@ func ret_upload_files(subdomain, domain string, files map[string]interface{}) (m
 }
 
 func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]interface{}, err error) {
-	url := "https://" + subdomain + "." + domain + "/api/v1/media"
+	url := "http://" + subdomain + "." + domain + "/api/v1/media"
 
 	// Create the multipart/form-data payload
 	payload := &bytes.Buffer{}
