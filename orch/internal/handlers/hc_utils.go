@@ -452,7 +452,7 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 		"./_files/hc_assets/ShortcutIcon.png":       nil,
 		"./_files/hc_assets/SocialMediaCard.png":    nil,
 	}
-	logo_files, err = ret_upload_files("ret", "hc-"+cfg.HubId, logo_files)
+	logo_files, err = ret_upload_files("ret", "hc-"+cfg.HubId+":4001", logo_files)
 	if err != nil {
 		return err
 	}
@@ -615,28 +615,6 @@ func hc_updateTier(cfg HCcfg) error {
 			return err
 		}
 	}
-
-	// reset theme for p0 (free) tier
-	if tier == "p0" {
-		internal.Logger.Sugar().Debugf("reset theme for p0/free tier")
-		token, err := ret_getAdminToken(cfg)
-		if err != nil {
-			return err
-		}
-		ret_setDefaultTheme(token, cfg)
-	}
-
-	// update ns label
-	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	ns.Labels["tier"] = tier
-	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
-
 	//set hpa
 	retHpa, err := internal.Cfg.K8ss_local.ClientSet.AutoscalingV1().HorizontalPodAutoscalers(nsName).Get(context.Background(), "ret-hpa", metav1.GetOptions{})
 	if err != nil {
@@ -649,6 +627,25 @@ func hc_updateTier(cfg HCcfg) error {
 	_, err = internal.Cfg.K8ss_local.ClientSet.AutoscalingV1().HorizontalPodAutoscalers(nsName).Update(context.Background(), retHpa, metav1.UpdateOptions{})
 	if err != nil {
 		return err
+	}
+	// update ns label
+	ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ns.Labels["tier"] = tier
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	// reset theme for p0 (free) tier
+	if tier == "p0" {
+		internal.Logger.Sugar().Debugf("reset theme for p0/free tier")
+		token, err := ret_getAdminToken(cfg)
+		if err != nil {
+			return err
+		}
+		ret_setDefaultTheme(token, cfg)
 	}
 
 	return nil
