@@ -414,7 +414,7 @@ func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]int
 	// 	return nil, fmt.Errorf("failed: %v", err)
 	// }
 
-	resp, _, err := internal.RetryHttpReq(client, req, 30*time.Second)
+	resp, _, err := internal.RetryHttpReq(client, req, 300*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -452,7 +452,7 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 		"./_files/hc_assets/ShortcutIcon.png":       nil,
 		"./_files/hc_assets/SocialMediaCard.png":    nil,
 	}
-	logo_files, err = ret_upload_files(cfg.Subdomain, cfg.HubDomain, logo_files)
+	logo_files, err = ret_upload_files("ret", "hc-"+cfg.HubId, logo_files)
 	if err != nil {
 		return err
 	}
@@ -475,7 +475,7 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 	if err != nil {
 		return err
 	}
-	app_configs_req, err := http.NewRequest("POST", "https://"+cfg.Subdomain+"."+cfg.HubDomain+"/api/v1/app_configs", bytes.NewBuffer(appConfigsJsonBytes))
+	app_configs_req, err := http.NewRequest("POST", "http://ret.hc-"+cfg.HubId+":4001/api/v1/app_configs", bytes.NewBuffer(appConfigsJsonBytes))
 	if err != nil {
 		return err
 	}
