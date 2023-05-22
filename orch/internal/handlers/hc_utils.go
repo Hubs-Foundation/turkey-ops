@@ -480,7 +480,7 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 	if err != nil {
 		return err
 	}
-	app_configs_req, err := http.NewRequest("POST", "https://"+cfg.Subdomain+"."+cfg.HubDomain+"api/v1/app_configs", bytes.NewBuffer(appConfigsJsonBytes))
+	app_configs_req, err := http.NewRequest("POST", "https://"+cfg.Subdomain+"."+cfg.HubDomain+"/api/v1/app_configs", bytes.NewBuffer(appConfigsJsonBytes))
 	if err != nil {
 		return err
 	}
