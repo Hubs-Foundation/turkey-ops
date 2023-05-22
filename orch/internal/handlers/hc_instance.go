@@ -212,16 +212,6 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 
-	// subdomain updates
-	if cfg.Subdomain != "" {
-		go func() {
-			err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
-			if err != nil {
-				internal.Logger.Error("hc_patch_subdomain FAILED: " + err.Error())
-			}
-		}()
-		return "subdomain update started for: " + cfg.HubId, nil
-	}
 	// tier change
 	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
 		go func() {
@@ -239,6 +229,18 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		}()
 		return "tier update started for: " + cfg.HubId, nil
 	}
+
+	// subdomain updates
+	if cfg.Subdomain != "" {
+		go func() {
+			err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
+			if err != nil {
+				internal.Logger.Error("hc_patch_subdomain FAILED: " + err.Error())
+			}
+		}()
+		return "subdomain update started for: " + cfg.HubId, nil
+	}
+
 	return "bad request", fmt.Errorf("bad req -- cfg: %v", cfg)
 }
 
