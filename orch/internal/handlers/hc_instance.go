@@ -215,16 +215,17 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 	// tier change
 	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
 		go func() {
-			err := hc_updateTier(cfg)
-			if err != nil {
-				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
-			}
 			if cfg.Tier == "p0" && cfg.Subdomain != "" {
-				time.Sleep(3 * time.Second)
+				internal.Logger.Sugar().Debugf("hc_updateTier[p0] / hc_patch_subdomain, hub_id: %v, subdomain: %v", cfg.HubId, cfg.Subdomain)
 				err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
 				if err != nil {
 					internal.Logger.Error("hc_updateTier[p0] / hc_patch_subdomain FAILED: " + err.Error())
 				}
+				time.Sleep(3 * time.Second)
+			}
+			err := hc_updateTier(cfg)
+			if err != nil {
+				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
 			}
 		}()
 		return "tier update started for: " + cfg.HubId, nil
