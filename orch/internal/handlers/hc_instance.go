@@ -229,6 +229,13 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 			if err != nil {
 				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
 			}
+			if cfg.Tier == "p0" && cfg.Subdomain != "" {
+				time.Sleep(3 * time.Second)
+				err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
+				if err != nil {
+					internal.Logger.Error("hc_updateTier[p0] / hc_patch_subdomain FAILED: " + err.Error())
+				}
+			}
 		}()
 		return "tier update started for: " + cfg.HubId, nil
 	}
@@ -872,27 +879,13 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 
 			d.Spec.Template.Spec.Containers[0].Env[idx].Value = newSubdomain
 		}
+
+		d.ResourceVersion = ""
 		_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Update(context.Background(), d, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
 	}
-
-	// //rolling restart affect deployments -- reticulum, hubs, and spoke
-	// for _, dName := range []string{"reticulum", "hubs", "spoke"} {
-	// 	d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Get(context.Background(), dName, metav1.GetOptions{})
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	// touch annotation to trigger a restart ... https://github.com/kubernetes/kubectl/blob/release-1.16/pkg/polymorphichelpers/objectrestarter.go#L32
-	// 	d.Spec.Template.ObjectMeta.Annotations = map[string]string{"turkeyorch-reboot-id": base64.RawURLEncoding.EncodeToString(internal.NewUUID())}
-
-	// 	_, err = internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(ns).Update(context.Background(), d, metav1.UpdateOptions{})
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	// ^^^ rolling restart seems to sometimes cause haproxy to take a long time to refresh backend pods
 	pods, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(nsName).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -926,6 +919,8 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		ingress.Annotations["haproxy.org/response-set-header"] = strings.Replace(
 			ingress.Annotations["haproxy.org/response-set-header"],
 			`//`+oldSubdomain+`.`, `//`+Subdomain+`.`, 1)
+
+		ingress.ResourceVersion = ""
 		_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(), &ingress, metav1.UpdateOptions{})
 		if err != nil {
 			return err
@@ -937,6 +932,8 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 		return err
 	}
 	ns.Labels["subdomain"] = Subdomain
+
+	ns.ResourceVersion = ""
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
 	if err != nil {
 		return err

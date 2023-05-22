@@ -49,7 +49,7 @@ func (p *PvtEpEnforcer) Filter(allowedKubeSvcs []string) func(http.Handler) http
 func (p *PvtEpEnforcer) shoudAllow(ip string, allowedKubeSvcs []string) bool {
 
 	if !net.ParseIP(ip).IsPrivate() {
-		GetLogger().Warn("!!! private endpoint accessed by non-private-ip:" + ip)
+		Logger.Warn("!!! private endpoint accessed by non-private-ip:" + ip)
 		return false
 	}
 	// * == allow all internal ips
@@ -93,17 +93,17 @@ func (p *PvtEpEnforcer) StartWatching() error {
 			cache.ResourceEventHandlerFuncs{
 				AddFunc: func(obj interface{}) {
 					ep := obj.(*corev1.Endpoints)
-					GetLogger().Sugar().Debugf("added: %v", ep)
+					Logger.Sugar().Debugf("added: %v", ep)
 					p.refreshEpData(ep.Name+"."+ep.Namespace, ep)
 				},
 				UpdateFunc: func(oldObj, newObj interface{}) {
 					ep := newObj.(*corev1.Endpoints)
-					GetLogger().Sugar().Debugf("updated: %v", ep)
+					Logger.Sugar().Debugf("updated: %v", ep)
 					p.refreshEpData(ep.Name+"."+ep.Namespace, ep)
 				},
 				DeleteFunc: func(obj interface{}) {
 					ep := obj.(*corev1.Endpoints)
-					GetLogger().Sugar().Debugf("deleted: %v", ep)
+					Logger.Sugar().Debugf("deleted: %v", ep)
 					delete(p.epData, ep.Name+"."+ep.Namespace)
 				},
 			},
@@ -121,5 +121,5 @@ func (p *PvtEpEnforcer) refreshEpData(allowedKubeSvc string, ep *corev1.Endpoint
 		}
 	}
 	p.epData[allowedKubeSvc] = ips
-	GetLogger().Sugar().Debugf("refreshed: epData[%v]=%v", allowedKubeSvc, ips)
+	Logger.Sugar().Debugf("refreshed: epData[%v]=%v", allowedKubeSvc, ips)
 }
