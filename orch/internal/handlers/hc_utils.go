@@ -506,7 +506,7 @@ func ret_getAdminToken(cfg HCcfg) ([]byte, error) {
 	)
 	tokenReq.Header.Add("content-type", "application/json")
 	tokenReq.Header.Add("x-ret-dashboard-access-key", internal.Cfg.DASHBOARD_ACCESS_KEY)
-	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 30*time.Second)
+	resp, _, err := internal.RetryHttpReq(_httpClient, tokenReq, 300*time.Second)
 	if err != nil {
 		return nil, err
 	}
