@@ -89,6 +89,21 @@ spec:
           httpGet:
             path: /healthz
             port: 1042
+            scheme: HTTP
+          timeoutSeconds: 15
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 2
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 1042
+            scheme: HTTP
+          initialDelaySeconds: 60
+          timeoutSeconds: 1
+          periodSeconds: 2
+          successThreshold: 5
+          failureThreshold: 5
         env:
         - name: TZ
           value: "Etc/UTC"

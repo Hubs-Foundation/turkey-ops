@@ -570,6 +570,10 @@ spec:
           value: "http://speelycaptor:5000"
         - name: turkeyCfg_STORAGE_QUOTA_GB
           value: "{{.StorageLimit}}"
+        - name: turkeyCfg_tier
+          value: {{.Tier}}
+        - name: TIER
+          value: {{.Tier}}
         # startupProbe:
         #   httpGet:
         #     path: /?skipadmin
@@ -624,6 +628,10 @@ spec:
             secretKeyRef:
               name: configs
               key: PGRST_JWT_SECRET
+        - name: turkeyCfg_tier
+          value: {{.Tier}}
+        - name: TIER
+          value: {{.Tier}}
         resources:
           requests:
             memory: 25Mi
@@ -638,6 +646,10 @@ spec:
               fieldPath: metadata.namespace
         - name: RET_MODE
           value: RET_MODE==will-not-start-turkey-updater
+        - name: turkeyCfg_tier
+          value: {{.Tier}}
+        - name: TIER
+          value: {{.Tier}}
         resources:
           requests:
             memory: 25Mi
