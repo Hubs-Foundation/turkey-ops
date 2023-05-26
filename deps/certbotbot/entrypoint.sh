@@ -9,8 +9,9 @@ function need_new_cert(){
   echo "cert sub: $sub"
   if ! echo $sub | grep -q "$DOMAIN"; then echo "  bad cert sub ($sub)-- need new cert for $DOMAIN"; return 0; fi
   # 3888000 sec == 45 days
-  openssl x509 -checkend 3888000 -noout -in tls.crt;
-  if ! [ $? ]; then echo "expiring -- need new cert";return 0; else return 1; fi
+  chk=$(openssl x509 -checkend 3888000 -noout -in tls.crt);
+  echo $chk
+  if [[ $chk == *"will expire"* ]]; then echo "expiring -- need new cert";return 0; else return 1; fi
 }
 
 function get_new_cert_dns(){
