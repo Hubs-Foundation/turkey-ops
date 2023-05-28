@@ -669,6 +669,7 @@ var HC_instance_getSignedBucketUrl = http.HandlerFunc(func(w http.ResponseWriter
 
 	hubId := r.URL.Query().Get("hub_id")
 	method := r.URL.Query().Get("method")
+	internal.Logger.Sugar().Debugf("hub_id: %v, method: %v", hubId, method)
 
 	url, err := internal.Cfg.Gcps.GCS_makeSignedURL("turkeyfs", "hc-"+hubId+"/*", method)
 	if err != nil {

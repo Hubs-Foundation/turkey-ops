@@ -165,12 +165,12 @@ func (g *GcpSvs) GCS_makeSignedURL(bucketName, objName, method string) (string, 
 	// 	return "", err
 	// }    storageClient, _ := storage.NewClient(ctx)
 
-	url, _ := client.Bucket(bucketName).SignedURL(objName, &storage.SignedURLOptions{
+	url, err := client.Bucket(bucketName).SignedURL(objName, &storage.SignedURLOptions{
 		Method:  method,
 		Expires: exp,
 	})
 
-	return url, nil
+	return url, err
 }
 func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 	cService, err := gkev1.NewService(context.Background())
