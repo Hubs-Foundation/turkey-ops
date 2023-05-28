@@ -660,3 +660,20 @@ func hc_updateTier(cfg HCcfg) error {
 
 	return nil
 }
+
+var HC_instance_getSignedBucketUrl = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/hc_instance/signed_bucket_url" && r.Method != "GET" {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	hubId := r.URL.Query().Get("hub_id")
+	method := r.URL.Query().Get("method")
+
+	url, err := internal.Cfg.Gcps.GCS_makeSignedURL("turkeyfs", "hc-"+hubId+"/*", method)
+	if err != nil {
+		http.Error(w, "err: "+err.Error(), http.StatusInternalServerError)
+	}
+	fmt.Fprint(w, url)
+
+})

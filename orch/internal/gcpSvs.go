@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
@@ -26,6 +27,7 @@ import (
 
 type GcpSvs struct {
 	ProjectId string
+	// SAEmail   string
 }
 
 func NewGcpSvs() (*GcpSvs, error) {
@@ -34,8 +36,18 @@ func NewGcpSvs() (*GcpSvs, error) {
 	if err != nil {
 		return nil, err
 	}
+	// jsonFile, err := os.Open(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer jsonFile.Close()
+	// bytes, _ := ioutil.ReadAll(jsonFile)
+	// m := make(map[string]string)
+	// json.Unmarshal(bytes, &m)
+
 	return &GcpSvs{
 		ProjectId: creds.ProjectID,
+		// SAEmail:   m["client_email"],
 	}, nil
 }
 
@@ -134,6 +146,32 @@ func (g *GcpSvs) GCS_List(bucketName, prefix string) ([]string, error) {
 	return res, nil
 }
 
+func (g *GcpSvs) GCS_makeSignedURL(bucketName, objName, method string) (string, error) {
+	GetLogger().Debug("GCS_makeSignedURL: " + bucketName + ", key: " + objName)
+	client, err := storage.NewClient(context.Background())
+	if err != nil {
+		return "", err
+	}
+
+	exp := time.Now().Add(7 * 24 * time.Hour)
+	// url, err := client.SignedURL(bucketName, objName,
+	// 	&storage.SignedURLOptions{
+	// 		GoogleAccessID: g.SAEmail,
+	// 		Method:         method,
+	// 		Expires:        time.Now().Add(7 * 24 * time.Hour),
+	// 	})
+	// if err != nil {
+	// 	fmt.Printf("Error: %v", err)
+	// 	return "", err
+	// }    storageClient, _ := storage.NewClient(ctx)
+
+	url, _ := client.Bucket(bucketName).SignedURL(objName, &storage.SignedURLOptions{
+		Method:  method,
+		Expires: exp,
+	})
+
+	return url, nil
+}
 func (g *GcpSvs) GetK8sConfigFromGke(gkeName string) (*rest.Config, error) {
 	cService, err := gkev1.NewService(context.Background())
 	if err != nil {
