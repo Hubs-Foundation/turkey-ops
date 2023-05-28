@@ -65,8 +65,8 @@ func main() {
 	// 	// "turkeyauth.turkey-services",
 	// })(handlers.HC_instance))
 
-	router.Handle("/hc_instace", handlers.HC_instance)
-	router.Handle("/hc_instace/signed_bucket_url", handlers.HC_instance_getSignedBucketUrl)
+	router.Handle("/hc_instance", handlers.HC_instance)
+	router.Handle("/hc_instance/signed_bucket_url", handlers.HC_instance_getSignedBucketUrl)
 
 	router.Handle("/", handlers.TurkeyReturnCenter)
 	router.Handle("/turkey-return-center/", handlers.TurkeyReturnCenter)
