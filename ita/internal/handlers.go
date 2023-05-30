@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -233,14 +235,20 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	//storage
 	dst := "/storage"
-
-	err := os.Rename(src, dst)
+	files, err := ioutil.ReadDir(src)
 	if err != nil {
 		Logger.Sugar().Errorf("failed: %v", err)
 		http.Error(w, "failed @ storage: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	for _, file := range files {
+		srcFile := filepath.Join(src, file.Name())
+		dstFile := filepath.Join(dst, file.Name())
+		err := os.Rename(srcFile, dstFile)
+		if err != nil {
+			Logger.Sugar().Errorf("failed: %v", err)
+		}
+	}
 	// db
 	configs, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Get(context.Background(), "configs", metav1.GetOptions{})
 	if err != nil {
