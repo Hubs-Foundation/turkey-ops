@@ -55,11 +55,12 @@ func (fm *featureMan) determineFeatures() {
 
 	if slices.Contains([]string{"pro", "business", "b1"}, cfg.Tier) {
 		fm._features.customDomain = true
+		fm._features.customClient = true
 
-		if cfg.CustomDomain != "" {
-			Logger.Info("customClient enabled -- customDomain: " + cfg.CustomDomain)
-			fm._features.customClient = true
-		}
+		// if cfg.CustomDomain != "" {
+		// 	Logger.Info("customClient enabled -- customDomain: " + cfg.CustomDomain)
+		// 	fm._features.customClient = true
+		// }
 	}
 
 }

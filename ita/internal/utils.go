@@ -742,7 +742,9 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 		return nil, err
 	}
 
-	err = os.MkdirAll("/storage/ita_uploads", os.ModePerm)
+	baseDir := "/storage/ita_uploads"
+
+	err = os.MkdirAll(baseDir, os.ModePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -763,7 +765,7 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 		}
 		//create a timestamp
 		//write the file to the fs
-		dst, err := os.Create("/storage/ita_uploads/" + part.FileName())
+		dst, err := os.Create(baseDir + r.Header.Get("addpath") + "/" + part.FileName())
 		if err != nil {
 			return nil, err
 		}

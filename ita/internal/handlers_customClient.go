@@ -35,6 +35,11 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+
+	if cfg.CustomDomain == "" {
+		http.Error(w, "custom domain is required but not configured", http.StatusBadRequest)
+	}
+
 	app := r.URL.Query().Get("app")
 	if app != "hubs" && app != "spoke" {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
