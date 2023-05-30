@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"os/exec"
 	"sync/atomic"
 	"time"
 
@@ -198,4 +200,64 @@ var Refresh = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, "done")
+})
+
+var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	features := cfg.Features.Get()
+	if !features.customClient || (r.URL.Path != "/upload" && r.URL.Path != "/api/ita/upload") {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	if r.Method == "POST" {
+		_, err := receiveFileFromReqBody(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		reqId := w.Header().Get("X-Request-Id")
+		fmt.Fprintf(w, "done, reqId: %v", reqId)
+	}
+
+})
+
+var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	features := cfg.Features.Get()
+	if !features.customClient || (r.URL.Path != "/restore" && r.URL.Path != "/api/ita/restore") {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	backupName := r.URL.Query().Get("backupName")
+
+	//input validation
+	src := "/storage/ita_upload/" + backupName
+
+	//storage
+	dst := "/storage"
+
+	err := os.Rename(src, dst)
+	if err != nil {
+		Logger.Sugar().Errorf("failed: %v", err)
+		http.Error(w, "failed @ storage: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// db
+	configs, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Get(context.Background(), "configs", metav1.GetOptions{})
+	if err != nil {
+		Logger.Sugar().Errorf("failed: %v", err)
+		http.Error(w, "failed @ getting pgConn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	pgConn := configs.StringData["PGRST_DB_URI"]
+	Logger.Debug("pgConn: " + pgConn)
+	// pgConn := "postgres://user:password@localhost:5432/databaseName"
+	dumpfile := "/path/to/pg_dump.sql"
+	cmd := exec.Command("psql", pgConn, "-f", dumpfile)
+	err = cmd.Run()
+	if err != nil {
+		Logger.Sugar().Errorf("failed: %v", err)
+		http.Error(w, "failed @ db: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 })

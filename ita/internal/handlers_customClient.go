@@ -11,23 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-var Upload = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	features := cfg.Features.Get()
-	if !features.customClient || (r.URL.Path != "/upload" && r.URL.Path != "/api/ita/upload") {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-	if r.Method == "POST" {
-		_, err := receiveFileFromReqBody(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		reqId := w.Header().Get("X-Request-Id")
-		fmt.Fprintf(w, "done, reqId: %v", reqId)
-	}
-
-})
-
 //curl -X PATCH ita:6000/deploy?app=hubs?file=<name-of-the-file-under-/storage/ita-uploads>
 var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	features := cfg.Features.Get()

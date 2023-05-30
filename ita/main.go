@@ -47,21 +47,25 @@ func main() {
 	router.Handle("/zaplvl", internal.Atom)
 	router.Handle("/healthz", internal.Healthz())
 	router.Handle("/hub_status", internal.HubInfraStatus())
+
 	//private api endpoints
+	router.Handle("/letsencrypt-account-collect", internal.LetsencryptAccountCollect)
+	router.Handle("/dump-worklog", internal.DumpWorkLog)
+
 	router.Handle("/refresh", internal.Refresh)
 	router.Handle("/upload", internal.Upload)
 	router.Handle("/deploy", internal.Deploy)
 	router.Handle("/undeploy", internal.Undeploy)
 	router.Handle("/custom-domain", internal.CustomDomain)
-	router.Handle("/letsencrypt-account-collect", internal.LetsencryptAccountCollect)
-	router.Handle("/dump-worklog", internal.DumpWorkLog)
+	router.Handle("/restore", internal.Restore)
 
 	//turkeyauth protected public api endpoints
-	router.Handle("/api/ita/refresh", chk_hat_hdr()(internal.Refresh))
-	router.Handle("/api/ita/upload", chk_hat_hdr()(internal.Upload))
-	router.Handle("/api/ita/deploy", chk_hat_hdr()(internal.Deploy))
-	router.Handle("/api/ita/undeploy", chk_hat_hdr()(internal.Undeploy))
-	router.Handle("/api/ita/custom-domain", chk_hat_hdr()(internal.CustomDomain))
+	router.Handle("/api/ita/refresh", chk_tat_hdr()(internal.Refresh))
+	router.Handle("/api/ita/upload", chk_tat_hdr()(internal.Upload))
+	router.Handle("/api/ita/deploy", chk_tat_hdr()(internal.Deploy))
+	router.Handle("/api/ita/undeploy", chk_tat_hdr()(internal.Undeploy))
+	router.Handle("/api/ita/custom-domain", chk_tat_hdr()(internal.CustomDomain))
+	router.Handle("/api/ita/restore", chk_tat_hdr()(internal.Restore))
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
@@ -69,7 +73,7 @@ func main() {
 }
 
 //check turkeyauthtoken header
-func chk_hat_hdr() func(http.Handler) http.Handler {
+func chk_tat_hdr() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			internal.Logger.Debug("~~~~~~~~~~~chk_TatHdr~~~~~~~~~~~")
