@@ -229,7 +229,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	backupName := r.URL.Query().Get("backupName")
 
 	//input validation
-	src := "/storage/ita_upload/" + backupName
+	src := "/storage/ita_uploads/" + backupName
 
 	//storage
 	dst := "/storage"
