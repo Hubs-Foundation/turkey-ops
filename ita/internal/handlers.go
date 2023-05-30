@@ -231,7 +231,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	backupName := r.URL.Query().Get("backupName")
 
 	//input validation
-	src := "/storage/ita_uploads/" + backupName
+	src := "/storage/ita_uploads/" + backupName + "/storage"
 
 	//storage
 	dst := "/storage"
@@ -259,7 +259,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	pgConn := configs.StringData["PGRST_DB_URI"]
 	Logger.Debug("pgConn: " + pgConn)
 	// pgConn := "postgres://user:password@localhost:5432/databaseName"
-	dumpfile := "/path/to/pg_dump.sql"
+	dumpfile := "/storage/pg_dump.sql"
 	cmd := exec.Command("psql", pgConn, "-f", dumpfile)
 	err = cmd.Run()
 	if err != nil {
