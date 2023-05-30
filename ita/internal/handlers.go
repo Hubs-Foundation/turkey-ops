@@ -256,16 +256,17 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed @ getting pgConn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	pgConn := string(configs.Data["PGRST_DB_URI"])
+	// pgConn := string(configs.Data["PGRST_DB_URI"])
+	pgConn := "postgres://" + string(configs.Data["DB_USER"]) + ":" + string(configs.Data["DB_PASS"]) + "@" + string(configs.Data["DB_HOST_T"]) + "/" + string(configs.Data["DB_NAME"])
 
-	Logger.Debug("pgConn: " + pgConn)
+	Logger.Debug("using pgConn: " + pgConn)
 	// pgConn := "postgres://user:password@localhost:5432/databaseName"
 	dumpfile := "/storage/pg_dump.sql"
 	cmd := exec.Command("psql", pgConn, "-f", dumpfile)
-	err = cmd.Run()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		Logger.Sugar().Errorf("failed: %v", err)
-		http.Error(w, "failed @ db: "+err.Error(), http.StatusInternalServerError)
+		Logger.Sugar().Errorf("failed: %v, %v", err, out)
+		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 		return
 	}
 
