@@ -256,7 +256,8 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed @ getting pgConn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	pgConn := configs.StringData["PGRST_DB_URI"]
+	pgConn := string(configs.Data["PGRST_DB_URI"])
+
 	Logger.Debug("pgConn: " + pgConn)
 	// pgConn := "postgres://user:password@localhost:5432/databaseName"
 	dumpfile := "/storage/pg_dump.sql"
