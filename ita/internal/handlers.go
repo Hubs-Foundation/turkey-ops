@@ -276,13 +276,14 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Logger.Debug("dropStorageCmd.out: " + string(out))
-	dropDbCmd := exec.Command("psql", pgConn, "-c", "drop schema ret0 cascade")
-	out, err = dropDbCmd.CombinedOutput()
+	dropRet0Cmd := exec.Command("psql", pgConn, "-c", "drop schema ret0 cascade")
+	out, err = dropRet0Cmd.CombinedOutput()
 	if err != nil {
-		Logger.Sugar().Errorf("failed(dropDbCmd): %v, %s", err, out)
-		http.Error(w, "failed(dropDbCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+		Logger.Sugar().Errorf("failed(dropRet0Cmd): %v, %s", err, out)
+		http.Error(w, "failed(dropRet0Cmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 		return
 	}
+	Logger.Debug("dropRet0Cmd.out: " + string(out))
 	// }
 
 	//storage
