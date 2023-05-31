@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -276,28 +279,28 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//storage
-	// files, err := ioutil.ReadDir(src)
-	// if err != nil {
-	// 	Logger.Sugar().Errorf("failed: %v", err)
-	// 	http.Error(w, "failed @ storage: "+err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
-	// for _, file := range files {
-	// 	srcFile := filepath.Join(src, file.Name())
-	// 	dstFile := filepath.Join(dst, file.Name())
-	// 	err := os.Rename(srcFile, dstFile)
-	// 	if err != nil {
-	// 		Logger.Sugar().Errorf("failed: %v", err)
-	// 	}
-	// }
-	storageCmd := exec.Command("mv", "-f", src+"/*", dst)
-	out, err = storageCmd.CombinedOutput()
+	files, err := ioutil.ReadDir(src)
 	if err != nil {
-		Logger.Sugar().Errorf("failed (storageCmd): %v, %s", err, out)
-		http.Error(w, "failed (storageCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+		Logger.Sugar().Errorf("failed: %v", err)
+		http.Error(w, "failed @ storage: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	Logger.Debug("storageCmd.out: " + string(out))
+	for _, file := range files {
+		srcFile := filepath.Join(src, file.Name())
+		dstFile := filepath.Join(dst, file.Name())
+		err := os.Rename(srcFile, dstFile)
+		if err != nil {
+			Logger.Sugar().Errorf("failed: %v", err)
+		}
+	}
+	// storageCmd := exec.Command("mv", "-f", src+"/*", dst)
+	// out, err = storageCmd.CombinedOutput()
+	// if err != nil {
+	// 	Logger.Sugar().Errorf("failed (storageCmd): %v, %s", err, out)
+	// 	http.Error(w, "failed (storageCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+	// 	return
+	// }
+	// Logger.Debug("storageCmd.out: " + string(out))
 
 	//refresh ret pods
 	err = killPods("app=reticulum")
