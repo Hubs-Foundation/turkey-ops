@@ -284,7 +284,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 		Logger.Sugar().Errorf("failed: %v", err)
 	// 	}
 	// }
-	storageCmd := exec.Command("mv", "-rf", src, dst)
+	storageCmd := exec.Command("mv", "-f", src, dst)
 	if out, err := storageCmd.CombinedOutput(); err != nil {
 		Logger.Sugar().Errorf("failed: %v, %v", err, out)
 		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)

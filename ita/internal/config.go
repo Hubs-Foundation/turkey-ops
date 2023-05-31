@@ -113,7 +113,7 @@ func MakeCfg() {
 
 	cfg.SubDomain, err = NS_getLabel("subdomain")
 	if err != nil {
-		Logger.Error("failed to get subdomain with NS_getLabel: " + err.Error())
+		Logger.Panic("failed to get subdomain with NS_getLabel: " + err.Error())
 	}
 
 	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
