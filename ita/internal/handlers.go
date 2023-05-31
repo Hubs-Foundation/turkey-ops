@@ -312,4 +312,6 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Fprintf(w, "restored: "+backupName)
+
 })
