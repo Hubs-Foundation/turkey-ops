@@ -252,6 +252,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	//ret config --  secret_key_base = "<PHX_KEY>" and secret_key = "<GUARDIAN_KEY>"
 	if PHX_KEY != "" && GUARDIAN_KEY != "" {
+		configs.StringData = make(map[string]string)
 		configs.StringData["PHX_KEY"] = PHX_KEY
 		configs.StringData["GUARDIAN_KEY"] = GUARDIAN_KEY
 		_, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Update(context.Background(), configs, metav1.UpdateOptions{})
@@ -289,8 +290,5 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 		return
 	}
-
-	//ret config --  secret_key_base = "<PHX_KEY>" and secret_key = "<GUARDIAN_KEY>"
-	configs.StringData["PHX_KEY"] = PHX_KEY
 
 })
