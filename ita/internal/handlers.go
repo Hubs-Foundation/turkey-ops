@@ -4,11 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -235,20 +232,27 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	//storage
 	dst := "/storage"
-	files, err := ioutil.ReadDir(src)
-	if err != nil {
-		Logger.Sugar().Errorf("failed: %v", err)
-		http.Error(w, "failed @ storage: "+err.Error(), http.StatusInternalServerError)
+	// files, err := ioutil.ReadDir(src)
+	// if err != nil {
+	// 	Logger.Sugar().Errorf("failed: %v", err)
+	// 	http.Error(w, "failed @ storage: "+err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+	// for _, file := range files {
+	// 	srcFile := filepath.Join(src, file.Name())
+	// 	dstFile := filepath.Join(dst, file.Name())
+	// 	err := os.Rename(srcFile, dstFile)
+	// 	if err != nil {
+	// 		Logger.Sugar().Errorf("failed: %v", err)
+	// 	}
+	// }
+	storageCmd := exec.Command("mv", "-rf", src, dst)
+	if out, err := storageCmd.CombinedOutput(); err != nil {
+		Logger.Sugar().Errorf("failed: %v, %v", err, out)
+		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 		return
 	}
-	for _, file := range files {
-		srcFile := filepath.Join(src, file.Name())
-		dstFile := filepath.Join(dst, file.Name())
-		err := os.Rename(srcFile, dstFile)
-		if err != nil {
-			Logger.Sugar().Errorf("failed: %v", err)
-		}
-	}
+
 	// db
 	configs, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Get(context.Background(), "configs", metav1.GetOptions{})
 	if err != nil {
@@ -256,18 +260,15 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed @ getting pgConn: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// pgConn := string(configs.Data["PGRST_DB_URI"])
 	pgConn := "postgres://" + string(configs.Data["DB_USER"]) + ":" + string(configs.Data["DB_PASS"]) + "@" + string(configs.Data["DB_HOST_T"]) + "/" + string(configs.Data["DB_NAME"])
-
-	Logger.Debug("using pgConn: " + pgConn)
-	// pgConn := "postgres://user:password@localhost:5432/databaseName"
 	dumpfile := "/storage/pg_dump.sql"
-	cmd := exec.Command("psql", pgConn, "-f", dumpfile)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
+	dbCmd := exec.Command("psql", pgConn, "-f", dumpfile)
+	if out, err := dbCmd.CombinedOutput(); err != nil {
 		Logger.Sugar().Errorf("failed: %v, %v", err, out)
 		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 		return
 	}
+
+	//ret config updates --  secret_key_base = "<PHX_KEY>" and secret_key_base = "<PHX_KEY>"
 
 })
