@@ -257,7 +257,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	Logger.Debug("dbCmd.out: " + string(out))
 
 	//ret config --  secret_key_base = "<PHX_KEY>" and secret_key = "<GUARDIAN_KEY>"
-	if PHX_KEY != "" && GUARDIAN_KEY != "" {
+	if PHX_KEY != string(configs.Data["PHX_KEY"]) || GUARDIAN_KEY != string(configs.Data["GUARDIAN_KEY"]) {
 		configs.StringData = make(map[string]string)
 		configs.StringData["PHX_KEY"] = PHX_KEY
 		configs.StringData["GUARDIAN_KEY"] = GUARDIAN_KEY
@@ -268,14 +268,21 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// new ret secret makes existing files useless
-		cleanupCmd := exec.Command("rm", "-rf", dst+"/owned/")
-		out, err := cleanupCmd.CombinedOutput()
+		dropStorageCmd := exec.Command("rm", "-rf", dst+"/owned/")
+		out, err := dropStorageCmd.CombinedOutput()
 		if err != nil {
-			Logger.Sugar().Errorf("failed(cleanupCmd): %v, %s", err, out)
-			http.Error(w, "failed(cleanupCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+			Logger.Sugar().Errorf("failed(dropStorageCmd): %v, %s", err, out)
+			http.Error(w, "failed(dropStorageCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 			return
 		}
-		Logger.Debug("cleanupCmd.out: " + string(out))
+		Logger.Debug("dropStorageCmd.out: " + string(out))
+		dropDbCmd := exec.Command("psql", pgConn, "-c", "\"drop schema ret0 cascade\"")
+		out, err = dropDbCmd.CombinedOutput()
+		if err != nil {
+			Logger.Sugar().Errorf("failed(dropDbCmd): %v, %s", err, out)
+			http.Error(w, "failed(dropDbCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	//storage
