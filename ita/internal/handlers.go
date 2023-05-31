@@ -242,13 +242,15 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pgConn := "postgres://" + string(configs.Data["DB_USER"]) + ":" + string(configs.Data["DB_PASS"]) + "@" + string(configs.Data["DB_HOST_T"]) + "/" + string(configs.Data["DB_NAME"])
-	dumpfile := "/storage/pg_dump.sql"
+	dumpfile := src + "/pg_dump.sql"
 	dbCmd := exec.Command("psql", pgConn, "-f", dumpfile)
-	if out, err := dbCmd.CombinedOutput(); err != nil {
+	out, err := dbCmd.CombinedOutput()
+	if err != nil {
 		Logger.Sugar().Errorf("failed: %v, %v", err, out)
 		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 		return
 	}
+	Logger.Debug("dbCmd.out: " + string(out))
 
 	//ret config --  secret_key_base = "<PHX_KEY>" and secret_key = "<GUARDIAN_KEY>"
 	if PHX_KEY != "" && GUARDIAN_KEY != "" {
@@ -262,11 +264,13 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		cleanupCmd := exec.Command("rm", "-rf", dst+"/*")
-		if out, err := cleanupCmd.CombinedOutput(); err != nil {
+		out, err := cleanupCmd.CombinedOutput()
+		if err != nil {
 			Logger.Sugar().Errorf("failed(cleanupCmd): %v, %v", err, out)
 			http.Error(w, "failed(cleanupCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 			return
 		}
+		Logger.Debug("cleanupCmd.out: " + string(out))
 	}
 
 	//storage
@@ -285,9 +289,18 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 	}
 	// }
 	storageCmd := exec.Command("mv", "-f", src, dst)
-	if out, err := storageCmd.CombinedOutput(); err != nil {
-		Logger.Sugar().Errorf("failed: %v, %v", err, out)
-		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+	out, err = storageCmd.CombinedOutput()
+	if err != nil {
+		Logger.Sugar().Errorf("failed (storageCmd): %v, %v", err, out)
+		http.Error(w, "failed (storageCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+		return
+	}
+	Logger.Debug("cleanupCmd.out: " + string(out))
+
+	//refresh ret pods
+	err = killPods("app=reticulum")
+	if err != nil {
+		http.Error(w, "failed to refresh reticulum pods: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
