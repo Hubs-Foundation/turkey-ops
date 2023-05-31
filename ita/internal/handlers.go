@@ -276,7 +276,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		Logger.Debug("dropStorageCmd.out: " + string(out))
-		dropDbCmd := exec.Command("psql", pgConn, "-c", "\"drop schema ret0 cascade\"")
+		dropDbCmd := exec.Command("psql", pgConn, "-c", "drop schema ret0 cascade")
 		out, err = dropDbCmd.CombinedOutput()
 		if err != nil {
 			Logger.Sugar().Errorf("failed(dropDbCmd): %v, %s", err, out)
