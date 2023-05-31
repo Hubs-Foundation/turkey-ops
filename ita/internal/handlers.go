@@ -257,10 +257,32 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// db
+	//		drop
+	pgConn := "postgres://" + string(configs.Data["DB_USER"]) + ":" + string(configs.Data["DB_PASS"]) + "@" + string(configs.Data["DB_HOST_T"]) + "/" + string(configs.Data["DB_NAME"])
+	dropRet0Cmd := exec.Command("psql", pgConn, "-c", "drop schema ret0 cascade")
+	out, err := dropRet0Cmd.CombinedOutput()
+	if err != nil {
+		Logger.Sugar().Errorf("failed(dropRet0Cmd): %v, %s", err, out)
+		http.Error(w, "failed(dropRet0Cmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+		return
+	}
+	Logger.Debug("dropRet0Cmd.out: " + string(out))
+	//		restore
+	dumpfile := src + "/pg_dump.sql"
+	dbCmd := exec.Command("psql", pgConn, "-f", dumpfile)
+	out, err = dbCmd.CombinedOutput()
+	if err != nil {
+		Logger.Sugar().Errorf("failed: %v, %v", err, out)
+		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+		return
+	}
+	Logger.Debug("dbCmd.out: " + string(out))
+
 	// storage
 	//		drop
 	dropStorageCmd := exec.Command("rm", "-rf", dst+"/owned/")
-	out, err := dropStorageCmd.CombinedOutput()
+	out, err = dropStorageCmd.CombinedOutput()
 	if err != nil {
 		Logger.Sugar().Errorf("failed(dropStorageCmd): %v, %s", err, out)
 		http.Error(w, "failed(dropStorageCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
@@ -282,28 +304,6 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			Logger.Sugar().Errorf("failed: %v", err)
 		}
 	}
-
-	// db
-	//		drop
-	pgConn := "postgres://" + string(configs.Data["DB_USER"]) + ":" + string(configs.Data["DB_PASS"]) + "@" + string(configs.Data["DB_HOST_T"]) + "/" + string(configs.Data["DB_NAME"])
-	dropRet0Cmd := exec.Command("psql", pgConn, "-c", "drop schema ret0 cascade")
-	out, err = dropRet0Cmd.CombinedOutput()
-	if err != nil {
-		Logger.Sugar().Errorf("failed(dropRet0Cmd): %v, %s", err, out)
-		http.Error(w, "failed(dropRet0Cmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
-		return
-	}
-	Logger.Debug("dropRet0Cmd.out: " + string(out))
-	//		restore
-	dumpfile := src + "/pg_dump.sql"
-	dbCmd := exec.Command("psql", pgConn, "-f", dumpfile)
-	out, err = dbCmd.CombinedOutput()
-	if err != nil {
-		Logger.Sugar().Errorf("failed: %v, %v", err, out)
-		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
-		return
-	}
-	Logger.Debug("dbCmd.out: " + string(out))
 
 	//refresh ret pods
 	err = killPods("app=reticulum")
