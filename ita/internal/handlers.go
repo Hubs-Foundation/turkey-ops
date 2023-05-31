@@ -232,6 +232,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	dst := "/storage"
 	PHX_KEY := r.Header.Get("secret_key_base")
 	GUARDIAN_KEY := r.Header.Get("secret_key")
+	Logger.Sugar().Debugf("PHX_KEY: %v, GUARDIAN_KEY: %v", PHX_KEY, GUARDIAN_KEY)
 	//does src contains all the files we need?
 
 	// db
@@ -263,10 +264,10 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "failed @ updating ret config:: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		cleanupCmd := exec.Command("rm", "-rf", dst+"/*")
+		cleanupCmd := exec.Command("rm", "-rf", dst+"/owned/")
 		out, err := cleanupCmd.CombinedOutput()
 		if err != nil {
-			Logger.Sugar().Errorf("failed(cleanupCmd): %v, %v", err, out)
+			Logger.Sugar().Errorf("failed(cleanupCmd): %v, %s", err, out)
 			http.Error(w, "failed(cleanupCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 			return
 		}
@@ -288,14 +289,14 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 		Logger.Sugar().Errorf("failed: %v", err)
 	// 	}
 	// }
-	storageCmd := exec.Command("mv", "-f", src, dst)
+	storageCmd := exec.Command("mv", "-f", src+"/*", dst+"/")
 	out, err = storageCmd.CombinedOutput()
 	if err != nil {
-		Logger.Sugar().Errorf("failed (storageCmd): %v, %v", err, out)
+		Logger.Sugar().Errorf("failed (storageCmd): %v, %s", err, out)
 		http.Error(w, "failed (storageCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
 		return
 	}
-	Logger.Debug("cleanupCmd.out: " + string(out))
+	Logger.Debug("storageCmd.out: " + string(out))
 
 	//refresh ret pods
 	err = killPods("app=reticulum")
