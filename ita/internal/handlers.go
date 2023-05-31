@@ -264,6 +264,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "failed @ updating ret config:: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		// new ret secret makes existing files useless
 		cleanupCmd := exec.Command("rm", "-rf", dst+"/owned/")
 		out, err := cleanupCmd.CombinedOutput()
 		if err != nil {
@@ -289,7 +290,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	// 		Logger.Sugar().Errorf("failed: %v", err)
 	// 	}
 	// }
-	storageCmd := exec.Command("mv", "-f", src+"/*", dst+"/")
+	storageCmd := exec.Command("mv", "-f", src+"/*", dst)
 	out, err = storageCmd.CombinedOutput()
 	if err != nil {
 		Logger.Sugar().Errorf("failed (storageCmd): %v, %s", err, out)
