@@ -227,11 +227,48 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	backupName := r.URL.Query().Get("backupName")
 
-	//input validation
+	//preps
 	src := "/storage/ita_uploads/" + backupName + "/storage"
+	dst := "/storage"
+	PHX_KEY := r.Header.Get("secret_key_base")
+	GUARDIAN_KEY := r.Header.Get("secret_key")
+	//does src contains all the files we need?
+
+	// db
+	configs, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Get(context.Background(), "configs", metav1.GetOptions{})
+	if err != nil {
+		Logger.Sugar().Errorf("failed: %v", err)
+		http.Error(w, "failed @ getting pgConn: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	pgConn := "postgres://" + string(configs.Data["DB_USER"]) + ":" + string(configs.Data["DB_PASS"]) + "@" + string(configs.Data["DB_HOST_T"]) + "/" + string(configs.Data["DB_NAME"])
+	dumpfile := "/storage/pg_dump.sql"
+	dbCmd := exec.Command("psql", pgConn, "-f", dumpfile)
+	if out, err := dbCmd.CombinedOutput(); err != nil {
+		Logger.Sugar().Errorf("failed: %v, %v", err, out)
+		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+		return
+	}
+
+	//ret config --  secret_key_base = "<PHX_KEY>" and secret_key = "<GUARDIAN_KEY>"
+	if PHX_KEY != "" && GUARDIAN_KEY != "" {
+		configs.StringData["PHX_KEY"] = PHX_KEY
+		configs.StringData["GUARDIAN_KEY"] = GUARDIAN_KEY
+		_, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Update(context.Background(), configs, metav1.UpdateOptions{})
+		if err != nil {
+			Logger.Sugar().Errorf("failed updating ret config: %v", err)
+			http.Error(w, "failed @ updating ret config:: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		cleanupCmd := exec.Command("rm", "-rf", dst+"/*")
+		if out, err := cleanupCmd.CombinedOutput(); err != nil {
+			Logger.Sugar().Errorf("failed(cleanupCmd): %v, %v", err, out)
+			http.Error(w, "failed(cleanupCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+			return
+		}
+	}
 
 	//storage
-	dst := "/storage"
 	// files, err := ioutil.ReadDir(src)
 	// if err != nil {
 	// 	Logger.Sugar().Errorf("failed: %v", err)
@@ -253,22 +290,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// db
-	configs, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Get(context.Background(), "configs", metav1.GetOptions{})
-	if err != nil {
-		Logger.Sugar().Errorf("failed: %v", err)
-		http.Error(w, "failed @ getting pgConn: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	pgConn := "postgres://" + string(configs.Data["DB_USER"]) + ":" + string(configs.Data["DB_PASS"]) + "@" + string(configs.Data["DB_HOST_T"]) + "/" + string(configs.Data["DB_NAME"])
-	dumpfile := "/storage/pg_dump.sql"
-	dbCmd := exec.Command("psql", pgConn, "-f", dumpfile)
-	if out, err := dbCmd.CombinedOutput(); err != nil {
-		Logger.Sugar().Errorf("failed: %v, %v", err, out)
-		http.Error(w, "failed @ db. <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
-		return
-	}
-
-	//ret config updates --  secret_key_base = "<PHX_KEY>" and secret_key_base = "<PHX_KEY>"
+	//ret config --  secret_key_base = "<PHX_KEY>" and secret_key = "<GUARDIAN_KEY>"
+	configs.StringData["PHX_KEY"] = PHX_KEY
 
 })
