@@ -256,34 +256,34 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}
 	Logger.Debug("dbCmd.out: " + string(out))
 
-	//ret config --  secret_key_base = "<PHX_KEY>" and secret_key = "<GUARDIAN_KEY>"
-	if PHX_KEY != string(configs.Data["PHX_KEY"]) || GUARDIAN_KEY != string(configs.Data["GUARDIAN_KEY"]) {
-		configs.StringData = make(map[string]string)
-		configs.StringData["PHX_KEY"] = PHX_KEY
-		configs.StringData["GUARDIAN_KEY"] = GUARDIAN_KEY
-		_, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Update(context.Background(), configs, metav1.UpdateOptions{})
-		if err != nil {
-			Logger.Sugar().Errorf("failed updating ret config: %v", err)
-			http.Error(w, "failed @ updating ret config:: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		// new ret secret makes existing files useless
-		dropStorageCmd := exec.Command("rm", "-rf", dst+"/owned/")
-		out, err := dropStorageCmd.CombinedOutput()
-		if err != nil {
-			Logger.Sugar().Errorf("failed(dropStorageCmd): %v, %s", err, out)
-			http.Error(w, "failed(dropStorageCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
-			return
-		}
-		Logger.Debug("dropStorageCmd.out: " + string(out))
-		dropDbCmd := exec.Command("psql", pgConn, "-c", "drop schema ret0 cascade")
-		out, err = dropDbCmd.CombinedOutput()
-		if err != nil {
-			Logger.Sugar().Errorf("failed(dropDbCmd): %v, %s", err, out)
-			http.Error(w, "failed(dropDbCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
-			return
-		}
+	//ret config --  secret_key_base <=> "<PHX_KEY>" and secret_key <=> "<GUARDIAN_KEY>"
+	// if PHX_KEY != string(configs.Data["PHX_KEY"]) || GUARDIAN_KEY != string(configs.Data["GUARDIAN_KEY"]) {
+	configs.StringData = make(map[string]string)
+	configs.StringData["PHX_KEY"] = PHX_KEY
+	configs.StringData["GUARDIAN_KEY"] = GUARDIAN_KEY
+	_, err = cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Update(context.Background(), configs, metav1.UpdateOptions{})
+	if err != nil {
+		Logger.Sugar().Errorf("failed updating ret config: %v", err)
+		http.Error(w, "failed @ updating ret config:: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
+	// new ret secret makes existing files useless
+	dropStorageCmd := exec.Command("rm", "-rf", dst+"/owned/")
+	out, err = dropStorageCmd.CombinedOutput()
+	if err != nil {
+		Logger.Sugar().Errorf("failed(dropStorageCmd): %v, %s", err, out)
+		http.Error(w, "failed(dropStorageCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+		return
+	}
+	Logger.Debug("dropStorageCmd.out: " + string(out))
+	dropDbCmd := exec.Command("psql", pgConn, "-c", "drop schema ret0 cascade")
+	out, err = dropDbCmd.CombinedOutput()
+	if err != nil {
+		Logger.Sugar().Errorf("failed(dropDbCmd): %v, %s", err, out)
+		http.Error(w, "failed(dropDbCmd). <err>: "+err.Error()+", <output>: "+string(out), http.StatusInternalServerError)
+		return
+	}
+	// }
 
 	//storage
 	files, err := ioutil.ReadDir(src)
