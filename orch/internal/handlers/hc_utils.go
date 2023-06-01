@@ -577,6 +577,21 @@ func hc_updateTier(cfg HCcfg) error {
 				internal.Logger.Sugar().Debugf("adding: TIER=%v", tier)
 				c.Env = append(c.Env, corev1.EnvVar{Name: "TIER", Value: tier})
 			}
+
+			    //ignore storage
+					hasTurkeyCfg_ignore_quota_gb := false
+					for idx, envVar := range c.Env {
+							if envVar.Name == "turkeyCfg_ignore_quota_gb" {
+									internal.Logger.Sugar().Debugf("updating turkeyCfg_ignore_quota_gb to: true")
+									c.Env[idx].Value = true
+									hasTurkeyCfg_ignore_quote_gb = true
+							}
+					}
+					if !hasTurkeyCfg_ignore_quota_gb {
+							internal.Logger.Sugar().Debugf("adding: turkeyCfg_ignore_quota_gb=%v", true)
+							c.Env = append(c.Env, corev1.EnvVar{Name: "turkeyCfg_ignore_quota_gb", Value: true})
+					}
+					
 			//turkeyCfg_tier
 			hasTurkeyCfg_tier := false
 			for idx, envVar := range c.Env {
