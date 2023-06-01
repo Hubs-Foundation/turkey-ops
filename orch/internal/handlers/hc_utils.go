@@ -538,13 +538,13 @@ func hc_updateTier(cfg HCcfg) error {
 	map_tiers_retCpuRam := map[string][]string{
 		"p0": []string{"250m", "250Mi", "500m", "500Mi"},
 		"p1": []string{"250m", "250Mi", "500m", "500Mi"},
-		"b1": []string{"1500m", "1500Mi", "2500m", "2500Mi"},
+		"b1": []string{"2500m", "2500Mi", "3500m", "3500Mi"},
 	}
 	// pod counts
 	map_tiers_retPodCnt := map[string]int{
 		"p0": 1,
 		"p1": 2,
-		"b1": 3,
+		"b1": 2,
 	}
 
 	if _, ok := map_tiers_retPodCnt[cfg.Tier]; !ok {
