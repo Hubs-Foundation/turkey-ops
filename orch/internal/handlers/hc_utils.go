@@ -653,7 +653,10 @@ func hc_updateTier(cfg HCcfg) error {
 		if err != nil {
 			return err
 		}
-		ret_setDefaultTheme(token, cfg)
+		err = ret_setDefaultTheme(token, cfg)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("ret_setDefaultTheme failed for: %v, %v, %v ", cfg.AccountId, cfg.Subdomain, cfg.UserEmail)
+		}
 	}
 
 	return nil
