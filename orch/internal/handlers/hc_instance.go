@@ -317,16 +317,23 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 	// internal.Logger.Debug("&#128231; --- admin email: " + hcCfg.UserEmail)
 
 	// #5 create db
-	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+hcCfg.DBname+"\"")
-	if err != nil {
+	createDB_tries := 3
+	for {
+		_, err = internal.PgxPool.Exec(context.Background(), "create database \""+hcCfg.DBname+"\"")
+		if err == nil {
+			break
+		}
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			internal.Logger.Debug("db already exists: " + hcCfg.DBname)
+			break
+		}
+		if createDB_tries > 0 {
+			internal.Logger.Sugar().Warnf("failed @ create db (%v), tries left: %v", err, createDB_tries)
 		} else {
-			internal.Logger.Error("error @ create hub db: " + err.Error())
-			return errors.New("error @ create hub db: " + err.Error())
+			return errors.New("error @ create db: " + err.Error())
 		}
 	}
-	internal.Logger.Debug("&#128024; --- db created: " + hcCfg.DBname)
+	internal.Logger.Debug("&#128024; --- db : " + hcCfg.DBname)
 
 	go func() {
 		// temporary api-automation hacks for until this is properly implemented in reticulum

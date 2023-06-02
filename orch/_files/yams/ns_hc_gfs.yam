@@ -405,7 +405,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate: 
-      maxUnavailable: 0
+      maxUnavailable: 1
       maxSurge: 1
   revisionHistoryLimit: 1
   template:
@@ -705,7 +705,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate: 
-      maxUnavailable: 0
+      maxUnavailable: 1
       maxSurge: 1
   template:
     metadata:
@@ -792,7 +792,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate: 
-      maxUnavailable: 0
+      maxUnavailable: 1
       maxSurge: 1
   template:
     metadata:
@@ -881,7 +881,7 @@ spec:
 #   strategy:
 #     type: RollingUpdate
 #     rollingUpdate: 
-#       maxUnavailable: 0
+#       maxUnavailable: 1
 #       maxSurge: 1
 #   template:
 #     metadata:
