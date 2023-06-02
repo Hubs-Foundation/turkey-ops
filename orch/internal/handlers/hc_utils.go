@@ -414,15 +414,13 @@ func ret_upload_file(subdomain, domain, filePath string) (respMap map[string]int
 	// 	return nil, fmt.Errorf("failed: %v", err)
 	// }
 
-	resp, _, err := internal.RetryHttpReq(client, req, 300*time.Second)
+	resp, _, err := internal.RetryHttpReq(client, req, 600*time.Second)
 	if err != nil {
 		return nil, err
 	}
 
 	defer resp.Body.Close()
-	internal.Logger.Sugar().Debugf("resp.code: %v", resp.StatusCode)
-	// bodyBytes, _ := io.ReadAll(resp.Body)
-	// fmt.Println("bodyBytes", string(bodyBytes))
+	internal.Logger.Sugar().Debugf("resp.code: %v (%v, %v)", resp.StatusCode, filePath, subdomain)
 
 	decoder := json.NewDecoder(resp.Body)
 
@@ -488,7 +486,7 @@ func ret_setDefaultTheme(token []byte, cfg HCcfg) error {
 	app_configs_req.Header.Add("authorization", "bearer "+string(token))
 	client := &http.Client{}
 
-	app_configs_resp, _, err := internal.RetryHttpReq(client, app_configs_req, 30*time.Second)
+	app_configs_resp, _, err := internal.RetryHttpReq(client, app_configs_req, 600*time.Second)
 	if err != nil {
 		return err
 	}
