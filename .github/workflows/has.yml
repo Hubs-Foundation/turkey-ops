@@ -1,0 +1,17 @@
+name: has
+on:
+  push:
+    paths:
+    - 'has/**'
+    - '.github/workflows/has.yml'
+  workflow_dispatch:
+
+jobs:
+  turkeyGitops:
+    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
+    with:
+      codePath: has
+      registry: mozillareality
+      dockerfile: Dockerfile
+    secrets:
+      DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
