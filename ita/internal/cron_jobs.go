@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"bytes"
 	"context"
 	"crypto/x509"
 	"encoding/json"
@@ -9,7 +8,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,11 +20,13 @@ func Cronjob_dummy(interval string) {
 }
 
 var pauseJob_idleCnt time.Duration
+var pausing bool
 
 func Cronjob_pauseHC(interval time.Duration) {
-	Logger.Debug("hello from Cronjob_pauseJob")
+	if pausing {
+		return
+	}
 	//get ret_ccu
-
 	retccu, err := getRetCcu()
 	if err != nil {
 		Logger.Error("retCcuReq err: " + err.Error())
@@ -34,28 +34,17 @@ func Cronjob_pauseHC(interval time.Duration) {
 	}
 	Logger.Sugar().Debugf("retCcu: %v", retccu)
 	// resp, err := http.Client{Timeout:5*time.Millisecond, }
-
 	if retccu != 0 {
 		pauseJob_idleCnt = 0
 	} else {
 		pauseJob_idleCnt += interval
-		Logger.Sugar().Debugf("updated pauseJob_idle: %v, time to pause: %v", pauseJob_idleCnt, (cfg.FreeTierIdleMax - pauseJob_idleCnt))
+		Logger.Sugar().Debugf("new pauseJob_idle: %v, time to pause: %v", pauseJob_idleCnt, (cfg.FreeTierIdleMax - pauseJob_idleCnt))
 		if pauseJob_idleCnt >= cfg.FreeTierIdleMax {
 			//pause it
 			Logger.Info("Cronjob_pauseHC --- pausing -- " + cfg.PodNS)
-			pauseReqBody, _ := json.Marshal(map[string]string{
-				"hub_id": strings.TrimPrefix(cfg.PodNS, "hc-"),
-			})
-			pauseReq, err := http.NewRequest("PATCH", "https://"+cfg.turkeyorchHost+"/hc_instance?status=down", bytes.NewBuffer(pauseReqBody))
-			if err != nil {
-				Logger.Error("pauseReq err: " + err.Error())
-				return
-			}
-			_, err = _httpClient.Do(pauseReq)
-			if err != nil {
-				Logger.Error("pauseReq err: " + err.Error())
-				return
-			}
+
+			HC_Pause()
+			pausing = true
 		}
 	}
 

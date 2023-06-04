@@ -143,6 +143,7 @@ var ClusterIps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 
 })
+
 var ClusterIpsList = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/z/meta/cluster-ips/list" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -314,4 +315,20 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, "restored: "+backupName)
 
+})
+
+var Z_Pause = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := HC_Pause()
+
+	fmt.Fprintf(w, err.Error())
+})
+
+var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := HC_Resume()
+	fmt.Fprintf(w, err.Error())
+})
+
+var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	http.Error(w, "pausing", http.StatusOK)
 })

@@ -75,7 +75,7 @@ func MakeCfg() {
 		Logger.Error("POD_NS not set")
 	}
 	if strings.HasPrefix(cfg.PodNS, "hc-") {
-		cfg.Tier = getEnv("TIER", "free")
+		cfg.Tier = getEnv("TIER", "p0")
 	} else {
 		cfg.Tier = "N/A"
 	}
@@ -122,7 +122,7 @@ func MakeCfg() {
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {
 		Logger.Sugar().Warnf("failed to parse (FreeTierIdleMax): %v, falling back to default value", os.Getenv("FreeTierIdleMax"))
-		cfg.FreeTierIdleMax = 30 * time.Minute
+		cfg.FreeTierIdleMax = 4 * time.Hour
 	}
 	Logger.Sugar().Infof("cfg.turkeyorchHost: %v", cfg.turkeyorchHost)
 	Logger.Sugar().Infof("cfg.FreeTierIdleMax: %v", cfg.FreeTierIdleMax)

@@ -792,3 +792,126 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 
 	return files, nil
 }
+
+func pointerOfInt32(i int) *int32 {
+	int32i := int32(i)
+	return &int32i
+}
+
+func HC_Pause() error {
+
+	//back up current ingresses
+	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	igs_bak, err := json.Marshal(*igs)
+	if err != nil {
+		Logger.Error("failed to marshal ingresses: " + err.Error())
+	}
+	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Create(context.Background(),
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "igs_bak"},
+			BinaryData: map[string][]byte{"igs_bak": igs_bak},
+		}, metav1.CreateOptions{})
+	if err != nil {
+		Logger.Error("failed to create ig_bak configmap:" + err.Error())
+	}
+	//delete current ingresses
+	for _, ig := range igs.Items {
+		err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Delete(context.Background(), ig.Name, metav1.DeleteOptions{})
+		if err != nil {
+			Logger.Error("failed to delete ingresses" + err.Error())
+		}
+	}
+	//create pausing ingress
+	pathType := networkingv1.PathTypePrefix
+	_, err = cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Create(context.Background(),
+		&networkingv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "pausing",
+				Annotations: map[string]string{"kubernetes.io/ingress.class": "haproxy"},
+			},
+			Spec: networkingv1.IngressSpec{
+				Rules: []networkingv1.IngressRule{
+					{
+						Host: cfg.SubDomain + "." + cfg.HubDomain,
+						IngressRuleValue: networkingv1.IngressRuleValue{
+							HTTP: &networkingv1.HTTPIngressRuleValue{
+								Paths: []networkingv1.HTTPIngressPath{
+									{
+										Path:     "/",
+										PathType: &pathType,
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: "ita",
+												Port: networkingv1.ServiceBackendPort{
+													Number: 6000,
+												}}}}}}}}}},
+		}, metav1.CreateOptions{})
+	if err != nil {
+		Logger.Error("failed to create pausing ingresses" + err.Error())
+	}
+
+	// scale down deployments, except ita
+	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		Logger.Error("failed to list deployments: " + err.Error())
+		return err
+	}
+	for _, d := range ds.Items {
+		if d.Name == "ita" {
+			continue
+		}
+		d.Spec.Replicas = pointerOfInt32(0)
+		_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), &d, metav1.UpdateOptions{})
+		if err != nil {
+			Logger.Sugar().Errorf("failed to scale down %v: %v"+d.Name, err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
+func HC_Resume() error {
+
+	// scale back deployments
+	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		Logger.Error("failed to list deployments: " + err.Error())
+		return err
+	}
+	for _, d := range ds.Items {
+		if d.Name == "ita" {
+			continue
+		}
+		d.Spec.Replicas = pointerOfInt32(1)
+		_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), &d, metav1.UpdateOptions{})
+		if err != nil {
+			Logger.Sugar().Errorf("failed to scale back %v: %v"+d.Name, err.Error())
+			return err
+		}
+	}
+	// delete pausing ingress
+	err = cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Delete(context.Background(), "pausing", metav1.DeleteOptions{})
+	if err != nil {
+		Logger.Error("failed to delete pausing ingresses" + err.Error())
+	}
+	//restore ig_bak
+	igs_bak_cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "igs_bak", metav1.GetOptions{})
+	if err != nil {
+		Logger.Error("failed to get ig_bak configmap:" + err.Error())
+	}
+	igs_bak := igs_bak_cm.BinaryData["igs_bak"]
+	var igs networkingv1.IngressList
+	err = json.Unmarshal(igs_bak, &igs)
+	if err != nil {
+		Logger.Sugar().Errorf("failed to unmarshal igs_bak: %v", err)
+	}
+	for _, ig := range igs.Items {
+		_, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Create(context.Background(), &ig, metav1.CreateOptions{})
+		if err != nil {
+			Logger.Sugar().Errorf("failed to restore ig_bak: %v", err)
+		}
+	}
+
+	return nil
+}

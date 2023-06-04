@@ -3,6 +3,7 @@ package main
 import (
 	"main/internal"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -18,14 +19,20 @@ func main() {
 	//#############################################
 	if internal.GetCfg().PodNS == "turkey-services" {
 		cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
-
 		cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_publishTurkeyBuildReport)
 		cron_1m.Start()
+
 		cron_15m := internal.NewCron("cron_15m", 15*time.Minute)
 		cron_15m.Load("cleanupFailedPods", internal.Cronjob_cleanupFailedPods)
 		cron_15m.Load("SurveyStreamNodes", internal.Cronjob_SurveyStreamNodes)
-
 		cron_15m.Start()
+	}
+
+	if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
+		if internal.GetCfg().Tier == "p0" {
+			hc_cron_1m := internal.NewCron("cron_1h", 1*time.Minute)
+			hc_cron_1m.Load("Cronjob_pauseHC", internal.Cronjob_pauseHC)
+		}
 	}
 
 	//#############################################
@@ -36,7 +43,9 @@ func main() {
 	//legacy(dummy) ita endpoints
 	router.Handle("/admin-info", internal.Ita_admin_info)
 	router.Handle("/configs/reticulum/ps", internal.Ita_cfg_ret_ps)
+
 	//public api endpoints
+	router.Handle("/", internal.Root_Pausing)
 	router.Handle("/z/meta/cluster-ips", internal.ClusterIps)
 	router.Handle("/z/meta/cluster-ips/list", internal.ClusterIpsList)
 
@@ -58,6 +67,9 @@ func main() {
 	router.Handle("/undeploy", internal.Undeploy)
 	router.Handle("/custom-domain", internal.CustomDomain)
 	router.Handle("/restore", internal.Restore)
+
+	router.Handle("/z/pause", internal.Z_Pause)
+	router.Handle("/z/resume", internal.Z_Resume)
 
 	//turkeyauth protected public api endpoints
 	router.Handle("/api/ita/refresh", chk_tat_hdr()(internal.Refresh))
