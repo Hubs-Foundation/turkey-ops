@@ -907,6 +907,7 @@ func HC_Resume() error {
 		Logger.Sugar().Errorf("failed to unmarshal igsbak: %v", err)
 	}
 	for _, ig := range igs.Items {
+		ig.ResourceVersion = ""
 		_, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Create(context.Background(), &ig, metav1.CreateOptions{})
 		if err != nil {
 			Logger.Sugar().Errorf("failed to restore ig_bak: %v", err)
