@@ -320,15 +320,10 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 var Z_Pause = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	err := HC_Pause()
 
-	fmt.Fprintf(w, err.Error())
+	fmt.Fprintf(w, "err: %v", err)
 })
 
 var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	err := HC_Resume()
-	fmt.Fprintf(w, err.Error())
-})
-
-var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-	http.Error(w, "pausing", http.StatusOK)
+	fmt.Fprintf(w, "err: %v", err)
 })

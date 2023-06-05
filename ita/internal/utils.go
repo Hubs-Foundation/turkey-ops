@@ -802,14 +802,14 @@ func HC_Pause() error {
 
 	//back up current ingresses
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
-	igs_bak, err := json.Marshal(*igs)
+	igsbak, err := json.Marshal(*igs)
 	if err != nil {
 		Logger.Error("failed to marshal ingresses: " + err.Error())
 	}
 	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Create(context.Background(),
 		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: "igs_bak"},
-			BinaryData: map[string][]byte{"igs_bak": igs_bak},
+			ObjectMeta: metav1.ObjectMeta{Name: "igsbak"},
+			BinaryData: map[string][]byte{"igsbak": igsbak},
 		}, metav1.CreateOptions{})
 	if err != nil {
 		Logger.Error("failed to create ig_bak configmap:" + err.Error())
@@ -896,15 +896,15 @@ func HC_Resume() error {
 		Logger.Error("failed to delete pausing ingresses" + err.Error())
 	}
 	//restore ig_bak
-	igs_bak_cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "igs_bak", metav1.GetOptions{})
+	igsbak_cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "igsbak", metav1.GetOptions{})
 	if err != nil {
 		Logger.Error("failed to get ig_bak configmap:" + err.Error())
 	}
-	igs_bak := igs_bak_cm.BinaryData["igs_bak"]
+	igsbak := igsbak_cm.BinaryData["igsbak"]
 	var igs networkingv1.IngressList
-	err = json.Unmarshal(igs_bak, &igs)
+	err = json.Unmarshal(igsbak, &igs)
 	if err != nil {
-		Logger.Sugar().Errorf("failed to unmarshal igs_bak: %v", err)
+		Logger.Sugar().Errorf("failed to unmarshal igsbak: %v", err)
 	}
 	for _, ig := range igs.Items {
 		_, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Create(context.Background(), &ig, metav1.CreateOptions{})

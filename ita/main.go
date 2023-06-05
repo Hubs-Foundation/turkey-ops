@@ -30,8 +30,9 @@ func main() {
 
 	if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
 		if internal.GetCfg().Tier == "p0" {
-			hc_cron_1m := internal.NewCron("cron_1h", 1*time.Minute)
+			hc_cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
 			hc_cron_1m.Load("Cronjob_pauseHC", internal.Cronjob_pauseHC)
+			hc_cron_1m.Start()
 		}
 	}
 
