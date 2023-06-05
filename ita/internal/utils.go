@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"go.uber.org/zap"
@@ -887,8 +888,13 @@ func HC_Pause() error {
 	return nil
 }
 
-func HC_Resume() error {
+var resuming = int32(0)
 
+func HC_Resume() error {
+	if resuming != 0 {
+		return errors.New("not yet")
+	}
+	atomic.StoreInt32(&resuming, 1)
 	// scale back deployments
 	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -947,6 +953,11 @@ func HC_Resume() error {
 			Logger.Sugar().Errorf("failed to restore ig_bak: %v", err)
 		}
 	}
+
+	go func() {
+		time.Sleep(15 * time.Minute)
+		atomic.StoreInt32(&resuming, 0)
+	}()
 
 	return nil
 }
