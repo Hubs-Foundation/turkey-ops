@@ -11,29 +11,29 @@ run printf "subjectAltName=DNS:turkeyorch,DNS:*.turkeyorch,DNS:turkeyorch.turkey
 run openssl x509 -req -extfile f -days 36500 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out cert.pem
 
 from mozillareality/hubs:stable-latest as hubs
-ENV turkeyCfg_thumbnail_server="nearspark.reticulum.io"
-ENV turkeyCfg_base_assets_path="https://{{.Subdomain}}.assets.{{.Domain}}/hubs/"
-ENV turkeyCfg_non_cors_proxy_domains="{{.Subdomain}}.{{.Domain}},{{.Subdomain}}.assets.{{.Domain}}"
-ENV turkeyCfg_reticulum_server="{{.Subdomain}}.{{.HubDomain}}"
-ENV turkeyCfg_cors_proxy_server="hubs-proxy.com"
-ENV turkeyCfg_shortlink_domain="{{.Subdomain}}.{{.HubDomain}}"
-ENV turkeyCfg_tier="{{.Tier}}"
-ENV turkeyCfg_sentry_dsn="foobar"
 run sed -i '/nginx/d' run.sh
-run sh run.sh
+run turkeyCfg_thumbnail_server="nearspark\.reticulum\.io" \
+    turkeyCfg_base_assets_path="https://{{\.Subdomain}}\.assets\.{{\.Domain}}/hubs/" \
+    turkeyCfg_non_cors_proxy_domains="{{\.Subdomain}}\.{{\.Domain}},{{\.Subdomain}}\.assets\.{{\.Domain}}" \
+    turkeyCfg_reticulum_server="{{\.Subdomain}}\.{{\.HubDomain}}" \
+    turkeyCfg_cors_proxy_server="hubs-proxy\.com" \
+    turkeyCfg_shortlink_domain="{{\.Subdomain}}\.{{\.HubDomain}}" \
+    turkeyCfg_tier="{{\.Tier}}" \
+    turkeyCfg_sentry_dsn="foobar" \
+    bash run.sh || true
 
 from mozillareality/spoke:stable-latest as spoke
-ENV turkeyCfg_thumbnail_server="nearspark.reticulum.io"
-ENV turkeyCfg_base_assets_path="https://{{.Subdomain}}.assets.{{.Domain}}/hubs/"
-ENV turkeyCfg_non_cors_proxy_domains="{{.Subdomain}}.{{.Domain}},{{.Subdomain}}.assets.{{.Domain}}"
-ENV turkeyCfg_reticulum_server="{{.Subdomain}}.{{.HubDomain}}"
-ENV turkeyCfg_cors_proxy_server="hubs-proxy.com"
-ENV turkeyCfg_shortlink_domain="{{.Subdomain}}.{{.HubDomain}}"
-ENV turkeyCfg_tier="{{.Tier}}"
-ENV turkeyCfg_is_moz="false"
-ENV turkeyCfg_sentry_dsn="foobar"
 run sed -i '/nginx/d' run.sh
-run sh run.sh
+run turkeyCfg_thumbnail_server="nearspark\.reticulum\.io" \
+    turkeyCfg_base_assets_path="https://{{\.Subdomain}}\.assets\.{{\.Domain}}/hubs/" \
+    turkeyCfg_non_cors_proxy_domains="{{\.Subdomain}}\.{{\.Domain}},{{\.Subdomain}}\.assets\.{{\.Domain}}" \
+    turkeyCfg_reticulum_server="{{\.Subdomain}}\.{{\.HubDomain}}" \
+    turkeyCfg_cors_proxy_server="hubs-proxy\.com" \
+    turkeyCfg_shortlink_domain="{{\.Subdomain}}\.{{\.HubDomain}}" \
+    turkeyCfg_tier="{{\.Tier}}" \
+    turkeyCfg_sentry_dsn="foobar" \
+    turkeyCfg_is_moz = "false" \
+    bash run.sh || true
 
 from alpine:latest
 run apk add curl terraform
