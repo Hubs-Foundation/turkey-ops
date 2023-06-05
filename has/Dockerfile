@@ -20,7 +20,7 @@ ENV turkeyCfg_shortlink_domain="{{.Subdomain}}.{{.HubDomain}}"
 ENV turkeyCfg_tier="{{.Tier}}"
 ENV turkeyCfg_sentry_dsn="foobar"
 run sed -i '/nginx/d' run.sh
-run run.sh
+run bash run.sh
 
 from mozillareality/spoke:stable-latest as spoke
 ENV turkeyCfg_thumbnail_server="nearspark.reticulum.io"
@@ -33,7 +33,7 @@ ENV turkeyCfg_tier="{{.Tier}}"
 ENV turkeyCfg_is_moz="false"
 ENV turkeyCfg_sentry_dsn="foobar"
 run sed -i '/nginx/d' run.sh
-run run.sh
+run bash run.sh
 
 from alpine:latest
 run apk add curl terraform
