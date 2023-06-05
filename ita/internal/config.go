@@ -123,6 +123,9 @@ func MakeCfg() {
 	if err != nil {
 		Logger.Sugar().Warnf("failed to parse (FreeTierIdleMax): %v, falling back to default value", os.Getenv("FreeTierIdleMax"))
 		cfg.FreeTierIdleMax = 24 * time.Hour
+		if strings.HasPrefix(cfg.HubDomain, "dev.") {
+			cfg.FreeTierIdleMax = 15 * time.Minute
+		}
 	}
 	Logger.Sugar().Infof("cfg.turkeyorchHost: %v", cfg.turkeyorchHost)
 	Logger.Sugar().Infof("cfg.FreeTierIdleMax: %v", cfg.FreeTierIdleMax)
