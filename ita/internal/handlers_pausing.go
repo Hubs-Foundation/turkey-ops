@@ -42,8 +42,8 @@ var pausing_html = `
 		var clickCount = 0;
 		document.getElementById('duckPic').addEventListener('click', function() {
 			clickCount++;
-			if (clickCount == 5) {
-				// Replace with your GET request URL
+			if (clickCount >= 5) {
+				document.getElementById('pausingText').innerText = "resuming, this should take just a few minutes";
 				fetch('/z/resume') 
 				.then(response => response.json())
 				.then(data => console.log(data))

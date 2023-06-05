@@ -806,14 +806,19 @@ func HC_Pause() error {
 	if err != nil {
 		Logger.Error("failed to marshal ingresses: " + err.Error())
 	}
-	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Create(context.Background(),
-		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: "igsbak"},
-			BinaryData: map[string][]byte{"igsbak": igsbak},
-		}, metav1.CreateOptions{})
-	if err != nil {
-		Logger.Error("failed to create ig_bak configmap:" + err.Error())
+
+	igsbak_cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "igsbak"},
+		BinaryData: map[string][]byte{"igsbak": igsbak},
 	}
+	_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Create(context.Background(), igsbak_cm, metav1.CreateOptions{})
+	if err != nil {
+		_, err = cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Update(context.Background(), igsbak_cm, metav1.UpdateOptions{})
+		if err != nil {
+			Logger.Error("failed to create/update ig_bak configmap:" + err.Error())
+		}
+	}
+
 	//delete current ingresses
 	for _, ig := range igs.Items {
 		err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Delete(context.Background(), ig.Name, metav1.DeleteOptions{})
@@ -906,6 +911,24 @@ func HC_Resume() error {
 	if err != nil {
 		Logger.Error("failed to delete pausing ingresses" + err.Error())
 	}
+
+	//wait for ret pod
+	ret_readyReplicaCnt := 0
+	ttl := 5 * time.Minute
+	for ret_readyReplicaCnt < 1 && ttl > 0 {
+		ret_d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
+		if err != nil {
+			Logger.Sugar().Errorf("failed to get reticulum deployment in ns %v", cfg.PodNS)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		ret_readyReplicaCnt = int(ret_d.Status.ReadyReplicas)
+		Logger.Sugar().Debugf("waiting for ret, ttl: %v", ttl)
+		time.Sleep(15 * time.Second)
+		ttl -= 15 * time.Second
+	}
+	Logger.Debug("ret's ready")
+
 	//restore ig_bak
 	igsbak_cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "igsbak", metav1.GetOptions{})
 	if err != nil {
