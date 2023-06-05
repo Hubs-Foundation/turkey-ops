@@ -15,6 +15,6 @@ run openssl x509 -req -extfile f -days 36500 -in server.csr -CA ca.crt -CAkey ca
 from alpine:latest
 run apk update
 run apk add curl postgresql
-COPY --from=0 /app /app
+COPY --from=0 /app/. /app/.
 copy --from=certr /certs .
 ENTRYPOINT ["/app/main"]
