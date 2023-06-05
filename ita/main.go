@@ -47,6 +47,7 @@ func main() {
 
 	//public api endpoints
 	router.Handle("/", internal.Root_Pausing)
+	router.Handle("/z/dummy", internal.Z_dummy)
 	router.Handle("/z/meta/cluster-ips", internal.ClusterIps)
 	router.Handle("/z/meta/cluster-ips/list", internal.ClusterIpsList)
 

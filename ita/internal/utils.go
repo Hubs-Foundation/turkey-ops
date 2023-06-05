@@ -822,7 +822,8 @@ func HC_Pause() error {
 		}
 	}
 	//create pausing ingress
-	pathType := networkingv1.PathTypePrefix
+	pathType_exact := networkingv1.PathTypeExact
+	pathType_prefix := networkingv1.PathTypePrefix
 	_, err = cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Create(context.Background(),
 		&networkingv1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
@@ -838,13 +839,23 @@ func HC_Pause() error {
 								Paths: []networkingv1.HTTPIngressPath{
 									{
 										Path:     "/",
-										PathType: &pathType,
+										PathType: &pathType_exact,
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{
 												Name: "ita",
 												Port: networkingv1.ServiceBackendPort{
 													Number: 6000,
-												}}}}}}}}}},
+												}}}},
+									{
+										Path:     "/z/resume",
+										PathType: &pathType_prefix,
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: "ita",
+												Port: networkingv1.ServiceBackendPort{
+													Number: 6000,
+												}}}},
+								}}}}}},
 		}, metav1.CreateOptions{})
 	if err != nil {
 		Logger.Error("failed to create pausing ingresses" + err.Error())
