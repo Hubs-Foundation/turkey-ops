@@ -30,29 +30,18 @@
 			clickCount++;
 			if (clickCount >= 5 && !resuming) {
 				resuming = true
-				fetch('/z/resume', {
-                method: 'PUT',
-                headers: {
-                    // 'Content-Type': 'application/json',
-                    // 'Authorization': 'Bearer your-token' (if needed)
-                },
-                body: JSON.stringify({
-                    // Your request body here
-                })
-            }).then(response => response.json())
+				fetch('/z/resume', {method: 'PUT'}).then(response => response.json())
 				.then(data => console.log(data))
 				.catch(error => console.error('Error:', error));
 			}
             setInterval(function() {
-                fetch('/')
+                fetch('/z/resume', {method: 'PUT'})
                 .then(response => response.text())
                 .then(data => {                
-                    // document.getElementById('pausingText').innerText = "resuming, this should take just a few minutes";
                     document.getElementById('pausingText').innerText = data;
-                    console.log(data)
                 })
                 .catch(error => console.error('Error:', error));
-            }, 15000); // 10000 milliseconds = 10 seconds
+            }, 3000); // milliseconds
 		});
 
 

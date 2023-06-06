@@ -43,7 +43,7 @@ var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "something went wrong -- take this to support: reqId=%v", w.Header().Get("X-Request-Id"))
 		}
 
-		Logger.Sugar().Debugf("resuming: %v", _resuming_status)
+		Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
 
 		if _resuming_status == 0 {
 			fmt.Fprint(w, "this hubs' paused, click the duck to try to unpause it")
@@ -149,11 +149,11 @@ func HC_Pause() error {
 var _resuming_status = int32(0)
 
 func HC_Resume() error {
-	Logger.Sugar().Debugf("resuming=%v", _resuming_status)
+	Logger.Sugar().Debugf("_resuming_status=%v", _resuming_status)
 	if _resuming_status != 0 {
 		return nil
 	}
-	Logger.Sugar().Debugf("resuming in progress, ")
+	Logger.Sugar().Debugf("resuming in progress, _resuming_status=%v", _resuming_status)
 	atomic.StoreInt32(&_resuming_status, -1)
 	// scale back deployments
 	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
