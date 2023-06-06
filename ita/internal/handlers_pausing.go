@@ -43,17 +43,17 @@ var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "something went wrong -- take this to support: reqId=%v", w.Header().Get("X-Request-Id"))
 		}
 
-		Logger.Sugar().Debugf("resuming: %v", resuming)
+		Logger.Sugar().Debugf("resuming: %v", _resuming_status)
 
-		if resuming == 0 {
+		if _resuming_status == 0 {
 			fmt.Fprint(w, "this hubs' paused, click the duck to try to unpause it")
 			return
 		}
-		if resuming < 0 {
+		if _resuming_status < 0 {
 			fmt.Fprintf(w, "resuming, this can take a few minutes")
 			return
 		}
-		fmt.Fprintf(w, "not ready yet, try again in %v min", (resuming / 60))
+		fmt.Fprintf(w, "not ready yet, try again in %v min", (_resuming_status / 60))
 	}
 })
 
@@ -146,13 +146,15 @@ func HC_Pause() error {
 	return nil
 }
 
-var resuming = int32(0)
+var _resuming_status = int32(0)
 
 func HC_Resume() error {
-	if resuming != 0 {
+	Logger.Sugar().Debugf("resuming=%v", _resuming_status)
+	if _resuming_status != 0 {
 		return nil
 	}
-	atomic.StoreInt32(&resuming, -1)
+	Logger.Sugar().Debugf("resuming in progress, ")
+	atomic.StoreInt32(&_resuming_status, -1)
 	// scale back deployments
 	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -217,9 +219,9 @@ func HC_Resume() error {
 		for cooldown > 0 {
 			time.Sleep(11 * time.Second)
 			cooldown -= 11
-			atomic.StoreInt32(&resuming, int32(cooldown))
+			atomic.StoreInt32(&_resuming_status, int32(cooldown))
 		}
-		atomic.StoreInt32(&resuming, 0)
+		atomic.StoreInt32(&_resuming_status, 0)
 	}()
 
 	return nil
