@@ -47,6 +47,7 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			//status report during HC_Resume(), incl cooldown period
 			for {
 				Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
+				time.Sleep(3 * time.Second)
 				if _resuming_status == 0 {
 					continue
 				}
