@@ -317,17 +317,6 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 })
 
-var Z_Pause = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	err := HC_Pause()
-
-	fmt.Fprintf(w, "err: %v", err)
-})
-
-var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	err := HC_Resume()
-	fmt.Fprintf(w, "err: %v", err)
-})
-
 var Z_dummy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "req: %v, rAdr: %v, xff: %v", w.Header().Get("X-Request-Id"), r.RemoteAddr, r.Header["X-Forwarded_for"])
 })
