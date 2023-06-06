@@ -37,13 +37,13 @@
 		});
         setInterval(function() {
             if (!resuming) {return}
-            fetch('/z/resume', {method: 'PUT'})
+            fetch('/z/resume')
             .then(response => response.text())
             .then(data => {                
                 document.getElementById('pausingText').innerText = data;
             })
             .catch(error => console.error('Error:', error));
-        }, 3000); // milliseconds
+        }, 11000); // milliseconds
 
 
 	</script>
