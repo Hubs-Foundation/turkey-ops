@@ -46,7 +46,7 @@
 		});
 
         setInterval(function() {
-            fetch('/z/resume')
+            fetch('/z/resume', {method: 'PUT'})
             .then(response => response.text())
             .then(data => {                
 				// document.getElementById('pausingText').innerText = "resuming, this should take just a few minutes";
