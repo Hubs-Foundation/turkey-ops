@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	cloud.google.com/go/storage v1.10.0
+	github.com/gorilla/websocket v1.4.2
 	go.uber.org/zap v1.19.1
 	k8s.io/api v0.22.1
 	k8s.io/apimachinery v0.22.1

@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -17,6 +16,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gorilla/websocket"
+
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,42 +27,46 @@ var captchaSolve = int32(111)
 
 var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	//websocket
 	if strings.HasSuffix(r.URL.Path, "/websocket") {
-		hj, ok := w.(http.Hijacker)
-		if !ok {
-			http.Error(w, "", http.StatusInternalServerError)
-			return
+		upgrader := websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
 		}
-		conn, _, err := hj.Hijack()
+		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
-			Logger.Debug(err.Error())
+			Logger.Error("failed to upgrade: " + err.Error())
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
 		defer conn.Close()
-		fmt.Fprint(conn, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n")
-
 		go func() {
 			rand.Seed(time.Now().UnixNano())
 			for {
 				randomNumber := rand.Intn(100)
-				msg := fmt.Sprintf("Random number: %d", randomNumber)
-				fmt.Fprintf(conn, "%s\n", msg)
+				err := conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Random number: %d", randomNumber)))
+				if err != nil {
+					Logger.Debug("err @ conn.WriteMessage:" + err.Error())
+					break
+				}
 				time.Sleep(10 * time.Second)
 			}
 		}()
 
-		scanner := bufio.NewScanner(conn)
-		for scanner.Scan() {
-			text := scanner.Text()
-			if strings.TrimSpace(text) == "" {
-				continue
+		for {
+			mt, message, err := conn.ReadMessage()
+			if err != nil {
+				Logger.Debug("err @ conn.ReadMessage:" + err.Error())
+				break
 			}
-			fmt.Fprintf(conn, "Echo: %s\n", text)
-		}
 
-		return
+			Logger.Debug("recv: " + string(message))
+
+			err = conn.WriteMessage(mt, message)
+			if err != nil {
+				Logger.Debug("err @ conn.WriteMessage:" + err.Error())
+				break
+			}
+		}
 	}
 
 	switch r.Method {
