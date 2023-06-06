@@ -29,8 +29,8 @@ func Cronjob_pauseHC(interval time.Duration) {
 	//get ret_ccu
 	retccu, err := getRetCcu()
 	if err != nil {
-		Logger.Error("retCcuReq err: " + err.Error())
-		return
+		Logger.Sugar().Debugf("retCcuReq err (%v), using retccu=1", err.Error())
+		retccu = 1
 	}
 	Logger.Sugar().Debugf("retCcu: %v", retccu)
 	// resp, err := http.Client{Timeout:5*time.Millisecond, }
