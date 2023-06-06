@@ -215,8 +215,8 @@ func HC_Resume() error {
 
 		cooldown := 3600
 		for cooldown > 0 {
-			time.Sleep(1 * time.Second)
-			cooldown -= 1
+			time.Sleep(11 * time.Second)
+			cooldown -= 11
 			atomic.StoreInt32(&resuming, int32(cooldown))
 		}
 		atomic.StoreInt32(&resuming, 0)
