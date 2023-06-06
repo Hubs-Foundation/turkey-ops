@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -40,15 +41,31 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		}
 		defer conn.Close()
 		go func() {
-			rand.Seed(time.Now().UnixNano())
+			// rand.Seed(time.Now().UnixNano())
 			for {
-				randomNumber := rand.Intn(100)
-				err := conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("roll: %d", randomNumber)))
+				if _resuming_status != 0 {
+					continue
+				}
+				time.Sleep(11 * time.Second)
+				// randomNumber := rand.Intn(100)
+				// sendMsg:= fmt.Sprintf("roll: %d", randomNumber)
+				sendMsg := fmt.Sprintf("not ready yet, try again in %v min", (_resuming_status / 60))
+				if _resuming_status == 0 {
+					// sendMsg = "slide to fix the ducks orintation"
+					sendMsg = "press any key to unpause"
+					return
+				}
+				if _resuming_status < 0 {
+					fmt.Fprintf(w, "loading...this can take a few minutes")
+					return
+				}
+				fmt.Fprintf(w, "Ability is not ready yet, cooldown left %v min", (_resuming_status / 60))
+
+				err := conn.WriteMessage(websocket.TextMessage, []byte(sendMsg))
 				if err != nil {
 					Logger.Debug("err @ conn.WriteMessage:" + err.Error())
 					break
 				}
-				time.Sleep(11 * time.Second)
 			}
 		}()
 
@@ -58,8 +75,11 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				Logger.Debug("err @ conn.ReadMessage:" + err.Error())
 				break
 			}
-
-			Logger.Debug("recv: " + string(message))
+			strMessage := string(message)
+			Logger.Debug("recv: " + string(strMessage))
+			if strings.HasPrefix(strMessage, "keyCode:") && _resuming_status == 0 {
+				HC_Resume()
+			}
 
 			err = conn.WriteMessage(mt, message)
 			if err != nil {
@@ -220,14 +240,18 @@ func HC_Pause() error {
 }
 
 var _resuming_status = int32(0)
+var reMu sync.Mutex
 
 func HC_Resume() error {
-	Logger.Sugar().Debugf("_resuming_status=%v", _resuming_status)
+
+	reMu.Lock()
 	if _resuming_status != 0 {
 		return nil
 	}
-	Logger.Sugar().Debugf("resuming in progress, _resuming_status=%v", _resuming_status)
 	atomic.StoreInt32(&_resuming_status, -1)
+	reMu.Unlock()
+
+	Logger.Sugar().Debugf("resuming in progress, _resuming_status=%v", _resuming_status)
 	// scale back deployments
 	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
