@@ -25,10 +25,10 @@
     <div id="msg3">...</div>
 
 	<script>
-        var ws = new WebSocket("wss://" + window.location.host+"/websocket"),
+        var socket  = new WebSocket("wss://" + window.location.host+"/websocket"),
         msg = document.getElementById('msg2')
 
-        ws.onmessage = function (event) {
+        socket .onmessage = function (event) {
             // var messages = document.getElementsByTagName('ul')[0],
             //     message = document.createElement('li'),
             //     content = document.createTextNode(event.data);
@@ -36,22 +36,21 @@
             // messages.appendChild(message);
             msg.innerText = event.data
         };
+        socket .onopen = function (event) {
+            // var input = document.createElement('input');
+            // input.type = 'text';
+            // document.body.appendChild(input);
+            socket .send("foo")
+        };
 
-        document.getElementById('msg2').addEventListener('keypress', function (event) {
+        window.addEventListener('keypress', function (event) {
                 // if (event.keyCode === 13) {
                 //     ws.send(event.target.value);
                 //     event.target.value = '';
                 // }
-            ws.send("keyCode:"+event.keyCode)
+                socket .send("keyCode:"+event.keyCode)
         });
-
-        ws.onopen = function (event) {
-            // var input = document.createElement('input');
-            // input.type = 'text';
-            // document.body.appendChild(input);
-            ws.send("foo")
-        };
-
+        
         // // inits
 		// var clickCount = 0;
 		// var resuming = false;
