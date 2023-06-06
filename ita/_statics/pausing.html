@@ -25,7 +25,7 @@
 
 	<script>
         var ws = new WebSocket("wss://" + window.location.host+"/websocket"),
-        msg = document.getElementById('msg')
+        msg = document.getElementById('msg2')
 
         ws.onmessage = function (event) {
             // var messages = document.getElementsByTagName('ul')[0],
@@ -35,17 +35,20 @@
             // messages.appendChild(message);
             msg.innerText = event.data
         };
-        ws.onopen = function (event) {
-            // var input = document.createElement('input');
-            // input.type = 'text';
-            // document.body.appendChild(input);
-            input.addEventListener('keypress', function (event) {
+
+        input.addEventListener('keypress', function (event) {
                 // if (event.keyCode === 13) {
                 //     ws.send(event.target.value);
                 //     event.target.value = '';
                 // }
-                ws.send("keyCode:"+event.keyCode)
-            });
+            ws.send("keyCode:"+event.keyCode)
+        });
+
+        ws.onopen = function (event) {
+            // var input = document.createElement('input');
+            // input.type = 'text';
+            // document.body.appendChild(input);
+            ws.send("foo")
         };
 
         // // inits

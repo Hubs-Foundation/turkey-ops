@@ -43,12 +43,12 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			rand.Seed(time.Now().UnixNano())
 			for {
 				randomNumber := rand.Intn(100)
-				err := conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("Random number: %d", randomNumber)))
+				err := conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("roll: %d", randomNumber)))
 				if err != nil {
 					Logger.Debug("err @ conn.WriteMessage:" + err.Error())
 					break
 				}
-				time.Sleep(10 * time.Second)
+				time.Sleep(11 * time.Second)
 			}
 		}()
 
