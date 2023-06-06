@@ -1,11 +1,19 @@
 package internal
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
+	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -14,27 +22,67 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var captchaSolve = int32(111)
+
 var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method == "GET" {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	//websocket
+	if strings.HasSuffix(r.URL.Path, "/websocket") {
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+		conn, _, err := hj.Hijack()
+		if err != nil {
+			Logger.Debug(err.Error())
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+		defer conn.Close()
+		fmt.Fprint(conn, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n")
 
+		go func() {
+			rand.Seed(time.Now().UnixNano())
+			for {
+				randomNumber := rand.Intn(100)
+				msg := fmt.Sprintf("Random number: %d", randomNumber)
+				fmt.Fprintf(conn, "%s\n", msg)
+				time.Sleep(10 * time.Second)
+			}
+		}()
+
+		scanner := bufio.NewScanner(conn)
+		for scanner.Scan() {
+			text := scanner.Text()
+			if strings.TrimSpace(text) == "" {
+				continue
+			}
+			fmt.Fprintf(conn, "Echo: %s\n", text)
+		}
+
+		return
+	}
+
+	switch r.Method {
+	case "GET":
+		if _, ok := r.Header["Duck"]; ok {
+			duckpng, _ := os.Open("./_statics/duck.png")
+			defer duckpng.Close()
+			img, _, _ := image.Decode(duckpng)
+			rand.Seed(time.Now().UnixNano())
+			rotatedImg := rotateImg(img, 25+rand.Float64()*250)
+			var buffer bytes.Buffer
+			_ = png.Encode(&buffer, rotatedImg)
+			encoded := base64.StdEncoding.EncodeToString(buffer.Bytes())
+			fmt.Fprint(w, encoded)
+			return
+		}
 		bytes, err := ioutil.ReadFile("./_statics/pausing.html")
 		if err != nil {
 			Logger.Sugar().Errorf("%v", err)
 		}
 		fmt.Fprint(w, string(bytes))
-	}
-
-})
-
-var Z_Pause = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	err := HC_Pause()
-	fmt.Fprintf(w, "err: %v", err)
-})
-
-var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
 	case "PUT":
 		if _resuming_status != 0 {
 			http.Error(w, "", http.StatusBadRequest)
@@ -43,14 +91,14 @@ var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := HC_Resume()
 		if err != nil {
 			Logger.Sugar().Errorf("err (reqId: %v): %v", w.Header().Get("X-Request-Id"), err)
-			fmt.Fprintf(w, "something went wrong -- take this to support: reqId=%v", w.Header().Get("X-Request-Id"))
+			fmt.Fprintf(w, "something went wrong -- reqId=%v", w.Header().Get("X-Request-Id"))
 			return
 		}
-		fmt.Fprint(w, "started")
-	case "GET":
+		fmt.Fprint(w, "resuming")
+	case "UPDATE":
 		Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
 		if _resuming_status == 0 {
-			fmt.Fprint(w, "this hubs' paused, click the duck 6 times to unpause")
+			fmt.Fprint(w, "slide to fix the ducks orintation")
 			return
 		}
 		if _resuming_status < 0 {
@@ -61,6 +109,25 @@ var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "", 404)
 	}
+})
+
+var Z_Pause = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := HC_Pause()
+	fmt.Fprintf(w, "err: %v", err)
+})
+
+var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if _resuming_status != 0 {
+		http.Error(w, string(_resuming_status), http.StatusBadRequest)
+		return
+	}
+	err := HC_Resume()
+	if err != nil {
+		Logger.Sugar().Errorf("err (reqId: %v): %v", w.Header().Get("X-Request-Id"), err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprint(w, "started")
 })
 
 func HC_Pause() error {
@@ -96,7 +163,7 @@ func HC_Pause() error {
 		}
 	}
 	//create pausing ingress
-	pathType_exact := networkingv1.PathTypeExact
+	// pathType_exact := networkingv1.PathTypeExact
 	pathType_prefix := networkingv1.PathTypePrefix
 	_, err = cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Create(context.Background(),
 		&networkingv1.Ingress{
@@ -113,15 +180,6 @@ func HC_Pause() error {
 								Paths: []networkingv1.HTTPIngressPath{
 									{
 										Path:     "/",
-										PathType: &pathType_exact,
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
-												Name: "ita",
-												Port: networkingv1.ServiceBackendPort{
-													Number: 6000,
-												}}}},
-									{
-										Path:     "/z/resume",
 										PathType: &pathType_prefix,
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{
@@ -225,7 +283,7 @@ func HC_Resume() error {
 			}
 		}
 
-		cooldown := 3600
+		cooldown := cfg.FreeTierIdleMax.Seconds() * 1.25
 		for cooldown > 0 {
 			time.Sleep(11 * time.Second)
 			cooldown -= 11
