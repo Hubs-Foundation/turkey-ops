@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"image/png"
@@ -162,6 +163,10 @@ func HC_Pause() error {
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		Logger.Error("failed to get ingresses: " + err.Error())
+		return errors.New("failed to get ingress" + err.Error())
+	}
+	if len(igs.Items) < 2 || igs.Items[0].Name == "pausing" {
+		return fmt.Errorf("UNEXPECTED VERY BAD EXCEPTION -- igs: %v", igs)
 	}
 
 	igsbak, err := json.Marshal(*igs)
