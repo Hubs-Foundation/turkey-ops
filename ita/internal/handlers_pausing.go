@@ -50,7 +50,7 @@ var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
 		if _resuming_status == 0 {
-			fmt.Fprint(w, "this hubs' paused, click the duck to try to unpause")
+			fmt.Fprint(w, "this hubs' paused, click the duck 6 times to unpause")
 			return
 		}
 		if _resuming_status < 0 {
