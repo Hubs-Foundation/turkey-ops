@@ -42,6 +42,8 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		defer conn.Close()
 		go func() {
 			// rand.Seed(time.Now().UnixNano())
+
+			//status report during HC_Resume(), incl cooldown period
 			for {
 				if _resuming_status == 0 {
 					continue
@@ -56,7 +58,7 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 					return
 				}
 				if _resuming_status < 0 {
-					fmt.Fprintf(w, "loading...this can take a few minutes")
+					fmt.Fprintf(w, "waiting for reticulum...")
 					return
 				}
 				fmt.Fprintf(w, "Ability is not ready yet, cooldown left %v min", (_resuming_status / 60))
@@ -79,12 +81,11 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			Logger.Debug("recv: " + string(strMessage))
 			if strings.HasPrefix(strMessage, "keyCode:") && _resuming_status == 0 {
 				HC_Resume()
-			}
-
-			err = conn.WriteMessage(mt, []byte("started!"))
-			if err != nil {
-				Logger.Debug("err @ conn.WriteMessage:" + err.Error())
-				break
+				err = conn.WriteMessage(mt, []byte("respawning hubs pods"))
+				if err != nil {
+					Logger.Debug("err @ conn.WriteMessage:" + err.Error())
+					break
+				}
 			}
 		}
 	}
