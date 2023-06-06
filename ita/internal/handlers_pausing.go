@@ -36,16 +36,20 @@ var Z_Pause = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "PUT" {
-		r, err := HC_Resume()
+		err := HC_Resume()
+
 		if err != nil {
 			Logger.Sugar().Errorf("err (reqId: %v): %v", w.Header().Get("X-Request-Id"), err)
 			fmt.Fprintf(w, "something went wrong -- take this to support: reqId=%v", w.Header().Get("X-Request-Id"))
 		}
-		if r == 0 {
+
+		Logger.Sugar().Debugf("resuming: %v", resuming)
+
+		if resuming == 0 {
 			fmt.Fprint(w, "this hubs' paused, click the duck to try to unpause it")
 			return
 		}
-		if r < 0 {
+		if resuming < 0 {
 			fmt.Fprintf(w, "resuming, this can take a few minutes")
 			return
 		}
@@ -144,16 +148,16 @@ func HC_Pause() error {
 
 var resuming = int32(0)
 
-func HC_Resume() (int32, error) {
+func HC_Resume() error {
 	if resuming != 0 {
-		return resuming, nil
+		return nil
 	}
 	atomic.StoreInt32(&resuming, -1)
 	// scale back deployments
 	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		Logger.Error("failed to list deployments: " + err.Error())
-		return resuming, err
+		return err
 	}
 	for _, d := range ds.Items {
 		if d.Name == "ita" {
@@ -163,7 +167,7 @@ func HC_Resume() (int32, error) {
 		_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
 			Logger.Sugar().Errorf("failed to scale back %v: %v"+d.Name, err.Error())
-			return resuming, err
+			return err
 		}
 	}
 	go func() {
@@ -218,5 +222,5 @@ func HC_Resume() (int32, error) {
 		atomic.StoreInt32(&resuming, 0)
 	}()
 
-	return resuming, nil
+	return nil
 }

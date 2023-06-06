@@ -43,17 +43,18 @@
 				.then(data => console.log(data))
 				.catch(error => console.error('Error:', error));
 			}
+            setInterval(function() {
+                fetch('/')
+                .then(response => response.text())
+                .then(data => {                
+                    // document.getElementById('pausingText').innerText = "resuming, this should take just a few minutes";
+                    document.getElementById('pausingText').innerText = data;
+                    console.log(data)
+                })
+                .catch(error => console.error('Error:', error));
+            }, 15000); // 10000 milliseconds = 10 seconds
 		});
 
-        setInterval(function() {
-            fetch('/z/resume', {method: 'PUT'})
-            .then(response => response.text())
-            .then(data => {                
-				// document.getElementById('pausingText').innerText = "resuming, this should take just a few minutes";
-                document.getElementById('pausingText').innerText = data;
-            })
-            .catch(error => console.error('Error:', error));
-        }, 10000); // 10000 milliseconds = 10 seconds
 
 	</script>
 </body>
