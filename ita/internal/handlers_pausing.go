@@ -43,10 +43,10 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		go func() {
 			// rand.Seed(time.Now().UnixNano())
 			for {
-				if _resuming_status != 0 {
+				if _resuming_status == 0 {
 					continue
 				}
-				time.Sleep(11 * time.Second)
+				time.Sleep(3 * time.Second)
 				// randomNumber := rand.Intn(100)
 				// sendMsg:= fmt.Sprintf("roll: %d", randomNumber)
 				sendMsg := fmt.Sprintf("not ready yet, try again in %v min", (_resuming_status / 60))
@@ -81,7 +81,7 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				HC_Resume()
 			}
 
-			err = conn.WriteMessage(mt, message)
+			err = conn.WriteMessage(mt, []byte("started!"))
 			if err != nil {
 				Logger.Debug("err @ conn.WriteMessage:" + err.Error())
 				break
