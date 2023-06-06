@@ -30,21 +30,25 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 var Z_Pause = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	err := HC_Pause()
-
 	fmt.Fprintf(w, "err: %v", err)
 })
 
 var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "PUT" {
+	switch r.Method {
+	case "PUT":
+		if _resuming_status != 0 {
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
 		err := HC_Resume()
-
 		if err != nil {
 			Logger.Sugar().Errorf("err (reqId: %v): %v", w.Header().Get("X-Request-Id"), err)
 			fmt.Fprintf(w, "something went wrong -- take this to support: reqId=%v", w.Header().Get("X-Request-Id"))
+			return
 		}
-
+		fmt.Fprint(w, "started")
+	case "GET":
 		Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
-
 		if _resuming_status == 0 {
 			fmt.Fprint(w, "this hubs' paused, click the duck to try to unpause it")
 			return
@@ -54,6 +58,8 @@ var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fmt.Fprintf(w, "not ready yet, try again in %v min", (_resuming_status / 60))
+	default:
+		http.Error(w, "", 404)
 	}
 })
 
