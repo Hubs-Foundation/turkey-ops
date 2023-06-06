@@ -50,7 +50,7 @@ var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
 		if _resuming_status == 0 {
-			fmt.Fprint(w, "this hubs' paused, click the duck to try to unpause it")
+			fmt.Fprint(w, "this hubs' paused, click the duck to try to unpause")
 			return
 		}
 		if _resuming_status < 0 {
@@ -67,6 +67,10 @@ func HC_Pause() error {
 
 	//back up current ingresses
 	igs, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		Logger.Error("failed to get ingresses: " + err.Error())
+	}
+
 	igsbak, err := json.Marshal(*igs)
 	if err != nil {
 		Logger.Error("failed to marshal ingresses: " + err.Error())
