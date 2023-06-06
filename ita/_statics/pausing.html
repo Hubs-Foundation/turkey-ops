@@ -25,17 +25,36 @@
 	<script>
 		var clickCount = 0;
 		var resuming = false;
+        
 		document.getElementById('duckPic').addEventListener('click', function() {
 			clickCount++;
 			if (clickCount >= 5 && !resuming) {
 				resuming = true
-				document.getElementById('pausingText').innerText = "resuming, this should take just a few minutes";
-				fetch('/z/resume') 
-				.then(response => response.json())
+				fetch('/z/resume', {
+                method: 'PUT',
+                headers: {
+                    // 'Content-Type': 'application/json',
+                    // 'Authorization': 'Bearer your-token' (if needed)
+                },
+                body: JSON.stringify({
+                    // Your request body here
+                })
+            }).then(response => response.json())
 				.then(data => console.log(data))
 				.catch(error => console.error('Error:', error));
 			}
 		});
+
+        setInterval(function() {
+            fetch('/z/resume')
+            .then(response => response.text())
+            .then(data => {                
+				// document.getElementById('pausingText').innerText = "resuming, this should take just a few minutes";
+                document.getElementById('pausingText').innerText = data;
+            })
+            .catch(error => console.error('Error:', error));
+        }, 10000); // 10000 milliseconds = 10 seconds
+
 	</script>
 </body>
 </html>	

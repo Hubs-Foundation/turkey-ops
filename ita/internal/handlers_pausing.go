@@ -3,7 +3,6 @@ package internal
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -17,15 +16,41 @@ import (
 
 var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	// http.Error(w, "this hubs' paused, click the duck to try to unpause it", http.StatusOK)
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if r.Method == "GET" {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	bytes, err := ioutil.ReadFile("./_statics/pausing.html")
-	if err != nil {
-		Logger.Sugar().Errorf("%v", err)
+		bytes, err := ioutil.ReadFile("./_statics/pausing.html")
+		if err != nil {
+			Logger.Sugar().Errorf("%v", err)
+		}
+		fmt.Fprint(w, string(bytes))
 	}
-	fmt.Fprint(w, string(bytes))
 
+})
+
+var Z_Pause = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := HC_Pause()
+
+	fmt.Fprintf(w, "err: %v", err)
+})
+
+var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "PUT" {
+		r, err := HC_Resume()
+		if err != nil {
+			Logger.Sugar().Errorf("err (reqId: %v): %v", w.Header().Get("X-Request-Id"), err)
+			fmt.Fprintf(w, "something went wrong -- take this to support: reqId=%v", w.Header().Get("X-Request-Id"))
+		}
+		if r == 0 {
+			fmt.Fprint(w, "this hubs' paused, click the duck to try to unpause it")
+			return
+		}
+		if r < 0 {
+			fmt.Fprintf(w, "resuming, this can take a few minutes")
+			return
+		}
+		fmt.Fprintf(w, "not ready yet, try again in %v sec left", r)
+	}
 })
 
 func HC_Pause() error {
@@ -119,16 +144,16 @@ func HC_Pause() error {
 
 var resuming = int32(0)
 
-func HC_Resume() error {
+func HC_Resume() (int32, error) {
 	if resuming != 0 {
-		return errors.New("not yet")
+		return resuming, nil
 	}
-	atomic.StoreInt32(&resuming, 1)
+	atomic.StoreInt32(&resuming, -1)
 	// scale back deployments
 	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		Logger.Error("failed to list deployments: " + err.Error())
-		return err
+		return resuming, err
 	}
 	for _, d := range ds.Items {
 		if d.Name == "ita" {
@@ -138,56 +163,60 @@ func HC_Resume() error {
 		_, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), &d, metav1.UpdateOptions{})
 		if err != nil {
 			Logger.Sugar().Errorf("failed to scale back %v: %v"+d.Name, err.Error())
-			return err
+			return resuming, err
 		}
 	}
-
-	//wait for ret pod
-	ret_readyReplicaCnt := 0
-	ttl := 5 * time.Minute
-	for ret_readyReplicaCnt < 1 && ttl > 0 {
-		ret_d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
-		if err != nil {
-			Logger.Sugar().Errorf("failed to get reticulum deployment in ns %v", cfg.PodNS)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		ret_readyReplicaCnt = int(ret_d.Status.ReadyReplicas)
-		Logger.Sugar().Debugf("waiting for ret, ttl: %v", ttl)
-		time.Sleep(30 * time.Second)
-		ttl -= 30 * time.Second
-	}
-	Logger.Debug("ret's ready")
-
-	// delete pausing ingress
-	err = cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Delete(context.Background(), "pausing", metav1.DeleteOptions{})
-	if err != nil {
-		Logger.Error("failed to delete pausing ingresses" + err.Error())
-	}
-
-	//restore ig_bak
-	igsbak_cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "igsbak", metav1.GetOptions{})
-	if err != nil {
-		Logger.Error("failed to get ig_bak configmap:" + err.Error())
-	}
-	igsbak := igsbak_cm.BinaryData["igsbak"]
-	var igs networkingv1.IngressList
-	err = json.Unmarshal(igsbak, &igs)
-	if err != nil {
-		Logger.Sugar().Errorf("failed to unmarshal igsbak: %v", err)
-	}
-	for _, ig := range igs.Items {
-		ig.ResourceVersion = ""
-		_, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Create(context.Background(), &ig, metav1.CreateOptions{})
-		if err != nil {
-			Logger.Sugar().Errorf("failed to restore ig_bak: %v", err)
-		}
-	}
-
 	go func() {
-		time.Sleep(15 * time.Minute)
+		//wait for ret pod
+		ret_readyReplicaCnt := 0
+		ttl := 5 * time.Minute
+		for ret_readyReplicaCnt < 1 && ttl > 0 {
+			ret_d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
+			if err != nil {
+				Logger.Sugar().Errorf("failed to get reticulum deployment in ns %v", cfg.PodNS)
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			ret_readyReplicaCnt = int(ret_d.Status.ReadyReplicas)
+			Logger.Sugar().Debugf("waiting for ret, ttl: %v", ttl)
+			time.Sleep(30 * time.Second)
+			ttl -= 30 * time.Second
+		}
+		Logger.Debug("ret's ready")
+
+		// delete pausing ingress
+		err = cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Delete(context.Background(), "pausing", metav1.DeleteOptions{})
+		if err != nil {
+			Logger.Error("failed to delete pausing ingresses" + err.Error())
+		}
+
+		//restore ig_bak
+		igsbak_cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "igsbak", metav1.GetOptions{})
+		if err != nil {
+			Logger.Error("failed to get ig_bak configmap:" + err.Error())
+		}
+		igsbak := igsbak_cm.BinaryData["igsbak"]
+		var igs networkingv1.IngressList
+		err = json.Unmarshal(igsbak, &igs)
+		if err != nil {
+			Logger.Sugar().Errorf("failed to unmarshal igsbak: %v", err)
+		}
+		for _, ig := range igs.Items {
+			ig.ResourceVersion = ""
+			_, err := cfg.K8sClientSet.NetworkingV1().Ingresses(cfg.PodNS).Create(context.Background(), &ig, metav1.CreateOptions{})
+			if err != nil {
+				Logger.Sugar().Errorf("failed to restore ig_bak: %v", err)
+			}
+		}
+
+		cooldown := 3600
+		for cooldown > 0 {
+			time.Sleep(1 * time.Second)
+			cooldown -= 1
+			atomic.StoreInt32(&resuming, int32(cooldown))
+		}
 		atomic.StoreInt32(&resuming, 0)
 	}()
 
-	return nil
+	return resuming, nil
 }
