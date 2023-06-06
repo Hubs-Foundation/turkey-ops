@@ -53,7 +53,7 @@ var Z_Resume = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "resuming, this can take a few minutes")
 			return
 		}
-		fmt.Fprintf(w, "not ready yet, try again in %v sec left", r)
+		fmt.Fprintf(w, "not ready yet, try again in %v min", (resuming / 60))
 	}
 })
 
