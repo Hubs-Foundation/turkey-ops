@@ -46,23 +46,17 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 			//status report during HC_Resume(), incl cooldown period
 			for {
+				Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
 				if _resuming_status == 0 {
 					continue
 				}
 				time.Sleep(3 * time.Second)
-				// randomNumber := rand.Intn(100)
-				// sendMsg:= fmt.Sprintf("roll: %d", randomNumber)
+
 				sendMsg := fmt.Sprintf("not ready yet, try again in %v min", (_resuming_status / 60))
-				if _resuming_status == 0 {
-					// sendMsg = "slide to fix the ducks orintation"
-					sendMsg = "press any key to unpause"
-					return
-				}
 				if _resuming_status < 0 {
 					fmt.Fprintf(w, "waiting for reticulum...")
 					return
 				}
-				fmt.Fprintf(w, "Ability is not ready yet, cooldown left %v min", (_resuming_status / 60))
 
 				err := conn.WriteMessage(websocket.TextMessage, []byte(sendMsg))
 				if err != nil {
