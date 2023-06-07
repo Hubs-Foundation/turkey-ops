@@ -29,6 +29,8 @@ var captchaSolve = int32(111)
 
 var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+	watingMsg := "waiting for backends..."
+
 	if strings.HasSuffix(r.URL.Path, "/websocket") {
 		upgrader := websocket.Upgrader{
 			ReadBufferSize:  1024,
@@ -55,7 +57,8 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 				sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (_resuming_status / 60))
 				if _resuming_status < 0 {
-					sendMsg = fmt.Sprintf("waiting for backends...(%v)", (int)(_resuming_status))
+					watingMsg += "."
+					sendMsg = watingMsg
 				}
 				if float64(_resuming_status) > (cfg.FreeTierIdleMax.Seconds()*1.5 - 60) {
 					sendMsg = "_refresh_"
@@ -259,8 +262,6 @@ func HC_Resume() error {
 	atomic.StoreInt32(&_resuming_status, -1)
 	reMu.Unlock()
 
-	tStart := time.Now()
-
 	Logger.Sugar().Debugf("resuming in progress, _resuming_status=%v", _resuming_status)
 	// scale back deployments
 	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
@@ -284,7 +285,6 @@ func HC_Resume() error {
 		ret_readyReplicaCnt := 0
 		ttl := 5 * time.Minute
 		for ret_readyReplicaCnt < 1 && ttl > 0 {
-			atomic.StoreInt32(&_resuming_status, (int32)(0-time.Since(tStart).Seconds()))
 			ret_d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
 			if err != nil {
 				Logger.Sugar().Errorf("failed to get reticulum deployment in ns %v", cfg.PodNS)
