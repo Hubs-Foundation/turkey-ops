@@ -55,7 +55,10 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 				sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (_resuming_status / 60))
 				if _resuming_status < 0 {
-					sendMsg = fmt.Sprintf("waiting for reticulum...")
+					sendMsg = "waiting for reticulum..."
+				}
+				if _resuming_status > 0 {
+					sendMsg = "_refresh_"
 				}
 				Logger.Debug("sendMsg: " + sendMsg)
 				err := conn.WriteMessage(websocket.TextMessage, []byte(sendMsg))

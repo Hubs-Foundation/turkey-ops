@@ -37,6 +37,9 @@
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
 
         socket.onmessage = function (event) {
+            if (event.data=="_refresh_"){
+                location.reload();
+            }
             document.getElementById('msg_line1').innerText = "unpausing:"
             document.getElementById('msg_line2').innerText = event.data
         };
