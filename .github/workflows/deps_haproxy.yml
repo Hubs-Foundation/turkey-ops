@@ -3,7 +3,7 @@ on:
   push:
     paths:
     - 'haproxy/**'
-    - '.github/workflows/haproxy.yml'
+    - '.github/workflows/deps_haproxy.yml'
   workflow_dispatch:
 
 jobs:
