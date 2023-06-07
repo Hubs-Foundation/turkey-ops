@@ -57,7 +57,7 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				if _resuming_status < 0 {
 					sendMsg = "waiting for reticulum..."
 				}
-				if _resuming_status > 0 {
+				if float64(_resuming_status) > (cfg.FreeTierIdleMax.Seconds()*1.25 - 15) {
 					sendMsg = "_refresh_"
 				}
 				Logger.Debug("sendMsg: " + sendMsg)
