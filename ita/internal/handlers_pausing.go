@@ -60,7 +60,8 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 					watingMsg += "."
 					sendMsg = watingMsg
 				}
-				if float64(_resuming_status) > (cfg.FreeTierIdleMax.Seconds()*1.5 - 60) {
+
+				if float64(_resuming_status) > (cfg.FreeTierIdleMax.Seconds()*1.5 - 900) {
 					sendMsg = "_refresh_"
 				}
 				Logger.Debug("sendMsg: " + sendMsg)

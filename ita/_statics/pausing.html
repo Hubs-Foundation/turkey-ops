@@ -19,7 +19,7 @@
 	</style>
 </head>
 <body>
-    <img id="duckPic" src="https://storage.googleapis.com/turkey-assets/logos/bigger_duck.png"/>
+    <img id="duckPic" src="https://storage.googleapis.com/turkey-assets/logos/hubsduck.png"/>
 	<div id="msg_line0">this hubs' paused due to inactivity</div>
 	<div id="msg_line1"></div>
     <div id="msg_line2">[ . ]</div>
@@ -28,13 +28,21 @@
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
         var countdown=10;
         var go=false
+        var done=false
+
+        updateDuckRotation(countdown)
 
         socket.onmessage = function (event) {
             if (event.data=="hi"){
                 go=true
             }
             if (event.data=="_refresh_"){
-                location.reload();
+                done=true
+                document.getElementById('msg_line1').innerText = "done (this page should refresh automatically)"
+                document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"
+                setInterval(function() {                
+                    location.reload();
+                }, 3000);
             }
             document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
         };
@@ -47,7 +55,8 @@
 
         countdownInterval = setInterval(function() {
             if (go && !document.hidden){
-                countdown--;       
+                countdown--;
+                updateDuckRotation(countdown)
                 document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
             }
             if (countdown <= 0 || countdown > 20) {
@@ -59,8 +68,17 @@
         
 		document.getElementById('duckPic').addEventListener('click', function() {
 			countdown++;
+            updateDuckRotation(countdown)
+            if (done){                
+                return
+            }
             document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + "/20 clicks ]";
 		});
+
+
+        function updateDuckRotation(countdown){
+            document.getElementById('duckPic').style.transform='rotate(' + (countdown * 18).toString() + 'deg)';
+        }
 
         // // inits
 		// var clickCount = 0;
