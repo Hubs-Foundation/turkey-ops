@@ -1,0 +1,17 @@
+name: haproxy
+on:
+  push:
+    paths:
+    - 'haproxy/**'
+    - '.github/workflows/haproxy.yml'
+  workflow_dispatch:
+
+jobs:
+  turkeyGitops:
+    uses: mozilla/hubs-ops/.github/workflows/turkeyGitops.yml@master
+    with:
+      codePath: haproxy
+      registry: mozillareality
+      dockerfile: Dockerfile
+    secrets:
+      DOCKER_HUB_PWD: ${{ secrets.DOCKER_HUB_PWD }}
