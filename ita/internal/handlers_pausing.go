@@ -56,7 +56,7 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 				sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (_resuming_status / 60))
 				if _resuming_status < 0 {
-					sendMsg = fmt.Sprintf("waiting for backends...(%v)", time.Since(tResumeStart).Seconds())
+					sendMsg = fmt.Sprintf("waiting for backends...(%v)", (int)(time.Since(tResumeStart).Seconds()))
 				}
 				if float64(_resuming_status) > (cfg.FreeTierIdleMax.Seconds()*1.25 - 60) {
 					sendMsg = "_refresh_"

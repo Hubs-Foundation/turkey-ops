@@ -47,8 +47,7 @@
         });
 
         countdownInterval = setInterval(function() {
-            // if (go && !document.hidden){
-            if (!document.hidden){
+            if (go && !document.hidden){
                 countdown--;       
                 document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
             }
