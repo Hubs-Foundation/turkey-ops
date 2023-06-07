@@ -245,7 +245,7 @@ func HC_Pause() error {
 		}
 	}
 
-	NS_setLabel("paused", "yes")
+	Deployment_setLabel("paused", "yes")
 
 	return nil
 }
@@ -323,6 +323,8 @@ func HC_Resume() error {
 			}
 		}
 
+		Deployment_setLabel("paused", "no")
+
 		cooldown := cfg.FreeTierIdleMax.Seconds() * 1.5
 		for cooldown > 0 {
 			time.Sleep(11 * time.Second)
@@ -330,7 +332,6 @@ func HC_Resume() error {
 			atomic.StoreInt32(&_resuming_status, int32(cooldown))
 		}
 		atomic.StoreInt32(&_resuming_status, 0)
-		NS_setLabel("paused", "no")
 
 	}()
 
