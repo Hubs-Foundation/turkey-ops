@@ -81,3 +81,38 @@ func Has() http.Handler {
 		}
 	})
 }
+
+// func NBSRV() http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		fmt.Fprintf(w, `
+// <!DOCTYPE html>
+// <html>
+// <head>
+// 	<style>
+// 		body {
+// 			background-color: black;
+// 			color: white;
+// 			display: flex;
+// 			justify-content: center;
+// 			align-items: center;
+// 			height: 100vh;
+// 			flex-direction: column;
+// 		}
+// 		#pic {
+// 			width: 200px;
+// 			height: 200px;
+// 		}
+// 	</style>
+// </head>
+// <body>
+// 	<img id="duckPic" src="" />
+// 	<div id="msg">waiting for backend, please try again later</div>
+
+// 	<script>
+
+// 	</script>
+// </body>
+// </html>
+// 		`)
+// 	})
+// }

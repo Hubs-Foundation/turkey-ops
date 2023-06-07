@@ -1186,3 +1186,50 @@ spec:
 #   - name: http-client
 #     port: 3000
 #     targetPort: 3000
+####################################################################################
+################################### has ############################################
+####################################################################################
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: has
+  namespace: turkey-services
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: has
+  template:
+    metadata:
+      labels:
+        app: has
+    spec:
+      {{ if ne .Env "dev" }}
+      nodeSelector:
+        turkey: service
+      {{ end }}
+      containers:
+      - name: has
+        image: mozillareality/has:{{.ItaChan}}
+        ports:
+        - containerPort: 9001
+        resources:
+          requests:
+            memory: 500Mi
+            cpu: 0.5   
+          limits:
+            memory: 800Mi
+            cpu: 0.8
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: has
+  namespace: turkey-services
+spec:
+  ports:
+    - name: http-client
+      port: 9001
+      targetPort: 9001
+  selector:
+    app: has

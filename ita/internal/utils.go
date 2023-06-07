@@ -10,7 +10,9 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
+	"image"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -90,6 +92,19 @@ func NS_getLabel(key string) (string, error) {
 		return "", err
 	}
 	return ns.Labels[key], nil
+}
+
+func NS_setLabel(key, val string) error {
+	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ns.Labels[key] = val
+	_, err = cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func Get_fromNsAnnotations(key string) (string, error) {
@@ -796,4 +811,38 @@ func receiveFileFromReqBody(r *http.Request) ([]string, error) {
 func pointerOfInt32(i int) *int32 {
 	int32i := int32(i)
 	return &int32i
+}
+
+func rotateImg(img image.Image, angle float64) image.Image {
+	// Get the image bounds and find the center
+	bounds := img.Bounds()
+	width, height := bounds.Max.X, bounds.Max.Y
+	cx, cy := float64(width)/2, float64(height)/2
+
+	// Create a new image for the rotated result
+	rotated := image.NewRGBA(bounds)
+
+	// Rotate
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			// Translate the point to the origin, rotate it, then translate it back
+			rx, ry := rotatePoint(float64(x)-cx, float64(y)-cy, angle)
+			rx += cx
+			ry += cy
+
+			// Check if the rotated point is within the image bounds
+			if rx >= 0 && rx < float64(width) && ry >= 0 && ry < float64(height) {
+				rotated.Set(x, y, img.At(int(rx), int(ry)))
+			}
+		}
+	}
+	return img
+}
+
+// rotatePoint rotates a point by the specified angle around the origin
+func rotatePoint(x, y, angle float64) (float64, float64) {
+	angleRad := angle * (math.Pi / 180)
+	cos := math.Cos(angleRad)
+	sin := math.Sin(angleRad)
+	return x*cos - y*sin, y*cos + x*sin
 }
