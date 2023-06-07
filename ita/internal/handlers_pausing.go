@@ -78,7 +78,7 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			}
 			strMessage := string(message)
 			Logger.Sugar().Debugf("recv: type=<%v>, msg=<%v>", mt, string(strMessage))
-			if strMessage == "hi" {
+			if strMessage == "hi" && _resuming_status == 0 {
 				conn.WriteMessage(websocket.TextMessage, []byte("hi"))
 			}
 			if strings.HasPrefix(strMessage, "_r_:") && _resuming_status == 0 {
