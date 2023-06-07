@@ -1,0 +1,39 @@
+HTTP/1.0 503 Service Unavailable
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: black;
+            color: white;
+        }
+        #message {
+            position: absolute;
+            text-align: center;
+        }
+        #image {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="message">
+        <h3>waiting for backend to become available, please try again later</h3>
+    </div>
+    <div id="image"> <img src="https://storage.googleapis.com/turkey-assets/logos/min.png"> </div>
+</body>
+
+</html>
