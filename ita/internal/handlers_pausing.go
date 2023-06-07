@@ -29,7 +29,7 @@ var captchaSolve = int32(111)
 
 var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	watingMsg := "waiting for backends..."
+	watingMsg := "waiting for backends"
 
 	if strings.HasSuffix(r.URL.Path, "/websocket") {
 		upgrader := websocket.Upgrader{
