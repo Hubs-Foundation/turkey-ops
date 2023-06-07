@@ -36,7 +36,6 @@
             if (event.data=="_refresh_"){
                 location.reload();
             }
-            document.getElementById('msg_line1').innerText = "unpausing:"
             document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
         };
         socket.onopen = function (event) {
@@ -53,6 +52,7 @@
             }
             if (countdown <= 0 || countdown > 20) {
                 socket.send("_r_: 1")
+                document.getElementById('msg_line1').innerText = "unpausing"
                 clearInterval(countdownInterval);
             }
         }, 1000);
