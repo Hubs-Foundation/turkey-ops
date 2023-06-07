@@ -24,16 +24,6 @@
     <div id="msg_line2"> ... </div>
 
 	<script>
-
-        pageVisiable=false
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                pageVisiable=false;
-            } else {
-                pageVisiable=true;
-            }
-        });
-
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
 
         socket.onmessage = function (event) {
@@ -52,7 +42,9 @@
 
         var countdown=10;
         countdownInterval = setInterval(function() {
-            countdown--;
+            if (!document.hidden){
+                countdown--;                
+            }
             if (countdown <= 0) {
                 socket.send("keyCode: 1")
                 clearInterval(countdownInterval);
