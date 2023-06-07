@@ -41,7 +41,6 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		defer conn.Close()
-		var tResumeStart time.Time
 		go func() {
 			// rand.Seed(time.Now().UnixNano())
 
@@ -56,9 +55,9 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 				sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (_resuming_status / 60))
 				if _resuming_status < 0 {
-					sendMsg = fmt.Sprintf("waiting for backends...(%v)", (int)(time.Since(tResumeStart).Seconds()))
+					sendMsg = fmt.Sprintf("waiting for backends...(%v)", (int)(_resuming_status))
 				}
-				if float64(_resuming_status) > (cfg.FreeTierIdleMax.Seconds()*1.25 - 60) {
+				if float64(_resuming_status) > (cfg.FreeTierIdleMax.Seconds()*1.5 - 60) {
 					sendMsg = "_refresh_"
 				}
 				Logger.Debug("sendMsg: " + sendMsg)
@@ -82,7 +81,6 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				conn.WriteMessage(websocket.TextMessage, []byte("hi"))
 			}
 			if strings.HasPrefix(strMessage, "_r_:") && _resuming_status == 0 {
-				tResumeStart = time.Now()
 				HC_Resume()
 				err = conn.WriteMessage(mt, []byte("respawning hubs pods"))
 				if err != nil {
@@ -261,6 +259,8 @@ func HC_Resume() error {
 	atomic.StoreInt32(&_resuming_status, -1)
 	reMu.Unlock()
 
+	tStart := time.Now()
+
 	Logger.Sugar().Debugf("resuming in progress, _resuming_status=%v", _resuming_status)
 	// scale back deployments
 	ds, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
@@ -284,6 +284,7 @@ func HC_Resume() error {
 		ret_readyReplicaCnt := 0
 		ttl := 5 * time.Minute
 		for ret_readyReplicaCnt < 1 && ttl > 0 {
+			atomic.StoreInt32(&_resuming_status, (int32)(0-time.Since(tStart).Seconds()))
 			ret_d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", metav1.GetOptions{})
 			if err != nil {
 				Logger.Sugar().Errorf("failed to get reticulum deployment in ns %v", cfg.PodNS)
@@ -292,8 +293,8 @@ func HC_Resume() error {
 			}
 			ret_readyReplicaCnt = int(ret_d.Status.ReadyReplicas)
 			Logger.Sugar().Debugf("waiting for ret, ttl: %v", ttl)
-			time.Sleep(30 * time.Second)
-			ttl -= 30 * time.Second
+			time.Sleep(10 * time.Second)
+			ttl -= 10 * time.Second
 		}
 		Logger.Debug("ret's ready")
 
@@ -322,7 +323,7 @@ func HC_Resume() error {
 			}
 		}
 
-		cooldown := cfg.FreeTierIdleMax.Seconds() * 1.25
+		cooldown := cfg.FreeTierIdleMax.Seconds() * 1.5
 		for cooldown > 0 {
 			time.Sleep(11 * time.Second)
 			cooldown -= 11
