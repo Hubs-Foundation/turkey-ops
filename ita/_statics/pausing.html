@@ -28,6 +28,7 @@
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
         var countdown=10;
         var go=false
+        var started=false
         var done=false
 
         updateDuckRotation(countdown)
@@ -62,6 +63,7 @@
             if (countdown <= 0 || countdown > 20) {
                 socket.send("_r_: 1")
                 document.getElementById('msg_line1').innerText = "unpausing"
+                started=true
                 clearInterval(countdownInterval);
             }
         }, 1000);
@@ -69,7 +71,7 @@
 		document.getElementById('duckPic').addEventListener('click', function() {
 			countdown++;
             updateDuckRotation(countdown)
-            if (done){                
+            if (started){                
                 return
             }
             document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + "/20 clicks ]";
