@@ -94,6 +94,19 @@ func NS_getLabel(key string) (string, error) {
 	return ns.Labels[key], nil
 }
 
+func NS_setLabel(key, val string) error {
+	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	ns.Labels[key] = val
+	_, err = cfg.K8sClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func Get_fromNsAnnotations(key string) (string, error) {
 	ns, err := cfg.K8sClientSet.CoreV1().Namespaces().Get(context.Background(), cfg.PodNS, metav1.GetOptions{})
 	if err != nil {

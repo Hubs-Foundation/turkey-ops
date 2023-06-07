@@ -13,7 +13,7 @@ func main() {
 	router.Handle("/hubs", internal.Has())
 	router.Handle("/spoke", internal.Has())
 
-	router.Handle("/nbsrv", internal.NBSRV())
+	// router.Handle("/nbsrv", internal.NBSRV())
 
 	internal.StartNewServer(router, 9001, false)
 
