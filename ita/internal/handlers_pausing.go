@@ -76,8 +76,11 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				break
 			}
 			strMessage := string(message)
-			Logger.Debug("recv: " + string(strMessage))
-			if strings.HasPrefix(strMessage, "keyCode:") && _resuming_status == 0 {
+			Logger.Sugar().Debugf("recv: type=<%v>, msg=<%v>", mt, string(strMessage))
+			if strMessage == "hi" {
+				conn.WriteMessage(websocket.TextMessage, []byte("hi"))
+			}
+			if strings.HasPrefix(strMessage, "_r_:") && _resuming_status == 0 {
 				HC_Resume()
 				err = conn.WriteMessage(mt, []byte("respawning hubs pods"))
 				if err != nil {

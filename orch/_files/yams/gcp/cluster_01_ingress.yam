@@ -205,6 +205,7 @@ metadata:
   name: gcp-hosted-ingress
   namespace: ingress
 spec:
+  timeoutSec: 7200
   healthCheck:
     checkIntervalSec: 5
     timeoutSec: 3
