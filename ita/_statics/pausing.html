@@ -27,18 +27,16 @@
 	<script>
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
         var countdown=10;
-        var go=false
-        var started=false
-        var done=false
+        var state=0
 
         updateDuckRotation(countdown)
 
         socket.onmessage = function (event) {
             if (event.data=="hi"){
-                go=true
+                state=1
             }
             if (event.data=="_refresh_"){
-                done=true
+                state=2
                 document.getElementById('msg_line1').innerText = "done (this page should refresh automatically)"
                 document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"
                 setInterval(function() {                
@@ -55,7 +53,7 @@
         });
 
         countdownInterval = setInterval(function() {
-            if (go && !document.hidden){
+            if (state==1 && !document.hidden){
                 countdown--;
                 updateDuckRotation(countdown)
                 document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
@@ -63,7 +61,7 @@
             if (countdown <= 0 || countdown > 20) {
                 socket.send("_r_: 1")
                 document.getElementById('msg_line1').innerText = "unpausing"
-                started=true
+                state=2
                 clearInterval(countdownInterval);
             }
         }, 1000);
@@ -71,7 +69,7 @@
 		document.getElementById('duckPic').addEventListener('click', function() {
 			countdown++;
             updateDuckRotation(countdown)
-            if (started){                
+            if (state==2){                
                 return
             }
             document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + "/20 clicks ]";
