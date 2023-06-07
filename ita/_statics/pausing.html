@@ -47,21 +47,20 @@
         });
 
         countdownInterval = setInterval(function() {
-            if (go && !document.hidden){
+            // if (go && !document.hidden){
+            if (!document.hidden){
                 countdown--;       
                 document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
             }
-            if (countdown <= 0) {
+            if (countdown <= 0 || countdown > 20) {
                 socket.send("_r_: 1")
                 clearInterval(countdownInterval);
             }
         }, 1000);
         
-		document.duckPic('msg_line1').addEventListener('click', function() {
+		document.getElementById('duckPic').addEventListener('click', function() {
 			countdown++;
-			if (countdown >= 20) {
-				countdown=0
-			}
+            document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + "/20 clicks ]";
 		});
 
         // // inits
