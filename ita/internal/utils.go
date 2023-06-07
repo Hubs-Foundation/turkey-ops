@@ -81,6 +81,7 @@ func Deployment_setLabel(key, val string) error {
 	d.Labels[key] = val
 	_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
 	if err != nil {
+		Logger.Error(err.Error())
 		return err
 	}
 	return nil
