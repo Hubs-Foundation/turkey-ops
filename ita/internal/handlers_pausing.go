@@ -245,7 +245,7 @@ func HC_Pause() error {
 		}
 	}
 
-	NS_setLabel("paused", "1")
+	NS_setLabel("paused", "yes")
 
 	return nil
 }
@@ -330,7 +330,7 @@ func HC_Resume() error {
 			atomic.StoreInt32(&_resuming_status, int32(cooldown))
 		}
 		atomic.StoreInt32(&_resuming_status, 0)
-		NS_setLabel("paused", "0")
+		NS_setLabel("paused", "no")
 
 	}()
 
