@@ -20,7 +20,8 @@
 </head>
 <body>
     <img id="duckPic" src="https://storage.googleapis.com/turkey-assets/logos/bigger_duck.png"/>
-	<div id="msg_line1">this hubs' paused due to inactivity</div>
+	<div id="msg_line0">this hubs' paused due to inactivity</div>
+	<div id="msg_line1"></div>
     <div id="msg_line2">[ . ]</div>
 
 	<script>
@@ -56,6 +57,12 @@
             }
         }, 1000);
         
+		document.duckPic('msg_line1').addEventListener('click', function() {
+			countdown++;
+			if (countdown >= 20) {
+				countdown=0
+			}
+		});
 
         // // inits
 		// var clickCount = 0;
