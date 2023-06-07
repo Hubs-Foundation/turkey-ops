@@ -2,7 +2,7 @@ name: haproxy
 on:
   push:
     paths:
-    - 'haproxy/**'
+    - 'deps/haproxy/**'
     - '.github/workflows/deps_haproxy.yml'
   workflow_dispatch:
 
