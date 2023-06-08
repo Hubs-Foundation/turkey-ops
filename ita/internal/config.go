@@ -122,7 +122,7 @@ func MakeCfg() {
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {
 		Logger.Sugar().Warnf("failed to parse (FreeTierIdleMax): %v, falling back to default value", os.Getenv("FreeTierIdleMax"))
-		cfg.FreeTierIdleMax = 90 * time.Minute
+		cfg.FreeTierIdleMax = 36 * time.Hour
 		if strings.HasPrefix(cfg.HubDomain, "dev.") {
 			cfg.FreeTierIdleMax = 15 * time.Minute
 		}
