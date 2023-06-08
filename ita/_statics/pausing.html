@@ -27,7 +27,7 @@
 	<script>
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
         var countdown=10;
-        var state=0
+        var state=0;
 
         updateDuckRotation(countdown)
 
@@ -37,11 +37,9 @@
             }
             if (event.data=="_refresh_"){
                 state=2
-                document.getElementById('msg_line1').innerText = "done (this page should refresh automatically)"
+                document.getElementById('msg_line1').innerText = "waiting for ingress update"
                 document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"
-                setInterval(function() {                
-                    location.reload();
-                }, 3000);
+                return
             }
             document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
         };
@@ -51,18 +49,34 @@
         window.addEventListener('keypress', function (event) {
                 socket.send("keyCode:"+event.keyCode)
         });
-
-        countdownInterval = setInterval(function() {
+        mainLoop = setInterval(function() {
+            switch(state) {
+                case 1:
+                    if (!document.hidden){
+                        countdown--;
+                        updateDuckRotation(countdown)
+                        document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
+                    }
+                    if (countdown <= 0 || countdown > 20) {
+                        socket.send("_r_: 1")
+                        document.getElementById('msg_line1').innerText = "unpausing"
+                        state=2
+                        clearInterval(mainLoop);
+                    }                    
+                    break;
+                case 2:
+                    if (await checkReadiness(800)) {                        
+                        setInterval(function() {                
+                            location.reload();
+                        }, 3000);
+                    }
+                    break;
+                default:
+            }
             if (state==1 && !document.hidden){
                 countdown--;
                 updateDuckRotation(countdown)
                 document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
-            }
-            if (countdown <= 0 || countdown > 20) {
-                socket.send("_r_: 1")
-                document.getElementById('msg_line1').innerText = "unpausing"
-                state=2
-                clearInterval(countdownInterval);
             }
         }, 1000);
         
@@ -80,65 +94,38 @@
             document.getElementById('duckPic').style.transform='rotate(' + (countdown * 18).toString() + 'deg)';
         }
 
-        // // inits
-		// var clickCount = 0;
-		// var resuming = false;
-        
-        // var pDiv = document.getElementById('pausingDiv')
-        // var playBtn = document.getElementById("playBtn");
+        function checkEndpoint(ep) {
+            var resp
+            resp = await fetch(ep)
+            console.log(resp.status, ep)
+            return resp.status === 200
+        }
 
-        // var duckChk= document.getElementById("duckChk")
-        // var duckPic = document.getElementById("duckPic")
-        // var slider = document.getElementById("slider");
-        
-        // //playBtn
-        // playBtn.addEventListener('click', function() {
-        //     pDiv.style.display = 'none'
-        //     duckChk.style.display = ''
-		// });
-
-
-
-        // fetch('/', {method: 'UPDATE'}).then(response => response.text()).then(data => {
-        //     pText.innerText = data;})
-        
-        // //text
-        // setInterval(function() {
-        //     if (!resuming) {return}
-        //     fetch('/', {method: 'UPDATE'})
-        //     .then(response => response.text())
-        //     .then(data => {pText.innerText = data;})
-        //     .catch(error => console.error('Error:', error));
-        // }, 11000); // milliseconds        
-
-        // //image
-		// image.addEventListener('click', function() {
-		// 	clickCount++;
-		// 	if (clickCount >= 6 && !resuming) {
-		// 		resuming = true
-		// 		fetch('/', {method: 'PUT'}).then(response => response.json())
-        //         .then(data => {document.getElementById('pausingText').innerText = data;})
-		// 		.catch(error => console.error('Error:', error));
-		// 	}
-		// });
-
-        // //slider
-        // var slider = document.getElementById("slider");
-        // // var mouseDownValue = 0;
-        // // var mouseUpValue = 0;
-        // // slider.onmousedown = function() {
-        // //     mouseDownValue = this.value;
-        // // };
-        // slider.onmouseup = function() {
-        //     // mouseUpValue = this.value;
-        //     // var rotation = mouseUpValue - mouseDownValue;
-        //     // console.log('Rotated: ' + rotation + ', current: ' + this.value );
-        //     console.log('angle:', this.value)
-        // };
-        // slider.oninput = function() {
-        //     image.style.transform = 'rotate(' + this.value + 'deg)';
-        // };
-
+        function checkReadiness(timeoutInMilliseconds) {
+            return new Promise((resolve, reject) => {
+                const timeout = new Promise((_, reject) => {
+                    setTimeout(() => {
+                        return false
+                    }, timeoutInMilliseconds);
+                });
+                const check = new Promise((_, reject) => {
+                    [
+                        "https://"+window.location.host,
+                        "https://"+window.location.host+"/manifest.webmanifest",
+                        "https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0",
+                        "https://"+window.location.host + "/hubs/pages/index.html",
+                        "https://"+window.location.host + "/hubs/pages/index.html"
+                    ].forEach(e => {
+                        if (!checkEndpoint(e)) {
+                            return false
+                        }
+                    })
+                });
+                Promise.race([timeout, fetchOperation])
+                    .then(data => resolve(data))
+                    .catch(error => reject(error));
+            });
+        }
 	</script>
 </body>
 </html>	
