@@ -65,6 +65,14 @@
                         document.getElementById('msg_line1').innerText = "unpausing"
                         state=2
                         clearInterval(unpausingLoop);
+                        setInterval(async function() {                            
+                            const ready = await checkReadiness(800)
+                            console.log("ready:", ready)
+                            document.getElementById('msg_line3').innerText = ready + "/5"
+                            if (ready == 2) {                        
+                                location.reload();
+                            }
+                        }, 15000);
                     }                    
                     break;
             }
@@ -74,19 +82,6 @@
                 document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
             }
         }, 1000);
-
-        setInterval(async function() {
-            switch(state) {
-                case 2:
-                    const ready = await checkReadiness(800)
-                    console.log("ready:", ready)
-                    document.getElementById('msg_line3').innerText = ready + "/5"
-                    if (ready == 5) {                        
-                        location.reload();
-                    }
-                    break;
-            }
-        }, 1500);
         
 		document.getElementById('duckPic').addEventListener('click', function() {
 			countdown++;
