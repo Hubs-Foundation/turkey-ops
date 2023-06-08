@@ -41,13 +41,12 @@
                 document.getElementById('msg_line1').innerText = "waiting for ingress update"
                 document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"
                 
-                await new Promise(resolve => setTimeout(resolve, 10000));
-                setInterval(async function() {           
+                setInterval(async function() {
                     console.log("checkReadiness")
                     const ready = await checkReadiness(800)
                     console.log("ready:", ready)
                     document.getElementById('msg_line3').innerText = ready + "/5"
-                    if (ready == 2) {                        
+                    if (ready == 2) {
                         location.reload();
                     }
                 }, 10000);
