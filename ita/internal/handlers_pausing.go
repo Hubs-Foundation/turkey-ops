@@ -53,8 +53,6 @@ var Root_Pausing = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				if _resuming_status == 0 {
 					continue
 				}
-				time.Sleep(3 * time.Second)
-
 				sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (_resuming_status / 60))
 				if _resuming_status < 0 {
 					watingMsg += "."

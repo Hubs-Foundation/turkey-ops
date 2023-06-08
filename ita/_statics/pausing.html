@@ -23,6 +23,7 @@
 	<div id="msg_line0">this hubs' paused due to inactivity</div>
 	<div id="msg_line1"></div>
     <div id="msg_line2">[ . ]</div>
+    <div id="msg_line3"></div>
 
 	<script>
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
@@ -66,8 +67,9 @@
                     break;
                 case 2:
                     const ready = checkReadiness(800)
-                    if (ready) {                        
-                        setInterval(function() {                
+                    document.getElementById('msg_line3').innerText = ready + "/5"
+                    if (ready == 5) {                        
+                        setInterval(function() {
                             location.reload();
                         }, 3000);
                     }
@@ -106,23 +108,23 @@
             return new Promise((resolve, reject) => {
                 const timeout = new Promise((_, reject) => {
                     setTimeout(() => {
-                        return false
+                        return -1
                     }, timeoutInMilliseconds);
                 });
-                const check = new Promise((_, reject) => {
+                const readinessCheck = new Promise((_, reject) => {
                     [
                         "https://"+window.location.host,
                         "https://"+window.location.host+"/manifest.webmanifest",
                         "https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0",
                         "https://"+window.location.host + "/hubs/pages/index.html",
                         "https://"+window.location.host + "/hubs/pages/index.html"
-                    ].forEach(e => {
-                        if (!checkEndpoint(e)) {
-                            return false
+                    ].forEach(function (val, idx) {
+                        if (!checkEndpoint(val)) {
+                            return idx +1
                         }
                     })
-                });
-                Promise.race([timeout, fetchOperation])
+                })
+                Promise.race([timeout, readinessCheck])
                     .then(data => resolve(data))
                     .catch(error => reject(error));
             });
