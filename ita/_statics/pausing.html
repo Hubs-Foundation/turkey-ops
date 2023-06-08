@@ -50,7 +50,8 @@
         window.addEventListener('keypress', function (event) {
                 socket.send("keyCode:"+event.keyCode)
         });
-        mainLoop = setInterval(async function() {
+
+        unpausingLoop = setInterval(async function() {
             console.log("state:", state)
             switch(state) {
                 case 1:
@@ -63,20 +64,9 @@
                         socket.send("_r_: 1")
                         document.getElementById('msg_line1').innerText = "unpausing"
                         state=2
-                        clearInterval(mainLoop);
+                        clearInterval(unpausingLoop);
                     }                    
                     break;
-                case 2:
-                    const ready = await checkReadiness(800)
-                    console.log("ready:", ready)
-                    document.getElementById('msg_line3').innerText = ready + "/5"
-                    if (ready == 5) {                        
-                        setInterval(function() {
-                            location.reload();
-                        }, 3000);
-                    }
-                    break;
-                default:
             }
             if (state==1 && !document.hidden){
                 countdown--;
@@ -84,6 +74,19 @@
                 document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
             }
         }, 1000);
+
+        setInterval(async function() {
+            switch(state) {
+                case 2:
+                    const ready = await checkReadiness(800)
+                    console.log("ready:", ready)
+                    document.getElementById('msg_line3').innerText = ready + "/5"
+                    if (ready == 5) {                        
+                        location.reload();
+                    }
+                    break;
+            }
+        }, 1500);
         
 		document.getElementById('duckPic').addEventListener('click', function() {
 			countdown++;
@@ -106,6 +109,7 @@
             return resp.status === 200
         }
 
+
         async function checkReadiness(timeoutInMilliseconds) {
             return new Promise((resolve, reject) => {
                 const timeout = new Promise((_, reject) => {
@@ -115,11 +119,8 @@
                 });
                 const readinessCheck = new Promise((_, reject) => {
                     [
-                        "https://"+window.location.host,
                         "https://"+window.location.host+"/manifest.webmanifest",
-                        "https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0",
-                        "https://"+window.location.host + "/hubs/pages/index.html",
-                        "https://"+window.location.host + "/hubs/pages/index.html"
+                        "https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0"
                     ].forEach(function (val, idx) {
                         if (!checkEndpoint(val)) {
                             return idx +1
