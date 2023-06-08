@@ -49,7 +49,7 @@
         window.addEventListener('keypress', function (event) {
                 socket.send("keyCode:"+event.keyCode)
         });
-        mainLoop = setInterval(function() {
+        mainLoop = setInterval(async function() {
             switch(state) {
                 case 1:
                     if (!document.hidden){
@@ -65,7 +65,8 @@
                     }                    
                     break;
                 case 2:
-                    if (await checkReadiness(800)) {                        
+                    const ready = checkReadiness(800)
+                    if (ready) {                        
                         setInterval(function() {                
                             location.reload();
                         }, 3000);
@@ -94,7 +95,7 @@
             document.getElementById('duckPic').style.transform='rotate(' + (countdown * 18).toString() + 'deg)';
         }
 
-        function checkEndpoint(ep) {
+        async function checkEndpoint(ep) {
             var resp
             resp = await fetch(ep)
             console.log(resp.status, ep)
