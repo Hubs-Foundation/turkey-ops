@@ -44,13 +44,13 @@ func ArchMigrations() error {
 		}
 	}
 	//		fix pausing label
-	pausingLable, err := Deployment_getLabel("pausing")
+	pausingLable, err := Deployment_getLabel("paused")
 	if err != nil {
 		return err
 	}
 	if pausingLable == "" || pausingLable == "yes" {
 		t_str := time.Now().Format("060102")
-		Deployment_setLabel("pausing", t_str) //time.Parse("060102", t_str)
+		Deployment_setLabel("paused", t_str) //time.Parse("060102", t_str)
 	}
 	return nil
 }
