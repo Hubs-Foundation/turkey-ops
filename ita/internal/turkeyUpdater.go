@@ -155,7 +155,7 @@ func (u *TurkeyUpdater) handleEvents(obj interface{}, eventType string) {
 		// so some namespaces will pull the new container images first
 		// and have them cached locally -- less likely for us to get rate limited
 		rand.Seed(int64(cfg.HostnameHash))
-		waitSec := rand.Intn(300) + 30
+		waitSec := rand.Intn(1800) + 30
 		Logger.Sugar().Debugf("stable channel: deployment will start in %v secs", waitSec)
 		time.Sleep(time.Duration(waitSec) * time.Second)
 	}
