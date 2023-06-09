@@ -42,10 +42,15 @@
                 document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"
                 
                 setInterval(async function() {
-                    console.log("checkReadiness")
-                    const ready = await checkReadiness(800)
-                    console.log("ready:", ready)
-                    document.getElementById('msg_line3').innerText = ready + "/5"
+                    const timeout = new Promise((resolve, reject) => {
+                        setTimeout(resolve, 1000, false);
+                    })
+                    const promise2 = Promise.all([
+                        fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
+                        fetch("https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
+                    ]).then(([status1, status2]) => status1 === 200 && status2 === 200);                    
+                    const ready=await Promise.race([timeout, readinessCheck])
+                    console.log("ready: ", ready)
                     if (ready == 2) {
                         location.reload();
                     }
@@ -77,11 +82,6 @@
                     }                    
                     break;
             }
-            if (state==1 && !document.hidden){
-                countdown--;
-                updateDuckRotation(countdown)
-                document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
-            }
         }, 1000);
         
 		document.getElementById('duckPic').addEventListener('click', function() {
@@ -98,37 +98,13 @@
             document.getElementById('duckPic').style.transform='rotate(' + (countdown * 18).toString() + 'deg)';
         }
 
-        async function checkEndpoint(ep) {
-            var resp
-            resp = await fetch(ep)
-            console.log(resp.status, ep)
-            return resp.status == 200
-        }
+        // async function checkEndpoint(ep) {
+        //     var resp
+        //     resp = await fetch(ep)
+        //     console.log(resp.status, ep)
+        //     return resp.status == 200
+        // }
 
-
-        async function checkReadiness(timeoutInMilliseconds) {
-            return new Promise((resolve, reject) => {
-                const timeout = new Promise((_, reject) => {
-                    setTimeout(() => {
-                        console.log("checkReadiness timeout")
-                    }, timeoutInMilliseconds);
-                });
-                const readinessCheck = new Promise((_, reject) => {
-                    [
-                        "https://"+window.location.host+"/manifest.webmanifest",
-                        "https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0"
-                    ].forEach(function (val, idx) {                        
-                        if (!checkEndpoint(val)) {
-                            return idx +1
-                        }
-                    })
-                    return 2
-                })
-                Promise.race([timeout, readinessCheck])
-                    .then(data => resolve(data))
-                    .catch(error => reject(error));
-            });
-        }
 	</script>
 </body>
 </html>	
