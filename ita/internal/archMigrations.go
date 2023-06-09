@@ -10,10 +10,10 @@ import (
 
 func ArchMigrations() error {
 
-	pausingLable, err := Deployment_getLabel("pausing")
-	if err != nil {
-		return err
-	}
+	// pausingLable, err := Deployment_getLabel("pausing")
+	// if err != nil {
+	// 	return err
+	// }
 	// if pausingLable != "yes" {
 	// 	return nil
 	// }
@@ -24,17 +24,17 @@ func ArchMigrations() error {
 		Logger.Error("VERY BAD -- unexpceted paused instance, pausing==yes, but ret.replicas != 0, manual investigation needed")
 		return nil
 	}
+	Logger.Debug("ret_d.Spec.Replicas == 0")
 	//tripple check
 	pods, _ := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), v1.ListOptions{})
-	if len(pods.Items) != 1 {
-		return nil
-	}
-	if !strings.HasPrefix(pods.Items[0].Name, "ita-") {
-		return nil
+	for _, pod := range pods.Items {
+		Logger.Debug("pod.Name: " + pod.Name)
+		if !strings.HasPrefix(pod.Name, "ita-") {
+			return nil
+		}
 	}
 
-	//fixes for pausing
-	//		delete junk svcs
+	Logger.Info("deleting unused svcs for pausing hc instances")
 	svcs, err := cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return err
@@ -48,11 +48,8 @@ func ArchMigrations() error {
 		}
 	}
 	//		fix pausing label
-	if pausingLable == "yes" {
-		t_str := time.Now().Format("060102")
-		Deployment_setLabel("pausing", t_str) //time.Parse("060102", t_str)
-
-	}
+	t_str := time.Now().Format("060102")
+	Deployment_setLabel("pausing", t_str) //time.Parse("060102", t_str)
 
 	return nil
 }
