@@ -24,6 +24,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 var captchaSolve = int32(111)
@@ -331,21 +332,64 @@ func HC_Resume() error {
 
 	//restore svcs_bak
 	svcsbak_cm, err := cfg.K8sClientSet.CoreV1().ConfigMaps(cfg.PodNS).Get(context.Background(), "svcsbak", metav1.GetOptions{})
-	if err != nil {
+	if err != nil { // for broken arch backwards compatability, can be removed eventually
 		Logger.Error("failed to get ig_bak configmap:" + err.Error())
+		cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).Create(context.Background(), &corev1.Service{
+			ObjectMeta: v1.ObjectMeta{Name: "ret"},
+			Spec: corev1.ServiceSpec{
+				Selector:  map[string]string{"app": "reticulum"},
+				ClusterIP: "None",
+				Ports: []corev1.ServicePort{
+					{Name: "http-reticulum", Port: 4001, TargetPort: intstr.IntOrString{IntVal: 4001}},
+					{Name: "https-reticulum", Port: 4000, TargetPort: intstr.IntOrString{IntVal: 4000}},
+				},
+			},
+		}, metav1.CreateOptions{})
+		cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).Create(context.Background(), &corev1.Service{
+			ObjectMeta: v1.ObjectMeta{Name: "hubs"},
+			Spec: corev1.ServiceSpec{
+				Selector:  map[string]string{"app": "hubs"},
+				ClusterIP: "None",
+				Ports: []corev1.ServicePort{
+					{Name: "https-hubs", Port: 8080, TargetPort: intstr.IntOrString{IntVal: 8080}},
+				},
+			},
+		}, metav1.CreateOptions{})
+		cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).Create(context.Background(), &corev1.Service{
+			ObjectMeta: v1.ObjectMeta{Name: "spoke"},
+			Spec: corev1.ServiceSpec{
+				Selector:  map[string]string{"app": "spoke"},
+				ClusterIP: "None",
+				Ports: []corev1.ServicePort{
+					{Name: "https-spoke", Port: 8080, TargetPort: intstr.IntOrString{IntVal: 8080}},
+				},
+			},
+		}, metav1.CreateOptions{})
+		cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).Create(context.Background(), &corev1.Service{
+			ObjectMeta: v1.ObjectMeta{Name: "speelycaptor"},
+			Spec: corev1.ServiceSpec{
+				Selector:  map[string]string{"app": "speelycaptor"},
+				ClusterIP: "None",
+				Ports: []corev1.ServicePort{
+					{Name: "https-spoke", Port: 5000, TargetPort: intstr.IntOrString{IntVal: 5000}},
+				},
+			},
+		}, metav1.CreateOptions{})
 	}
-	svcsbak := svcsbak_cm.BinaryData["svcsbak"]
-	var svcs corev1.ServiceList
-	err = json.Unmarshal(svcsbak, &svcs)
-	if err != nil {
-		Logger.Sugar().Errorf("failed to unmarshal igsbak: %v", err)
-	}
-	for _, svc := range svcs.Items {
-		if svc.Name != "ita" {
-			svc.ResourceVersion = ""
-			_, err := cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).Create(context.Background(), &svc, metav1.CreateOptions{})
-			if err != nil {
-				Logger.Sugar().Errorf("failed to restore ig_bak: %v", err)
+	if err == nil {
+		svcsbak := svcsbak_cm.BinaryData["svcsbak"]
+		var svcs corev1.ServiceList
+		err = json.Unmarshal(svcsbak, &svcs)
+		if err != nil {
+			Logger.Sugar().Errorf("failed to unmarshal igsbak: %v", err)
+		}
+		for _, svc := range svcs.Items {
+			if svc.Name != "ita" {
+				svc.ResourceVersion = ""
+				_, err := cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).Create(context.Background(), &svc, metav1.CreateOptions{})
+				if err != nil {
+					Logger.Sugar().Errorf("failed to restore ig_bak: %v", err)
+				}
 			}
 		}
 	}
