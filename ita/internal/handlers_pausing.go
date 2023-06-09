@@ -275,7 +275,7 @@ func HC_Pause() error {
 		}
 	}
 
-	Deployment_setLabel("paused", "yes")
+	Deployment_setLabel("paused", time.Now().Format("060102"))
 
 	return nil
 }
@@ -418,7 +418,7 @@ func HC_Resume() error {
 			Logger.Error("failed to delete pausing ingresses" + err.Error())
 		}
 
-		Deployment_setLabel("paused", "no")
+		Deployment_setLabel("paused", "")
 
 		cooldown := cfg.FreeTierIdleMax.Seconds() * 1.5
 		for cooldown > 0 {
