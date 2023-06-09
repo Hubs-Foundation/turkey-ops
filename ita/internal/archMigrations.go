@@ -16,12 +16,11 @@ func ArchMigrations() error {
 		return err
 	}
 	for _, svc := range svcs.Items {
-		if svc.Name == "ita" {
-			continue
-		}
-		err := cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).Delete(context.Background(), svc.Name, v1.DeleteOptions{})
-		if err != nil {
-			return err
+		if svc.Name != "ita" {
+			err := cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).Delete(context.Background(), svc.Name, v1.DeleteOptions{})
+			if err != nil {
+				return err
+			}
 		}
 	}
 	//		fix pausing label
