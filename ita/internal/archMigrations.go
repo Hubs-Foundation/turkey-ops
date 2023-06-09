@@ -10,10 +10,6 @@ import (
 
 func ArchMigrations() error {
 
-	// pausingLable, err := Deployment_getLabel("pausing")
-	// if err != nil {
-	// 	return err
-	// }
 	// if pausingLable != "yes" {
 	// 	return nil
 	// }
@@ -48,8 +44,13 @@ func ArchMigrations() error {
 		}
 	}
 	//		fix pausing label
-	t_str := time.Now().Format("060102")
-	Deployment_setLabel("pausing", t_str) //time.Parse("060102", t_str)
-
+	pausingLable, err := Deployment_getLabel("pausing")
+	if err != nil {
+		return err
+	}
+	if pausingLable == "" || pausingLable == "yes" {
+		t_str := time.Now().Format("060102")
+		Deployment_setLabel("pausing", t_str) //time.Parse("060102", t_str)
+	}
 	return nil
 }
