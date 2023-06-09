@@ -14,6 +14,8 @@ func main() {
 	internal.InitLogger()
 	internal.MakeCfg()
 
+	internal.ArchMigrations()
+
 	//#############################################
 	//################# cron jobs #################
 	//#############################################
