@@ -17,6 +17,13 @@ func ArchMigrations() error {
 		return nil
 	}
 
+	//double check
+	ret_d, _ := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "ret", v1.GetOptions{})
+	if *ret_d.Spec.Replicas != 0 {
+		Logger.Error("VERY BAD -- unexpceted paused instance, pausing==yes, but ret.replicas != 0, manual investigation needed")
+		return nil
+	}
+
 	//fixes for pausing
 	//		delete junk svcs
 	svcs, err := cfg.K8sClientSet.CoreV1().Services(cfg.PodNS).List(context.Background(), v1.ListOptions{})
