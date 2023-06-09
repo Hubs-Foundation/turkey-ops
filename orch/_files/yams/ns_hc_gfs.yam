@@ -636,24 +636,6 @@ spec:
           requests:
             memory: 25Mi
             cpu: 0.01
-      - name: ita
-        image: mozillareality/ita:{{.Img_ita}}
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: POD_NS
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: RET_MODE
-          value: RET_MODE==will-not-start-turkey-updater
-        - name: turkeyCfg_tier
-          value: {{.Tier}}
-        - name: TIER
-          value: {{.Tier}}
-        resources:
-          requests:
-            memory: 25Mi
-            cpu: 0.01
 ---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
@@ -983,9 +965,6 @@ spec:
   - name: http
     port: 6000
     targetPort: 6000
-  - name: https
-    port: 6001
-    targetPort: 6001
   selector:
     app: ita
 ---

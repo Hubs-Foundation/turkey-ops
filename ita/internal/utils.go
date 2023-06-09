@@ -484,7 +484,8 @@ func ingress_addItaApiRule() error {
 	retRootRule := retRootRules[0]
 	port := int32(6000)
 	if _, ok := ig.Annotations["haproxy.org/server-ssl"]; ok {
-		port = 6001
+		// port = 6001
+		Logger.Error("BAD -- UNEXPECTED OUTDATED ARCH !!! ITA INGRESS RULL WILL NOT WORK FOR THIS HC INSTANCE")
 	}
 	itaRule := retRootRule.DeepCopy()
 	itaRule.HTTP.Paths[0].Path = "/api/ita"
