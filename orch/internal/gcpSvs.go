@@ -6,13 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"time"
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/dns/v1"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -357,4 +360,57 @@ func (g *GcpSvs) Filestore_GetIP(name, location string) (string, error) {
 	ip := fs.Networks[0].IpAddresses[0]
 	GetLogger().Debug("Filestore_GetIP: " + ip)
 	return ip, err
+}
+
+func (g *GcpSvs) FindTandemCidr(vpcName string) (string, error) {
+	computeService, err := compute.NewService(context.Background(), option.WithoutAuthentication())
+	if err != nil {
+		Logger.Error(err.Error())
+		return "", err
+	}
+
+	req := computeService.Subnetworks.AggregatedList(g.ProjectId)
+	req.Filter(fmt.Sprintf("network eq .*%s", vpcName))
+	subnetList, err := req.Do()
+	if err != nil {
+		Logger.Error(err.Error())
+		return "", err
+	}
+	// Store the existing CIDRs
+	var existingCIDRs []string
+	for _, subnetList := range subnetList.Items {
+		for _, subnetwork := range subnetList.Subnetworks {
+			existingCIDRs = append(existingCIDRs, subnetwork.IpCidrRange)
+		}
+	}
+	Logger.Sugar().Debugf("[%v] existingCIDRs: %v", vpcName, existingCIDRs)
+	// Loop through possible /16 CIDR blocks to find an available block
+	for i := 0; i <= 255; i++ {
+		for j := 0; j <= 255; j++ {
+			cidr := fmt.Sprintf("10.%d.%d.0/16", i, j)
+			_, ipnet, err := net.ParseCIDR(cidr)
+			if err != nil {
+				Logger.Error(err.Error())
+				return "", err
+			}
+			conflict := false
+			for _, existingCIDR := range existingCIDRs {
+				_, existingNet, err := net.ParseCIDR(existingCIDR)
+				if err != nil {
+					Logger.Error(err.Error())
+					return "", err
+				}
+				if ipnet.Contains(existingNet.IP) || existingNet.Contains(ipnet.IP) {
+					conflict = true
+					break
+				}
+			}
+			if !conflict {
+				Logger.Sugar().Debugf("[%v] found: %v", vpcName, cidr)
+				return cidr, nil
+			}
+		}
+	}
+	return "", errors.New("can't find it, VPC's full?")
+
 }

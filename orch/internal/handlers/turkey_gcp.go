@@ -64,6 +64,12 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		tfTemplateFileName = cfg.Env + "-" + cfg.CLOUD + ".tf.gotemplate"
 	} else {
 		tfTemplateFileName = "tandem-" + cfg.Env + "-" + cfg.CLOUD + ".tf.gotemplate"
+		cfg.VPC_CIDR, err = internal.Cfg.Gcps.FindTandemCidr(cfg.VPC)
+		if err != nil {
+			internal.Logger.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))

@@ -130,6 +130,7 @@ type clusterCfg struct {
 	DASHBOARD_ACCESS_KEY string `json:"DASHBOARD_ACCESS_KEY"` // api key for DASHBOARD access
 	FilestoreIP          string `json: "FilestoreIP"`         //
 	FilestorePath        string `json: "FilestorePath"`       // default: vol1
+	VPC_CIDR             string `json: "VPC_CIDR"`            //for tandem cluster, the first available /16 cidr
 
 	//initiated pre-infra-deploy, generated post-infra-deploy
 	DB_HOST string `json:"DB_HOST"` //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
