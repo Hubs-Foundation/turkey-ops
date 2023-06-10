@@ -107,6 +107,7 @@ type clusterCfg struct {
 	SENTRY_DSN_RET          string `json:"SENTRY_DSN_RET"`          //
 	SENTRY_DSN_HUBS         string `json:"SENTRY_DSN_HUBS"`         //
 	SENTRY_DSN_SPOKE        string `json:"SENTRY_DSN_SPOKE"`        //
+	VPC                     string `json:"VPC`                      //non-empty for tandem cluster
 
 	ItaChan     string `json:"itachan"`     //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
 	CLOUD       string `json:"cloud"`       //aws or gcp or azure or something else like nope or local etc
@@ -222,9 +223,8 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		return cfg, err
 	}
 
-	// treat invalid Domains as ""
 	if strings.HasPrefix(cfg.Domain, "changeMe") || !internal.IsValidDomainName(cfg.Domain) {
-		cfg.Domain = ""
+		return cfg, errors.New("bad Domain: " + cfg.Domain)
 	}
 
 	// stackname present == there's an existing cluster
@@ -392,12 +392,12 @@ func hash(s string) uint32 {
 	return h.Sum32()
 }
 
-func runTf(cfg clusterCfg, verb string, flags ...string) (string, []string, error) {
+func runTf(cfg clusterCfg, tfTemplateFileName, verb string, flags ...string) (string, []string, error) {
 	wd, _ := os.Getwd()
 	// render the template.tf with cfg.Stackname into a Stackname named folder so that
 	// 1. we can run terraform from that folder
 	// 2. terraform will use a Stackname named folder in it's remote backend
-	tfTemplateFile := wd + "/_files/tf/gcp.tf.gotemplate"
+	tfTemplateFile := wd + "/_files/tf/" + tfTemplateFileName
 	if _, err := os.Stat(tfTemplateFile); errors.Is(err, os.ErrNotExist) {
 		return "", nil, err
 	}

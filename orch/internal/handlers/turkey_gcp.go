@@ -58,17 +58,25 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg.CLOUD = "gcp"
+
+	tfTemplateFileName := ""
+	if cfg.VPC == "" {
+		tfTemplateFileName = cfg.Env + "-" + cfg.CLOUD + ".tf.gotemplate"
+	} else {
+		tfTemplateFileName = "tandem-" + cfg.Env + "-" + cfg.CLOUD + ".tf.gotemplate"
+	}
+
 	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-	internal.Logger.Info("[creation] [" + cfg.Stackname + "] " + "started ... this can take a while")
+	internal.Logger.Sugar().Infof("[creation] tfTemplateFileName: %v, cfg: %v ", tfTemplateFileName, cfg)
 
 	go func() {
 		// ########## 2. run tf #########################################
-		tf, err := NewTfSvs(cfg.Stackname, cfg)
-		if err != nil {
-			internal.Logger.Error("failed @NewTfSvs : " + err.Error())
-			return
-		}
-		tfFile, _, err := tf.Run("apply", "--auto-approve")
+		// tf, err := NewTfSvs(cfg.Stackname, cfg)
+		// if err != nil {
+		// 	internal.Logger.Error("failed @NewTfSvs : " + err.Error())
+		// 	return
+		// }
+		tfFile, _, err := runTf(cfg, tfTemplateFileName, "apply", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @tf.Run: " + err.Error())
 			return
@@ -182,6 +190,10 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 }
 
 func tco_gcp_get(w http.ResponseWriter, r *http.Request) {
+
+	http.Error(w, "too dangerous, go do it manually", http.StatusBadRequest)
+	return
+
 	bktPrefix := "tf-backend/"
 	rawList, err := internal.Cfg.Gcps.GCS_List("turkeycfg", bktPrefix)
 	if err != nil {
@@ -220,21 +232,14 @@ func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
-
-	tf, err := NewTfSvs(cfg.Stackname, cfg)
-	if err != nil {
-		internal.Logger.Error("failed @NewTfSvs : " + err.Error())
-		return
-	}
 
 	hrInt := (time.Now().Unix() - 1648672222) / int64(time.Hour)
 	tfplanFileName := cfg.Stackname + ".tf_plan." + strconv.FormatInt(hrInt, 36)
-	tfplanFile := tf.Dir + "/" + tfplanFileName
+	tfplanFile := "tmp/" + tfplanFileName
 
 	if _, err := os.Stat(tfplanFile); err != nil {
 		internal.Logger.Info("[update] [" + cfg.Stackname + "] planning: " + tfplanFileName)
-		_, tfout, err := tf.Run("plan", "-out="+tfplanFileName)
+		_, tfout, err := runTf(cfg, tfplanFile, "plan", "-out="+tfplanFileName)
 		if err != nil {
 			internal.Logger.Error("failed @tf.Run: " + err.Error())
 			return
@@ -290,7 +295,7 @@ func tco_gcp_tfUpdate(w http.ResponseWriter, r *http.Request) {
 		"msg":       "stage: applying",
 		"output":    "use skooner for now...log streaming to be added",
 	})
-	return
+
 }
 func tco_gcp_k8sUpdate(w http.ResponseWriter, r *http.Request) {
 
@@ -309,6 +314,9 @@ func tco_gcp_k8sUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
+
+	http.Error(w, "too dangerous, go do it manually", http.StatusBadRequest)
+	return
 	// sess := internal.GetSession(r.Cookie)
 
 	// ######################################### 1. get cfg from r.body ########################################
@@ -328,15 +336,15 @@ func tco_gcp_delete(w http.ResponseWriter, r *http.Request) {
 	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
 	internal.Logger.Info("[deletion] [" + cfg.Stackname + "] started")
 
-	tf, err := NewTfSvs(cfg.Stackname, cfg)
-	if err != nil {
-		internal.Logger.Error("failed @NewTfSvs : " + err.Error())
-		return
-	}
+	// tf, err := NewTfSvs(cfg.Stackname, cfg)
+	// if err != nil {
+	// 	internal.Logger.Error("failed @NewTfSvs : " + err.Error())
+	// 	return
+	// }
 
 	go func() {
 		// ######################################### 2. run tf #########################################
-		_, _, err := tf.Run("destroy", "--auto-approve")
+		_, _, err := runTf(cfg, cfg.Stackname, "destroy", "--auto-approve")
 		if err != nil {
 			internal.Logger.Error("failed @runTf: " + err.Error())
 		}

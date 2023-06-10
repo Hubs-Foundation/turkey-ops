@@ -16,23 +16,18 @@ provider "google-beta" {
 variable "vmType" {
   type = map
   default = {
-    "stream"  = "e2-standard-4"
-    "hub" = "e2-standard-4"
-    "service" = "e2-standard-4"
-    "spot" = "e2-standard-4"
+    "stream"  = "e2-standard-8"
+    "hub" = "e2-standard-8"
+    "service" = "e2-standard-16"
+    "spot" = "e2-standard-8"
   }
 }
-{{ if ne .Env "dev" }}
-variable "location" {
-  type= string
-  default   = "{{.Region}}"
-}
-{{ else }}
+
 variable "location" {
   type= string
   default   = "{{.Region}}-b"
 }
-{{ end }}
+
 
 ################## network
 resource "google_compute_network" "vpc" {
@@ -42,24 +37,17 @@ resource "google_compute_network" "vpc" {
   name                    = "{{.Stackname}}"
   routing_mode            = "GLOBAL"
 }
-resource "google_compute_subnetwork" "private" {
-  provider = google-beta
-  name          = "{{.Stackname}}-pvt"
-  region        = "{{.Region}}"
-  network       = google_compute_network.vpc.name
-  ip_cidr_range = "10.0.0.0/16"
-  private_ip_google_access = "true"
-}
+
 resource "google_compute_subnetwork" "public" {
   provider = google-beta
-  name          = "{{.Stackname}}-pub"
-  region        = "{{.Region}}"
-  network       = google_compute_network.vpc.name
+  name    = "{{.Stackname}}-pub"
+  region  = "{{.Region}}"
+  network = google_compute_network.vpc.name
   ip_cidr_range = "10.1.0.0/16"
 }
 resource "google_compute_firewall" "stream" {
   provider = google-beta
-  name    = "{{.Stackname}}-stream"
+  name     = "{{.Stackname}}-stream"
   network = google_compute_network.vpc.name
   allow {
     protocol = "tcp"
@@ -78,44 +66,25 @@ resource "google_container_cluster" "gke" {
   name     = "{{.Stackname}}"
   location = var.location
   remove_default_node_pool = true
-  initial_node_count       = 1
+  initial_node_count       = 1  
+  networking_mode    = "CILIUM" # Enabling Dataplane V2 by setting networking mode to CILIUM
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.public.name
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
   cluster_autoscaling {   # this is node auto-provisioning, not "cluster autoscaler", more info--https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
-# {{ if ne .Env "dev" }}    
-#     enabled = true
-#     resource_limits{
-#       resource_type = "memory"
-#       minimum = 24
-#       maximum = 512
-#     }
-#     resource_limits{
-#       resource_type = "cpu"
-#       minimum = 12
-#       maximum = 256
-#     }
-#     autoscaling_profile = "OPTIMIZE_UTILIZATION"
-# {{ else }}    
-#     enabled = false
-# {{ end }}
     enabled = false
   }
-
-  # doesn't seem to be working, as of 
   logging_config {
     enable_components = []
   }
   monitoring_config {
     enable_components = []
   } 
-
 }
 
 ####################### node pools
 ####################### dev env => create a single "turkey:spot" node pool
 ####################### non-dev env => create 4 node pools: {turkey:stream, turkey:hub, turkey:services, turkey:spot}
-{{ if ne .Env "dev" }}
 resource "google_container_node_pool" "stream_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-stream"
@@ -204,36 +173,7 @@ resource "google_container_node_pool" "service_nodes" {
     max_node_count = 32
   }
 }
-{{ else }}
-resource "google_container_node_pool" "spot_nodes" {  # spot instances for tooling/monitoring (and free tiers hub probably)
-  provider = google-beta
-  name       = "${google_container_cluster.gke.name}-spot"
-  location   = var.location
-  cluster    = google_container_cluster.gke.name
-  node_count = 1
-  node_config {
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/logging.write",
-      "https://www.googleapis.com/auth/monitoring",
-    ]
-    labels = {
-      env = "{{.Env}}"
-      stackname="{{.Stackname}}"
-      turkey = "spot"
-    }
-    preemptible  = true
-    machine_type = var.vmType["spot"]
-    tags         = ["turkey","{{.Env}}","spot","{{.Stackname}}"]
-    metadata = {
-      disable-legacy-endpoints = "true"
-    }
-  }
-  autoscaling { # this is "cluster autoscaler"
-    min_node_count = 1
-    max_node_count = 256
-  }
-}
-{{ end }}
+
 ################## pgsql
 resource "google_compute_global_address" "private_ip_address" {
   provider = google-beta
@@ -292,23 +232,21 @@ resource "google_sql_database" "dashboard_db" {
   name     = "dashboard"
   instance = google_sql_database_instance.pgsql.name
 }
-######################## filestore
 
-resource "google_filestore_instance" "instance" {
-  name = "{{.Stackname}}"
-  location = "{{.Region}}-b"
-  tier = "STANDARD"
-  file_shares {
-    capacity_gb = 1024
-    name        = "vol1"
-  }
-  networks {
-    network = "{{.Stackname}}"
-    modes   = ["MODE_IPV4"]
-  }
-}
-
-
+# ######################## filestore
+# resource "google_filestore_instance" "instance" {
+#   name = "{{.Stackname}}"
+#   location = "{{.Region}}-b"
+#   tier = "STANDARD"
+#   file_shares {
+#     capacity_gb = 1024
+#     name        = "vol1"
+#   }
+#   networks {
+#     network = "{{.Stackname}}"
+#     modes   = ["MODE_IPV4"]
+#   }
+# }
 
 
 

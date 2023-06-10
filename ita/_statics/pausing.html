@@ -48,7 +48,7 @@
                     const readinessCheck = Promise.all([
                         fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
                         fetch("https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
-                    ]).then(([status1, status2]) => status1 === 200 && status2 === 200);                    
+                    ]).then(([status1, status2]) => status1 === 200 && status2 === 200);
                     const ready=await Promise.race([timeout, readinessCheck])
                     console.log("ready: ", ready)
                     if (ready) {
