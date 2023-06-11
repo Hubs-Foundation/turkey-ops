@@ -62,9 +62,15 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 	tfTemplateFileName := ""
 	if cfg.VPC == "" {
 		tfTemplateFileName = cfg.Env + "-" + cfg.CLOUD + ".tf.gotemplate"
-	} else {
+	} else { // VPC provided == creating a new cluster on provided VPC, aka a tandem cluster, main goal is to share the filestore
 		tfTemplateFileName = "tandem-" + cfg.Env + "-" + cfg.CLOUD + ".tf.gotemplate"
 		cfg.VPC_CIDR, err = internal.Cfg.Gcps.FindTandemCidr(cfg.VPC)
+		if err != nil {
+			internal.Logger.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		cfg.FilestoreIP, err = internal.Cfg.Gcps.Filestore_GetIP(cfg.VPC, cfg.Region+"-a")
 		if err != nil {
 			internal.Logger.Error(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -99,15 +105,16 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 		// *** wip ***
 		// get filestore ip and vol name and add to cfg
-		fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname, cfg.Region+"-b")
-		if err != nil {
-			internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "post tf deployment: failed to get Filestore_GetIP, err: " + err.Error())
-			// return
-			fsip = "0.0.0.0"
-		}
-		cfg.FilestoreIP = fsip
-		cfg.FilestorePath = "vol1"
-		// *** wip ***
+		if cfg.FilestoreIP == "" {
+			fsip, err := internal.Cfg.Gcps.Filestore_GetIP(cfg.Stackname, cfg.Region+"-a")
+			if err != nil {
+				internal.Logger.Error("[creation] [" + cfg.Stackname + "] " + "post tf deployment: failed to get Filestore_GetIP, err: " + err.Error())
+				// return
+				fsip = "0.0.0.0"
+			}
+			cfg.FilestoreIP = fsip
+			cfg.FilestorePath = "vol1"
+		} // *** wip ***
 
 		cfg.DB_HOST = dbIps["PRIVATE"] //+ ":5432"
 		cfg.DB_CONN = "postgres://postgres:" + cfg.DB_PASS + "@" + cfg.DB_HOST
