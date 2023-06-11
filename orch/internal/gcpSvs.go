@@ -384,7 +384,7 @@ func (g *GcpSvs) FindTandemCidr(vpcName string) (string, error) {
 	}
 	Logger.Sugar().Debugf("[%v] existingCIDRs: %v", vpcName, existingCIDRs)
 	// Loop through possible /16 CIDR blocks to find an available block
-	for i := 11; i <= 255; i++ {
+	for i := 101; i <= 255; i++ {
 		// for j := 0; j <= 255; j++ {
 		// cidr := fmt.Sprintf("10.%d.%d.0/16", i, j)
 		cidr := fmt.Sprintf("10.%d.0.0/16", i)
