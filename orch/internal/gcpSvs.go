@@ -332,6 +332,34 @@ func (g *GcpSvs) PubSub_Pulling(subscriptionName string, f func(ctx context.Cont
 		return err
 	}
 	sub := client.Subscription(subscriptionName)
+
+	// ok, err := sub.Exists(ctx)
+	// if err != nil {
+	// 	Logger.Error("Failed to check subscription existence: " + err.Error())
+	// 	return err
+	// }
+	// if !ok {
+	// 	Logger.Sugar().Warnf("pubsub sub <%v> not found (new deployment?), creating it on the fly for topic <%v>", subscriptionName, Cfg.TurkeyJobsPubSubTopic)
+	// 	sub, err = client.CreateSubscription(ctx, subscriptionName, pubsub.SubscriptionConfig{
+	// 		Topic: client.Topic(Cfg.TurkeyJobsPubSubTopic),
+	// 		EnableExactlyOnceDelivery: true,
+	// 		AckDeadline: 60*time.Second,
+	// 		DeadLetterPolicy: &pubsub.DeadLetterPolicy{
+	// 			DeadLetterTopic: Cfg.TurkeyJobsPubSubTopic+"_dlq",
+	// 			MaxDeliveryAttempts: 6,
+	// 		},
+	// 		RetryPolicy: &pubsub.RetryPolicy{
+	// 			MinimumBackoff: 10*time.Second,
+	// 			MaximumBackoff: 10*time.Second,
+	// 		},
+
+	// 	})
+	// 	if err != nil {
+	// 		Logger.Error("failed to create pubsub sub " + err.Error())
+	// 		return err
+	// 	}
+	// }
+
 	err = sub.Receive(ctx, f)
 	if err != nil {
 		Logger.Error(err.Error())

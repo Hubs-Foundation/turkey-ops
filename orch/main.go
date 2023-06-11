@@ -1,16 +1,13 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"main/internal"
 	"main/internal/handlers"
-
-	"cloud.google.com/go/pubsub"
 )
 
 func main() {
@@ -19,6 +16,11 @@ func main() {
 	internal.InitLogger()
 	internal.MakeCfg()
 	internal.MakePgxPool()
+
+	cron_30m := internal.NewCron("cron_30m", 30*time.Minute)
+	internal.Cronjob_CountHC(time.Second)
+	cron_30m.Load("Cronjob_CountHC", internal.Cronjob_CountHC)
+	cron_30m.Start()
 
 	pvtEpEnforcer := internal.NewPvtEpEnforcer(
 		[]string{
@@ -32,22 +34,7 @@ func main() {
 		// internal.Cfg.K8ss_local.StartWatching_HcNs()
 		pvtEpEnforcer.StartWatching()
 	}
-
-	if internal.Cfg.ClusterName != "" {
-		// cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
-		// cron_1m.Load("turkeyBuildPublisher", internal.Cronjob_TurkeyJobQueue)
-		// cron_1m.Start()
-		go func() {
-			for {
-				err := internal.Cfg.Gcps.PubSub_Pulling(
-					"turkey_job_queue_"+internal.Cfg.ClusterName+"_sub",
-					TurkeyJobRouter,
-				)
-				internal.Logger.Sugar().Errorf("err: %v", err)
-			}
-		}()
-	}
-	fmt.Println("router")
+	handlers.HandleTurkeyJobs()
 
 	router := http.NewServeMux()
 	//public endpoints
@@ -200,35 +187,3 @@ func mozOnly() func(http.Handler) http.Handler {
 // 		})
 // 	}
 // }
-
-var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
-	internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", string(msg.Data))
-	internal.Logger.Sugar().Debugf("received message, msg.Attributes :%v\n", msg.Attributes)
-
-	var hcCfg handlers.HCcfg
-	err := json.Unmarshal(msg.Data, &hcCfg)
-	if err != nil {
-		internal.Logger.Error("bad hcmsg.DataCfg: " + string(msg.Data))
-	}
-	switch hcCfg.JobQueueReqMethod {
-	case "POST":
-		err = handlers.CreateHubsCloudInstance(hcCfg)
-		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to CreateHubsCloudInstance, err: %v, msg.Data dump: %v", err, string(msg.Data))
-		}
-	case "PATCH":
-		_, err := handlers.UpdateHubsCloudInstance(hcCfg)
-		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to PatchHubsCloudInstance, err: %v, msg.Data dump: %v", err, string(msg.Data))
-		}
-	case "DELETE":
-		err := handlers.DeleteHubsCloudInstance(hcCfg)
-		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to DeleteHubsCloudInstance, err: %v, msg.Data dump: %v", err, string(msg.Data))
-		}
-
-	default:
-		internal.Logger.Error("bad hcCfg.JobQueueReqMethod: " + hcCfg.JobQueueReqMethod)
-	}
-	msg.Ack()
-}

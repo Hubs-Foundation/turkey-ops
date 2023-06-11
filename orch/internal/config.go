@@ -4,30 +4,31 @@ import (
 	"context"
 	"net"
 	"os"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Config struct {
-	ClusterName string
-
 	Port         string
 	PodIp        string
 	PodNS        string
 	PodLabelApp  string
 	AuthProxyUrl string `description:"auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)"`
 
-	Env           string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
-	Channel       string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
-	Domain        string `long:"domain" env:"DOMAIN" description:"turkey domain this k8s cluster's serving, example: myhubs.net"`
-	HubDomain     string
-	DBuser        string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
-	DBpass        string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`
-	DBconn        string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
-	PermsKey      string `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications"`
-	FilestoreIP   string ``
-	FilestorePath string ``
+	Env                     string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
+	TurkeyJobsPubSubSubName string
+	Channel                 string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
+	Domain                  string `long:"domain" env:"DOMAIN" description:"example: myhubs.dev, this is the domain for turkey services, ie. asset and stream "`
+	HubDomain               string `long:"hubdomain" env:"HUB_DOMAIN" description:"example: myhubs.net, this is the domain for reticulum"`
+	ClusterName             string
+	DBuser                  string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
+	DBpass                  string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`
+	DBconn                  string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
+	PermsKey                string `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications"`
+	FilestoreIP             string ``
+	FilestorePath           string ``
 
 	AwsKey               string `long:"aws-key" env:"AWS_KEY" description:"AWS_ACCESS_KEY_ID"`
 	AwsSecret            string `long:"aws-secret" env:"AWS_SECRET" description:"AWS_SECRET_ACCESS_KEY"`
@@ -65,8 +66,6 @@ var Cfg *Config
 func MakeCfg() {
 	Cfg = &Config{}
 
-	Cfg.ClusterName = os.Getenv("CLUSTER_NAME")
-	Logger.Info("Cfg.ClusterName: " + Cfg.ClusterName)
 	Cfg.ImgRepo = "mozillareality"
 
 	Cfg.AuthProxyUrl = os.Getenv("AUTH_PROXY_URL")
@@ -93,9 +92,19 @@ func MakeCfg() {
 	} else if Cfg.Env == "prod" {
 		Cfg.Channel = "stable"
 	}
+
+	Cfg.TurkeyJobsPubSubSubName = "turkey_jobs_sub"
+	if Cfg.Env == "dev" {
+		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
+	}
+
 	Logger.Info("Cfg.Channel: " + Cfg.Channel)
 	Cfg.Domain = os.Getenv("DOMAIN")
 	Cfg.HubDomain = os.Getenv("HUB_DOMAIN")
+
+	Cfg.ClusterName = strings.Split(Cfg.HubDomain, ".")[0]
+	Logger.Info("Cfg.ClusterName: " + Cfg.ClusterName)
+
 	Cfg.DBconn = os.Getenv("DB_CONN")
 	Cfg.FilestoreIP = os.Getenv("FilestoreIP")
 	Cfg.FilestorePath = getEnv("FilestorePath", "vol1")

@@ -1,8 +1,12 @@
 package internal
 
 import (
+	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type Cron struct {
@@ -78,3 +82,17 @@ func Cronjob_dummy(interval time.Duration) {
 // 	Logger.Sugar().Debugf("msg received: %v", msgBytes)
 
 // }
+
+var HC_Count int32
+
+func Cronjob_CountHC(interval time.Duration) {
+	tStart := time.Now()
+	nsList, err := Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{
+		LabelSelector: "hub_id",
+	})
+	if err != nil {
+		Logger.Error("Cronjob_CountHC failed: " + err.Error())
+	}
+	atomic.StoreInt32(&HC_Count, (int32)(len(nsList.Items)))
+	Logger.Sugar().Debugf("Cronjob_CountHC took: %v", time.Since(tStart))
+}
