@@ -101,7 +101,7 @@ resource "google_container_node_pool" "stream_nodes" {
       stackname="{{.Stackname}}"
       turkey = "stream"
     }
-    preemptible  = false
+    preemptible  = {{.IsSpot}}
     machine_type = var.vmType["stream"] # dialog's cpu bound, uses less than 1G ram per 1core cpu on load
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","stream","{{.Stackname}}"]
@@ -130,7 +130,7 @@ resource "google_container_node_pool" "hub_nodes" {
       stackname="{{.Stackname}}"
       turkey = "hub"
     }
-    preemptible  = false
+    preemptible  = {{.IsSpot}}
     machine_type = var.vmType["hub"]  # ret uses:
                                     #   10m/250Mi@idle, 150m+500Mi/ccu@25ccu, 380m/650Mi@60, 1300m/800Mi@110ccu
                                     #   aka. ram bound at low ccu, cpu bound at high ccu
@@ -160,7 +160,7 @@ resource "google_container_node_pool" "service_nodes" {
       stackname="{{.Stackname}}"
       turkey = "service"
     }
-    preemptible  = false
+    preemptible  = {{.IsSpot}}
     machine_type = var.vmType["service"]
     # local_ssd_count = 1
     tags         = ["turkey","{{.Env}}","service","{{.Stackname}}"]

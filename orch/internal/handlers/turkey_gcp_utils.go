@@ -108,6 +108,7 @@ type clusterCfg struct {
 	SENTRY_DSN_HUBS         string `json:"SENTRY_DSN_HUBS"`         //
 	SENTRY_DSN_SPOKE        string `json:"SENTRY_DSN_SPOKE"`        //
 	VPC                     string `json:"VPC`                      //non-empty for tandem cluster
+	IsSpot                  string `json:IsSpot`                    //if using spot instance (ie. for dev)
 
 	ItaChan     string `json:"itachan"`     //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
 	CLOUD       string `json:"cloud"`       //aws or gcp or azure or something else like nope or local etc

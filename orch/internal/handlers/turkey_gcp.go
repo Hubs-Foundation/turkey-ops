@@ -62,9 +62,9 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 
 	tfTemplateFileName := ""
 	if cfg.VPC == "" {
-		tfTemplateFileName = cfg.Env + "-" + cfg.CLOUD + ".tf.gotemplate"
+		tfTemplateFileName = "tf.gotemplate"
 	} else { // VPC provided == creating a new cluster on provided VPC, aka a tandem cluster, main goal is to share the filestore
-		tfTemplateFileName = "tandem-" + cfg.Env + "-" + cfg.CLOUD + ".tf.gotemplate"
+		tfTemplateFileName = "tandem-tf.gotemplate"
 		cfg.VPC_CIDR, err = internal.Cfg.Gcps.FindTandemCidr(cfg.VPC)
 		if err != nil {
 			internal.Logger.Error(err.Error())
@@ -77,6 +77,10 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+	}
+	cfg.IsSpot = "false"
+	if cfg.Env == "dev" {
+		cfg.IsSpot = "true"
 	}
 
 	// internal.Logger.Debug(fmt.Sprintf("turkeycfg: %v", cfg))
