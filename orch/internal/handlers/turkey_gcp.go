@@ -70,7 +70,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		cfg.FilestoreIP, err = internal.Cfg.Gcps.Filestore_GetIP(cfg.VPC, cfg.Region+"-a")
+		cfg.FilestoreIP, err = internal.Cfg.Gcps.Filestore_GetIP(cfg.VPC+"-hs", cfg.Region+"-a")
 		if err != nil {
 			internal.Logger.Error(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
