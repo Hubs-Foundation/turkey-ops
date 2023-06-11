@@ -15,7 +15,6 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/dns/v1"
 	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
 	sqladmin "google.golang.org/api/sqladmin/v1beta4"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -363,7 +362,7 @@ func (g *GcpSvs) Filestore_GetIP(name, location string) (string, error) {
 }
 
 func (g *GcpSvs) FindTandemCidr(vpcName string) (string, error) {
-	computeService, err := compute.NewService(context.Background(), option.WithoutAuthentication())
+	computeService, err := compute.NewService(context.Background())
 	if err != nil {
 		Logger.Error(err.Error())
 		return "", err
