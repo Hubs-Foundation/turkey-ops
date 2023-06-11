@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/smtp"
@@ -149,17 +150,23 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		internal.Logger.Info("[creation] [" + cfg.Stackname + "] " + "k8sSetups completed")
 
 		// ########## what else? send an email? doe we use dns in gcp or do we keep using route53?
-		rootDomain := internal.FindRootDomain(cfg.Domain)
-		err = internal.Cfg.Gcps.Dns_createRecordSet(strings.Replace(rootDomain, ".", "-", 1),
-			// strings.Replace("*."+cfg.Domain, rootDomain, "", 1),
-			"*."+cfg.Domain+".",
-			"A", []string{report["lb"]})
 
-		dnsMsg := "(already done in gcp/cloudDns)"
-		if err != nil {
-			internal.Logger.Warn("[creation] [" + cfg.Stackname + "] " + "Dns_createRecordSet failed: " + err.Error())
-			dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"
-		}
+		// rootDomain := internal.FindRootDomain(cfg.Domain)
+		// err = internal.Cfg.Gcps.Dns_createRecordSet(strings.Replace(rootDomain, ".", "-", 1),
+		// 	// strings.Replace("*."+cfg.Domain, rootDomain, "", 1),
+		// 	"*."+cfg.Domain+".",
+		// 	"A", []string{report["lb"]})
+
+		// dnsMsg := "(already done in gcp/cloudDns)"
+		// if err != nil {
+		// 	internal.Logger.Warn("[creation] [" + cfg.Stackname + "] " + "Dns_createRecordSet failed: " + err.Error())
+		// 	dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"
+		// }
+
+		// internal.Cfg.Awss.Route53_addRecord("*."+cfg.Domain, "A", report["lbIp"])
+		// internal.Cfg.Awss.Route53_addRecord("*."+cfg.HubDomain, "A", report["igIp"])
+
+		dnsMsg := fmt.Sprintf("*.%s -> A -> [%s]; *.%s -> A -> [%s]", cfg.Domain, report["lbIp"], cfg.HubDomain, report["igIp"])
 
 		//upload clusterCfg
 		clusterCfgBytes, _ := json.Marshal(cfg)
@@ -167,7 +174,6 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		internal.Cfg.Gcps.GCS_WriteFile("turkeycfg", "tf-backend/"+cfg.Stackname+"/infra.tf", tfFile)
 
 		//email the final manual steps to authenticated user
-
 		authnUser := r.Header.Get("X-Forwarded-UserEmail")
 		err = smtp.SendMail(
 			internal.Cfg.SmtpServer+":"+internal.Cfg.SmtpPort,
@@ -388,26 +394,33 @@ func k8sSetups(cfg clusterCfg, k8sCfg *rest.Config, k8sYamls []string) (map[stri
 		}
 	}
 
-	// find sknooner token
-	toolsSecrets, err := internal.K8s_GetAllSecrets(k8sCfg, "tools")
-	if err != nil {
-		internal.Logger.Error("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
-		return nil, err
-	}
-	for k, v := range toolsSecrets {
-		if strings.HasPrefix(k, "skooner-sa-token-") {
-			report["skoonerToken"] = string(v["token"])
-		}
-	}
-	// internal.Logger.Debug("~~~~~~~~~~skoonerToken: " + report["skoonerToken"])
-	// find service-lb's host info (or public ip)
+	// // find sknooner token
+	// toolsSecrets, err := internal.K8s_GetAllSecrets(k8sCfg, "tools")
+	// if err != nil {
+	// 	internal.Logger.Error("post cf deployment: failed to get k8s secrets in tools namespace because: " + err.Error())
+	// 	return nil, err
+	// }
+	// for k, v := range toolsSecrets {
+	// 	if strings.HasPrefix(k, "skooner-sa-token-") {
+	// 		report["skoonerToken"] = string(v["token"])
+	// 	}
+	// }
+
 	lb, err := internal.K8s_GetServiceIngress0(k8sCfg, "ingress", "lb")
 	if err != nil {
 		internal.Logger.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
 		return nil, err
 	}
-	report["lb"] = lb.IP
-	internal.Logger.Info("~~~~~~~~~~lb: " + report["lb"])
+	report["lbIp"] = lb.IP
+	internal.Logger.Info("~~~~~~~~~~lbIp: " + report["lbIp"])
+
+	ig, err := internal.K8s_GetServiceIngress0(k8sCfg, "ingress", "gcp-hosted-ingress")
+	if err != nil {
+		internal.Logger.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
+		return nil, err
+	}
+	report["igIp"] = ig.IP
+	internal.Logger.Info("~~~~~~~~~~igIp: " + report["igIp"])
 
 	return report, nil
 }

@@ -261,28 +261,48 @@ func K8s_GetServiceIngress0(cfg *rest.Config, namespace string, serviceName stri
 	if err != nil {
 		return corev1.LoadBalancerIngress{}, err
 	}
-	// GetLogger().Debug(fmt.Sprintf("svc.ObjectMeta: %v", svc.ObjectMeta))
-	// GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer: %v", svc.Status.LoadBalancer))
-	// GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer.Ingress: %v", svc.Status.LoadBalancer.Ingress))
-	// GetLogger().Debug(fmt.Sprintf("svc.Status.LoadBalancer.Ingress[0]: %v", svc.Status.LoadBalancer.Ingress[0]))
 
-	tries := 1
+	tries := 10
 	for len(svc.Status.LoadBalancer.Ingress) < 1 {
-		if tries > 10 {
-			GetLogger().Warn("got nothing and max retry(10) reached")
-			break
+		if tries < 1 {
+			GetLogger().Warn("timeout")
+			return corev1.LoadBalancerIngress{}, errors.New("retry timeout")
 		}
-		GetLogger().Info("got nothing -- retrying: " + fmt.Sprint(tries))
+		GetLogger().Info("nothing -- retrying: " + fmt.Sprint(tries))
 		time.Sleep(time.Second * 30)
 		svc, _ = svcsClient.Get(context.Background(), serviceName, metav1.GetOptions{})
-		tries++
+		tries--
 		fmt.Printf("svc: %v\n", svc)
-	}
-	if len(svc.Status.LoadBalancer.Ingress) < 1 {
-		return corev1.LoadBalancerIngress{}, errors.New("retry timeout")
 	}
 
 	return svc.Status.LoadBalancer.Ingress[0], nil
+}
+
+func K8s_GetIngressIngress0(cfg *rest.Config, namespace string, ingressName string) (corev1.LoadBalancerIngress, error) {
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return corev1.LoadBalancerIngress{}, err
+	}
+	igsClient := clientset.CoreV1().Services(namespace)
+	ig, err := igsClient.Get(context.Background(), ingressName, metav1.GetOptions{})
+	if err != nil {
+		return corev1.LoadBalancerIngress{}, err
+	}
+
+	tries := 10
+	for len(ig.Status.LoadBalancer.Ingress) < 1 {
+		if tries < 1 {
+			GetLogger().Warn("timeout")
+			return corev1.LoadBalancerIngress{}, errors.New("retry timeout")
+		}
+		GetLogger().Info("nothing -- retrying: " + fmt.Sprint(tries))
+		time.Sleep(time.Second * 30)
+		ig, _ = igsClient.Get(context.Background(), ingressName, metav1.GetOptions{})
+		tries--
+		fmt.Printf("ig: %v\n", ig)
+	}
+
+	return ig.Status.LoadBalancer.Ingress[0], nil
 }
 
 func K8s_getNs(cfg *rest.Config) (*corev1.NamespaceList, error) {
