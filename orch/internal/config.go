@@ -17,6 +17,7 @@ type Config struct {
 	PodLabelApp  string
 	AuthProxyUrl string `description:"auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)"`
 
+	Region                    string
 	Env                       string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
 	TurkeyJobsPubSubSubName   string
 	TurkeyJobsPubSubTopicName string
@@ -66,6 +67,8 @@ var Cfg *Config
 
 func MakeCfg() {
 	Cfg = &Config{}
+
+	Cfg.Region = getEnv("REGION", "us-central1")
 
 	Cfg.ImgRepo = "mozillareality"
 
