@@ -385,30 +385,31 @@ func (g *GcpSvs) FindTandemCidr(vpcName string) (string, error) {
 	Logger.Sugar().Debugf("[%v] existingCIDRs: %v", vpcName, existingCIDRs)
 	// Loop through possible /16 CIDR blocks to find an available block
 	for i := 11; i <= 255; i++ {
-		for j := 0; j <= 255; j++ {
-			cidr := fmt.Sprintf("10.%d.%d.0/16", i, j)
-			_, ipnet, err := net.ParseCIDR(cidr)
+		// for j := 0; j <= 255; j++ {
+		// cidr := fmt.Sprintf("10.%d.%d.0/16", i, j)
+		cidr := fmt.Sprintf("10.%d.0.0/16", i)
+		_, ipnet, err := net.ParseCIDR(cidr)
+		if err != nil {
+			Logger.Error(err.Error())
+			return "", err
+		}
+		conflict := false
+		for _, existingCIDR := range existingCIDRs {
+			_, existingNet, err := net.ParseCIDR(existingCIDR)
 			if err != nil {
 				Logger.Error(err.Error())
 				return "", err
 			}
-			conflict := false
-			for _, existingCIDR := range existingCIDRs {
-				_, existingNet, err := net.ParseCIDR(existingCIDR)
-				if err != nil {
-					Logger.Error(err.Error())
-					return "", err
-				}
-				if ipnet.Contains(existingNet.IP) || existingNet.Contains(ipnet.IP) {
-					conflict = true
-					break
-				}
-			}
-			if !conflict {
-				Logger.Sugar().Debugf("[%v] found: %v", vpcName, cidr)
-				return cidr, nil
+			if ipnet.Contains(existingNet.IP) || existingNet.Contains(ipnet.IP) {
+				conflict = true
+				break
 			}
 		}
+		if !conflict {
+			Logger.Sugar().Debugf("[%v] found: %v", vpcName, cidr)
+			return cidr, nil
+		}
+		// }
 	}
 	return "", errors.New("can't find it, VPC's full?")
 
