@@ -41,13 +41,13 @@ resource "google_compute_subnetwork" "public" {
   provider = google-beta
   name    = "{{.Stackname}}-pub"
   region  = "{{.Region}}"
-  network = "{{.HostVPC}}"
-  ip_cidr_range = "10.1.0.0/16"
+  network = "{{.VPC}}"
+  ip_cidr_range = "{{.VPC_CIDR}}"
 }
 resource "google_compute_firewall" "stream" {
   provider = google-beta
   name     = "{{.Stackname}}-stream"
-  network  = "{{.HostVPC}}"
+  network  = "{{.VPC}}"
   allow {
     protocol = "tcp"
     ports    = ["4443", "5349"]
@@ -67,7 +67,7 @@ resource "google_container_cluster" "gke" {
   remove_default_node_pool = true
   initial_node_count       = 1
   networking_mode    = "CILIUM" # Enabling Dataplane V2 by setting networking mode to CILIUM
-  network  = "{{.HostVPC}}"
+  network  = "{{.VPC}}"
   subnetwork = google_compute_subnetwork.public.name
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
   cluster_autoscaling {   # this is node auto-provisioning, not "cluster autoscaler", more info--https://cloud.google.com/kubernetes-engine/docs/how-to/node-auto-provisioning
