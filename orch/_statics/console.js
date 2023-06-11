@@ -141,8 +141,8 @@ tbody.onclick = function (e) {
 
 document.getElementById("btn_sampleCfg_minDev").onclick = function(){
   document.getElementById("cluster_cfg").value = `{
-  "domain":"changeMe.myhubs.net",
-  "hubdomain":"changeMe.myhubs.dev",
+  "domain":"changeMe.myhubs.dev",
+  "hubdomain":"changeMe.myhubs.net",
   "region":"us-central1"
 }`
 }

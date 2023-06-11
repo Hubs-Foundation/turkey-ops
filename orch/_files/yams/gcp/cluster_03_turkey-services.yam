@@ -519,6 +519,8 @@ spec:
           mountPath: /turkeyfs
           mountPropagation: Bidirectional
         env:
+        - name: REGION
+          value: {{.Region}}
         - name: FilestoreIP
           value: {{.FilestoreIP}}
         - name: FilestorePath
