@@ -33,7 +33,10 @@ var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 	if err != nil {
 		internal.Logger.Error("bad hcmsg.DataCfg: " + string(msg.Data))
 	}
-	switch hcCfg.JobQueueReqMethod {
+
+	internal.Logger.Sugar().Debugf("hcCfg: %v", hcCfg)
+
+	switch hcCfg.TurkeyJobReqMethod {
 	case "POST":
 		err = CreateHubsCloudInstance(hcCfg)
 		if err != nil {
@@ -51,7 +54,7 @@ var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 		}
 
 	default:
-		internal.Logger.Error("bad hcCfg.JobQueueReqMethod: " + hcCfg.JobQueueReqMethod)
+		internal.Logger.Error("bad hcCfg.TurkeyJobReqMethod: " + hcCfg.TurkeyJobReqMethod)
 	}
 	msg.Ack()
 }

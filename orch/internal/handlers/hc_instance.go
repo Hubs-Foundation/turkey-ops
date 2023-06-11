@@ -40,8 +40,8 @@ type HCcfg struct {
 	NodePool     string `json:"nodepool"`      // default == spot
 
 	//optional inputs
-	Options       string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
-	TargetCluster string `json:"target_cluster"`
+	Options string `json:"options"` //additional options, debug purpose only, underscore(_)prefixed -- ie. "_nfs"
+	Region  string `json:"region"`
 
 	//inherited from turkey cluster -- aka the values are here already, in internal.Cfg
 	Domain               string `json:"domain"`
@@ -84,8 +84,9 @@ type HCcfg struct {
 	// Img_ytdl string
 
 	//control fields
-	JobQueueReqMethod          string `json:"job_queue_req_method"`
-	JobQueueReqCallbackWebhook string `json:"job_queue_req_callback_webhook"`
+	TurkeyJobReqMethod string `json:"turkey_job_req_method"`
+	TurkeyJobJobId     string `json:"turkey_job_job_id"`
+	TurkeyJobCallback  string `json:"turkey_job_callback"`
 }
 
 var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -100,14 +101,17 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// do we need to bounce it to a foreign cluster
-	if cfg.TargetCluster != "" && cfg.TargetCluster != internal.Cfg.ClusterName {
-		internal.Logger.Debug("hcCfg.TargetCluster: " + cfg.TargetCluster)
-		cfg.JobQueueReqMethod = r.Method
+	// is this a multi-cluster request
+	if cfg.Region != "" {
+		internal.Logger.Debug("multi-cluster req, hcCfg.Region: " + cfg.Region)
+
+		cfg.TurkeyJobReqMethod = r.Method
+		cfg.TurkeyJobJobId = w.Header().Get("X-Request-Id")
+		cfg.TurkeyJobCallback = "https://dashboard.myhubs.net/api/v1/events/orch"
+
 		msgBytes, _ := json.Marshal(cfg)
 
-		jobQueueTopic := "turkey_job_queue_" + cfg.TargetCluster
-		err = internal.Cfg.Gcps.PubSub_PublishMsg(jobQueueTopic, msgBytes)
+		err = internal.Cfg.Gcps.PubSub_PublishMsg(internal.Cfg.TurkeyJobsPubSubTopicName, msgBytes)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed, err:= ", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -115,7 +119,7 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		}
 		w.WriteHeader(http.StatusAccepted)
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "cross cluster/region req --> published to: " + jobQueueTopic,
+			"job_id": cfg.TurkeyJobJobId,
 			"hub_id": cfg.HubId,
 		})
 		return

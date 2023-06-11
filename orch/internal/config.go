@@ -17,18 +17,19 @@ type Config struct {
 	PodLabelApp  string
 	AuthProxyUrl string `description:"auth proxy needs to produce http200 and various X-Forwarded headers for auth success (ie. X-Forwarded-UserEmail)"`
 
-	Env                     string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
-	TurkeyJobsPubSubSubName string
-	Channel                 string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
-	Domain                  string `long:"domain" env:"DOMAIN" description:"example: myhubs.dev, this is the domain for turkey services, ie. asset and stream "`
-	HubDomain               string `long:"hubdomain" env:"HUB_DOMAIN" description:"example: myhubs.net, this is the domain for reticulum"`
-	ClusterName             string
-	DBuser                  string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
-	DBpass                  string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`
-	DBconn                  string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
-	PermsKey                string `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications"`
-	FilestoreIP             string ``
-	FilestorePath           string ``
+	Env                       string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
+	TurkeyJobsPubSubSubName   string
+	TurkeyJobsPubSubTopicName string
+	Channel                   string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
+	Domain                    string `long:"domain" env:"DOMAIN" description:"example: myhubs.dev, this is the domain for turkey services, ie. asset and stream "`
+	HubDomain                 string `long:"hubdomain" env:"HUB_DOMAIN" description:"example: myhubs.net, this is the domain for reticulum"`
+	ClusterName               string
+	DBuser                    string `long:"db-user" env:"DB_USER" description:"postgresql data base username"`
+	DBpass                    string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`
+	DBconn                    string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
+	PermsKey                  string `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications"`
+	FilestoreIP               string ``
+	FilestorePath             string ``
 
 	AwsKey               string `long:"aws-key" env:"AWS_KEY" description:"AWS_ACCESS_KEY_ID"`
 	AwsSecret            string `long:"aws-secret" env:"AWS_SECRET" description:"AWS_SECRET_ACCESS_KEY"`
