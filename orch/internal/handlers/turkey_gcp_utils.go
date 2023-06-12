@@ -387,6 +387,9 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	cfg.DASHBOARD_ACCESS_KEY = internal.PwdGen(15, pwdSeed, "P~")
 
 	cfg.ProjectId = internal.Cfg.Gcps.ProjectId
+	if cfg.FilestorePath == "" {
+		cfg.FilestorePath = "/vol1"
+	}
 
 	return cfg, nil
 }
