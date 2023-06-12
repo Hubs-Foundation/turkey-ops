@@ -413,8 +413,16 @@ spec:
       labels:
         app: reticulum
     spec:
-      nodeSelector:
-        turkey: {{.NodePool}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: turkey
+                operator: In
+                values:
+                - {{.NodePool}}
       volumes:
       - name: nfs
         nfs:
@@ -694,8 +702,16 @@ spec:
       labels:
         app: hubs
     spec:
-      nodeSelector:
-        turkey: {{.NodePool}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: turkey
+                operator: In
+                values:
+                - {{.NodePool}}
       containers:
       - name: hubs
         image: mozillareality/hubs:{{.Img_hubs}}
@@ -781,8 +797,16 @@ spec:
       labels:
         app: spoke
     spec:
-      nodeSelector:
-        turkey: {{.NodePool}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: turkey
+                operator: In
+                values:
+                - {{.NodePool}}
       containers:
       - name: spoke
         image: mozillareality/spoke:{{.Img_spoke}}
@@ -870,8 +894,16 @@ spec:
 #       labels:
 #         app: nearspark
 #     spec:
-#       nodeSelector:
-#         turkey: {{.NodePool}}
+#      affinity:
+#        nodeAffinity:
+#          preferredDuringSchedulingIgnoredDuringExecution:
+#          - weight: 100
+#            preference:
+#              matchExpressions:
+#              - key: turkey
+#                operator: In
+#                values:
+#                - {{.NodePool}}
 #       containers:
 #       - name: nearspark
 #         image: mozillareality/nearspark:stable-latest
@@ -916,8 +948,16 @@ spec:
         app: ita
     spec:
       serviceAccountName: ita-sa
-      nodeSelector:
-        turkey: {{.NodePool}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: turkey
+                operator: In
+                values:
+                - {{.NodePool}}
       containers:
       - name: ita
         image: mozillareality/ita:{{.Img_ita}}
@@ -1012,8 +1052,16 @@ spec:
       labels:
         app: speelycaptor
     spec:
-      nodeSelector:
-        turkey: {{.NodePool}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: turkey
+                operator: In
+                values:
+                - {{.NodePool}}
       containers:
       - image: mozillareality/speelycaptor:{{.Img_speelycaptor}}
         imagePullPolicy: IfNotPresent
@@ -1079,8 +1127,16 @@ spec:
 #       labels:
 #         app: photomnemonic
 #     spec:
-#       nodeSelector:
-#         turkey: {{.NodePool}}
+#      affinity:
+#        nodeAffinity:
+#          preferredDuringSchedulingIgnoredDuringExecution:
+#          - weight: 100
+#            preference:
+#              matchExpressions:
+#              - key: turkey
+#                operator: In
+#                values:
+#                - {{.NodePool}}
 #       containers:
 #       - name: photomnemonic
 #         image: mozillareality/photomnemonic:{{.Img_photomnemonic}}
@@ -1139,8 +1195,16 @@ spec:
 #       labels:
 #         app: nfs  
 #     spec:
-#       nodeSelector:
-#         turkey: {{.NodePool}}
+#      affinity:
+#        nodeAffinity:
+#          preferredDuringSchedulingIgnoredDuringExecution:
+#          - weight: 100
+#            preference:
+#              matchExpressions:
+#              - key: turkey
+#                operator: In
+#                values:
+#                - {{.NodePool}}
 #       containers:
 #         - name: nfs
 #           # image: mozillareality/nfs:stable-latest
