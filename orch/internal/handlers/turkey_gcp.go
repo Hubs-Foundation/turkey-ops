@@ -168,8 +168,9 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 		// 	dnsMsg = "root domain not found in gcp/cloud-dns, you need to create it manually"
 		// }
 
-		internal.Cfg.Awss.Route53_addRecord("*."+cfg.Domain, "A", report["lbIp"])
+		internal.Cfg.Awss.Route53_addRecord("*."+cfg.Domain, "A", report["igIp"])
 		internal.Cfg.Awss.Route53_addRecord("*."+cfg.HubDomain, "A", report["igIp"])
+		internal.Cfg.Awss.Route53_addRecord("*.stream."+cfg.Domain, "A", report["lbIp"])
 
 		dnsMsg := fmt.Sprintf("*.%s -> A -> [%s]; *.%s -> A -> [%s]", cfg.Domain, report["lbIp"], cfg.HubDomain, report["igIp"])
 

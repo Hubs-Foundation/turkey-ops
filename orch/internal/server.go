@@ -100,7 +100,7 @@ func (s *Server) Start() {
 		atomic.StoreInt32(&Healthy, 0)
 
 		ctx, cancel := context.WithTimeout(context.Background(),
-			1*time.Second) //default = 30 or longer probably i guess depends on the thing
+			10*time.Minute) //30 sec or longer probably i guess depends on the thing
 		defer cancel()
 
 		server.SetKeepAlivesEnabled(false)
