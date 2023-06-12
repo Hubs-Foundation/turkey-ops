@@ -283,7 +283,7 @@ func K8s_GetIngressIngress0(cfg *rest.Config, namespace string, ingressName stri
 	if err != nil {
 		return corev1.LoadBalancerIngress{}, err
 	}
-	igsClient := clientset.CoreV1().Services(namespace)
+	igsClient := clientset.NetworkingV1().Ingresses(namespace)
 	ig, err := igsClient.Get(context.Background(), ingressName, metav1.GetOptions{})
 	if err != nil {
 		return corev1.LoadBalancerIngress{}, err
