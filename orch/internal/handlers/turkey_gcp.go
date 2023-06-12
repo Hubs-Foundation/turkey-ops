@@ -77,6 +77,7 @@ func tco_gcp_create(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		cfg.Stackname = cfg.VPC + "-" + strings.Split(cfg.VPC_CIDR, ".")[1]
 	}
 	cfg.IsSpot = "false"
 	if cfg.Env == "dev" {
