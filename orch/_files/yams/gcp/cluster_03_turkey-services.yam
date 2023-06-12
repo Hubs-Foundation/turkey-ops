@@ -507,7 +507,7 @@ spec:
       - name: nfs
         nfs:
           server: {{.FilestoreIP}}
-          path: /{{.FilestorePath}}
+          path: {{.FilestorePath}}
       containers:
       - name: turkeyorch
         image: mozilla/turkeyorch:{{.ItaChan}}-latest
@@ -1073,7 +1073,7 @@ spec:
       {{ end }}
       containers:
       - name: has
-        image: mozillareality/has:{{.ItaChan}}
+        image: mozillareality/has:{{.ItaChan}}-latest
         ports:
         - containerPort: 9001
         resources:
