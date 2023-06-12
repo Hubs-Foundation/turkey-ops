@@ -262,14 +262,14 @@ func K8s_GetServiceIngress0(cfg *rest.Config, namespace string, serviceName stri
 		return corev1.LoadBalancerIngress{}, err
 	}
 
-	tries := 10
+	tries := 15
 	for len(svc.Status.LoadBalancer.Ingress) < 1 {
 		if tries < 1 {
 			GetLogger().Warn("timeout")
 			return corev1.LoadBalancerIngress{}, errors.New("retry timeout")
 		}
 		GetLogger().Info("nothing -- retrying: " + fmt.Sprint(tries))
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Second * 60)
 		svc, _ = svcsClient.Get(context.Background(), serviceName, metav1.GetOptions{})
 		tries--
 		fmt.Printf("svc: %v\n", svc)
@@ -289,14 +289,14 @@ func K8s_GetIngressIngress0(cfg *rest.Config, namespace string, ingressName stri
 		return corev1.LoadBalancerIngress{}, err
 	}
 
-	tries := 10
+	tries := 15
 	for len(ig.Status.LoadBalancer.Ingress) < 1 {
 		if tries < 1 {
 			GetLogger().Warn("timeout")
 			return corev1.LoadBalancerIngress{}, errors.New("retry timeout")
 		}
 		GetLogger().Info("nothing -- retrying: " + fmt.Sprint(tries))
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Second * 60)
 		ig, _ = igsClient.Get(context.Background(), ingressName, metav1.GetOptions{})
 		tries--
 		fmt.Printf("ig: %v\n", ig)
