@@ -82,6 +82,7 @@ resource "google_container_cluster" "gke" {
 resource "google_container_node_pool" "stream_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-stream"
+  location = "{{.Region}}"
   cluster    = google_container_cluster.gke.name
   node_count = 1
   node_config {
@@ -110,6 +111,7 @@ resource "google_container_node_pool" "stream_nodes" {
 resource "google_container_node_pool" "hub_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-hub"
+  location = "{{.Region}}"
   cluster    = google_container_cluster.gke.name
   node_count = 1
   node_config {
@@ -139,6 +141,7 @@ resource "google_container_node_pool" "hub_nodes" {
 resource "google_container_node_pool" "service_nodes" {
   provider = google-beta
   name       = "${google_container_cluster.gke.name}-service"
+  location = "{{.Region}}"
   cluster    = google_container_cluster.gke.name
   node_count = 1
   node_config {
