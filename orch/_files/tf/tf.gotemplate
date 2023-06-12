@@ -220,9 +220,9 @@ resource "google_sql_user" "db_user" {
     google_sql_database_instance.pgsql
   ]
   provider = google-beta
-  name     = "{{.DbUser}}"
+  name     = "{{.DB_USER}}"
   instance = google_sql_database_instance.pgsql.name
-  password = "{{.DbPass}}"
+  password = "{{.DB_PASS}}"
 }
 resource "google_sql_database" "dashboard_db" {
   depends_on = [

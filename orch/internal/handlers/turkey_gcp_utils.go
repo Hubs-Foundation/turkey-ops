@@ -134,9 +134,10 @@ type clusterCfg struct {
 	VPC_CIDR             string `json: "VPC_CIDR"`            //for tandem cluster, the first available /16 cidr
 
 	//initiated pre-infra-deploy, generated post-infra-deploy
-	DB_HOST string `json:"DB_HOST"` //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
-	DB_CONN string `json:"DB_CONN"` //postgres://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
-	PSQL    string `json:"PSQL"`    //postgresql://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
+	DB_HOST   string `json:"DB_HOST"`   //geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+	DB_CONN   string `json:"DB_CONN"`   //postgres://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com
+	PSQL      string `json:"PSQL"`      //postgresql://postgres:itjfHE8888@geng-test4turkey-db.ccgehrnbveo1.us-east-1.rds.amazonaws.com/ret_dev
+	ProjectId string `json:"ProjectId"` //gcp projectId
 }
 
 func turkey_getCfg(r *http.Request) (clusterCfg, error) {
@@ -385,6 +386,8 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	}
 	cfg.DASHBOARD_ACCESS_KEY = internal.PwdGen(15, pwdSeed, "P~")
 
+	cfg.ProjectId = internal.Cfg.Gcps.ProjectId
+
 	return cfg, nil
 }
 
@@ -417,14 +420,16 @@ func runTf(cfg clusterCfg, tfTemplateFileName, verb string, flags ...string) (st
 	f, _ := os.Create(tfFile)
 	defer f.Close()
 
-	t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass, Env string }{
-		ProjectId: internal.Cfg.Gcps.ProjectId,
-		Stackname: cfg.Stackname,
-		Region:    cfg.Region,
-		DbUser:    cfg.DB_USER,
-		DbPass:    cfg.DB_PASS,
-		Env:       cfg.Env,
-	})
+	// t.Execute(f, struct{ ProjectId, Stackname, Region, DbUser, DbPass, Env string }{
+	// 	ProjectId: internal.Cfg.Gcps.ProjectId,
+	// 	Stackname: cfg.Stackname,
+	// 	Region:    cfg.Region,
+	// 	DbUser:    cfg.DB_USER,
+	// 	DbPass:    cfg.DB_PASS,
+	// 	Env:       cfg.Env,
+	// })
+	t.Execute(f, cfg)
+
 	tfBytes, _ := ioutil.ReadFile(tfFile)
 	tfFileStr := string(tfBytes)
 
