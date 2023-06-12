@@ -66,7 +66,6 @@ resource "google_container_cluster" "gke" {
   location = var.location
   remove_default_node_pool = true
   initial_node_count       = 1
-  networking_mode    = "CILIUM" # Enabling Dataplane V2 by setting networking mode to CILIUM
   network  = "{{.VPC}}"
   subnetwork = google_compute_subnetwork.public.name
   ip_allocation_policy {}  # empty == let gcp pick to avoid "cidr range not available" errors
@@ -79,6 +78,7 @@ resource "google_container_cluster" "gke" {
   monitoring_config {
     enable_components = []
   } 
+  datapath_provider = "ADVANCED_DATAPATH" # dataplane v2
 }
 
 ####################### node pools
