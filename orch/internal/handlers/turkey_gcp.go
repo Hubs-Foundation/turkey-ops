@@ -419,7 +419,7 @@ func k8sSetups(cfg clusterCfg, k8sCfg *rest.Config, k8sYamls []string) (map[stri
 	report["lbIp"] = lb.IP
 	internal.Logger.Info("~~~~~~~~~~lbIp: " + report["lbIp"])
 
-	ig, err := internal.K8s_GetServiceIngress0(k8sCfg, "ingress", "gcp-hosted-ingress")
+	ig, err := internal.K8s_GetIngressIngress0(k8sCfg, "ingress", "gcp-hosted-ingress")
 	if err != nil {
 		internal.Logger.Error("post cf deployment: failed to get ingress lb's external ip because: " + err.Error())
 		return nil, err
