@@ -206,7 +206,7 @@ resource "google_sql_database_instance" "pgsql" {
     {{ end }}
     ip_configuration {
       ipv4_enabled    = true
-      private_network = "{{.VPC}}"
+      private_network = "projects/{{.ProjectId}}/global/networks/{{.VPC}}"
     }
     database_flags {
       name = "max_connections"
