@@ -1,0 +1,139 @@
+####################################################################################
+#################################### dashboard #####################################
+####################################################################################  
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: turkeydashboard
+  namespace: turkey-services
+  annotations:
+    kubernetes.io/ingress.class: haproxy
+spec:
+  rules:
+  - host: dashboard-api.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeydashboard
+            port: 
+              number: 4000
+  - host: dashboard.{{.Domain}}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: turkeydashboard
+            port: 
+              number: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: turkeydashboard
+  namespace: turkey-services
+  labels:
+    app: turkeydashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: turkeydashboard
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: turkeydashboard
+    spec:
+      imagePullSecrets:
+      - name: regcred  
+      # terminationGracePeriodSeconds: 3
+      {{ if ne .Env "dev" }}
+      nodeSelector:
+        turkey: service
+      {{ end }}
+      containers:
+      - name: turkeydashboard
+        image: mozilla/turkeydashboard:{{.ItaChan}}-latest
+        imagePullPolicy: IfNotPresent        
+        env:
+        - name: AUTH_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: AUTH_PUBLIC_KEY
+        - name: turkeyDomain
+          value: {{.Domain}}        
+        - name: PHX_HOST
+          value: dashboard.{{.Domain}}
+        - name: PHX_SERVER
+          value: string
+        - name: RELEASE_NAME
+          value: string
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DASHBOARD_DATABASE_URL      #ecto://USER:PASS@HOST/DATABASE
+        - name: SECRET_KEY_BASE
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DASHBOARD_SECRET_KEY_BASE
+        - name: DASHBOARD_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: configs
+              key: DASHBOARD_ACCESS_KEY
+        - name: BASIC_AUTH_USERNAME
+          value: dev
+        - name: BASIC_AUTH_PASSWORD
+          value: ducksducksducks
+        - name: AUTH_SERVER
+          value: auth.{{.Domain}}
+        - name: FXA_SERVER
+          value: {{.FXA_SERVER}}
+        resources:
+          requests:
+            cpu: 0.25
+            memory: 250Mi
+          limits:
+            cpu: 1
+            memory: 2Gi
+      - name: turkeydashboardclient
+        image: mozilla/turkeydashboardclient:{{.ItaChan}}-latest
+        imagePullPolicy: IfNotPresent        
+        env:
+        - name: dummy
+          value: dummy
+        resources:
+          requests:
+            cpu: 0.25
+            memory: 250Mi
+          limits:
+            cpu: 1
+            memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: turkeydashboard
+  namespace: turkey-services
+  labels:
+    app: turkeydashboard
+spec:
+  type: ClusterIP
+  selector:
+    app: turkeydashboard
+  ports:
+  - name: http-client
+    port: 3000
+    targetPort: 3000
+  - name: http
+    port: 4000
+    targetPort: 4000
