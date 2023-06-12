@@ -226,7 +226,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		return cfg, err
 	}
 
-	if strings.HasPrefix(cfg.Domain, "changeMe") || !internal.IsValidDomainName(cfg.Domain) {
+	if strings.HasPrefix(cfg.Domain, "changeMe") { //|| !internal.IsValidDomainName(cfg.Domain) {
 		return cfg, errors.New("bad Domain: " + cfg.Domain)
 	}
 
