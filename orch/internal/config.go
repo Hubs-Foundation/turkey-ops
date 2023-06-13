@@ -21,6 +21,7 @@ type Config struct {
 	Env                       string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
 	TurkeyJobsPubSubSubName   string
 	TurkeyJobsPubSubTopicName string
+	LAZY                      bool   `description:"Nack all jobs"`
 	Channel                   string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
 	Domain                    string `long:"domain" env:"DOMAIN" description:"example: myhubs.dev, this is the domain for turkey services, ie. asset and stream "`
 	HubDomain                 string `long:"hubdomain" env:"HUB_DOMAIN" description:"example: myhubs.net, this is the domain for reticulum"`
@@ -102,6 +103,11 @@ func MakeCfg() {
 	if Cfg.Env == "dev" {
 		Cfg.TurkeyJobsPubSubTopicName = "dev_turkey_jobs"
 		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
+	}
+
+	Cfg.LAZY = false
+	if os.Getenv("LAZY") != "" {
+		Cfg.LAZY = true
 	}
 
 	Logger.Info("Cfg.Channel: " + Cfg.Channel)

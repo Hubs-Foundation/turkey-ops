@@ -26,6 +26,13 @@ func HandleTurkeyJobs() {
 }
 
 var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
+
+	if internal.Cfg.LAZY {
+		internal.Logger.Info("LAZY --> Nack")
+		msg.Nack()
+		return
+	}
+
 	DeliveryAttempt := *msg.DeliveryAttempt
 	internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", string(msg.Data))
 	internal.Logger.Sugar().Debugf("received message, msg.DeliveryAttempt :%v\n", DeliveryAttempt)
@@ -41,6 +48,7 @@ var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 	if DeliveryAttempt < 6 && DeliveryAttempt < loadTier {
 		internal.Logger.Sugar().Debugf("Nack: DeliveryAttempt(%v), loadTier(%v)", DeliveryAttempt, loadTier)
 		msg.Nack()
+		return
 	}
 	snooze := time.Duration(internal.HC_Count * int32(time.Millisecond))
 	internal.Logger.Sugar().Debugf("snoozing for HC_Count: %v Millisecond", snooze.Milliseconds())
