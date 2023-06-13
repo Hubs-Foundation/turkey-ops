@@ -184,3 +184,23 @@ document.getElementById("btn_sampleCfg_fullBlown").onclick = function(){
   "Options":"changeMe"
 }`
 }
+
+document.getElementById("btn_sampleCfg_tandemDev").onclick = function(){
+  document.getElementById("cluster_cfg").value = `{
+  "domain":"changeMe.myhubs.dev",
+  "hubdomain":"changeMe.myhubs.net",
+  "region":"us-central1",
+  "env":"dev",
+  "VPC":"devmyhubsnet5hmnp"
+}`
+}
+
+document.getElementById("btn_sampleCfg_tandemProd").onclick = function(){
+  document.getElementById("cluster_cfg").value = `{
+  "domain":"changeMe.myhubs.dev",
+  "hubdomain":"changeMe.myhubs.net",
+  "region":"us-central1"
+  "env":"prod",
+  "VPC":"myhubsdevacn55"
+}`
+}
