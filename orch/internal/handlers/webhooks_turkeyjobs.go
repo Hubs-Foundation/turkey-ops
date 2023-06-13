@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-var turkeyJobs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var Webhook_turkeyJobs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		handleTurkeyJobCallback(r)
 	}

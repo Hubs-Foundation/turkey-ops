@@ -40,7 +40,8 @@ func main() {
 
 	router := http.NewServeMux()
 	//public endpoints
-	router.Handle("/webhooks/dockerhub", handlers.Dockerhub)
+	router.Handle("/webhooks/dockerhub", handlers.Webhook_dockerhub)
+	router.Handle("/webhooks/turkeyjobs", handlers.Webhook_turkeyJobs)
 
 	//private endpoints
 	router.Handle("/_healthz", handlers.Healthz())
