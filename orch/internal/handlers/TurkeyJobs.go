@@ -10,7 +10,7 @@ import (
 
 func HandleTurkeyJobs() {
 
-	internal.Logger.Debug("")
+	internal.Logger.Debug("HandleTurkeyJobs")
 
 	go func() {
 		for {

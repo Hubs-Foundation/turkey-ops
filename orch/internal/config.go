@@ -97,8 +97,10 @@ func MakeCfg() {
 		Cfg.Channel = "stable"
 	}
 
+	Cfg.TurkeyJobsPubSubTopicName = "turkey_jobs"
 	Cfg.TurkeyJobsPubSubSubName = "turkey_jobs_sub"
 	if Cfg.Env == "dev" {
+		Cfg.TurkeyJobsPubSubTopicName = "dev_turkey_jobs"
 		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
 	}
 
