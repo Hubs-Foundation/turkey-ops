@@ -5,7 +5,9 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -62,12 +64,37 @@ type Config struct {
 	K8ss_local *K8sSvs
 
 	ImgRepo string
+
+	RedisAddr string
+	RedisPass string
+	Redis     *redis.Client
 }
 
 var Cfg *Config
 
 func MakeCfg() {
 	Cfg = &Config{}
+
+	Cfg.RedisAddr = os.Getenv("REDIS_ADDR")
+	if Cfg.RedisAddr != "" {
+		Cfg.RedisPass = os.Getenv("REDIS_PASS")
+		Cfg.Redis = redis.NewClient(&redis.Options{
+			Addr:     Cfg.RedisAddr,
+			Password: Cfg.RedisPass,
+			DB:       0,
+		})
+		//test
+		go func() {
+			Logger.Sugar().Debugf("redis test, pushing key in 3 sec")
+			time.Sleep(3 * time.Second)
+			Cfg.Redis.RPush(context.Background(), "testkey", "hi")
+		}()
+		result, err := Cfg.Redis.BLPop(context.Background(), 0*time.Second, "testkey").Result()
+		if err != nil {
+			Logger.Sugar().Debugf("redis test failed -- err:%v", err)
+		}
+		Logger.Sugar().Debugf("redis test result: %v", result)
+	}
 
 	Cfg.Region = getEnv("REGION", "us-central1")
 
