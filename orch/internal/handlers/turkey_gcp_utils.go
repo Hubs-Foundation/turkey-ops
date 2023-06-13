@@ -388,7 +388,7 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 
 	cfg.ProjectId = internal.Cfg.Gcps.ProjectId
 	if cfg.FilestorePath == "" {
-		cfg.FilestorePath = "/vol1"
+		cfg.FilestorePath = "vol1"
 	}
 
 	return cfg, nil
