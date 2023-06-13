@@ -22,18 +22,20 @@ func main() {
 	cron_30m.Load("Cronjob_CountHC", internal.Cronjob_CountHC)
 	cron_30m.Start()
 
-	pvtEpEnforcer := internal.NewPvtEpEnforcer(
-		[]string{
-			"turkeydashboard.turkey-services",
-			"turkeyauth.turkey-services",
-		},
-	)
+	// pvtEpEnforcer := internal.NewPvtEpEnforcer(
+	// 	[]string{
+	// 		"turkeydashboard.turkey-services",
+	// 		"turkeyauth.turkey-services",
+	// 	},
+	// )
 
-	if internal.Cfg.K8ss_local != nil {
-		// internal.StartLruCache()
-		// internal.Cfg.K8ss_local.StartWatching_HcNs()
-		pvtEpEnforcer.StartWatching()
-	}
+	// if internal.Cfg.K8ss_local != nil {
+	// 	// internal.StartLruCache()
+	// 	// internal.Cfg.K8ss_local.StartWatching_HcNs()
+
+	// 	pvtEpEnforcer.StartWatching()
+	// }
+
 	handlers.HandleTurkeyJobs()
 
 	router := http.NewServeMux()
@@ -68,7 +70,7 @@ func main() {
 	}))
 
 	router.Handle("/letsencrypt-account-collect", handlers.LetsencryptAccountCollect)
-	router.Handle("/dump_hcnstable", pvtEpEnforcer.Filter([]string{"*"})(handlers.Dump_HcNsTable))
+	// router.Handle("/dump_hcnstable", pvtEpEnforcer.Filter([]string{"*"})(handlers.Dump_HcNsTable))
 
 	//start listening
 	port, err := strconv.Atoi(internal.Cfg.Port)

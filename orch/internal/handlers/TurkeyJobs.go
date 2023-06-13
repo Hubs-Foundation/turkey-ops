@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"main/internal"
+	"math"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 )
@@ -24,37 +26,70 @@ func HandleTurkeyJobs() {
 }
 
 var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
-	internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", string(msg.Data))
-	internal.Logger.Sugar().Debugf("received message, msg.Attributes :%v\n", msg.Attributes)
+	internal.Logger.Sugar().Debugf("received message, msg :%v\n", msg)
+	internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", msg.Data)
+	internal.Logger.Sugar().Debugf("received message, msg.DeliveryAttempt :%v\n", msg.DeliveryAttempt)
+	internal.Logger.Sugar().Debugf("received message, msg.ID :%v\n", msg.ID)
+	internal.Logger.Sugar().Debugf("received message, msg.OrderingKey :%v\n", msg.OrderingKey)
+	internal.Logger.Sugar().Debugf("received message, msg.PublishTime :%v\n", msg.PublishTime)
 	internal.Logger.Sugar().Debugf("HC_Count: %v", internal.HC_Count)
 
-	var hcCfg HCcfg
-	err := json.Unmarshal(msg.Data, &hcCfg)
+	//let lighter clusters take the job first
+	DeliveryAttempt := *msg.DeliveryAttempt
+	loadTier := (int)(math.Round((float64)(internal.HC_Count) / (float64)(1000)))
+
+	internal.Logger.Sugar().Debugf("DeliveryAttempt(%v), loadTier(%v)", DeliveryAttempt, loadTier)
+	if DeliveryAttempt < 6 && DeliveryAttempt < loadTier {
+		internal.Logger.Sugar().Debugf("Nack: DeliveryAttempt(%v), loadTier(%v)", DeliveryAttempt, loadTier)
+		msg.Nack()
+	}
+	snooze := time.Duration(internal.HC_Count * int32(time.Millisecond))
+	internal.Logger.Sugar().Debugf("snoozing for HC_Count: %v Millisecond", snooze.Microseconds())
+	time.Sleep(snooze)
+
+	//try to acquire the job
+	AckStat, err := msg.AckWithResult().Get(context.Background())
 	if err != nil {
-		internal.Logger.Error("bad hcmsg.DataCfg: " + string(msg.Data))
+		internal.Logger.Sugar().Infof("[abort] AckStat: %v, AckWithResult err: %v,%v", AckStat, err)
+		return
+	}
+
+	// job acquired
+	var hcCfg HCcfg
+	err = json.Unmarshal(msg.Data, &hcCfg)
+	if err != nil {
+		internal.Logger.Error("bad msg.Data: " + string(msg.Data))
 	}
 
 	internal.Logger.Sugar().Debugf("hcCfg: %v", hcCfg)
+	hcCfg, err = makeHcCfg(hcCfg)
+	if err != nil {
+		internal.Logger.Error("bad hcCfg: " + err.Error())
+		return
+	}
 
 	switch hcCfg.TurkeyJobReqMethod {
 	case "POST":
 		err = CreateHubsCloudInstance(hcCfg)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to CreateHubsCloudInstance, err: %v, msg.Data dump: %v", err, string(msg.Data))
+			internal.Logger.Sugar().Errorf("failed to CreateHubsCloudInstance, err: %v", err)
 		}
 	case "PATCH":
 		_, err := UpdateHubsCloudInstance(hcCfg)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to PatchHubsCloudInstance, err: %v, msg.Data dump: %v", err, string(msg.Data))
+			internal.Logger.Sugar().Errorf("failed to PatchHubsCloudInstance, err: %v", err)
 		}
 	case "DELETE":
 		err := DeleteHubsCloudInstance(hcCfg)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to DeleteHubsCloudInstance, err: %v, msg.Data dump: %v", err, string(msg.Data))
+			internal.Logger.Sugar().Errorf("failed to DeleteHubsCloudInstance, err: %v", err)
 		}
 
 	default:
 		internal.Logger.Error("bad hcCfg.TurkeyJobReqMethod: " + hcCfg.TurkeyJobReqMethod)
 	}
-	msg.Ack()
+
+	//callback
+	internal.Logger.Sugar().Debugf("calling back: %v", hcCfg.TurkeyJobCallback)
+
 }
