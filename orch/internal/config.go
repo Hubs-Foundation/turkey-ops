@@ -23,6 +23,7 @@ type Config struct {
 	Env                       string `long:"environment" env:"ENV" description:"env name, used to select tf template file"`
 	TurkeyJobsPubSubSubName   string
 	TurkeyJobsPubSubTopicName string
+	TurkeyJobCallback         string
 	LAZY                      bool   `description:"Nack all jobs"`
 	Channel                   string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
 	Domain                    string `long:"domain" env:"DOMAIN" description:"example: myhubs.dev, this is the domain for turkey services, ie. asset and stream "`
@@ -85,15 +86,17 @@ func MakeCfg() {
 		})
 		//test
 		go func() {
-			Logger.Sugar().Debugf("redis test, pushing key in 3 sec")
-			time.Sleep(3 * time.Second)
-			Cfg.Redis.RPush(context.Background(), "testkey", "hi")
+			go func() {
+				Logger.Sugar().Debugf("redis test, pushing key in 3 sec, t.now: %v", time.Now())
+				time.Sleep(3 * time.Second)
+				Cfg.Redis.RPush(context.Background(), "testkey", "foobar")
+			}()
+			result, err := Cfg.Redis.BLPop(context.Background(), 0*time.Second, "testkey").Result()
+			if err != nil {
+				Logger.Sugar().Debugf("redis test failed -- err:%v", err)
+			}
+			Logger.Sugar().Debugf("redis test result: %v, t.now: %v", result, time.Now())
 		}()
-		result, err := Cfg.Redis.BLPop(context.Background(), 0*time.Second, "testkey").Result()
-		if err != nil {
-			Logger.Sugar().Debugf("redis test failed -- err:%v", err)
-		}
-		Logger.Sugar().Debugf("redis test result: %v", result)
 	}
 
 	Cfg.Region = getEnv("REGION", "us-central1")
@@ -127,9 +130,11 @@ func MakeCfg() {
 
 	Cfg.TurkeyJobsPubSubTopicName = "turkey_jobs"
 	Cfg.TurkeyJobsPubSubSubName = "turkey_jobs_sub"
+	Cfg.TurkeyJobCallback = "    https://orch.myhubs.net/webhooks/turkeyjobs"
 	if Cfg.Env == "dev" {
 		Cfg.TurkeyJobsPubSubTopicName = "dev_turkey_jobs"
 		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
+		Cfg.TurkeyJobCallback = "    https://orch.dev.myhubs.net/webhooks/turkeyjobs"
 	}
 
 	Cfg.LAZY = false

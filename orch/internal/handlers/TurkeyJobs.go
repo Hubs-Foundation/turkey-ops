@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"main/internal"
 	"math"
+	"net/http"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -75,28 +77,40 @@ var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 		return
 	}
 
+	callback_payload := map[string]string{}
+	callback_payload["id"] = hcCfg.TurkeyJobJobId
+	callback_payload["hub_id"] = hcCfg.HubId
+	callback_payload["domain"] = hcCfg.HubDomain
+
 	switch hcCfg.TurkeyJobReqMethod {
 	case "POST":
 		err = CreateHubsCloudInstance(hcCfg)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to CreateHubsCloudInstance, err: %v", err)
+			callback_payload["err"] = err.Error()
 		}
 	case "PATCH":
 		_, err := UpdateHubsCloudInstance(hcCfg)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to PatchHubsCloudInstance, err: %v", err)
+			callback_payload["err"] = err.Error()
 		}
 	case "DELETE":
 		err := DeleteHubsCloudInstance(hcCfg)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to DeleteHubsCloudInstance, err: %v", err)
+			callback_payload["err"] = err.Error()
 		}
-
 	default:
-		internal.Logger.Error("bad hcCfg.TurkeyJobReqMethod: " + hcCfg.TurkeyJobReqMethod)
+		internal.Logger.Warn("bad hcCfg.TurkeyJobReqMethod: " + hcCfg.TurkeyJobReqMethod)
 	}
 
 	//callback
 	internal.Logger.Sugar().Debugf("calling back: %v", hcCfg.TurkeyJobCallback)
-
+	jsonPayload, _ := json.Marshal(callback_payload)
+	_, err = http.NewRequest("POST", hcCfg.TurkeyJobCallback, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		internal.Logger.Error("callback failed: " + err.Error())
+		return
+	}
 }

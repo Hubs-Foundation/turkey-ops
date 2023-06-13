@@ -103,25 +103,11 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 	// is this a multi-cluster request
 	if cfg.Region != "" {
-		internal.Logger.Debug("multi-cluster req, hcCfg.Region: " + cfg.Region)
-
-		cfg.TurkeyJobReqMethod = r.Method
-		cfg.TurkeyJobJobId = w.Header().Get("X-Request-Id")
-		cfg.TurkeyJobCallback = "https://dashboard.myhubs.net/api/v1/events/orch"
-
-		msgBytes, _ := json.Marshal(cfg)
-
-		err = internal.Cfg.Gcps.PubSub_PublishMsg(internal.Cfg.TurkeyJobsPubSubTopicName, msgBytes)
+		err := handleMultiClusterReq(w, r, cfg)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("PubSub_PublishMsg failed, err:= ", err)
+			internal.Logger.Sugar().Errorf("failed @ handleMultiClusterReq, err:= ", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "err: %v", err)
 		}
-		w.WriteHeader(http.StatusAccepted)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"job_id": cfg.TurkeyJobJobId,
-			"hub_id": cfg.HubId,
-		})
 		return
 	}
 
