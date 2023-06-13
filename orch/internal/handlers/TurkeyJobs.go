@@ -26,16 +26,15 @@ func HandleTurkeyJobs() {
 }
 
 var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
-	internal.Logger.Sugar().Debugf("received message, msg :%v\n", msg)
-	internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", msg.Data)
-	internal.Logger.Sugar().Debugf("received message, msg.DeliveryAttempt :%v\n", msg.DeliveryAttempt)
+	DeliveryAttempt := *msg.DeliveryAttempt
+	internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", string(msg.Data))
+	internal.Logger.Sugar().Debugf("received message, msg.DeliveryAttempt :%v\n", DeliveryAttempt)
 	internal.Logger.Sugar().Debugf("received message, msg.ID :%v\n", msg.ID)
 	internal.Logger.Sugar().Debugf("received message, msg.OrderingKey :%v\n", msg.OrderingKey)
 	internal.Logger.Sugar().Debugf("received message, msg.PublishTime :%v\n", msg.PublishTime)
 	internal.Logger.Sugar().Debugf("HC_Count: %v", internal.HC_Count)
 
 	//let lighter clusters take the job first
-	DeliveryAttempt := *msg.DeliveryAttempt
 	loadTier := (int)(math.Round((float64)(internal.HC_Count) / (float64)(1000)))
 
 	internal.Logger.Sugar().Debugf("DeliveryAttempt(%v), loadTier(%v)", DeliveryAttempt, loadTier)
@@ -44,7 +43,7 @@ var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 		msg.Nack()
 	}
 	snooze := time.Duration(internal.HC_Count * int32(time.Millisecond))
-	internal.Logger.Sugar().Debugf("snoozing for HC_Count: %v Millisecond", snooze.Microseconds())
+	internal.Logger.Sugar().Debugf("snoozing for HC_Count: %v Millisecond", snooze.Milliseconds())
 	time.Sleep(snooze)
 
 	//try to acquire the job
