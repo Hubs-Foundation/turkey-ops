@@ -30,7 +30,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 		internal.Logger.Sugar().Debugf("failed @ catching callback: %v", err)
 	}
 	callback_map := map[string]string{}
-	_ = json.Unmarshal([]byte(callback_arr[0]), callback_map)
+	_ = json.Unmarshal([]byte(callback_arr[0]), &callback_map)
 
 	internal.Logger.Sugar().Debugf("callback: %v", callback_map)
 
