@@ -66,9 +66,9 @@ type Config struct {
 
 	ImgRepo string
 
-	RedisHosts string
-	RedisPass  string
-	Redis      *redis.ClusterClient
+	RedisHost string
+	RedisPass string
+	Redis     *redis.Client
 }
 
 var Cfg *Config
@@ -76,13 +76,13 @@ var Cfg *Config
 func MakeCfg() {
 	Cfg = &Config{}
 
-	Cfg.RedisHosts = os.Getenv("REDIS_HOSTS")
-	if Cfg.RedisHosts != "" {
+	Cfg.RedisHost = os.Getenv("REDIS_ADDR")
+	if Cfg.RedisHost != "" {
 		Cfg.RedisPass = os.Getenv("REDIS_PASS")
-
-		Cfg.Redis = redis.NewFailoverClusterClient(&redis.FailoverOptions{
-			SentinelAddrs: strings.Split(Cfg.RedisHosts, ","),
-			Password:      "quackquack",
+		Cfg.Redis = redis.NewClient(&redis.Options{
+			Addr:     Cfg.RedisHost,
+			Password: Cfg.RedisPass,
+			DB:       0,
 		})
 
 		//test
