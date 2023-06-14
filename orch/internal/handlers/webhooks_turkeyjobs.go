@@ -8,9 +8,6 @@ import (
 )
 
 var Webhook_turkeyJobs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-	internal.Logger.Sugar().Debugf("Webhook_turkeyJobs -- r: %v", r)
-
 	if r.Method == "POST" {
 		handleTurkeyJobCallback(r)
 	}
@@ -32,8 +29,10 @@ func handleTurkeyJobCallback(r *http.Request) {
 	internal.Logger.Sugar().Debugf("payload: %v", payload)
 
 	if payload["id"] != "" {
-		internal.Cfg.Redis.LPush(
-			payload["id"], payload)
+		err := internal.Cfg.Redis.LPush(payload["id"], payload)
+		if err != nil {
+			internal.Logger.Error("failed @ LPush: " + err.Error())
+		}
 	}
 
 }
