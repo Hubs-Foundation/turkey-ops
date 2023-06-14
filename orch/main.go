@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	fmt.Println("init")
+
 	//inits
 	internal.InitLogger()
 	internal.MakeCfg()

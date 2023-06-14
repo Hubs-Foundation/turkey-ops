@@ -31,6 +31,7 @@ func NewRedisSvc() *redisSvc {
 
 	//test
 	go func() {
+		Logger.Sugar().Debugf("[NewRedisSvc test]")
 		go func() {
 			r.PopAll("_testkey")
 			Logger.Sugar().Debugf("[NewRedisSvc test], pushing _testkey in 2 sec")
