@@ -54,11 +54,15 @@ func (r *redisSvc) PopAll(key string) {
 
 func (r *redisSvc) LPush(key string, val interface{}) error {
 	_, err := r.rdb.LPush(context.Background(), key, val).Result()
-	Logger.Sugar().Errorf("failed (add retries?): %v", err)
+	if err != nil {
+		Logger.Sugar().Errorf("failed (add retries?): %v", err)
+	}
 	return err
 }
 func (r *redisSvc) BLPop(timeout time.Duration, key string) (interface{}, error) {
 	val, err := r.rdb.BLPop(context.Background(), timeout, key).Result()
-	Logger.Sugar().Errorf("failed (add retries?): %v", err)
+	if err != nil {
+		Logger.Sugar().Errorf("failed (add retries?): %v", err)
+	}
 	return val, err
 }
