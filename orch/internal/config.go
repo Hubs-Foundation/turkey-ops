@@ -134,11 +134,11 @@ func MakeCfg() {
 
 	Cfg.TurkeyJobsPubSubTopicName = "turkey_jobs"
 	Cfg.TurkeyJobsPubSubSubName = "turkey_jobs_sub"
-	Cfg.TurkeyJobCallback = "    https://orch.myhubs.net/webhooks/turkeyjobs"
+	Cfg.TurkeyJobCallback = "https://orch.myhubs.net/webhooks/turkeyjobs"
 	if Cfg.Env == "dev" {
 		Cfg.TurkeyJobsPubSubTopicName = "dev_turkey_jobs"
 		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
-		Cfg.TurkeyJobCallback = "    https://orch.dev.myhubs.net/webhooks/turkeyjobs"
+		Cfg.TurkeyJobCallback = "https://orch.dev.myhubs.net/webhooks/turkeyjobs"
 	}
 
 	Cfg.LAZY = false

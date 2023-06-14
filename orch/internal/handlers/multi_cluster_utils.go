@@ -21,7 +21,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 		return err
 	}
 
-	callback, err := internal.Cfg.Redis.BLPop(15*time.Second, cfg.TurkeyJobJobId)
+	callback, err := internal.Cfg.Redis.BLPop(30*time.Second, cfg.TurkeyJobJobId)
 	if err != nil {
 		internal.Logger.Sugar().Debugf("failed @ catching callback: %v", err)
 	}
