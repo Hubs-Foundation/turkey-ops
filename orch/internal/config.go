@@ -76,7 +76,7 @@ var Cfg *Config
 func MakeCfg() {
 	Cfg = &Config{}
 
-	Cfg.RedisHost = os.Getenv("REDIS_ADDR")
+	Cfg.RedisHost = os.Getenv("REDIS_HOST")
 	if Cfg.RedisHost != "" {
 		Cfg.RedisPass = os.Getenv("REDIS_PASS")
 		Cfg.Redis = redis.NewClient(&redis.Options{
