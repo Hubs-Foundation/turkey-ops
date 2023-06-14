@@ -66,9 +66,9 @@ type Config struct {
 
 	ImgRepo string
 
-	RedisAddr string
-	RedisPass string
-	Redis     *redis.Client
+	RedisHosts string
+	RedisPass  string
+	Redis      *redis.ClusterClient
 }
 
 var Cfg *Config
@@ -76,14 +76,15 @@ var Cfg *Config
 func MakeCfg() {
 	Cfg = &Config{}
 
-	Cfg.RedisAddr = os.Getenv("REDIS_ADDR")
-	if Cfg.RedisAddr != "" {
+	Cfg.RedisHosts = os.Getenv("REDIS_HOSTS")
+	if Cfg.RedisHosts != "" {
 		Cfg.RedisPass = os.Getenv("REDIS_PASS")
-		Cfg.Redis = redis.NewClient(&redis.Options{
-			Addr:     Cfg.RedisAddr,
-			Password: Cfg.RedisPass,
-			DB:       0,
+
+		Cfg.Redis = redis.NewClusterClient(&redis.ClusterOptions{
+			Addrs:    strings.Split(Cfg.RedisHosts, ","),
+			Password: "quackquack",
 		})
+
 		//test
 		go func() {
 			go func() {
@@ -91,7 +92,7 @@ func MakeCfg() {
 				time.Sleep(3 * time.Second)
 				Cfg.Redis.RPush(context.Background(), "testkey", "foobar")
 			}()
-			result, err := Cfg.Redis.BLPop(context.Background(), 0*time.Second, "testkey").Result()
+			result, err := Cfg.Redis.BLPop(context.Background(), 3*time.Second, "testkey").Result()
 			if err != nil {
 				Logger.Sugar().Debugf("redis test failed -- err:%v", err)
 			}
