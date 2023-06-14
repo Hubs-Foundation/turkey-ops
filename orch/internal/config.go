@@ -140,6 +140,7 @@ func MakeCfg() {
 
 	Cfg.LAZY = false
 	if os.Getenv("LAZY") != "" {
+		Logger.Warn("LAZY -- will not pickup turkey jobs")
 		Cfg.LAZY = true
 	}
 
