@@ -29,7 +29,7 @@ func handleTurkeyJobCallback(r *http.Request) {
 	}
 
 	if payload["id"] != "" {
-		internal.Cfg.Redis.RPush(
+		internal.Cfg.Redis.Rdb.RPush(
 			context.Background(),
 			payload["id"], payload)
 	}

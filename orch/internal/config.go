@@ -5,9 +5,7 @@ import (
 	"net"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/go-redis/redis/v8"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -68,7 +66,7 @@ type Config struct {
 
 	RedisHost string
 	RedisPass string
-	Redis     *redis.Client
+	Redis     *redisSvc
 }
 
 var Cfg *Config
@@ -78,32 +76,31 @@ func MakeCfg() {
 
 	Cfg.RedisHost = os.Getenv("REDIS_HOST")
 	if Cfg.RedisHost != "" {
-		Cfg.RedisPass = os.Getenv("REDIS_PASS")
-		Cfg.Redis = redis.NewClient(&redis.Options{
-			Addr:     Cfg.RedisHost,
-			Password: Cfg.RedisPass,
-			DB:       0,
-		})
+		// Cfg.RedisPass = os.Getenv("REDIS_PASS")
+		// Cfg.Redis = redis.NewClient(&redis.Options{
+		// 	Addr:     Cfg.RedisHost,
+		// 	Password: Cfg.RedisPass,
+		// 	DB:       0,
+		// })
 
-		//test
-		go func() {
-			go func() {
-				for val, err := Cfg.Redis.LPop(context.Background(), "testkey").Result(); err == nil; {
-					Logger.Sugar().Debugf("redis test -- emptying testkey, poped: %v", val)
-				}
-				Logger.Sugar().Debugf("redis test, pushing testkey in 3 sec, t.now: %v", time.Now())
-				time.Sleep(3 * time.Second)
-				Cfg.Redis.RPush(context.Background(), "testkey", "foobar")
-			}()
-			result, err := Cfg.Redis.BLPop(context.Background(), 6*time.Second, "testkey").Result()
-			if err != nil {
-				Logger.Sugar().Errorf("redis test failed -- err:%v", err)
-			}
-			Logger.Sugar().Debugf("redis test result: %v, t.now: %v", result, time.Now())
+		// //test
+		// go func() {
+		// 	go func() {
+		// 		for val, err := Cfg.Redis.LPop(context.Background(), "testkey").Result(); err == nil; {
+		// 			Logger.Sugar().Debugf("redis test -- emptying testkey, poped: %v", val)
+		// 		}
+		// 		Logger.Sugar().Debugf("redis test, pushing testkey in 3 sec, t.now: %v", time.Now())
+		// 		time.Sleep(3 * time.Second)
+		// 		Cfg.Redis.RPush(context.Background(), "testkey", "foobar")
+		// 	}()
+		// 	result, err := Cfg.Redis.BLPop(context.Background(), 6*time.Second, "testkey").Result()
+		// 	if err != nil {
+		// 		Logger.Sugar().Errorf("redis test failed -- err:%v", err)
+		// 	}
+		// 	Logger.Sugar().Debugf("redis test result: %v, t.now: %v", result, time.Now())
 
-			_ = NewRedisSvc()
-
-		}()
+		// }()
+		Cfg.Redis = NewRedisSvc()
 	}
 
 	Cfg.Region = getEnv("REGION", "us-central1")

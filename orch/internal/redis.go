@@ -9,7 +9,7 @@ import (
 )
 
 type redisSvc struct {
-	rdb *redis.Client
+	Rdb *redis.Client
 }
 
 func NewRedisSvc() *redisSvc {
@@ -20,7 +20,7 @@ func NewRedisSvc() *redisSvc {
 	})
 
 	r := &redisSvc{
-		rdb: rdb,
+		Rdb: rdb,
 	}
 	//test
 	go func() {
@@ -29,12 +29,12 @@ func NewRedisSvc() *redisSvc {
 			r.PopAll("_testkey")
 			Logger.Sugar().Debugf("[NewRedisSvc test], pushing _testkey:foobar in 5 sec")
 			time.Sleep(5 * time.Second)
-			_, err := r.rdb.LPush(context.Background(), "_testkey", "foobar").Result()
+			_, err := r.Rdb.LPush(context.Background(), "_testkey", "foobar").Result()
 			if err != nil {
 				Logger.Error("[NewRedisSvc test] failed to LPUSH _testkey: " + err.Error())
 			}
 		}()
-		val, err := r.rdb.BLPop(context.Background(), 10*time.Second, "_testkey").Result()
+		val, err := r.Rdb.BLPop(context.Background(), 10*time.Second, "_testkey").Result()
 		if err != nil {
 			Logger.Sugar().Errorf("[NewRedisSvc test] failed -- err:%v", err)
 		}
@@ -45,7 +45,7 @@ func NewRedisSvc() *redisSvc {
 }
 
 func (r *redisSvc) PopAll(key string) {
-	for val, err := r.rdb.LPop(context.Background(), key).Result(); err == nil; {
+	for val, err := r.Rdb.LPop(context.Background(), key).Result(); err == nil; {
 		Logger.Sugar().Debugf("dumped: %v", val)
 	}
 }

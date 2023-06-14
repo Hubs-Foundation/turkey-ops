@@ -1,6 +1,6 @@
 module main
 
-go 1.17
+go 1.20
 
 require (
 	cloud.google.com/go/storage v1.28.1
@@ -37,7 +37,6 @@ require (
 require (
 	cloud.google.com/go/filestore v1.6.0
 	cloud.google.com/go/pubsub v1.30.0
-	github.com/go-redis/redis/v8 v8.11.5
 	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.1.0
 	github.com/redis/go-redis/v9 v9.0.5
 )
