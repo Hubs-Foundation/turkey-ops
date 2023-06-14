@@ -30,23 +30,22 @@ func NewRedisSvc() *redisSvc {
 	}
 
 	//test
+	Logger.Sugar().Debugf("[NewRedisSvc test]")
 	go func() {
-		Logger.Sugar().Debugf("[NewRedisSvc test]")
-		go func() {
-			r.PopAll("_testkey")
-			Logger.Sugar().Debugf("[NewRedisSvc test], pushing _testkey in 3 sec")
-			time.Sleep(3 * time.Second)
-			_, err := r.Conn().Do("LPUSH", "_testkey", "foobar")
-			if err != nil {
-				Logger.Error("[NewRedisSvc test] failed to LPUSH _testkey: " + err.Error())
-			}
-		}()
-		val, err := r.Conn().Do("BLPop", "_testkey", 0)
+		r.PopAll("_testkey")
+		Logger.Sugar().Debugf("[NewRedisSvc test], pushing _testkey in 3 sec")
+		time.Sleep(3 * time.Second)
+		_, err := r.Conn().Do("LPUSH", "_testkey", "foobar")
 		if err != nil {
-			Logger.Sugar().Errorf("[NewRedisSvc test] failed -- err:%v", err)
+			Logger.Error("[NewRedisSvc test] failed to LPUSH _testkey: " + err.Error())
 		}
-		Logger.Sugar().Debugf("[NewRedisSvc test] result: %v", val)
 	}()
+	val, err := r.Conn().Do("BLPop", "_testkey", 0)
+	if err != nil {
+		Logger.Sugar().Errorf("[NewRedisSvc test] failed -- err:%v", err)
+	}
+	Logger.Sugar().Debugf("[NewRedisSvc test] result: %v", val)
+
 	return r
 }
 
