@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"main/internal"
 	"net/http"
 	"time"
@@ -29,12 +30,17 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	if err != nil {
 		internal.Logger.Sugar().Debugf("failed @ catching callback: %v", err)
 	}
-	internal.Logger.Sugar().Debugf("callback_arr[0]: %v", callback_arr[0])
-	callback_map := map[string]string{}
-	err = json.Unmarshal([]byte(callback_arr[0]), &callback_map)
-	if err != nil {
-		internal.Logger.Sugar().Errorf("err: %v", err)
+	internal.Logger.Sugar().Debugf("callback_arr: %v", callback_arr)
+
+	for i, e := range callback_arr {
+		fmt.Println("i:", i, ", e:", e)
 	}
+
+	callback_map := map[string]string{}
+	// err = json.Unmarshal([]byte(callback_arr), &callback_map)
+	// if err != nil {
+	// 	internal.Logger.Sugar().Errorf("err: %v", err)
+	// }
 
 	internal.Logger.Sugar().Debugf("callback_map: %v", callback_map)
 

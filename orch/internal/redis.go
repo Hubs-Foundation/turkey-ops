@@ -45,6 +45,10 @@ func NewRedisSvc() *redisSvc {
 	return r
 }
 
+func (r *redisSvc) Client() *redis.Client {
+	return r.rdb
+}
+
 func (r *redisSvc) PopAll(key string) {
 	var err error
 	for err == nil {
