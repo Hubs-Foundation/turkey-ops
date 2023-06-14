@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"main/internal"
@@ -29,8 +28,7 @@ func handleTurkeyJobCallback(r *http.Request) {
 	}
 
 	if payload["id"] != "" {
-		internal.Cfg.Redis.Rdb.RPush(
-			context.Background(),
+		internal.Cfg.Redis.LPush(
 			payload["id"], payload)
 	}
 
