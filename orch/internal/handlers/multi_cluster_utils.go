@@ -29,17 +29,19 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	if err != nil {
 		internal.Logger.Sugar().Debugf("failed @ catching callback: %v", err)
 	}
-	callback_map := callback.(map[string]string)
-	internal.Logger.Sugar().Debugf("callback_map: %v", callback_map)
+	callback_arr_0 := callback.([]string)[0]
+
+	internal.Logger.Sugar().Debugf("callback: %v", callback)
 
 	tElapsed := time.Since(tStart)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		// "job_id": cfg.TurkeyJobJobId,
-		// "hub_id": cfg.HubId,
-		"job_id":   callback_map["id"],
-		"hub_id":   callback_map["hub_id"],
-		"domain":   callback_map["domain"],
+		"job_id": cfg.TurkeyJobJobId,
+		"hub_id": cfg.HubId,
+		// "job_id":   callback_map["id"],
+		// "hub_id":   callback_map["hub_id"],
+		// "domain":   callback_map["domain"],
+		"domain":   callback_arr_0,
 		"tElapsed": tElapsed.Seconds(),
 	})
 	return nil
