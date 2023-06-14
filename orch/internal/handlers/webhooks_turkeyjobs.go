@@ -29,6 +29,7 @@ func handleTurkeyJobCallback(r *http.Request) {
 		internal.Logger.Sugar().Errorf("failed to unmarshalbad (%v), err: %v", string(rBodyBytes), err)
 		return
 	}
+	internal.Logger.Sugar().Debugf("payload: %v", payload)
 
 	if payload["id"] != "" {
 		internal.Cfg.Redis.LPush(
