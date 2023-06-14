@@ -93,6 +93,21 @@ func MakeCfg() {
 					Logger.Debug("redis test -- prepop err: " + err.Error())
 				}
 				Logger.Sugar().Debugf("redis test -- prepop result: %v", result)
+				result, err = Cfg.Redis.LPop(context.Background(), "testkey").Result()
+				if err != nil {
+					Logger.Debug("redis test -- prepop err: " + err.Error())
+				}
+				Logger.Sugar().Debugf("redis test -- prepop result: %v", result)
+				result, err = Cfg.Redis.LPop(context.Background(), "testkey").Result()
+				if err != nil {
+					Logger.Debug("redis test -- prepop err: " + err.Error())
+				}
+				Logger.Sugar().Debugf("redis test -- prepop result: %v", result)
+				result, err = Cfg.Redis.LPop(context.Background(), "testkey").Result()
+				if err != nil {
+					Logger.Debug("redis test -- prepop err: " + err.Error())
+				}
+				Logger.Sugar().Debugf("redis test -- prepop result: %v", result)
 
 				Logger.Sugar().Debugf("redis test, pushing key in 3 sec, t.now: %v", time.Now())
 				time.Sleep(3 * time.Second)
