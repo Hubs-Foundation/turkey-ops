@@ -31,7 +31,8 @@ var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 
 	if internal.Cfg.LAZY {
 		internal.Logger.Info("LAZY --> Nack")
-		msg.Nack()
+		// msg.Nack()
+		msg.NackWithResult()
 		return
 	}
 
