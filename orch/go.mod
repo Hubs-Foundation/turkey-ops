@@ -38,6 +38,7 @@ require (
 	cloud.google.com/go/filestore v1.6.0
 	cloud.google.com/go/pubsub v1.30.0
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/gomodule/redigo v1.8.9
 	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.1.0
 )
 

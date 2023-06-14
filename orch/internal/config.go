@@ -100,6 +100,9 @@ func MakeCfg() {
 				Logger.Sugar().Errorf("redis test failed -- err:%v", err)
 			}
 			Logger.Sugar().Debugf("redis test result: %v, t.now: %v", result, time.Now())
+
+			_ = NewRedisSvc()
+
 		}()
 	}
 
