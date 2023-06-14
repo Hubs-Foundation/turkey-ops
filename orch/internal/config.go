@@ -80,9 +80,9 @@ func MakeCfg() {
 	if Cfg.RedisHosts != "" {
 		Cfg.RedisPass = os.Getenv("REDIS_PASS")
 
-		Cfg.Redis = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:    strings.Split(Cfg.RedisHosts, ","),
-			Password: "quackquack",
+		Cfg.Redis = redis.NewFailoverClusterClient(&redis.FailoverOptions{
+			SentinelAddrs: strings.Split(Cfg.RedisHosts, ","),
+			Password:      "quackquack",
 		})
 
 		//test
@@ -94,7 +94,7 @@ func MakeCfg() {
 			}()
 			result, err := Cfg.Redis.BLPop(context.Background(), 3*time.Second, "testkey").Result()
 			if err != nil {
-				Logger.Sugar().Debugf("redis test failed -- err:%v", err)
+				Logger.Sugar().Errorf("redis test failed -- err:%v", err)
 			}
 			Logger.Sugar().Debugf("redis test result: %v, t.now: %v", result, time.Now())
 		}()
