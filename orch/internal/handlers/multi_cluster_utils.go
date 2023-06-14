@@ -13,7 +13,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 
 	cfg.TurkeyJobReqMethod = r.Method
 	cfg.TurkeyJobJobId = w.Header().Get("X-Request-Id")
-	cfg.TurkeyJobCallback = "https://dashboard.myhubs.net/api/v1/events/orch"
+	cfg.TurkeyJobCallback = internal.Cfg.TurkeyJobCallback
 
 	msgBytes, _ := json.Marshal(cfg)
 

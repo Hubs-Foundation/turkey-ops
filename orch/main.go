@@ -17,10 +17,10 @@ func main() {
 	internal.MakeCfg()
 	internal.MakePgxPool()
 
-	cron_30m := internal.NewCron("cron_30m", 30*time.Minute)
+	cron_countHC := internal.NewCron("cron_countHC", 3*time.Hour)
 	internal.Cronjob_CountHC(time.Second)
-	cron_30m.Load("Cronjob_CountHC", internal.Cronjob_CountHC)
-	cron_30m.Start()
+	cron_countHC.Load("Cronjob_CountHC", internal.Cronjob_CountHC)
+	cron_countHC.Start()
 
 	// pvtEpEnforcer := internal.NewPvtEpEnforcer(
 	// 	[]string{
