@@ -108,9 +108,11 @@ var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 	//callback
 	internal.Logger.Sugar().Debugf("calling back: %v", hcCfg.TurkeyJobCallback)
 	jsonPayload, _ := json.Marshal(callback_payload)
-	_, err = http.NewRequest("POST", hcCfg.TurkeyJobCallback, bytes.NewBuffer(jsonPayload))
+
+	_, err = http.Post(hcCfg.TurkeyJobCallback, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		internal.Logger.Error("callback failed: " + err.Error())
 		return
 	}
+
 }
