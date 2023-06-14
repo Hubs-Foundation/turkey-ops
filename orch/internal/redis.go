@@ -1,70 +1,62 @@
 package internal
 
 import (
+	"context"
 	"os"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis/v8"
 )
 
 type redisSvc struct {
-	pool *redis.Pool
+	rdb *redis.Client
 }
 
 func NewRedisSvc() *redisSvc {
 
-	const maxConnections = 10
-	redisPool := &redis.Pool{
-		MaxIdle: maxConnections,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial(
-				"tcp",
-				os.Getenv("REDIS_HOST"),
-				redis.DialPassword(os.Getenv("REDIS_PASS")),
-			)
-		},
-	}
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_HOST"),
+		Password: os.Getenv("REDIS_PASS"),
+		DB:       0,
+	})
 
 	r := &redisSvc{
-		pool: redisPool,
+		rdb: rdb,
 	}
 
 	//test
-	Logger.Sugar().Debugf("[NewRedisSvc test]")
 	go func() {
-		r.PopAll("_testkey")
-		Logger.Sugar().Debugf("[NewRedisSvc test], pushing _testkey in 3 sec")
-		time.Sleep(3 * time.Second)
-		_, err := r.Conn().Do("LPUSH", "_testkey", "foobar")
+		Logger.Sugar().Debugf("[NewRedisSvc test]")
+		go func() {
+			r.PopAll("_testkey")
+			Logger.Sugar().Debugf("[NewRedisSvc test], pushing _testkey in 3 sec")
+			time.Sleep(3 * time.Second)
+			err := r.LPush("_testkey", "foobar")
+			if err != nil {
+				Logger.Error("[NewRedisSvc test] failed to LPUSH _testkey: " + err.Error())
+			}
+		}()
+		val, err := r.BLPop(10*time.Second, "_testkey")
 		if err != nil {
-			Logger.Error("[NewRedisSvc test] failed to LPUSH _testkey: " + err.Error())
+			Logger.Sugar().Errorf("[NewRedisSvc test] failed -- err:%v", err)
 		}
+		Logger.Sugar().Debugf("[NewRedisSvc test] result: %v", val)
 	}()
-	val, err := r.Conn().Do("BLPop", "_testkey", 10)
-	if err != nil {
-		Logger.Sugar().Errorf("[NewRedisSvc test] failed -- err:%v", err)
-	}
-	Logger.Sugar().Debugf("[NewRedisSvc test] result: %v", val)
-
 	return r
-}
-
-func (r *redisSvc) Conn() redis.Conn {
-	return r.pool.Get()
 }
 
 func (r *redisSvc) PopAll(key string) {
 	var err error
 	for err == nil {
-		_, err = r.Conn().Do("LPOP", key)
+		_, err = r.rdb.LPop(context.Background(), key).Result()
 	}
 }
 
 func (r *redisSvc) LPush(key string, val interface{}) error {
-	_, err := r.Conn().Do("LPUSH", key, val)
+	_, err := r.rdb.LPush(context.Background(), key, val).Result()
 	return err
 }
-func (r *redisSvc) BLPop(key string, sec int) (interface{}, error) {
-	val, err := r.Conn().Do("BLPOP", key, sec)
+func (r *redisSvc) BLPop(timeout time.Duration, key string) (interface{}, error) {
+	val, err := r.rdb.BLPop(context.Background(), timeout, key).Result()
 	return val, err
 }
