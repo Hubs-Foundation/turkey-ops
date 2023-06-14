@@ -8,6 +8,9 @@ import (
 )
 
 var Webhook_turkeyJobs = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	internal.Logger.Sugar().Debugf("Webhook_turkeyJobs -- r: %v", r)
+
 	if r.Method == "POST" {
 		handleTurkeyJobCallback(r)
 	}
