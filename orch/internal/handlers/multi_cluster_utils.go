@@ -25,23 +25,23 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	}
 
 	//wait for callback
-	callback, err := internal.Cfg.Redis.BLPop(60*time.Second, cfg.TurkeyJobJobId)
+	callback_arr, err := internal.Cfg.Redis.BLPop(60*time.Second, cfg.TurkeyJobJobId)
 	if err != nil {
 		internal.Logger.Sugar().Debugf("failed @ catching callback: %v", err)
 	}
-	callback_arr_0 := callback.([]string)[0]
+	callback_map := map[string]string{}
+	_ = json.Unmarshal([]byte(callback_arr[0]), callback_map)
 
-	internal.Logger.Sugar().Debugf("callback: %v", callback)
+	internal.Logger.Sugar().Debugf("callback: %v", callback_map)
 
 	tElapsed := time.Since(tStart)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"job_id": cfg.TurkeyJobJobId,
-		"hub_id": cfg.HubId,
-		// "job_id":   callback_map["id"],
-		// "hub_id":   callback_map["hub_id"],
-		// "domain":   callback_map["domain"],
-		"domain":   callback_arr_0,
+		"_job_id":  cfg.TurkeyJobJobId,
+		"_hub_id":  cfg.HubId,
+		"job_id":   callback_map["id"],
+		"hub_id":   callback_map["hub_id"],
+		"domain":   callback_map["domain"],
 		"tElapsed": tElapsed.Seconds(),
 	})
 	return nil

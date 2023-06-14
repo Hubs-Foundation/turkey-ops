@@ -29,7 +29,8 @@ func handleTurkeyJobCallback(r *http.Request) {
 	internal.Logger.Sugar().Debugf("payload: %v", payload)
 
 	if payload["id"] != "" {
-		err := internal.Cfg.Redis.LPush(payload["id"], payload)
+		bytes, _ := json.Marshal(payload)
+		err := internal.Cfg.Redis.LPush(payload["id"], string(bytes))
 		if err != nil {
 			internal.Logger.Error("failed @ LPush: " + err.Error())
 		}
