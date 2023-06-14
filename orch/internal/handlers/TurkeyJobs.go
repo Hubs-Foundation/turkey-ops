@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"main/internal"
-	"math"
 	"net/http"
 	"time"
 
@@ -29,33 +28,28 @@ func HandleTurkeyJobs() {
 
 var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 
-	if internal.Cfg.LAZY {
-		internal.Logger.Info("LAZY --> Nack")
-		// msg.Nack()
-		msg.NackWithResult()
-		return
-	}
-
-	DeliveryAttempt := *msg.DeliveryAttempt
 	internal.Logger.Sugar().Debugf("received message, msg.Data :%v\n", string(msg.Data))
-	internal.Logger.Sugar().Debugf("received message, msg.DeliveryAttempt :%v\n", DeliveryAttempt)
+	internal.Logger.Sugar().Debugf("received message, msg.DeliveryAttempt :%v\n", *msg.DeliveryAttempt)
 	internal.Logger.Sugar().Debugf("received message, msg.ID :%v\n", msg.ID)
 	internal.Logger.Sugar().Debugf("received message, msg.OrderingKey :%v\n", msg.OrderingKey)
 	internal.Logger.Sugar().Debugf("received message, msg.PublishTime :%v\n", msg.PublishTime)
 	internal.Logger.Sugar().Debugf("HC_Count: %v", internal.HC_Count)
 
-	//let lighter clusters take the job first
-	loadTier := (int)(math.Round((float64)(internal.HC_Count) / (float64)(1000)))
-
-	internal.Logger.Sugar().Debugf("DeliveryAttempt(%v), loadTier(%v)", DeliveryAttempt, loadTier)
-	if DeliveryAttempt < 6 && DeliveryAttempt < loadTier {
-		internal.Logger.Sugar().Debugf("Nack: DeliveryAttempt(%v), loadTier(%v)", DeliveryAttempt, loadTier)
+	//LAZY
+	if internal.Cfg.LAZY {
+		internal.Logger.Debug("LAZY --> Nack")
 		msg.Nack()
 		return
 	}
+
+	//snooze -->  lighter clusters takes the job first
+	msgAge := time.Since(msg.PublishTime)
 	snooze := time.Duration(internal.HC_Count * int32(time.Millisecond))
-	internal.Logger.Sugar().Debugf("snoozing for HC_Count: %v Millisecond", snooze.Milliseconds())
-	time.Sleep(snooze)
+	if snooze > msgAge {
+		internal.Logger.Sugar().Debugf("snooze (%v > %v)", snooze.Milliseconds() > msgAge.Microseconds())
+		msg.Nack()
+		return
+	}
 
 	//try to acquire the job
 	AckStat, err := msg.AckWithResult().Get(context.Background())
