@@ -40,7 +40,7 @@ func NewRedisSvc() *redisSvc {
 				Logger.Error("[NewRedisSvc test] failed to LPUSH _testkey: " + err.Error())
 			}
 		}()
-		val, err := r.Conn().Do("BLPop", "_testkey")
+		val, err := r.Conn().Do("BLPop", "_testkey", 10*time.Second)
 		if err != nil {
 			Logger.Sugar().Errorf("[NewRedisSvc test] failed -- err:%v", err)
 		}
