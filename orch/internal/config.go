@@ -91,7 +91,7 @@ func MakeCfg() {
 				for val, err := Cfg.Redis.LPop(context.Background(), "testkey").Result(); err == nil; {
 					Logger.Sugar().Debugf("redis test -- emptying testkey, poped: %v", val)
 				}
-				Logger.Sugar().Debugf("redis test, pushing key in 3 sec, t.now: %v", time.Now())
+				Logger.Sugar().Debugf("redis test, pushing testkey in 3 sec, t.now: %v", time.Now())
 				time.Sleep(3 * time.Second)
 				Cfg.Redis.RPush(context.Background(), "testkey", "foobar")
 			}()
