@@ -47,12 +47,13 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	tElapsed := time.Since(tStart)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
+		"tElapsed": tElapsed.Seconds(),
 		"_job_id":  cfg.TurkeyJobJobId,
 		"_hub_id":  cfg.HubId,
 		"job_id":   callback_map["id"],
 		"hub_id":   callback_map["hub_id"],
 		"domain":   callback_map["domain"],
-		"tElapsed": tElapsed.Seconds(),
+		"error":    callback_map["err"],
 	})
 	return nil
 }

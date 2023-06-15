@@ -42,6 +42,7 @@ func main() {
 	//public endpoints
 	router.Handle("/webhooks/dockerhub", handlers.Webhook_dockerhub)
 	router.Handle("/webhooks/turkeyjobs", handlers.Webhook_turkeyJobs)
+	router.Handle("/webhooks/peerreport", handlers.Webhook_peerReport)
 
 	//private endpoints
 	router.Handle("/_healthz", handlers.Healthz())

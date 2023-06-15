@@ -60,14 +60,30 @@ func (r *redisSvc) LPush(key, val string) error {
 	Logger.Sugar().Debugf("LPush: %v:%v", key, val)
 	_, err := r.rdb.LPush(context.Background(), key, val).Result()
 	if err != nil {
-		Logger.Sugar().Errorf("failed (add retries?): %v", err)
+		Logger.Sugar().Errorf("failed @ LPush (add retries?): %v", err)
 	}
 	return err
 }
 func (r *redisSvc) BLPop(timeout time.Duration, key string) ([]string, error) {
 	val, err := r.rdb.BLPop(context.Background(), timeout, key).Result()
 	if err != nil {
-		Logger.Sugar().Errorf("failed (add retries?): %v", err)
+		Logger.Sugar().Errorf("failed BLPop (add retries?): %v", err)
 	}
 	return val, err
+}
+
+func (r *redisSvc) Get(key string) (string, error) {
+	val, err := r.rdb.Get(context.Background(), key).Result()
+	if err != nil {
+		Logger.Sugar().Errorf("failed @ HSet (add retries?): %v", err)
+	}
+	return val, err
+}
+
+func (r *redisSvc) Set(key, val string) error {
+	_, err := r.rdb.HGet(context.Background(), key, val).Result()
+	if err != nil {
+		Logger.Sugar().Errorf("failed @ HSet (add retries?): %v", err)
+	}
+	return err
 }

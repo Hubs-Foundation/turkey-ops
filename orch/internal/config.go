@@ -22,6 +22,7 @@ type Config struct {
 	TurkeyJobsPubSubSubName   string
 	TurkeyJobsPubSubTopicName string
 	TurkeyJobCallback         string
+	PeerReportWebhook         string
 	LAZY                      bool   `description:"Nack all jobs"`
 	Channel                   string `long:"channel" env:"CHANNEL" description:"channel name, used to select turkey build channel"`
 	Domain                    string `long:"domain" env:"DOMAIN" description:"example: myhubs.dev, this is the domain for turkey services, ie. asset and stream "`
@@ -58,15 +59,18 @@ type Config struct {
 	TurkeyCfg_s3_bkt  string
 	DefaultRegion_aws string
 
+	ImgRepo string
+
+	IsRoot bool
+
+	// singletons todo -- refactor them out of cfg ...
 	Awss       *AwsSvs
 	Gcps       *GcpSvs
 	K8ss_local *K8sSvs
-
-	ImgRepo string
-
-	RedisHost string
-	RedisPass string
-	Redis     *redisSvc
+	RedisHost  string
+	RedisPass  string
+	Redis      *redisSvc
+	PeerMan    *PeerMan
 }
 
 var Cfg *Config
@@ -131,25 +135,31 @@ func MakeCfg() {
 	} else if Cfg.Env == "prod" {
 		Cfg.Channel = "stable"
 	}
-
-	Cfg.TurkeyJobsPubSubTopicName = "turkey_jobs"
-	Cfg.TurkeyJobsPubSubSubName = "turkey_jobs_sub"
-	Cfg.TurkeyJobCallback = "https://orch.myhubs.net/webhooks/turkeyjobs"
-	if Cfg.Env == "dev" {
-		Cfg.TurkeyJobsPubSubTopicName = "dev_turkey_jobs"
-		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
-		Cfg.TurkeyJobCallback = "https://orch.dev.myhubs.net/webhooks/turkeyjobs"
-	}
-
 	Cfg.LAZY = false
 	if os.Getenv("LAZY") != "" {
 		Logger.Warn("LAZY -- will not pickup turkey jobs")
 		Cfg.LAZY = true
 	}
 
+	Cfg.TurkeyJobsPubSubTopicName = "turkey_jobs"
+	Cfg.TurkeyJobsPubSubSubName = "turkey_jobs_sub"
+	Cfg.TurkeyJobCallback = "https://orch.myhubs.net/webhooks/turkeyjobs"
+	Cfg.PeerReportWebhook = "https://orch.myhubs.net/webhooks/peerreport"
+	if Cfg.Env == "dev" {
+		Cfg.TurkeyJobsPubSubTopicName = "dev_turkey_jobs"
+		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
+		Cfg.TurkeyJobCallback = "https://orch.dev.myhubs.net/webhooks/turkeyjobs"
+		Cfg.PeerReportWebhook = "https://orch.dev.myhubs.net/webhooks/peerreport"
+	}
+
 	Logger.Info("Cfg.Channel: " + Cfg.Channel)
 	Cfg.Domain = os.Getenv("DOMAIN")
 	Cfg.HubDomain = os.Getenv("HUB_DOMAIN")
+	Cfg.IsRoot = false
+	if Cfg.HubDomain == "myhubs.net" || (Cfg.Env == "dev" && Cfg.HubDomain == "dev.myhubs.net") {
+		Cfg.PeerMan = NewPeerMan()
+		Cfg.IsRoot = true
+	}
 
 	Cfg.ClusterName = strings.Split(Cfg.HubDomain, ".")[0]
 	Logger.Info("Cfg.ClusterName: " + Cfg.ClusterName)

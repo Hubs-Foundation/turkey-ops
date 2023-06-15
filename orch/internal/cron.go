@@ -1,8 +1,11 @@
 package internal
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync/atomic"
 	"time"
 
@@ -95,4 +98,18 @@ func Cronjob_CountHC(interval time.Duration) {
 	}
 	atomic.StoreInt32(&HC_Count, (int32)(len(nsList.Items)))
 	Logger.Sugar().Debugf("Cronjob_CountHC took: %v", time.Since(tStart))
+
+	//phone home
+	Logger.Sugar().Debugf("phone home: %v", Cfg.PeerReportWebhook)
+	jsonPayload, _ := json.Marshal(PeerReport{
+		Region:   Cfg.Region,
+		Domain:   Cfg.HubDomain,
+		HC_count: int(HC_Count),
+	})
+	_, err = http.Post(Cfg.PeerReportWebhook, "application/json", bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		Logger.Error("callback failed: " + err.Error())
+		return
+	}
+
 }
