@@ -100,7 +100,7 @@ func Cronjob_CountHC(interval time.Duration) {
 	Logger.Sugar().Debugf("Cronjob_CountHC took: %v", time.Since(tStart))
 
 	//phone home
-	Logger.Sugar().Debugf("phone home: %v", Cfg.PeerReportWebhook)
+	Logger.Sugar().Debugf("[PeerReportWebhook] phone home: %v", Cfg.PeerReportWebhook)
 	jsonPayload, _ := json.Marshal(PeerReport{
 		Region:   Cfg.Region,
 		Domain:   Cfg.HubDomain,
@@ -108,7 +108,7 @@ func Cronjob_CountHC(interval time.Duration) {
 	})
 	_, err = http.Post(Cfg.PeerReportWebhook, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
-		Logger.Error("callback failed: " + err.Error())
+		Logger.Error("[PeerReportWebhook] failed: " + err.Error())
 		return
 	}
 

@@ -52,7 +52,12 @@ func (pm *PeerMan) upload() {
 	if err != nil {
 		Logger.Error("failed to marshal infoMap: " + err.Error())
 	}
-	Cfg.Redis.Set(redisKey, string(infoMapBytes))
+	err = Cfg.Redis.Set(redisKey, string(infoMapBytes))
+	if err != nil {
+		Logger.Error("failed @ Cfg.Redis.Set: " + err.Error())
+	} else {
+		Logger.Sugar().Debugf("uploaded: %v", string(infoMapBytes))
+	}
 }
 
 func (pm *PeerMan) download() {
@@ -76,15 +81,14 @@ func (pm *PeerMan) startSyncJob() {
 }
 
 func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
+	Logger.Sugar().Debugf("adding: %v", report)
 	pm.download()
-
 	pm.Mu.Lock()
 	pm.infoMap[report.Domain] = PeerInfo{
 		Region:   report.Region,
 		HC_count: report.HC_count,
 	}
 	pm.Mu.Unlock()
-
 	pm.upload()
 }
 
