@@ -63,7 +63,7 @@ type Config struct {
 
 	IsRoot bool
 
-	// singletons todo -- refactor them out of cfg ...
+	// singletons todo -- refactor them out of cfg ... into internal.go perhaps
 	Awss       *AwsSvs
 	Gcps       *GcpSvs
 	K8ss_local *K8sSvs

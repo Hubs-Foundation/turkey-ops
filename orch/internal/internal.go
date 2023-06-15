@@ -1,6 +1,7 @@
 package internal
 
-const SessionTokenName = "session_token"
+const DEFAULT_TIME_FORMAT = "060102-0304"
+const SESSION_TOKEN_NAME = "session_token"
 
 // var Logger = log.New(os.Stdout, "http: ", log.LstdFlags)
 var CACHE = NewCacheBox()

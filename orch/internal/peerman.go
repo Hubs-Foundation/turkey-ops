@@ -7,14 +7,17 @@ import (
 )
 
 type PeerReport struct {
-	Region   string `json:"region"`
-	Domain   string `json:"domain"`
-	HC_count int    `json:"hc_count"`
+	Domain string `json:"domain"`
+
+	Region    string `json:"region"`
+	HC_count  int    `json:"hc_count"`
+	TimeStamp string `json:"time_stamp"`
 }
 
 type PeerInfo struct {
-	Region   string `json:"region"`
-	HC_count int    `json:"hc_count"`
+	Region    string `json:"region"`
+	HC_count  int    `json:"hc_count"`
+	TimeStamp string `json:"time_stamp"`
 }
 type PeerMan struct {
 	infoMap map[string]PeerInfo
@@ -85,8 +88,9 @@ func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
 	pm.download()
 	pm.Mu.Lock()
 	pm.infoMap[report.Domain] = PeerInfo{
-		Region:   report.Region,
-		HC_count: report.HC_count,
+		Region:    report.Region,
+		HC_count:  report.HC_count,
+		TimeStamp: report.TimeStamp,
 	}
 	pm.Mu.Unlock()
 	pm.upload()
