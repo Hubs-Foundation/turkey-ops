@@ -81,9 +81,9 @@ func (r *redisSvc) Get(key string) (string, error) {
 }
 
 func (r *redisSvc) Set(key, val string) error {
-	_, err := r.rdb.Set(context.Background(), key, val, 0).Result()
+	err := r.rdb.Set(context.Background(), key, val, 0).Err()
 	if err != nil {
-		Logger.Sugar().Warnf("failed @ HSet (add retries?): %v", err)
+		Logger.Sugar().Warnf("failed @ Set (add retries?): %v", err)
 	}
 	return err
 }
