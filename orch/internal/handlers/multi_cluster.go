@@ -18,12 +18,15 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	cfg.TurkeyJobJobId = w.Header().Get("X-Request-Id")
 	cfg.TurkeyJobCallback = internal.Cfg.TurkeyJobCallback
 
-	msgBytes, _ := json.Marshal(cfg)
+	cfgBytes, _ := json.Marshal(cfg)
 
-	err := internal.Cfg.Gcps.PubSub_PublishMsg(internal.Cfg.TurkeyJobsPubSubTopicName, msgBytes)
+	// gcp-pubsub option: publish message
+	err := internal.Cfg.Gcps.PubSub_PublishMsg(internal.Cfg.TurkeyJobsPubSubTopicName, cfgBytes)
 	if err != nil {
 		return err
 	}
+
+	// root-cluter-proxy option:
 
 	//wait for callback
 	callback_arr, err := internal.Cfg.Redis.BLPop(60*time.Second, cfg.TurkeyJobJobId)

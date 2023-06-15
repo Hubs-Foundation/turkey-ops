@@ -111,6 +111,12 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	//handing hc_instance request
+	handle_hc_instance_req(w, r, cfg)
+
+})
+
+func handle_hc_instance_req(w http.ResponseWriter, r *http.Request, cfg HCcfg) {
 	switch r.Method {
 	case "POST":
 		hcCfg, err := makeHcCfg(cfg)
@@ -138,7 +144,6 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			"ccu_limit":     hcCfg.CcuLimit,
 			"storage_limit": hcCfg.StorageLimit,
 		})
-
 	case "GET":
 		// 	hc_get(w, r)
 		w.WriteHeader(http.StatusNotImplemented)
@@ -151,16 +156,13 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			internal.Logger.Error("missing hcCfg.HubId")
 			return
 		}
-
 		DeleteHubsCloudInstance(cfg)
-
 		//return
 		w.WriteHeader(http.StatusAccepted)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"result": "deleted",
 			"hub_id": cfg.HubId,
 		})
-
 	case "PATCH":
 		// pause
 		status := r.URL.Query().Get("status")
@@ -197,8 +199,7 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			"hub_id": cfg.HubId,
 		})
 	}
-
-})
+}
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 

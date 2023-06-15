@@ -5,6 +5,7 @@ const SESSION_TOKEN_NAME = "session_token"
 
 // var Logger = log.New(os.Stdout, "http: ", log.LstdFlags)
 var CACHE = NewCacheBox()
+var TokenBook = NewTokenBook(5)
 
 // type RootPageData struct {
 // 	ShowStackInfo bool

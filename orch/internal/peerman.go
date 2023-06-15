@@ -12,6 +12,7 @@ type PeerReport struct {
 	Region    string `json:"region"`
 	HC_count  int    `json:"hc_count"`
 	TimeStamp string `json:"time_stamp"`
+	token     string `json: "token"`
 }
 
 type PeerInfo struct {

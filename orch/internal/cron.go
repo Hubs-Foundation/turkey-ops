@@ -101,12 +101,18 @@ func Cronjob_CountHC(interval time.Duration) {
 
 	//phone home
 	Logger.Sugar().Debugf("[PeerReportWebhook] phone home: %v", Cfg.PeerReportWebhook)
+
+	token := string(NewUUID())
+	//add token to token book
+	TokenBook.NewToken(token)
+
 	jsonPayload, _ := json.Marshal(PeerReport{
 		Domain: Cfg.HubDomain,
 
 		Region:    Cfg.Region,
 		HC_count:  int(HC_Count),
 		TimeStamp: time.Now().Format(DEFAULT_TIME_FORMAT),
+		token:     token,
 	})
 	_, err = http.Post(Cfg.PeerReportWebhook, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
