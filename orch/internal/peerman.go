@@ -16,20 +16,20 @@ type PeerReport struct {
 	Token     string `json:"token"`
 }
 
-type PeerInfo struct {
-	Region    string `json:"region"`
-	HC_count  int    `json:"hc_count"`
-	TimeStamp string `json:"time_stamp"`
-	Token     string `json:"token"`
-}
+//	type PeerInfo struct {
+//		Region    string `json:"region"`
+//		HC_count  int    `json:"hc_count"`
+//		TimeStamp string `json:"time_stamp"`
+//		Token     string `json:"token"`
+//	}
 type PeerMan struct {
-	infoMap map[string]PeerInfo
+	infoMap map[string]PeerReport
 	Mu      sync.Mutex
 }
 
 func NewPeerMan() *PeerMan {
 	pm := &PeerMan{
-		infoMap: map[string]PeerInfo{},
+		infoMap: map[string]PeerReport{},
 	}
 	pm.download()
 	pm.startSyncJob()
@@ -38,7 +38,7 @@ func NewPeerMan() *PeerMan {
 
 const redisKey = "turkeyorchPeerBook"
 
-func (pm *PeerMan) GetInfoMap() map[string]PeerInfo {
+func (pm *PeerMan) GetInfoMap() map[string]PeerReport {
 	pm.Mu.Lock()
 	defer pm.Mu.Unlock()
 	return pm.infoMap
@@ -46,23 +46,15 @@ func (pm *PeerMan) GetInfoMap() map[string]PeerInfo {
 
 func (pm *PeerMan) FindPeerDomain(region string) []PeerReport {
 	peerReports := []PeerReport{}
-	for domain, info := range pm.infoMap {
-		Logger.Sugar().Debugf("domain: %v, region: %v", domain, region)
+	for domain, report := range pm.infoMap {
 		if strings.HasPrefix(domain, region) {
-			Logger.Sugar().Debugf("adding: domain: %v", domain)
-			peerReports_addBy_hcCnt(peerReports, PeerReport{
-				Domain:    domain,
-				Region:    info.Region,
-				HC_count:  info.HC_count,
-				TimeStamp: info.TimeStamp,
-				Token:     info.Token,
-			})
+			peerReports = peerReports_addBy_hcCnt(peerReports, report)
 		}
 	}
 	return peerReports
 }
 
-func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) {
+func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) []PeerReport {
 	reports = append(reports, report)
 	for i := len(reports) - 1; i > 0; i-- {
 		if reports[i].HC_count < reports[i-1].HC_count {
@@ -71,9 +63,10 @@ func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) {
 			reports[i] = buf
 		}
 	}
+	return reports
 }
 
-func (pm *PeerMan) SetInfoMap(infoMap map[string]PeerInfo) {
+func (pm *PeerMan) SetInfoMap(infoMap map[string]PeerReport) {
 	Logger.Sugar().Debugf("setting: %v", infoMap)
 	pm.Mu.Lock()
 	defer pm.Mu.Unlock()
@@ -102,7 +95,7 @@ func (pm *PeerMan) download() {
 	if err != nil {
 		Logger.Sugar().Errorf("failed to get from redis: %v", err)
 	}
-	infoMap := map[string]PeerInfo{}
+	infoMap := map[string]PeerReport{}
 	err = json.Unmarshal([]byte(mapStr), &infoMap)
 	if err != nil {
 		Logger.Error("failed to unmarshal: " + err.Error())
@@ -121,7 +114,8 @@ func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
 	Logger.Sugar().Debugf("adding: %v", report)
 	pm.download()
 	pm.Mu.Lock()
-	pm.infoMap[report.Domain] = PeerInfo{
+	pm.infoMap[report.Domain] = PeerReport{
+		Domain:    report.Domain,
 		Region:    report.Region,
 		HC_count:  report.HC_count,
 		TimeStamp: report.TimeStamp,
