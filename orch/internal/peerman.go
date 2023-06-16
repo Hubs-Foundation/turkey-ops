@@ -25,7 +25,9 @@ func NewPeerMan() *PeerMan {
 	pm := &PeerMan{
 		peerMap: map[string]PeerReport{},
 	}
-	Cronjob_PeerManSyncJob(0)
+	pm.download()
+	pm.cleanup()
+	pm.upload()
 	pm.startSyncJob()
 	return pm
 }
