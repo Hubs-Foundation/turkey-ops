@@ -25,7 +25,7 @@ func NewPeerMan() *PeerMan {
 	pm := &PeerMan{
 		peerMap: map[string]PeerReport{},
 	}
-	pm.download()
+	Cronjob_PeerManSyncJob(0)
 	pm.startSyncJob()
 	return pm
 }
@@ -60,11 +60,33 @@ func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) []PeerRepo
 	return reports
 }
 
-func (pm *PeerMan) SetPeerMap(peerMap map[string]PeerReport) {
-	Logger.Sugar().Debugf("setting: %v", peerMap)
+func (pm *PeerMan) download() {
+	mapStr, err := Cfg.Redis.Get(redisKey)
+	if err != nil {
+		Logger.Sugar().Errorf("failed to get from redis: %v", err)
+	}
+	peerMap := map[string]PeerReport{}
+	err = json.Unmarshal([]byte(mapStr), &peerMap)
+	if err != nil {
+		Logger.Error("failed to unmarshal: " + err.Error())
+	}
+	Logger.Sugar().Debugf("downloaded peerMap: %v", peerMap)
+	pm.Mu.Lock()
+	pm.peerMap = peerMap
+	pm.Mu.Unlock()
+}
+
+func (pm *PeerMan) cleanup() {
 	pm.Mu.Lock()
 	defer pm.Mu.Unlock()
-	pm.peerMap = peerMap
+	_peerMap := map[string]PeerReport{}
+	for k, v := range pm.peerMap {
+		ts, _ := time.Parse(DEFAULT_TIME_FORMAT, v.TimeStamp)
+		if time.Since(ts) < 2*time.Hour {
+			_peerMap[k] = v
+		}
+	}
+	pm.peerMap = _peerMap
 }
 
 func (pm *PeerMan) upload() {
@@ -84,22 +106,8 @@ func (pm *PeerMan) upload() {
 	}
 }
 
-func (pm *PeerMan) download() {
-	mapStr, err := Cfg.Redis.Get(redisKey)
-	if err != nil {
-		Logger.Sugar().Errorf("failed to get from redis: %v", err)
-	}
-	peerMap := map[string]PeerReport{}
-	err = json.Unmarshal([]byte(mapStr), &peerMap)
-	if err != nil {
-		Logger.Error("failed to unmarshal: " + err.Error())
-	}
-	Logger.Sugar().Debugf("downloaded peerMap: %v", peerMap)
-	pm.SetPeerMap(peerMap)
-}
-
 func (pm *PeerMan) startSyncJob() {
-	cronjob := NewCron("PeerManSyncJob", 15*time.Minute)
+	cronjob := NewCron("PeerManSyncJob", 5*time.Minute)
 	cronjob.Load("PeerManSyncJob", Cronjob_PeerManSyncJob)
 	cronjob.Start()
 }
@@ -122,4 +130,6 @@ func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
 func Cronjob_PeerManSyncJob(interval time.Duration) {
 	Logger.Debug("hello from Cronjob_PeerManSyncJob")
 	Cfg.PeerMan.download()
+	Cfg.PeerMan.cleanup()
+	Cfg.PeerMan.upload()
 }
