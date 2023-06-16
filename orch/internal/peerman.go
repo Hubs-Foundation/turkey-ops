@@ -49,6 +49,7 @@ func (pm *PeerMan) FindPeerDomain(region string) []PeerReport {
 	peerReports := []PeerReport{}
 	peer_hc_cnt := math.MaxInt
 	for domain, info := range pm.infoMap {
+		Logger.Sugar().Debugf("domain: %v, region: %v", domain, region)
 		if strings.HasPrefix(domain, region) {
 			if info.HC_count < peer_hc_cnt {
 				peerReports_addBy_hcCnt(peerReports, PeerReport{
