@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	// ### inits
+	// ############################## inits ##############################
 	internal.InitLogger()
 	internal.MakeCfg()
 	internal.MakePgxPool()
@@ -27,7 +27,10 @@ func main() {
 		cron_countHC.Start()
 	}
 
-	// ### routes
+	// ############################## gcp-pubsub (deprecated) ##############################
+	// handlers.HandleTurkeyJobs()
+
+	// ############################## routes ##############################
 
 	// pvtEpEnforcer := internal.NewPvtEpEnforcer(
 	// 	[]string{
@@ -42,8 +45,6 @@ func main() {
 
 	// 	pvtEpEnforcer.StartWatching()
 	// }
-
-	handlers.HandleTurkeyJobs()
 
 	router := http.NewServeMux()
 	//public endpoints
@@ -82,7 +83,7 @@ func main() {
 	router.Handle("/letsencrypt-account-collect", handlers.LetsencryptAccountCollect)
 	// router.Handle("/dump_hcnstable", pvtEpEnforcer.Filter([]string{"*"})(handlers.Dump_HcNsTable))
 
-	//start listening
+	// ############################## serving ##############################
 	port, err := strconv.Atoi(internal.Cfg.Port)
 	if err != nil {
 		internal.GetLogger().Panic("bad port: " + err.Error())

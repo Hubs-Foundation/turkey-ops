@@ -465,13 +465,13 @@ spec:
             name: turkeyorch
             port: 
               number: 889
-      - path: /turkey-return-center
-        pathType: Prefix
-        backend:
-          service:
-            name: turkeyorch
-            port: 
-              number: 889
+      # - path: /turkey-return-center
+      #   pathType: Prefix
+      #   backend:
+      #     service:
+      #       name: turkeyorch
+      #       port: 
+      #         number: 889
 ---
 apiVersion: v1
 kind: Secret
