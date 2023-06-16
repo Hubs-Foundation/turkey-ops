@@ -78,9 +78,8 @@ func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) {
 func (pm *PeerMan) SetInfoMap(infoMap map[string]PeerInfo) {
 	Logger.Sugar().Debugf("setting: %v", infoMap)
 	pm.Mu.Lock()
-	pm.infoMap = nil
+	defer pm.Mu.Unlock()
 	pm.infoMap = infoMap
-	pm.Mu.Unlock()
 }
 
 func (pm *PeerMan) upload() {
