@@ -83,7 +83,7 @@ func (pm *PeerMan) cleanup() {
 	defer pm.Mu.Unlock()
 	_peerMap := map[string]PeerReport{}
 	for k, v := range pm.peerMap {
-		if time.Now().Unix()-v.T_unix_sec > 7200 {
+		if time.Now().Unix()-v.T_unix_sec < 7200 {
 			_peerMap[k] = v
 		}
 	}
