@@ -101,6 +101,11 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	if cfg.Tier == "p0" && cfg.Region == "" {
+		http.Error(w, "no new p0 on root cluster", http.StatusBadRequest)
+		return
+	}
+
 	// is this a multi-cluster request
 	if cfg.Region != "" {
 		err := handleMultiClusterReq(w, r, cfg)
