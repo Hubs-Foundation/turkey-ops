@@ -12,15 +12,22 @@ import (
 
 func main() {
 
-	//inits
+	// ### inits
 	internal.InitLogger()
 	internal.MakeCfg()
 	internal.MakePgxPool()
 
-	cron_countHC := internal.NewCron("cron_countHC", 15*time.Minute)
-	internal.Cronjob_CountHC(time.Second)
-	cron_countHC.Load("Cronjob_CountHC", internal.Cronjob_CountHC)
-	cron_countHC.Start()
+	// ### singletons and cronjobs
+	if internal.Cfg.IsRoot { // root cluster manages peers
+		internal.Cfg.PeerMan = internal.NewPeerMan()
+	} else { // peer cluster report to root cluster
+		cron_countHC := internal.NewCron("cron_countHC", 15*time.Minute)
+		internal.Cronjob_CountHC(time.Second)
+		cron_countHC.Load("Cronjob_CountHC", internal.Cronjob_CountHC)
+		cron_countHC.Start()
+	}
+
+	// ### routes
 
 	// pvtEpEnforcer := internal.NewPvtEpEnforcer(
 	// 	[]string{

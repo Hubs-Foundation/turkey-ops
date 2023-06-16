@@ -143,13 +143,13 @@ func MakeCfg() {
 
 	Cfg.TurkeyJobsPubSubTopicName = "turkey_jobs"
 	Cfg.TurkeyJobsPubSubSubName = "turkey_jobs_sub"
-	Cfg.TurkeyJobCallback = "https://orch.myhubs.net/webhooks/turkeyjobs"
-	Cfg.PeerReportWebhook = "https://orch.myhubs.net/webhooks/peerreport"
+	Cfg.TurkeyJobCallback = "https://orch.myhubs.dev/webhooks/turkeyjobs"
+	Cfg.PeerReportWebhook = "https://orch.myhubs.dev/webhooks/peerreport"
 	if Cfg.Env == "dev" {
 		Cfg.TurkeyJobsPubSubTopicName = "dev_turkey_jobs"
 		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
-		Cfg.TurkeyJobCallback = "https://orch.dev.myhubs.net/webhooks/turkeyjobs"
-		Cfg.PeerReportWebhook = "https://orch.dev.myhubs.net/webhooks/peerreport"
+		Cfg.TurkeyJobCallback = "https://orch.dev.myhubs.dev/webhooks/turkeyjobs"
+		Cfg.PeerReportWebhook = "https://orch.dev.myhubs.dev/webhooks/peerreport"
 	}
 
 	Logger.Info("Cfg.Channel: " + Cfg.Channel)
@@ -157,7 +157,6 @@ func MakeCfg() {
 	Cfg.HubDomain = os.Getenv("HUB_DOMAIN")
 	Cfg.IsRoot = false
 	if Cfg.HubDomain == "myhubs.net" || (Cfg.Env == "dev" && Cfg.HubDomain == "dev.myhubs.net") {
-		Cfg.PeerMan = NewPeerMan()
 		Cfg.IsRoot = true
 	}
 

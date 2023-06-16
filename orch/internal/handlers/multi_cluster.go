@@ -64,6 +64,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 		internal.Logger.Sugar().Errorf("failed to sed out hcReq: %v", err)
 		return err
 	}
+
 	respBodyBytes, _ := io.ReadAll(resp.Body)
 	resultMap := map[string]string{}
 	err = json.Unmarshal(respBodyBytes, &resultMap)
