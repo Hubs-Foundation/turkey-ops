@@ -8,7 +8,7 @@ import (
 
 var Webhook_remote_hc_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	if r.URL.Path == "/webhooks/remote_hc_instance" {
+	if r.URL.Path != "/webhooks/remote_hc_instance" {
 		http.Error(w, "", http.StatusNotFound)
 		return
 	}
