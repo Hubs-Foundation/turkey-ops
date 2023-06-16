@@ -102,7 +102,7 @@ func Cronjob_CountHC(interval time.Duration) {
 	//phone home
 	Logger.Sugar().Debugf("[PeerReportWebhook] phone home: %v", Cfg.PeerReportWebhook)
 
-	token := string(NewUUID())
+	token := PwdGen(64, time.Now().Unix(), "=")
 	//add token to token book
 	TokenBook.NewToken(token)
 
