@@ -14,7 +14,7 @@ type tokenBook struct {
 func NewTokenBook(bookSize int) *tokenBook {
 	_book := []string{}
 	for i := 0; i < bookSize; i++ {
-		_book[i] = ""
+		_book = append(_book, "")
 	}
 	return &tokenBook{
 		book: _book,
