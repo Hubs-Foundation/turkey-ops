@@ -94,3 +94,11 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	json.NewEncoder(w).Encode(resultMap)
 	return nil
 }
+
+var Dump_peerMap = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	peerMap := internal.Cfg.PeerMan.GetPeerMap()
+
+	json.NewEncoder(w).Encode(peerMap)
+
+})
