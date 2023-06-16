@@ -30,7 +30,7 @@ type PeerMan struct {
 
 func NewPeerMan() *PeerMan {
 	pm := &PeerMan{
-		infoMap: make(map[string]PeerInfo),
+		infoMap: map[string]PeerInfo{},
 	}
 	pm.download()
 	pm.startSyncJob()
@@ -78,6 +78,7 @@ func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) {
 func (pm *PeerMan) SetInfoMap(infoMap map[string]PeerInfo) {
 	Logger.Sugar().Debugf("setting: %v", infoMap)
 	pm.Mu.Lock()
+	pm.infoMap = nil
 	pm.infoMap = infoMap
 	pm.Mu.Unlock()
 }

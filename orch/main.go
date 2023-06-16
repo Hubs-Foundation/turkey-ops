@@ -17,7 +17,7 @@ func main() {
 	internal.MakeCfg()
 	internal.MakePgxPool()
 
-	cron_countHC := internal.NewCron("cron_countHC", 1*time.Hour)
+	cron_countHC := internal.NewCron("cron_countHC", 15*time.Minute)
 	internal.Cronjob_CountHC(time.Second)
 	cron_countHC.Load("Cronjob_CountHC", internal.Cronjob_CountHC)
 	cron_countHC.Start()
