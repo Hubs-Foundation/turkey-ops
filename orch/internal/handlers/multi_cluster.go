@@ -43,34 +43,48 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	// }
 
 	// root-cluter-proxy option, step1: locate the peer cluster
-	peerReports := internal.Cfg.PeerMan.FindPeerDomain(cfg.Region)
-	if len(peerReports) == 0 {
+	peers := internal.Cfg.PeerMan.FindPeerDomain(cfg.Region)
+	if len(peers) == 0 {
 		internal.Logger.Sugar().Errorf(
 			"no appropriate peer for region: %v (new regional peer cluster are manually created atm)", cfg.Region)
 		return errors.New("no appropriate peer for region: " + cfg.Region)
 	}
-	internal.Logger.Sugar().Debugf("located peers: %v", peerReports)
+	internal.Logger.Sugar().Debugf("located peers: %v", peers)
 
-	peerDomain := peerReports[0].Domain
-	peerToken := peerReports[0].Token
-
-	jsonPayload, _ := json.Marshal(cfg)
-	peerOrchWebhook := "https://orch." + peerDomain + "/webhooks/remote_hc_instance"
-	hcReq, _ := http.NewRequest(cfg.TurkeyJobReqMethod, peerOrchWebhook, bytes.NewBuffer(jsonPayload))
-	hcReq.Header.Add("token", peerToken)
-	internal.Logger.Sugar().Debugf("hcReq: %v", hcReq)
-	resp, err := http.DefaultClient.Do(hcReq)
-	if err != nil {
-		internal.Logger.Sugar().Errorf("failed to sed out hcReq: %v", err)
-		return err
-	}
-
-	respBodyBytes, _ := io.ReadAll(resp.Body)
+	done := false
+	pick := 0
 	resultMap := map[string]string{}
-	err = json.Unmarshal(respBodyBytes, &resultMap)
-	if err != nil {
-		internal.Logger.Sugar().Errorf("err: %v (respBody: %v)", err, string(respBodyBytes))
-		return err
+
+	for !done && pick < len(peers)-1 {
+		peerDomain := peers[pick].Domain
+		peerToken := peers[pick].Token
+		pick++
+
+		jsonPayload, _ := json.Marshal(cfg)
+		peerOrchWebhook := "https://orch." + peerDomain + "/webhooks/remote_hc_instance"
+		hcReq, _ := http.NewRequest(cfg.TurkeyJobReqMethod, peerOrchWebhook, bytes.NewBuffer(jsonPayload))
+		hcReq.Header.Add("token", peerToken)
+		// internal.Logger.Sugar().Debugf("hcReq: %v", hcReq)
+		resp, err := http.DefaultClient.Do(hcReq)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to sed out hcReq: %v", err)
+		}
+		if resp.StatusCode < 300 {
+			done = true
+		} else {
+			respBodyBytes, _ := io.ReadAll(resp.Body)
+			internal.Logger.Sugar().Warnf(
+				"failed -- domain: <%v>, resp.code:<%v>, resp.body:<%v>", peerDomain, resp.StatusCode, string(respBodyBytes))
+			continue
+		}
+		respBodyBytes, _ := io.ReadAll(resp.Body)
+		err = json.Unmarshal(respBodyBytes, &resultMap)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("err: %v (respBody: %v)", err, string(respBodyBytes))
+		}
+	}
+	if !done {
+		internal.Logger.Sugar().Errorf("failed on all peer clusters. %v", peers)
 	}
 
 	//-----------------------------------------------------------
