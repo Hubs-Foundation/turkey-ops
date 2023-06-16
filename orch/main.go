@@ -58,6 +58,7 @@ func main() {
 	router.Handle("/console", handlers.Console)
 	router.Handle("/_statics/", http.StripPrefix("/_statics/", http.FileServer(http.Dir("_statics"))))
 	router.Handle("/LogStream", handlers.LogStream)
+	router.Handle("/dump_peerMap", handlers.Dump_peerMap)
 
 	// router.Handle("/hc_instance", pvtEpEnforcer.Filter([]string{
 	// 	"*",
