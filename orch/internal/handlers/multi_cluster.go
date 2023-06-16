@@ -44,13 +44,16 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	// }
 
 	// root-cluter-proxy option, step1: locate the peer cluster
-	peerDomain, peerToken, peerHcCnt := internal.Cfg.PeerMan.FindPeerDomain(cfg.Region)
-	if peerDomain == "" {
+	peerReports := internal.Cfg.PeerMan.FindPeerDomain(cfg.Region)
+	if len(peerReports) == 0 {
 		internal.Logger.Sugar().Errorf(
 			"no appropriate peer for region: %v (new regional peer cluster are manually created atm)", cfg.Region)
 		return errors.New("no appropriate peer for region: " + cfg.Region)
 	}
-	internal.Logger.Sugar().Debugf("located peer: %v (%v)", peerDomain, peerHcCnt)
+	internal.Logger.Sugar().Debugf("located peers: %v", peerReports)
+
+	peerDomain := peerReports[0].Domain
+	peerToken := peerReports[0].Token
 
 	jsonPayload, _ := json.Marshal(cfg)
 	peerOrchWebhook := "https://orch." + peerDomain + "/webhooks/remote_hc_instance"

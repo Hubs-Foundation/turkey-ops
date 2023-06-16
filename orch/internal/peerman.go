@@ -14,14 +14,14 @@ type PeerReport struct {
 	Region    string `json:"region"`
 	HC_count  int    `json:"hc_count"`
 	TimeStamp string `json:"time_stamp"`
-	Token     string `json: "token"`
+	Token     string `json:"token"`
 }
 
 type PeerInfo struct {
 	Region    string `json:"region"`
 	HC_count  int    `json:"hc_count"`
 	TimeStamp string `json:"time_stamp"`
-	Token     string `json:"token`
+	Token     string `json:"token"`
 }
 type PeerMan struct {
 	infoMap map[string]PeerInfo
@@ -46,21 +46,34 @@ func (pm *PeerMan) GetInfoMap() map[string]PeerInfo {
 	return pm.infoMap
 }
 
-func (pm *PeerMan) FindPeerDomain(region string) (string, string, int) {
-	infoMap := pm.GetInfoMap()
-	peerDomain := ""
-	peerToken := ""
+func (pm *PeerMan) FindPeerDomain(region string) []PeerReport {
+	peerReports := []PeerReport{}
 	peer_hc_cnt := math.MaxInt
-	for domain, info := range infoMap {
+	for domain, info := range pm.infoMap {
 		if strings.HasPrefix(domain, region) {
 			if info.HC_count < peer_hc_cnt {
-				peer_hc_cnt = info.HC_count
-				peerDomain = domain
-				peerToken = info.Token
+				peerReports_addBy_hcCnt(peerReports, PeerReport{
+					Domain:    domain,
+					Region:    info.Region,
+					HC_count:  info.HC_count,
+					TimeStamp: info.TimeStamp,
+					Token:     info.Token,
+				})
 			}
 		}
 	}
-	return peerDomain, peerToken, peer_hc_cnt
+	return peerReports
+}
+
+func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) {
+	reports = append(reports, report)
+	for i := len(reports) - 1; i >= 0; i-- {
+		if reports[i].HC_count < reports[i-1].HC_count {
+			buf := reports[i-1]
+			reports[i-1] = reports[i]
+			reports[i] = buf
+		}
+	}
 }
 
 func (pm *PeerMan) SetInfoMap(infoMap map[string]PeerInfo) {
