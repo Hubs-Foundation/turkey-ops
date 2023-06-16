@@ -30,7 +30,7 @@ var Console = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UserPicture: r.Header.Get("X-Forwarded-UserPicture"),
 	}
 
-	c, err := r.Cookie(internal.SESSION_TOKEN_NAME)
+	c, err := r.Cookie(internal.CONST_SESSION_TOKEN_NAME)
 	if err != nil {
 		newCookie := internal.CreateNewSession()
 		http.SetCookie(w, newCookie)

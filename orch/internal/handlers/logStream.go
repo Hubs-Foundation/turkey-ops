@@ -32,7 +32,7 @@ var LogStream = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// check if this is an ui session
-	cookie, err := r.Cookie(internal.SESSION_TOKEN_NAME)
+	cookie, err := r.Cookie(internal.CONST_SESSION_TOKEN_NAME)
 	if err != nil {
 		fmt.Fprintf(w, "no session cookie")
 		return

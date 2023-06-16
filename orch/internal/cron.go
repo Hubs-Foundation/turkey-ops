@@ -113,7 +113,7 @@ func Cronjob_CountHC(interval time.Duration) {
 
 		Region:    Cfg.Region,
 		HC_count:  int(HC_Count),
-		TimeStamp: time.Now().Format(DEFAULT_TIME_FORMAT),
+		TimeStamp: time.Now().Format(CONST_DEFAULT_TIME_FORMAT),
 		Token:     token,
 	})
 	_, err = http.Post(Cfg.PeerReportWebhook, "application/json", bytes.NewBuffer(jsonPayload))

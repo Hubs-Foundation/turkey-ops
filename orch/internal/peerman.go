@@ -83,7 +83,7 @@ func (pm *PeerMan) cleanup() {
 	defer pm.Mu.Unlock()
 	_peerMap := map[string]PeerReport{}
 	for k, v := range pm.peerMap {
-		ts, _ := time.Parse(DEFAULT_TIME_FORMAT, v.TimeStamp)
+		ts, _ := time.Parse(CONST_DEFAULT_TIME_FORMAT, v.TimeStamp)
 		if time.Since(ts) < 2*time.Hour {
 			_peerMap[k] = v
 		}

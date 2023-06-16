@@ -89,7 +89,7 @@ func CreateNewSession() *http.Cookie {
 	Logger.Debug("######################## create new sessions: ########################")
 	id := base64.RawURLEncoding.EncodeToString(NewUUID())
 	cookie := &http.Cookie{
-		Name:  SESSION_TOKEN_NAME,
+		Name:  CONST_SESSION_TOKEN_NAME,
 		Value: id,
 	}
 	CACHE.Put(
@@ -184,7 +184,7 @@ func ParseJsonReqBody(reqBody io.ReadCloser) (map[string]string, error) {
 }
 
 func GetSession(Cookie func(string) (*http.Cookie, error)) *CacheBoxSessData {
-	cookie, _ := Cookie(SESSION_TOKEN_NAME)
+	cookie, _ := Cookie(CONST_SESSION_TOKEN_NAME)
 	if cookie == nil {
 		return nil
 	}
