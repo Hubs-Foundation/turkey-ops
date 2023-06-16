@@ -29,9 +29,8 @@ type PeerMan struct {
 }
 
 func NewPeerMan() *PeerMan {
-	m := map[string]PeerInfo{}
 	pm := &PeerMan{
-		infoMap: m,
+		infoMap: make(map[string]PeerInfo),
 	}
 	pm.download()
 	pm.startSyncJob()
