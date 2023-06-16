@@ -33,6 +33,8 @@ func handlePeerReport(r *http.Request) {
 	}
 	tReported, _ := time.Parse(internal.CONST_DEFAULT_TIME_FORMAT, report.TimeStamp)
 	internal.Logger.Sugar().Debugf("report: %v, timediff(why so big?): %v", report, time.Since(tReported))
+
+	//reset TimeStamp because (again why)timediff ^
 	report.TimeStamp = time.Now().Format(internal.CONST_DEFAULT_TIME_FORMAT)
 
 	internal.Cfg.PeerMan.UpdatePeerAndUpload(report)
