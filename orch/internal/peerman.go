@@ -16,20 +16,14 @@ type PeerReport struct {
 	Token     string `json:"token"`
 }
 
-//	type PeerInfo struct {
-//		Region    string `json:"region"`
-//		HC_count  int    `json:"hc_count"`
-//		TimeStamp string `json:"time_stamp"`
-//		Token     string `json:"token"`
-//	}
 type PeerMan struct {
-	infoMap map[string]PeerReport
+	peerMap map[string]PeerReport
 	Mu      sync.Mutex
 }
 
 func NewPeerMan() *PeerMan {
 	pm := &PeerMan{
-		infoMap: map[string]PeerReport{},
+		peerMap: map[string]PeerReport{},
 	}
 	pm.download()
 	pm.startSyncJob()
@@ -38,15 +32,15 @@ func NewPeerMan() *PeerMan {
 
 const redisKey = "turkeyorchPeerBook"
 
-func (pm *PeerMan) GetInfoMap() map[string]PeerReport {
+func (pm *PeerMan) GetPeerMap() map[string]PeerReport {
 	pm.Mu.Lock()
 	defer pm.Mu.Unlock()
-	return pm.infoMap
+	return pm.peerMap
 }
 
 func (pm *PeerMan) FindPeerDomain(region string) []PeerReport {
 	peerReports := []PeerReport{}
-	for domain, report := range pm.infoMap {
+	for domain, report := range pm.peerMap {
 		if strings.HasPrefix(domain, region) {
 			peerReports = peerReports_addBy_hcCnt(peerReports, report)
 		}
@@ -66,27 +60,27 @@ func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) []PeerRepo
 	return reports
 }
 
-func (pm *PeerMan) SetInfoMap(infoMap map[string]PeerReport) {
-	Logger.Sugar().Debugf("setting: %v", infoMap)
+func (pm *PeerMan) SetPeerMap(peerMap map[string]PeerReport) {
+	Logger.Sugar().Debugf("setting: %v", peerMap)
 	pm.Mu.Lock()
 	defer pm.Mu.Unlock()
-	pm.infoMap = infoMap
+	pm.peerMap = peerMap
 }
 
 func (pm *PeerMan) upload() {
 	pm.Mu.Lock()
-	infoMap := pm.infoMap
+	peerMap := pm.peerMap
 	pm.Mu.Unlock()
 
-	infoMapBytes, err := json.Marshal(infoMap)
+	peerMapBytes, err := json.Marshal(peerMap)
 	if err != nil {
-		Logger.Error("failed to marshal infoMap: " + err.Error())
+		Logger.Error("failed to marshal peerMap: " + err.Error())
 	}
-	err = Cfg.Redis.Set(redisKey, string(infoMapBytes))
+	err = Cfg.Redis.Set(redisKey, string(peerMapBytes))
 	if err != nil {
 		Logger.Error("failed @ Cfg.Redis.Set: " + err.Error())
 	} else {
-		Logger.Sugar().Debugf("uploaded: %v", string(infoMapBytes))
+		Logger.Sugar().Debugf("uploaded: %v", string(peerMapBytes))
 	}
 }
 
@@ -95,13 +89,13 @@ func (pm *PeerMan) download() {
 	if err != nil {
 		Logger.Sugar().Errorf("failed to get from redis: %v", err)
 	}
-	infoMap := map[string]PeerReport{}
-	err = json.Unmarshal([]byte(mapStr), &infoMap)
+	peerMap := map[string]PeerReport{}
+	err = json.Unmarshal([]byte(mapStr), &peerMap)
 	if err != nil {
 		Logger.Error("failed to unmarshal: " + err.Error())
 	}
-	Logger.Sugar().Debugf("downloaded infoMap: %v", infoMap)
-	pm.SetInfoMap(infoMap)
+	Logger.Sugar().Debugf("downloaded peerMap: %v", peerMap)
+	pm.SetPeerMap(peerMap)
 }
 
 func (pm *PeerMan) startSyncJob() {
@@ -114,7 +108,7 @@ func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
 	Logger.Sugar().Debugf("adding: %v", report)
 	pm.download()
 	pm.Mu.Lock()
-	pm.infoMap[report.Domain] = PeerReport{
+	pm.peerMap[report.Domain] = PeerReport{
 		Domain:    report.Domain,
 		Region:    report.Region,
 		HC_count:  report.HC_count,
