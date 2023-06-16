@@ -7,11 +7,16 @@ import (
 )
 
 var Webhook_remote_hc_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 	if r.URL.Path != "/webhooks/remote_hc_instance" {
 		http.Error(w, "", http.StatusNotFound)
 		return
 	}
+	token := r.Header.Get("Token")
+	if !internal.TokenBook.CheckToken(token) {
+		http.Error(w, "", http.StatusNotFound)
+		return
+	}
+
 	cfg, err := getHcCfg(r)
 	if err != nil {
 		http.Error(w, "", http.StatusNotFound)
