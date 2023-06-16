@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -102,7 +103,8 @@ func Cronjob_CountHC(interval time.Duration) {
 	//phone home
 	Logger.Sugar().Debugf("[PeerReportWebhook] phone home: %v", Cfg.PeerReportWebhook)
 
-	token := PwdGen(64, time.Now().Unix(), "=")
+	// token := PwdGen(64, time.Now().Unix(), "=")
+	token := uuid.New().String()
 	//add token to token book
 	TokenBook.NewToken(token)
 
