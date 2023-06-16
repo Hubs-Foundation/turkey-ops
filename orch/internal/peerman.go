@@ -10,10 +10,10 @@ import (
 type PeerReport struct {
 	Domain string `json:"domain"`
 
-	Region    string `json:"region"`
-	HC_count  int    `json:"hc_count"`
-	TimeStamp string `json:"time_stamp"`
-	Token     string `json:"token"`
+	Region     string `json:"region"`
+	HC_count   int    `json:"hc_count"`
+	T_unix_sec int64  `json:"t_unix_sec"`
+	Token      string `json:"token"`
 }
 
 type PeerMan struct {
@@ -83,8 +83,7 @@ func (pm *PeerMan) cleanup() {
 	defer pm.Mu.Unlock()
 	_peerMap := map[string]PeerReport{}
 	for k, v := range pm.peerMap {
-		ts, _ := time.Parse(CONST_DEFAULT_TIME_FORMAT, v.TimeStamp)
-		if time.Since(ts) < 2*time.Hour {
+		if time.Now().Unix()-v.T_unix_sec > 7200 {
 			_peerMap[k] = v
 		}
 	}
@@ -119,11 +118,11 @@ func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
 	pm.download()
 	pm.Mu.Lock()
 	pm.peerMap[report.Domain] = PeerReport{
-		Domain:    report.Domain,
-		Region:    report.Region,
-		HC_count:  report.HC_count,
-		TimeStamp: report.TimeStamp,
-		Token:     report.Token,
+		Domain:     report.Domain,
+		Region:     report.Region,
+		HC_count:   report.HC_count,
+		T_unix_sec: report.T_unix_sec,
+		Token:      report.Token,
 	}
 	pm.Mu.Unlock()
 	pm.upload()

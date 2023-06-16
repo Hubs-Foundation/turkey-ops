@@ -31,11 +31,9 @@ func handlePeerReport(r *http.Request) {
 		internal.Logger.Sugar().Errorf("failed to unmarshal (%v), err: %v", string(rBodyBytes), err)
 		return
 	}
-	tReported, _ := time.Parse(internal.CONST_DEFAULT_TIME_FORMAT, report.TimeStamp)
-	internal.Logger.Sugar().Debugf("report: %v, timediff(why so big?): %v", report, time.Since(tReported))
-
-	//reset TimeStamp because (again why)timediff ^
-	report.TimeStamp = time.Now().Format(internal.CONST_DEFAULT_TIME_FORMAT)
+	internal.Logger.Sugar().Debugf("report: %v, timediff: %v sec", report, time.Now().Unix()-report.T_unix_sec)
+	//reset TimeStamp
+	report.T_unix_sec = time.Now().Unix()
 
 	internal.Cfg.PeerMan.UpdatePeerAndUpload(report)
 

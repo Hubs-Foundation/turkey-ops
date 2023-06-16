@@ -111,10 +111,10 @@ func Cronjob_CountHC(interval time.Duration) {
 	jsonPayload, _ := json.Marshal(PeerReport{
 		Domain: Cfg.Domain,
 
-		Region:    Cfg.Region,
-		HC_count:  int(HC_Count),
-		TimeStamp: time.Now().Format(CONST_DEFAULT_TIME_FORMAT),
-		Token:     token,
+		Region:     Cfg.Region,
+		HC_count:   int(HC_Count),
+		T_unix_sec: time.Now().Unix(),
+		Token:      token,
 	})
 	_, err = http.Post(Cfg.PeerReportWebhook, "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
