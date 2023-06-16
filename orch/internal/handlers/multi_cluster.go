@@ -55,7 +55,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	pick := 0
 	resultMap := map[string]string{}
 
-	for !done && pick < len(peers)-1 {
+	for !done && pick < len(peers) {
 		peerDomain := peers[pick].Domain
 		peerToken := peers[pick].Token
 		pick++
