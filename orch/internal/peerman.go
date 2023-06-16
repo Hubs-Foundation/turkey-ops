@@ -66,7 +66,7 @@ func (pm *PeerMan) FindPeerDomain(region string) []PeerReport {
 
 func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) {
 	reports = append(reports, report)
-	for i := len(reports) - 1; i >= 0; i-- {
+	for i := len(reports) - 1; i > 0; i-- {
 		if reports[i].HC_count < reports[i-1].HC_count {
 			buf := reports[i-1]
 			reports[i-1] = reports[i]
