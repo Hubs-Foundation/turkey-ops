@@ -2,6 +2,8 @@ package internal
 
 import (
 	"encoding/json"
+	"math"
+	"strings"
 	"sync"
 	"time"
 )
@@ -12,13 +14,14 @@ type PeerReport struct {
 	Region    string `json:"region"`
 	HC_count  int    `json:"hc_count"`
 	TimeStamp string `json:"time_stamp"`
-	token     string `json: "token"`
+	Token     string `json: "token"`
 }
 
 type PeerInfo struct {
 	Region    string `json:"region"`
 	HC_count  int    `json:"hc_count"`
 	TimeStamp string `json:"time_stamp"`
+	Token     string `json:"token`
 }
 type PeerMan struct {
 	infoMap map[string]PeerInfo
@@ -41,12 +44,31 @@ func (pm *PeerMan) GetInfoMap() map[string]PeerInfo {
 	defer pm.Mu.Unlock()
 	return pm.infoMap
 }
+
+func (pm *PeerMan) FindPeerDomain(region string) (string, string, int) {
+	infoMap := pm.GetInfoMap()
+	peerDomain := ""
+	peerToken := ""
+	peer_hc_cnt := math.MaxInt
+	for domain, info := range infoMap {
+		if strings.HasPrefix(domain, region) {
+			if info.HC_count < peer_hc_cnt {
+				peer_hc_cnt = info.HC_count
+				peerDomain = domain
+				peerToken = info.Token
+			}
+		}
+	}
+	return peerDomain, peerToken, peer_hc_cnt
+}
+
 func (pm *PeerMan) SetInfoMap(infoMap map[string]PeerInfo) {
 	Logger.Sugar().Debugf("setting: %v", infoMap)
 	pm.Mu.Lock()
 	pm.infoMap = infoMap
 	pm.Mu.Unlock()
 }
+
 func (pm *PeerMan) upload() {
 	pm.Mu.Lock()
 	infoMap := pm.infoMap
@@ -92,6 +114,7 @@ func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
 		Region:    report.Region,
 		HC_count:  report.HC_count,
 		TimeStamp: report.TimeStamp,
+		Token:     report.Token,
 	}
 	pm.Mu.Unlock()
 	pm.upload()

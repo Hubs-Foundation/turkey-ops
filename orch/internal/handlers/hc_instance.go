@@ -112,93 +112,110 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	}
 
 	//handing hc_instance request
-	handle_hc_instance_req(w, r, cfg)
-
+	err = handle_hc_instance_req(r, cfg)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"result": "done",
+		"hub_id": cfg.HubId,
+	})
 })
 
-func handle_hc_instance_req(w http.ResponseWriter, r *http.Request, cfg HCcfg) {
+func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	switch r.Method {
 	case "POST":
 		hcCfg, err := makeHcCfg(cfg)
 		if err != nil {
-			internal.Logger.Error("bad hcCfg: " + err.Error())
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+			// internal.Logger.Error("bad hcCfg: " + err.Error())
+			// http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			// return
+			return fmt.Errorf("bad cfg, err: %v", err)
 		}
 		err = CreateHubsCloudInstance(hcCfg)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"result": err.Error(),
-				"hub_id": hcCfg.HubId,
-			})
-			return
+			// w.WriteHeader(http.StatusInternalServerError)
+			// json.NewEncoder(w).Encode(map[string]interface{}{
+			// 	"result": err.Error(),
+			// 	"hub_id": hcCfg.HubId,
+			// })
+			// return
+			return fmt.Errorf("failed to create, err: %v", err)
 		}
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result":        "done",
-			"useremail":     hcCfg.UserEmail,
-			"hub_id":        hcCfg.HubId,
-			"subdomain":     hcCfg.Subdomain,
-			"tier":          hcCfg.Tier,
-			"ccu_limit":     hcCfg.CcuLimit,
-			"storage_limit": hcCfg.StorageLimit,
-		})
+		// w.WriteHeader(http.StatusOK)
+		// json.NewEncoder(w).Encode(map[string]interface{}{
+		// 	"result":        "done",
+		// 	"useremail":     hcCfg.UserEmail,
+		// 	"hub_id":        hcCfg.HubId,
+		// 	"subdomain":     hcCfg.Subdomain,
+		// 	"tier":          hcCfg.Tier,
+		// 	"ccu_limit":     hcCfg.CcuLimit,
+		// 	"storage_limit": hcCfg.StorageLimit,
+		// })
+		return nil
 	case "GET":
 		// 	hc_get(w, r)
-		w.WriteHeader(http.StatusNotImplemented)
-		fmt.Fprint(w, "todo -- what's the req? also for cross cluster req provide JobQueueReqCallbackWebhook to receive resp on webhook")
+		// w.WriteHeader(http.StatusNotImplemented)
+		// fmt.Fprint(w, "todo -- what's the req? also for cross cluster req provide JobQueueReqCallbackWebhook to receive resp on webhook")
+		return errors.New("not implemented")
 
 	case "DELETE":
 		// hc_delete(w, r)
 		// sess := internal.GetSession(r.Cookie)
 		if cfg.HubId == "" {
-			internal.Logger.Error("missing hcCfg.HubId")
-			return
+			// internal.Logger.Error("")
+			// return
+			return fmt.Errorf("missing hcCfg.HubId, err")
 		}
 		DeleteHubsCloudInstance(cfg)
 		//return
-		w.WriteHeader(http.StatusAccepted)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"result": "deleted",
-			"hub_id": cfg.HubId,
-		})
+		// w.WriteHeader(http.StatusAccepted)
+		// json.NewEncoder(w).Encode(map[string]interface{}{
+		// 	"result": "deleted",
+		// 	"hub_id": cfg.HubId,
+		// })
+		return nil
 	case "PATCH":
 		// pause
 		status := r.URL.Query().Get("status")
 		if status == "down" || status == "up" {
 			err := hc_switch(cfg.HubId, status)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]interface{}{
-					"error":  err.Error(),
-					"hub_id": cfg.HubId,
-				})
+				// w.WriteHeader(http.StatusInternalServerError)
+				// json.NewEncoder(w).Encode(map[string]interface{}{
+				// 	"error":  err.Error(),
+				// 	"hub_id": cfg.HubId,
+				// })
+				return fmt.Errorf("failed @ hc_switch: %v", err)
 			}
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"msg":        "status updated",
-				"new_status": status,
-				"hub_id":     cfg.HubId,
-			})
-			return
+			// json.NewEncoder(w).Encode(map[string]interface{}{
+			// 	"msg":        "status updated",
+			// 	"new_status": status,
+			// 	"hub_id":     cfg.HubId,
+			// })
+			// return
+			return nil
 		}
 		// update
 		msg, err := UpdateHubsCloudInstance(cfg)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"error":  err.Error(),
-				"hub_id": cfg.HubId,
-			})
-			return
+			// w.WriteHeader(http.StatusInternalServerError)
+			// json.NewEncoder(w).Encode(map[string]interface{}{
+			// 	"error":  err.Error(),
+			// 	"hub_id": cfg.HubId,
+			// })
+			// return
+			return fmt.Errorf("failed to update, err: %v", err)
 		}
-
-		//resp
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"msg":    msg,
-			"hub_id": cfg.HubId,
-		})
+		// //resp
+		// json.NewEncoder(w).Encode(map[string]interface{}{
+		// 	"msg":    msg,
+		// 	"hub_id": cfg.HubId,
+		// })
+		internal.Logger.Debug("UpdateHubsCloudInstance: " + msg)
+		return nil
 	}
+	return nil
 }
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
