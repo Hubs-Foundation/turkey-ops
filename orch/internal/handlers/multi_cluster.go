@@ -59,6 +59,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	peerOrchWebhook := "https://orch." + peerDomain + "/webhooks/remote_hc_instance"
 	hcReq, _ := http.NewRequest(cfg.TurkeyJobReqMethod, peerOrchWebhook, bytes.NewBuffer(jsonPayload))
 	hcReq.Header.Add("token", peerToken)
+	internal.Logger.Sugar().Debugf("hcReq: %v", hcReq)
 	resp, err := http.DefaultClient.Do(hcReq)
 	if err != nil {
 		internal.Logger.Sugar().Errorf("failed to sed out hcReq: %v", err)
@@ -68,7 +69,8 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	resultMap := map[string]string{}
 	err = json.Unmarshal(respBodyBytes, &resultMap)
 	if err != nil {
-		internal.Logger.Sugar().Errorf("err: %v", err)
+		internal.Logger.Sugar().Errorf("err: %v (respBody: %v)", err, string(respBodyBytes))
+		return err
 	}
 
 	//-----------------------------------------------------------

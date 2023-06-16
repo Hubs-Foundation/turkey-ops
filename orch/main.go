@@ -43,6 +43,7 @@ func main() {
 	router.Handle("/webhooks/dockerhub", handlers.Webhook_dockerhub)
 	router.Handle("/webhooks/turkeyjobs", handlers.Webhook_turkeyJobs)
 	router.Handle("/webhooks/peerreport", handlers.Webhook_peerReport)
+	router.Handle("/webhooks/remote_hc_instance", handlers.Webhook_remote_hc_instance)
 
 	//private endpoints
 	router.Handle("/_healthz", handlers.Healthz())
