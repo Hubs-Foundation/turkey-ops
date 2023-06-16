@@ -110,7 +110,7 @@ func (pm *PeerMan) download() {
 		Logger.Error("failed to unmarshal: " + err.Error())
 	}
 	Logger.Sugar().Debugf("downloaded infoMap: %v", infoMap)
-	Cfg.PeerMan.SetInfoMap(infoMap)
+	pm.SetInfoMap(infoMap)
 }
 
 func (pm *PeerMan) startSyncJob() {
