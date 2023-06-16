@@ -24,11 +24,11 @@ var Webhook_remote_hc_instance = http.HandlerFunc(func(w http.ResponseWriter, r 
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"result":    "[remote] done",
-		"hub_id":    cfg.HubId,
-		"region":    cfg.Region,
-		"domain":    cfg.HubDomain,
-		"subdomain": cfg.Subdomain,
+		"result": "[remote] done",
+		"job_id": cfg.TurkeyJobJobId,
+		"hub_id": cfg.HubId,
+		"region": internal.Cfg.Region,
+		"domain": internal.Cfg.HubDomain,
 	})
 
 })

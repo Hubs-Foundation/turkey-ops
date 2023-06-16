@@ -7,12 +7,11 @@ import (
 	"io"
 	"main/internal"
 	"net/http"
-	"time"
 )
 
 func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) error {
 
-	tStart := time.Now()
+	// tStart := time.Now()
 
 	internal.Logger.Debug("multi-cluster req, hcCfg.Region: " + cfg.Region)
 
@@ -76,15 +75,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	//-----------------------------------------------------------
 	// resultMap produced
 	internal.Logger.Sugar().Debugf("resultMap: %v", resultMap)
-	tElapsed := time.Since(tStart)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"tElapsed": tElapsed.Seconds(),
-		"_job_id":  cfg.TurkeyJobJobId,
-		"_hub_id":  cfg.HubId,
-		"job_id":   resultMap["id"],
-		"hub_id":   resultMap["hub_id"],
-		"domain":   resultMap["domain"],
-		"error":    resultMap["err"],
-	})
+	// tElapsed := time.Since(tStart)
+	json.NewEncoder(w).Encode(resultMap)
 	return nil
 }
