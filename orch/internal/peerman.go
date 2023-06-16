@@ -33,6 +33,7 @@ func NewPeerMan() *PeerMan {
 	pm := &PeerMan{
 		infoMap: m,
 	}
+	pm.download()
 	pm.startSyncJob()
 	return pm
 }
