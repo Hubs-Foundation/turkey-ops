@@ -101,8 +101,8 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if cfg.Tier == "p0" && cfg.Region == "" {
-		http.Error(w, "no new p0 on root cluster", http.StatusBadRequest)
+	if r.Method == "POST" && cfg.Tier == "p0" && cfg.Region == "" {
+		http.Error(w, "no new p0 instance on root cluster pls, try again with a region field in the json payload", http.StatusBadRequest)
 		return
 	}
 
