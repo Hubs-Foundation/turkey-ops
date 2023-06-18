@@ -174,9 +174,8 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: haproxy
-    haproxy.org/server-ssl: "true"
     haproxy.org/request-set-header: |
-      backend https://turkeyorch:889/
+      backend https://turkeyorch:888/
       AllowedEmailDomains mozilla.com,
     haproxy.org/path-rewrite: (.*) /turkeyauthproxy\1   #add /turkeyauthproxy prefix
   generation: 1
@@ -464,14 +463,14 @@ spec:
           service:
             name: turkeyorch
             port: 
-              number: 889
+              number: 888
       # - path: /turkey-return-center
       #   pathType: Prefix
       #   backend:
       #     service:
       #       name: turkeyorch
       #       port: 
-      #         number: 889
+      #         number: 888
 ---
 apiVersion: v1
 kind: Secret
@@ -657,8 +656,8 @@ spec:
         livenessProbe:
           httpGet:
             path: "/_healthz"
-            port: 889
-            scheme: HTTPS
+            port: 888
+            scheme: HTTP
           initialDelaySeconds: 30
           timeoutSeconds: 1
           periodSeconds: 60
@@ -682,9 +681,6 @@ spec:
   - name: http
     port: 888
     targetPort: 888
-  - name: https
-    port: 889
-    targetPort: 889    
   selector:
     app: turkeyorch
 ---

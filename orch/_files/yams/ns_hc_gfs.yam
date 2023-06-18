@@ -92,7 +92,7 @@ metadata:
     kubernetes.io/ingress.class: haproxy
     haproxy.org/response-set-header: |
       access-control-allow-origin "https://{{.Subdomain}}.{{.HubDomain}}"
-    haproxy.org/path-rewrite: /api-internal(.*) /_drop_
+    haproxy.org/path-rewrite: /api-internal/change_email_for_login /_drop_
 spec:
   rules:
   - host: {{.Subdomain}}.{{.HubDomain}}
