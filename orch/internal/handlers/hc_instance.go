@@ -124,6 +124,8 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"result": "done",
 		"hub_id": cfg.HubId,
+		"domain": cfg.HubDomain,
+		"region": cfg.Region,
 	})
 })
 
@@ -613,6 +615,7 @@ func makeHcCfg(cfg HCcfg) (HCcfg, error) {
 
 	//inherit from cluster
 	cfg.Domain = internal.Cfg.Domain
+	cfg.Region = internal.Cfg.Region
 	cfg.HubDomain = internal.Cfg.HubDomain
 	if cfg.HubDomain == "" {
 		cfg.HubDomain = cfg.Domain
