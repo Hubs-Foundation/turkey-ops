@@ -43,14 +43,21 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	// }
 
 	// root-cluter-proxy option, step1: locate the peer cluster
-	peers := internal.Cfg.PeerMan.FindPeerDomain(cfg.Region)
-	if len(peers) == 0 {
-		internal.Logger.Sugar().Errorf(
-			"no appropriate peer for region: %v (new regional peer cluster are manually created atm)", cfg.Region)
-		return errors.New("no appropriate peer for region: " + cfg.Region)
+	peers := []internal.PeerReport{}
+	if cfg.Domain != "" { // request's naming it
+		peerMap := internal.Cfg.PeerMan.GetPeerMap()
+		peers = append(peers, peerMap[cfg.Domain])
+	} else { // request just want region, now we can "load balance"
+		peers = internal.Cfg.PeerMan.FindPeerDomain(cfg.Region)
+		if len(peers) == 0 {
+			internal.Logger.Sugar().Errorf(
+				"no appropriate peer for region: %v (new regional peer cluster are manually created atm)", cfg.Region)
+			return errors.New("no appropriate peer for region: " + cfg.Region)
+		}
+		internal.Logger.Sugar().Debugf("located peers: %v", peers)
 	}
-	internal.Logger.Sugar().Debugf("located peers: %v", peers)
 
+	// root-cluter-proxy option, step2: proxy req to peer cluster
 	done := false
 	pick := 0
 	resultMap := map[string]string{}
@@ -87,8 +94,9 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 		internal.Logger.Sugar().Errorf("failed on all peer clusters. %v", peers)
 	}
 
-	//-----------------------------------------------------------
-	// resultMap produced
+	// =============================================================
+	// =============================================================
+	// (either option) resultMap produced
 	internal.Logger.Sugar().Debugf("resultMap: %v", resultMap)
 	// tElapsed := time.Since(tStart)
 	json.NewEncoder(w).Encode(resultMap)

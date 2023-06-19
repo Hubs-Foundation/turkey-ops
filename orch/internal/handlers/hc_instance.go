@@ -106,8 +106,8 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// is this a multi-cluster request
-	if cfg.Region != "" {
+	// is this a multi-cluster request?
+	if cfg.Region != "" || cfg.Domain != "" {
 		err := handleMultiClusterReq(w, r, cfg)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed @ handleMultiClusterReq, err:= ", err)
