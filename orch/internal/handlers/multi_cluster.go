@@ -46,8 +46,10 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	peers := []internal.PeerReport{}
 	if cfg.Domain != "" { // request's naming it
 		peerMap := internal.Cfg.PeerMan.GetPeerMap()
-		if peer, ok := peerMap[cfg.Domain]; ok {
-			peers = append(peers, peer)
+		for _, v := range peerMap {
+			if v.HubDomain == cfg.Domain {
+				peers = append(peers, v)
+			}
 		}
 	} else { // request just want region, now we can "load balance"
 		peers = internal.Cfg.PeerMan.FindPeerDomain(cfg.Region)

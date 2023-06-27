@@ -109,8 +109,8 @@ func Cronjob_CountHC(interval time.Duration) {
 	TokenBook.NewToken(token)
 
 	jsonPayload, _ := json.Marshal(PeerReport{
-		Domain: Cfg.HubDomain,
-
+		Domain:     Cfg.Domain,
+		HubDomain:  Cfg.HubDomain,
 		Region:     Cfg.Region,
 		HC_count:   int(HC_Count),
 		T_unix_sec: time.Now().Unix(),

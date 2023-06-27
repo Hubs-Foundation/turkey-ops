@@ -8,7 +8,8 @@ import (
 )
 
 type PeerReport struct {
-	Domain string `json:"domain"`
+	Domain    string `json:"domain"`
+	HubDomain string `json:"hubdomain"`
 
 	Region     string `json:"region"`
 	HC_count   int    `json:"hc_count"`
@@ -119,6 +120,7 @@ func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
 	pm.Mu.Lock()
 	pm.peerMap[report.Domain] = PeerReport{
 		Domain:     report.Domain,
+		HubDomain:  report.HubDomain,
 		Region:     report.Region,
 		HC_count:   report.HC_count,
 		T_unix_sec: report.T_unix_sec,
