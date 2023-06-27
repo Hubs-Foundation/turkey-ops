@@ -71,8 +71,9 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 		jsonPayload, _ := json.Marshal(cfg)
 		peerOrchWebhook := "https://orch." + peerDomain + "/webhooks/remote_hc_instance"
 		hcReq, _ := http.NewRequest(cfg.TurkeyJobReqMethod, peerOrchWebhook, bytes.NewBuffer(jsonPayload))
+		hcReq.Method = cfg.TurkeyJobReqMethod
 		hcReq.Header.Add("token", peerToken)
-		// internal.Logger.Sugar().Debugf("hcReq: %v", hcReq)
+		internal.Logger.Sugar().Debugf("hcReq: %v", hcReq)
 		resp, err := http.DefaultClient.Do(hcReq)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to send out hcReq: %v", err)
