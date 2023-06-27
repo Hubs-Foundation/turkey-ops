@@ -12,7 +12,8 @@ var Webhook_remote_hc_instance = http.HandlerFunc(func(w http.ResponseWriter, r 
 		return
 	}
 	token := r.Header.Get("Token")
-	if !internal.TokenBook.CheckToken(token) {
+	if token == "" || !internal.TokenBook.CheckToken(token) {
+		internal.Logger.Debug("bad token: " + token)
 		http.Error(w, "", http.StatusNotFound)
 		return
 	}
