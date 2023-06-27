@@ -16,6 +16,7 @@ var Webhook_remote_hc_instance = http.HandlerFunc(func(w http.ResponseWriter, r 
 		http.Error(w, "", http.StatusNotFound)
 		return
 	}
+	internal.Logger.Debug("good token: " + token)
 
 	cfg, err := getHcCfg(r)
 	if err != nil {
