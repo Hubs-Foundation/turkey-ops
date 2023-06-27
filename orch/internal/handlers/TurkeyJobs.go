@@ -91,7 +91,7 @@ var TurkeyJobRouter = func(_ context.Context, msg *pubsub.Message) {
 			callback_payload["err"] = err.Error()
 		}
 	case "DELETE":
-		err := DeleteHubsCloudInstance(hcCfg)
+		err := DeleteHubsCloudInstance(hcCfg.HubId, false)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to DeleteHubsCloudInstance, err: %v", err)
 			callback_payload["err"] = err.Error()

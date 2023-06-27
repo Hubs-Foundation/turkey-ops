@@ -13,7 +13,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 
 	// tStart := time.Now()
 
-	internal.Logger.Debug("multi-cluster req, hcCfg.Region: " + cfg.Region)
+	internal.Logger.Sugar().Debugf("multi-cluster req, hcCfg: %v: ", cfg)
 
 	cfg.TurkeyJobReqMethod = r.Method
 	cfg.TurkeyJobJobId = w.Header().Get("X-Request-Id")
@@ -74,7 +74,8 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 		// internal.Logger.Sugar().Debugf("hcReq: %v", hcReq)
 		resp, err := http.DefaultClient.Do(hcReq)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to sed out hcReq: %v", err)
+			internal.Logger.Sugar().Errorf("failed to send out hcReq: %v", err)
+			return err
 		}
 		if resp.StatusCode < 300 {
 			done = true

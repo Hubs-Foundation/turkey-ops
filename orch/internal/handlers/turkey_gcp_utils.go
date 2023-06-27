@@ -384,7 +384,14 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 		cfg.GCP_SA_KEY_b64 = base64.StdEncoding.EncodeToString([]byte(os.Getenv("GCP_SA_KEY")))
 		internal.Logger.Warn("GCP_SA_KEY_b64 unspecified -- using: " + cfg.GCP_SA_KEY_b64)
 	}
-	cfg.DASHBOARD_ACCESS_KEY = internal.PwdGen(15, pwdSeed, "P~")
+
+	if cfg.DASHBOARD_ACCESS_KEY == "<COPY>" {
+		cfg.DASHBOARD_ACCESS_KEY = internal.Cfg.DASHBOARD_ACCESS_KEY
+	}
+	if cfg.DASHBOARD_ACCESS_KEY == "" {
+		cfg.DASHBOARD_ACCESS_KEY = internal.PwdGen(15, pwdSeed, "P~")
+		internal.Logger.Warn("DASHBOARD_ACCESS_KEY unspecified -- using: " + cfg.DASHBOARD_ACCESS_KEY)
+	}
 
 	cfg.ProjectId = internal.Cfg.Gcps.ProjectId
 	if cfg.FilestorePath == "" {

@@ -87,10 +87,10 @@ todo(internal only): <br>
 
 // todo: put strict rate limit on this endpoint and add caching to deflect/protect against ddos
 var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// if r.URL.Path != "/global_404_fallback" || r.Method != "GET" {
-	// 	http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-	// 	return
-	// }
+
+	fmt.Fprint(w, "hi from TurkeyReturnCenter")
+	return
+
 	goods := r.URL.Query().Get("goods")
 	if !strings.HasSuffix(goods, internal.Cfg.Domain) {
 		internal.Logger.Sugar().Debugf("TurkeyReturnCenter bounce / !strings.HasSuffix(goods (%v), internal.Cfg.Domain(%v)) ", goods, internal.Cfg.Domain)

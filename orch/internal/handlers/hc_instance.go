@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
@@ -130,99 +131,104 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 })
 
 func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
+	var err error
 	switch r.Method {
 	case "POST":
 		hcCfg, err := makeHcCfg(cfg)
 		if err != nil {
-			// internal.Logger.Error("bad hcCfg: " + err.Error())
-			// http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			// return
 			return fmt.Errorf("bad cfg, err: %v", err)
 		}
 		err = CreateHubsCloudInstance(hcCfg)
 		if err != nil {
-			// w.WriteHeader(http.StatusInternalServerError)
-			// json.NewEncoder(w).Encode(map[string]interface{}{
-			// 	"result": err.Error(),
-			// 	"hub_id": hcCfg.HubId,
-			// })
-			// return
 			return fmt.Errorf("failed to create, err: %v", err)
 		}
-		// w.WriteHeader(http.StatusOK)
-		// json.NewEncoder(w).Encode(map[string]interface{}{
-		// 	"result":        "done",
-		// 	"useremail":     hcCfg.UserEmail,
-		// 	"hub_id":        hcCfg.HubId,
-		// 	"subdomain":     hcCfg.Subdomain,
-		// 	"tier":          hcCfg.Tier,
-		// 	"ccu_limit":     hcCfg.CcuLimit,
-		// 	"storage_limit": hcCfg.StorageLimit,
-		// })
 		return nil
 	case "GET":
-		// 	hc_get(w, r)
-		// w.WriteHeader(http.StatusNotImplemented)
-		// fmt.Fprint(w, "todo -- what's the req? also for cross cluster req provide JobQueueReqCallbackWebhook to receive resp on webhook")
 		return errors.New("not implemented")
 
 	case "DELETE":
-		// hc_delete(w, r)
-		// sess := internal.GetSession(r.Cookie)
 		if cfg.HubId == "" {
-			// internal.Logger.Error("")
-			// return
 			return fmt.Errorf("missing hcCfg.HubId, err")
 		}
-		DeleteHubsCloudInstance(cfg)
-		//return
-		// w.WriteHeader(http.StatusAccepted)
-		// json.NewEncoder(w).Encode(map[string]interface{}{
-		// 	"result": "deleted",
-		// 	"hub_id": cfg.HubId,
-		// })
+		DeleteHubsCloudInstance(cfg.HubId, false)
 		return nil
 	case "PATCH":
 		// pause
 		status := r.URL.Query().Get("status")
-		if status == "down" || status == "up" {
+		msg := ""
+		switch status {
+		case "up", "down":
 			err := hc_switch(cfg.HubId, status)
 			if err != nil {
-				// w.WriteHeader(http.StatusInternalServerError)
-				// json.NewEncoder(w).Encode(map[string]interface{}{
-				// 	"error":  err.Error(),
-				// 	"hub_id": cfg.HubId,
-				// })
 				return fmt.Errorf("failed @ hc_switch: %v", err)
 			}
-			// json.NewEncoder(w).Encode(map[string]interface{}{
-			// 	"msg":        "status updated",
-			// 	"new_status": status,
-			// 	"hub_id":     cfg.HubId,
-			// })
-			// return
-			return nil
+		case "pause", "resume":
+			err = hc_pause(cfg.HubId, status)
+			if err != nil {
+				return fmt.Errorf("failed @ hc_switch: %v", err)
+			}
+		default:
+			msg, err = UpdateHubsCloudInstance(cfg)
+			if err != nil {
+				return fmt.Errorf("failed to %v, err: %v", status, err)
+			}
 		}
 		// update
-		msg, err := UpdateHubsCloudInstance(cfg)
-		if err != nil {
-			// w.WriteHeader(http.StatusInternalServerError)
-			// json.NewEncoder(w).Encode(map[string]interface{}{
-			// 	"error":  err.Error(),
-			// 	"hub_id": cfg.HubId,
-			// })
-			// return
-			return fmt.Errorf("failed to update, err: %v", err)
-		}
-		// //resp
-		// json.NewEncoder(w).Encode(map[string]interface{}{
-		// 	"msg":    msg,
-		// 	"hub_id": cfg.HubId,
-		// })
 		internal.Logger.Debug("UpdateHubsCloudInstance: " + msg)
 		return nil
 	}
-	return nil
+	return err
+}
+
+func hc_pause(hubId, status string) error {
+
+	return errors.New("not yet")
+
+	switch status {
+	case "pause":
+		// backup files
+
+		// add route
+		nsName := "hc-" + hubId
+		ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		subdomain := ns.Labels["subdomain"]
+		if subdomain == "" {
+			return errors.New("omg missing subdomain !!! why !!!")
+		}
+		ig, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "pausing")
+		if err != nil {
+			return err
+		}
+		pathType_prefix := networkingv1.PathTypePrefix
+		ig.Spec.Rules = append(
+			ig.Spec.Rules,
+			networkingv1.IngressRule{
+				Host: subdomain + "." + internal.Cfg.HubDomain,
+				IngressRuleValue: networkingv1.IngressRuleValue{
+					HTTP: &networkingv1.HTTPIngressRuleValue{
+						Paths: []networkingv1.HTTPIngressPath{
+							{
+								Path:     "/",
+								PathType: &pathType_prefix,
+								Backend: networkingv1.IngressBackend{
+									Service: &networkingv1.IngressServiceBackend{
+										Name: "turkeyorch",
+										Port: networkingv1.ServiceBackendPort{
+											Number: 888,
+										}}}},
+						}}}})
+
+		//delete in k8s
+		err = DeleteHubsCloudInstance(hubId, false)
+		return err
+	case "resume":
+		//restore configs
+		return nil
+	}
+	return errors.New("bad input: " + status)
 }
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
@@ -699,10 +705,10 @@ func makeHcCfg(cfg HCcfg) (HCcfg, error) {
 	return cfg, nil
 }
 
-func DeleteHubsCloudInstance(hcCfg HCcfg) error {
+func DeleteHubsCloudInstance(hubId string, keepData bool) error {
 
 	//mark the hc- namespace for the cleanup cronjob (todo)
-	nsName := "hc-" + hcCfg.HubId
+	nsName := "hc-" + hubId
 	err := internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
 	if err != nil {
 		internal.Logger.Error("failed @PatchNsAnnotation, err: " + err.Error())
@@ -726,7 +732,7 @@ func DeleteHubsCloudInstance(hcCfg HCcfg) error {
 	go func() {
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
-		hc_switch(hcCfg.HubId, "down")
+		hc_switch(hubId, "down")
 		err := internal.Cfg.K8ss_local.WaitForPodKill(nsName, 60*time.Minute, 1)
 		if err != nil {
 			internal.Logger.Error("error @WaitForPodKill: " + err.Error())
@@ -741,53 +747,57 @@ func DeleteHubsCloudInstance(hcCfg HCcfg) error {
 			return
 		}
 		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
-		//delete db
-		hcCfg.DBname = "ret_" + hcCfg.HubId
-		internal.Logger.Debug("&#128024 deleting db: " + hcCfg.DBname)
-		force := true
-		_, err = internal.PgxPool.Exec(context.Background(), "drop database "+hcCfg.DBname)
-		if err != nil {
-			if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
-				err = pg_kick_all(hcCfg)
+
+		if !keepData {
+			// delete hc-<hub-id> folder on turkeyfs (if any)
+			if len(hubId) < 1 {
+				internal.Logger.Error("DANGER!!! empty HubId")
+			} else {
+				os.RemoveAll("/turkeyfs/hc-" + hubId)
+			}
+			//delete db
+			dbName := "ret_" + hubId
+			internal.Logger.Debug("&#128024 deleting db: " + dbName)
+			force := true
+			_, err = internal.PgxPool.Exec(context.Background(), "drop database "+dbName)
+			if err != nil {
+				if strings.Contains(err.Error(), "is being accessed by other users (SQLSTATE 55006)") && force {
+					err = pg_kick_all(dbName)
+					if err != nil {
+						internal.Logger.Error(err.Error())
+						return
+					}
+					_, err = internal.PgxPool.Exec(context.Background(), "drop database "+dbName)
+				}
 				if err != nil {
 					internal.Logger.Error(err.Error())
 					return
 				}
-				_, err = internal.PgxPool.Exec(context.Background(), "drop database "+hcCfg.DBname)
 			}
+			internal.Logger.Debug("&#128024 deleted db: " + dbName)
+			// delete GCS (if any)
+			err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hubId+"."+internal.Cfg.Domain)
 			if err != nil {
-				internal.Logger.Error(err.Error())
+				internal.Logger.Error("delete ns failed: " + err.Error())
 				return
 			}
-		}
-		internal.Logger.Debug("&#128024 deleted db: " + hcCfg.DBname)
-		// delete GCS (if any)
-		err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hcCfg.HubId+"."+internal.Cfg.Domain)
-		if err != nil {
-			internal.Logger.Error("delete ns failed: " + err.Error())
-			return
-		}
-		// delete hc-<hub-id> folder on turkeyfs (if any)
-		if len(hcCfg.HubId) < 1 {
-			internal.Logger.Error("DANGER!!! empty HubId")
-		} else {
-			os.RemoveAll("/turkeyfs/hc-" + hcCfg.HubId)
 		}
 	}()
 	return nil
 }
 
-func pg_kick_all(cfg HCcfg) error {
+func pg_kick_all(dbName string) error {
+
 	sqatterCount := -1
 	tries := 0
 	for sqatterCount != 0 && tries < 3 {
-		squatters, _ := internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
-		internal.Logger.Debug("WARNING: pg_kick_all: kicking <" + fmt.Sprint(squatters.RowsAffected()) + "> squatters from " + cfg.DBname)
-		_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM public`)
-		_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+cfg.DBname+` FROM `+internal.Cfg.DBuser)
-		_, _ = internal.PgxPool.Exec(context.Background(), `SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '`+cfg.DBname+`'`)
+		squatters, _ := internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+dbName+`'`)
+		internal.Logger.Debug("WARNING: pg_kick_all: kicking <" + fmt.Sprint(squatters.RowsAffected()) + "> squatters from " + dbName)
+		_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+dbName+` FROM public`)
+		_, _ = internal.PgxPool.Exec(context.Background(), `REVOKE CONNECT ON DATABASE `+dbName+` FROM `+internal.Cfg.DBuser)
+		_, _ = internal.PgxPool.Exec(context.Background(), `SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '`+dbName+`'`)
 		time.Sleep(3 * time.Second)
-		squatters, _ = internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+cfg.DBname+`'`)
+		squatters, _ = internal.PgxPool.Exec(context.Background(), `select usename,client_addr,state,query from pg_stat_activity where datname = '`+dbName+`'`)
 		sqatterCount = int(squatters.RowsAffected())
 		tries++
 	}
@@ -831,27 +841,6 @@ func hc_switch(HubId, status string) error {
 			return err
 		}
 	}
-	// //statefulset
-	// sss, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().StatefulSets(ns).List(context.Background(), metav1.ListOptions{})
-	// if err != nil {
-	// 	internal.Logger.Error("hc_switch - failed to list statefulsets: " + err.Error())
-	// 	return err
-	// }
-
-	// for _, ss := range sss.Items {
-	// 	ss.Spec.Replicas = pointerOfInt32(Replicas)
-	// 	_, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().StatefulSets(ns).Update(context.Background(), &ss, metav1.UpdateOptions{})
-	// 	if err != nil {
-	// 		internal.Logger.Error("hc_switch -- failed to scale <ns: " + ns + ", deployment: " + ss.Name + ">: " + err.Error())
-	// 		return err
-	// 	}
-	// }
-
-	// //waits
-	// err = internal.Cfg.K8ss_local.WatiForDeployments(ns, 15*time.Minute)
-	// if err != nil {
-	// 	internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
-	// }
 
 	locker.Unlock()
 	return nil

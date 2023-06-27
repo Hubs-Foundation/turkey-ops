@@ -228,10 +228,22 @@ spec:
     port: 31042
   cdn:
     enabled: true
+    negativeCaching: false
     cachePolicy:
       includeHost: true
       includeProtocol: false
       includeQueryString: true
+  customRequestHeaders:
+    headers:
+    - X-Client-Region:{client_region}
+    - X-Client-City:{client_city}
+    - X-Client-CityLatLong:{client_city_lat_long}
+  securityPolicy:
+    {{ if ne .Env "dev" }}
+    name: turkey-prod
+    {{ else }}
+    name: turkey-dev
+    {{ end }}  
 ---
 apiVersion: networking.gke.io/v1beta1
 kind: FrontendConfig

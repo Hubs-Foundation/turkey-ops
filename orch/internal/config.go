@@ -2,6 +2,9 @@ package internal
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"net"
 	"os"
 	"strings"
@@ -32,6 +35,8 @@ type Config struct {
 	DBpass                    string `long:"db-pass" env:"DB_PASS" description:"postgresql data base password"`
 	DBconn                    string `long:"db-conn" env:"DB_CONN" description:"postgresql data base connection string"`
 	PermsKey                  string `long:"perms-key" env:"PERMS_KEY" description:"cluster wide private key for all reticulum authentications"`
+	PermsKey_pvt              *rsa.PrivateKey
+	PermsKey_pub              *rsa.PublicKey
 	FilestoreIP               string ``
 	FilestorePath             string ``
 
@@ -77,6 +82,7 @@ var Cfg *Config
 
 func MakeCfg() {
 	Cfg = &Config{}
+	var err error
 
 	Cfg.RedisHost = os.Getenv("REDIS_HOST")
 	if Cfg.RedisHost != "" {
@@ -176,6 +182,16 @@ func MakeCfg() {
 	Cfg.DASHBOARD_ACCESS_KEY = getEnv("DASHBOARD_ACCESS_KEY", "dummy_P@$$")
 
 	Cfg.PermsKey = os.Getenv("PERMS_KEY")
+	perms_key_str := strings.Replace(Cfg.PermsKey, `\\n`, "\n", -1)
+	pb, _ := pem.Decode([]byte(perms_key_str))
+	if pb == nil {
+		Logger.Sugar().Errorf("failed to decode perms key... perms_key_str %v, rawPermsKey %v", perms_key_str, Cfg.PermsKey)
+	}
+	Cfg.PermsKey_pvt, err = x509.ParsePKCS1PrivateKey(pb.Bytes)
+	if err != nil {
+		Logger.Sugar().Errorf("failed to parse PermsKey")
+	}
+	Cfg.PermsKey_pub = &Cfg.PermsKey_pvt.PublicKey
 
 	Cfg.SmtpServer = os.Getenv("SMTP_SERVER")
 	Cfg.SmtpPort = os.Getenv("SMTP_PORT")

@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
@@ -140,6 +141,31 @@ func (k8 K8sSvs) PatchNsAnnotation(namespace string, AnnotationKey, AnnotationVa
 		return err
 	}
 	return nil
+}
+
+func (k8 K8sSvs) GetOrCreateTrcIngress(namespace, ingressName string) (*networkingv1.Ingress, error) {
+	if k8.ClientSet == nil {
+		return nil, errors.New("k8.ClientSet == nil")
+	}
+	ig, err := k8.ClientSet.NetworkingV1().Ingresses(namespace).Get(context.Background(), namespace, metav1.GetOptions{})
+	if err == nil {
+		return ig, nil
+	}
+	if k8errors.IsNotFound(err) {
+		ig, err = k8.ClientSet.NetworkingV1().Ingresses(namespace).Create(context.Background(),
+			&networkingv1.Ingress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: ingressName,
+					Annotations: map[string]string{
+						`haproxy.org/request-set-header`: `trc .`,
+						`haproxy.org/path-rewrite:`:      `/turkey-return-center`,
+					},
+				},
+			},
+			metav1.CreateOptions{},
+		)
+	}
+	return ig, err
 }
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
