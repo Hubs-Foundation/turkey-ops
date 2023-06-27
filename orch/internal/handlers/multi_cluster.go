@@ -49,13 +49,12 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 		peers = append(peers, peerMap[cfg.Domain])
 	} else { // request just want region, now we can "load balance"
 		peers = internal.Cfg.PeerMan.FindPeerDomain(cfg.Region)
-		if len(peers) == 0 {
-			internal.Logger.Sugar().Errorf(
-				"no appropriate peer for region: %v (new regional peer cluster are manually created atm)", cfg.Region)
-			return errors.New("no appropriate peer for region: " + cfg.Region)
-		}
-		internal.Logger.Sugar().Debugf("located peers: %v", peers)
 	}
+	if len(peers) == 0 {
+		internal.Logger.Error("no appropriate peer for region: (new regional peer cluster are manually created atm)")
+		return errors.New("no appropriate peer for region: " + cfg.Region)
+	}
+	internal.Logger.Sugar().Debugf("located peers: %v", peers)
 
 	// root-cluter-proxy option, step2: proxy req to peer cluster
 	done := false
