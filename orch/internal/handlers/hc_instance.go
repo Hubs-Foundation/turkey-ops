@@ -537,6 +537,7 @@ func getHcCfg(r *http.Request) (HCcfg, error) {
 		internal.Logger.Error("ERROR @ reading r.body, error = " + err.Error())
 		return cfg, err
 	}
+	internal.Logger.Sugar().Debugf("rBodyBytes: " + string(rBodyBytes))
 	err = json.Unmarshal(rBodyBytes, &cfg)
 	if err != nil {
 		internal.Logger.Error("bad hcCfg: " + string(rBodyBytes))
