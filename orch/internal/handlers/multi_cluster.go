@@ -7,6 +7,7 @@ import (
 	"io"
 	"main/internal"
 	"net/http"
+	"time"
 )
 
 func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) error {
@@ -76,17 +77,21 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 		hcReq.Method = cfg.TurkeyJobReqMethod
 		hcReq.Header.Add("token", peerToken)
 		internal.Logger.Sugar().Debugf("hcReq: %v", hcReq)
-		resp, err := http.DefaultClient.Do(hcReq)
-		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to send out hcReq: %v", err)
-			return err
-		}
-		if resp.StatusCode < 300 {
+
+		// resp, err := http.DefaultClient.Do(hcReq)
+		// if err != nil {
+		// 	internal.Logger.Sugar().Errorf("failed to send hcReq: %v", err)
+		// 	return err
+		// }
+
+		resp, _, err := internal.RetryHttpReq(http.DefaultClient, hcReq, 6*time.Second)
+
+		if resp != nil && resp.StatusCode < 300 {
 			done = true
 		} else {
 			respBodyBytes, _ := io.ReadAll(resp.Body)
 			internal.Logger.Sugar().Warnf(
-				"failed -- domain: <%v>, resp.code:<%v>, resp.body:<%v>", peerDomain, resp.StatusCode, string(respBodyBytes))
+				"failed. err: <%v>  domain: <%v>, resp.code:<%v>, resp.body:<%v>", err, peerDomain, resp.StatusCode, string(respBodyBytes))
 			continue
 		}
 		respBodyBytes, _ := io.ReadAll(resp.Body)

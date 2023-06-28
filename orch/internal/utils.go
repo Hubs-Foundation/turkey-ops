@@ -285,11 +285,11 @@ func IsValidDomainName(domain string) bool {
 	return RegExp.MatchString(domain)
 }
 
-func RetryHttpReq(client *http.Client, request *http.Request, maxRetry time.Duration) (*http.Response, time.Duration, error) {
+func RetryHttpReq(client *http.Client, request *http.Request, ttl time.Duration) (*http.Response, time.Duration, error) {
 
-	stepWait := 8 * time.Second
+	stepWait := ttl / 9
 
-	timeout := time.Now().Add(maxRetry)
+	timeout := time.Now().Add(ttl)
 	tStart := time.Now()
 	resp, err := client.Do(request)
 	for err != nil || resp.StatusCode > 299 {
