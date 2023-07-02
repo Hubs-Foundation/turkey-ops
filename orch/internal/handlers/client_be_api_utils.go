@@ -72,3 +72,12 @@ func CheckAndReadJwtToken(jwtToken string) (fxaUser, error) {
 
 	return fxaUser, nil
 }
+
+var dashboard_hubs struct {
+	hub_id     int8
+	name       string
+	tier       string
+	subdomain  string
+	status     string
+	account_id int8
+}

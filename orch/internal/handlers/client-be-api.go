@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"main/internal"
 	"net/http"
 	"strings"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 // wip
@@ -83,8 +86,27 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		fmt.Fprintf(w, "not yet")
 
 	case "z/load_from_dashboard":
+		// fmt.Fprintf(w, "z/load_from_dashboard: %+v\n", fxaUser)
 
-		fmt.Fprintf(w, "z/load_from_dashboard: %+v\n", fxaUser)
+		turkeydashboardPool, _ := pgxpool.Connect(context.Background(), internal.Cfg.DBconn+"/dashboard")
+
+		rows, err := turkeydashboardPool.Query(context.Background(), "SELECT * FROM hubs")
+		if err != nil {
+			internal.Logger.Sugar().Errorf("Query failed: %v\n", err)
+			return
+		}
+		defer rows.Close()
+
+		hub := dashboard_hubs
+		for rows.Next() {
+			// Process each row - for example, let's say it's a table of a "name" column
+			if err := rows.Scan(&hub); err != nil {
+				internal.Logger.Sugar().Errorf("Error scanning row: %v\n", err)
+				return
+			}
+			internal.Logger.Sugar().Debugf("hub: %+v\n", hub)
+		}
+
 	}
 
 	http.Error(w, "", 404)
