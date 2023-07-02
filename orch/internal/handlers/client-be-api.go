@@ -10,7 +10,7 @@ import (
 
 // wip
 
-var Api_v1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	if !strings.HasPrefix(r.URL.Path, "/api/v1/") {
 		http.Error(w, "", 404)
