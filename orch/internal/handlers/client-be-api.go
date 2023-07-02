@@ -83,7 +83,8 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		fmt.Fprintf(w, "not yet")
 
 	case "z/load_from_dashboard":
-		fmt.Fprintf(w, "z/load_from_dashboard")
+
+		fmt.Fprintf(w, "z/load_from_dashboard: %+v\n", fxaUser)
 	}
 
 	http.Error(w, "", 404)
