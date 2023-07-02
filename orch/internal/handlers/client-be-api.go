@@ -90,7 +90,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 		turkeydashboardPool, _ := pgxpool.Connect(context.Background(), internal.Cfg.DBconn+"/dashboard")
 
-		rows, err := turkeydashboardPool.Query(context.Background(), "SELECT * FROM hubs")
+		rows, err := turkeydashboardPool.Query(context.Background(), "SELECT hub_id, name, tier, subdomain, status, account_id FROM hubs")
 		if err != nil {
 			internal.Logger.Sugar().Errorf("Query failed: %v\n", err)
 			return
@@ -99,8 +99,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 		hub := dashboard_hubs
 		for rows.Next() {
-			// Process each row - for example, let's say it's a table of a "name" column
-			if err := rows.Scan(&hub); err != nil {
+			if err := rows.Scan(&hub.hub_id, &hub.name, &hub.tier, &hub.subdomain, &hub.status, &hub.account_id); err != nil {
 				internal.Logger.Sugar().Errorf("Error scanning row: %v\n", err)
 				return
 			}
