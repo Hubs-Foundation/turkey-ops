@@ -16,12 +16,13 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "", 404)
 		return
 	}
-	token, err := r.Cookie("_turkeyauthtoken")
+	tokenCookie, err := r.Cookie("_turkeyauthtoken")
 	if err != nil {
 		http.Error(w, "", 404)
 		return
 	}
-	fxaUser, err := CheckAndReadJwtToken(token.Value)
+	internal.Logger.Debug("tokenCookie.Value: " + tokenCookie.Value)
+	fxaUser, err := CheckAndReadJwtToken(tokenCookie.Value)
 	if err != nil {
 		http.Error(w, "", 404)
 		return
@@ -33,6 +34,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	// rows := db_get_hubs_for_fxaSub(fxaUser.Sub)
 
 	resource := strings.TrimPrefix(r.URL.Path, "/api/v1/")
+
 	switch resource {
 	case "account":
 
