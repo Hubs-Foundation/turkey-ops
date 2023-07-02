@@ -84,7 +84,7 @@ func main() {
 	router.Handle("/letsencrypt-account-collect", handlers.LetsencryptAccountCollect)
 	// router.Handle("/dump_hcnstable", pvtEpEnforcer.Filter([]string{"*"})(handlers.Dump_HcNsTable))
 
-	router.Handle("/api/v1", handlers.DashboardApi)
+	router.Handle("/api/v1/", handlers.DashboardApi)
 
 	// ############################## serving ##############################
 	port, err := strconv.Atoi(internal.Cfg.Port)
