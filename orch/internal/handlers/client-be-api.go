@@ -23,7 +23,9 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	}
 	fxaUser, err := CheckAndReadJwtToken(tokenCookie.Value)
 	if err != nil {
-		internal.Logger.Sugar().Debugf("CheckAndReadJwtToken err: %v", err)
+		if err.Error() != "invalid token" {
+			internal.Logger.Sugar().Debugf("CheckAndReadJwtToken err: %v", err)
+		}
 		http.Error(w, "", 404)
 		return
 	}
