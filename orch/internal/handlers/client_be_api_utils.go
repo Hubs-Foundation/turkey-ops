@@ -31,7 +31,7 @@ func db_get_hubs_for_fxaSub(fxaSub string) pgx.Rows {
 
 // User is the authenticated user
 type fxaUser struct {
-	Exp                  string   `json:"exp"`
+	Exp                  int64    `json:"exp"`
 	TwoFA                bool     `json:"fxa_2fa"`
 	Cancel_at_period_end bool     `json:"fxa_cancel_at_period_end"`
 	Current_period_end   float64  `json:"fxa_current_period_end"`
@@ -40,7 +40,7 @@ type fxaUser struct {
 	Avatar               string   `json:"fxa_pic"`
 	Plan_id              string   `json:"fxa_plan_id"`
 	Subscriptions        []string `json:"fxa_subscriptions"`
-	Iat                  string   `json:"iat"`
+	Iat                  int64    `json:"iat"`
 	Iss                  string   `json:"iss"`
 	Sub                  string   `json:"sub"`
 }
