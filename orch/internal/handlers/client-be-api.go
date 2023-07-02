@@ -77,10 +77,9 @@ var Api_v1 = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	case "events/fxa":
 		fmt.Fprintf(w, "not yet")
 
+	case "z/load_from_dashboard":
+		fmt.Fprintf(w, "z/load_from_dashboard")
 	}
 
-	// hubId := "11111111111111"
-	// hubRec, _ := internal.PgxPool.Exec(context.Background(),
-	// 	fmt.Sprintf(`select * from hubs where datname = 'dashboard' and hub_id=%v`, hubId))
-
+	http.Error(w, "", 404)
 })
