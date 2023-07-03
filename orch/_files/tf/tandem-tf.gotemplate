@@ -16,7 +16,7 @@ provider "google-beta" {
 variable "vmType" {
   type = map
   default = {
-    "stream"  = "e2-standard-8"
+    "stream"  = "e2-standard-16"
     "hub" = "e2-standard-8"
     "service" = "e2-standard-16"
     "spot" = "e2-standard-8"
@@ -195,7 +195,7 @@ resource "google_sql_database_instance" "pgsql" {
   deletion_protection = false
   settings {
     {{ if ne .Env "dev" }}
-    tier = "db-custom-4-26624"
+    tier = "db-custom-16-106496"
     {{ else }}
     tier = "db-custom-2-13312"
     {{ end }}
@@ -205,7 +205,7 @@ resource "google_sql_database_instance" "pgsql" {
     }
     database_flags {
       name = "max_connections"
-      value = 2500
+      value = 25000
     }
   }
 }
