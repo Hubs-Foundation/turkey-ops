@@ -9,6 +9,8 @@ import (
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/jackc/pgx/v4"
+
+	"github.com/jackc/pgtype"
 )
 
 func db_get_turkeyAccountId(fxaSub string) pgx.Rows {
@@ -74,10 +76,10 @@ func CheckAndReadJwtToken(jwtToken string) (fxaUser, error) {
 }
 
 var dashboard_hubs struct {
-	hub_id     int64
-	name       string
-	tier       string
-	subdomain  string
-	status     string
-	account_id int64
+	hub_id     pgtype.Int8
+	name       pgtype.Text
+	tier       pgtype.Text
+	subdomain  pgtype.Text
+	status     pgtype.Text
+	account_id pgtype.Int8
 }

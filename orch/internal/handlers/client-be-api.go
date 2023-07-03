@@ -92,7 +92,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 		rows, err := turkeydashboardPool.Query(context.Background(), "SELECT hub_id, name, tier, subdomain, status, account_id FROM hubs")
 		if err != nil {
-			internal.Logger.Sugar().Errorf("Query failed: %v\n", err)
+			internal.Logger.Sugar().Errorf("Query failed: %v", err)
 			return
 		}
 		defer rows.Close()
@@ -100,7 +100,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		hub := dashboard_hubs
 		for rows.Next() {
 			if err := rows.Scan(&hub.hub_id, &hub.name, &hub.tier, &hub.subdomain, &hub.status, &hub.account_id); err != nil {
-				internal.Logger.Sugar().Errorf("Error scanning row: %v\n", err)
+				internal.Logger.Sugar().Errorf("Error scanning row: %v", err)
 				return
 			}
 			internal.Logger.Sugar().Debugf("hub: %+v\n", hub)
