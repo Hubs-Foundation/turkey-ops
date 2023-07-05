@@ -199,8 +199,9 @@ document.getElementById("btn_sampleCfg_tandemProd").onclick = function(){
   document.getElementById("cluster_cfg").value = `{
   "domain":"changeMe.myhubs.dev",
   "hubdomain":"changeMe.myhubs.net",
-  "region":"us-central1"
+  "region":"us-central1",
   "env":"prod",
-  "VPC":"myhubsdevacn55"
+  "VPC":"myhubsdevacn55",
+  "DASHBOARD_ACCESS_KEY":"<COPY>"
 }`
 }
