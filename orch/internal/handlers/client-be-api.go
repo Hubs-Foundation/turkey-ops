@@ -99,6 +99,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 		hub := dashboard_hubs
 		for rows.Next() {
+
 			if err := rows.Scan(&hub.hub_id, &hub.name, &hub.tier, &hub.subdomain, &hub.status, &hub.account_id); err != nil {
 				internal.Logger.Sugar().Errorf("Error scanning row: %v", err)
 				return

@@ -110,10 +110,12 @@ type clusterCfg struct {
 	VPC                     string `json:"VPC`                      //non-empty for tandem cluster
 	IsSpot                  string `json:IsSpot`                    //if using spot instance (ie. for dev)
 
-	ItaChan     string `json:"itachan"`     //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
-	CLOUD       string `json:"cloud"`       //aws or gcp or azure or something else like nope or local etc
-	FXA_SERVER  string `json:"FXA_SERVER"`  // for turkeydashboard
-	REGCRED_b64 string `json:"regcred_b64"` //private container registry creds for k8s/secret/.dockerconfigjson
+	ItaChan           string `json:"itachan"`            //ita's listening channel (dev, beta, stable), falls back to Env, swaping staging/prod for beta/stable
+	CLOUD             string `json:"cloud"`              //aws or gcp or azure or something else like nope or local etc
+	FXA_SERVER        string `json:"FXA_SERVER"`         // for turkeydashboard
+	REGCRED_b64       string `json:"regcred_b64"`        //private container registry creds for k8s/secret/.dockerconfigjson
+	FilestoreName     string `json: "FilestoreName"`     //
+	FilestoreLocation string `json: "FilestoreLocation"` //
 
 	//optional inputs
 	DeploymentPrefix     string `json:"name"`                 //t-
@@ -340,6 +342,14 @@ func turkey_makeCfg(r *http.Request) (clusterCfg, error) {
 	}
 	if cfg.Stackname == "" {
 		cfg.Stackname = cfg.DeploymentPrefix + cfg.DeploymentId
+	}
+
+	if cfg.FilestoreName == "" {
+		cfg.FilestoreName = cfg.VPC + "-hs"
+	}
+
+	if cfg.FilestoreLocation == "" {
+		cfg.FilestoreLocation = cfg.Region + "-a"
 	}
 
 	//generate the rest
