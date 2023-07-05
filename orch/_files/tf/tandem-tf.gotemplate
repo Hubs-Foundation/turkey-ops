@@ -68,7 +68,7 @@ resource "google_container_cluster" "gke" {
     enabled = false
   }
   logging_config {
-    enable_components = []
+    enable_components = [SYSTEM_COMPONENTS,WORKLOADS]
   }
   monitoring_config {
     enable_components = []
