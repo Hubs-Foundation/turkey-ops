@@ -68,7 +68,8 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 
 	for !done && pick < len(peers) {
 		peerDomain := peers[pick].Domain
-		peerToken := peers[pick].Token
+		// peerToken := peers[pick].Token
+		peerToken := internal.Cfg.DASHBOARD_ACCESS_KEY
 		pick++
 
 		jsonPayload, _ := json.Marshal(cfg)

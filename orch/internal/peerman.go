@@ -14,7 +14,7 @@ type PeerReport struct {
 	Region     string `json:"region"`
 	HC_count   int    `json:"hc_count"`
 	T_unix_sec int64  `json:"t_unix_sec"`
-	Token      string `json:"token"`
+	// Token      string `json:"token"`
 }
 
 type PeerMan struct {
@@ -124,7 +124,7 @@ func (pm *PeerMan) UpdatePeerAndUpload(report PeerReport) {
 		Region:     report.Region,
 		HC_count:   report.HC_count,
 		T_unix_sec: report.T_unix_sec,
-		Token:      report.Token,
+		// Token:      report.Token,
 	}
 	pm.Mu.Unlock()
 	pm.upload()

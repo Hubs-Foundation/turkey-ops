@@ -2,8 +2,6 @@ package internal
 
 import (
 	"sync"
-
-	"k8s.io/utils/strings/slices"
 )
 
 type tokenBook struct {
@@ -32,7 +30,9 @@ func (tb *tokenBook) NewToken(token string) {
 }
 
 func (tb *tokenBook) CheckToken(token string) bool {
-	tb.mu.Lock()
-	defer tb.mu.Unlock()
-	return slices.Contains(tb.book, token)
+
+	return token == Cfg.DASHBOARD_ACCESS_KEY
+	// tb.mu.Lock()
+	// defer tb.mu.Unlock()
+	// return slices.Contains(tb.book, token)
 }
