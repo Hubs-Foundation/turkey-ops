@@ -86,6 +86,11 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 
 		resp, _, err := internal.RetryHttpReq(http.DefaultClient, hcReq, 6*time.Second)
 
+		if err != nil {
+			internal.Logger.Sugar().Warnf("failed to submit req. err: %v", err)
+			continue
+		}
+
 		if resp != nil && resp.StatusCode < 300 {
 			done = true
 		} else {
