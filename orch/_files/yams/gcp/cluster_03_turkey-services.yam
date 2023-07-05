@@ -451,7 +451,6 @@ metadata:
   namespace: turkey-services
   annotations:
     kubernetes.io/ingress.class: haproxy
-    haproxy.org/server-ssl: "true"
 spec:
   rules:
   - host: orch.{{.Domain}}
