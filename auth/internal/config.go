@@ -83,7 +83,8 @@ func MakeCfg() {
 
 	cfg.TrustedClients = os.Getenv("trustedClients")
 	cfg.Secret = []byte("dummy-SecretString-replace-me-with-env-var-later")
-	cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
+	// cfg.Lifetime = time.Second * time.Duration(43200) //12 hours
+	cfg.Lifetime = 72 * time.Hour
 	cfg.CookieName = "_turkeyauthcookie"
 	cfg.JwtCookieName = "_turkeyauthtoken"
 
