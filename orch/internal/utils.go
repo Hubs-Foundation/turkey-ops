@@ -289,7 +289,7 @@ func RetryHttpReq(client *http.Client, request *http.Request, ttl time.Duration)
 
 	stepWait := ttl / 9
 	if stepWait < 500*time.Millisecond {
-		stepWait = time.Millisecond
+		stepWait = 500 * time.Millisecond
 	}
 
 	timeout := time.Now().Add(ttl)
