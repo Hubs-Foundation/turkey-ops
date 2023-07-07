@@ -62,7 +62,7 @@ func MakeOrchDb() {
 	pool.Exec(context.Background(), `CREATE TABLE IF NOT EXISTS migration (key TEXT);`)
 	scripts := getMigrationsScriptsArray()
 	var migrationsCnt int
-	err = pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM table_name").Scan(&migrationsCnt)
+	err = pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM migration").Scan(&migrationsCnt)
 	if err != nil {
 		Logger.Sugar().Fatalf("Failed to query row count: %v\n", err)
 	}
