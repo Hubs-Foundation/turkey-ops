@@ -88,7 +88,7 @@ type turkeyorch_hubs struct {
 	fxa_sub pgtype.Text
 
 	hub_id     pgtype.Int8
-	account_id pgtype.Text
+	account_id pgtype.Int8
 	name       pgtype.Text
 	tier       pgtype.Text
 	subdomain  pgtype.Text
