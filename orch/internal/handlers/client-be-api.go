@@ -117,7 +117,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			_, err := internal.OrchDb.Exec(
 				context.Background(),
 				`insert into hubs (hub_id,account_id,fxa_sub,name,tier,subdomain,status,email,inserted_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-				v.hub_id, v.account_id, v.fxa_sub, v.name, v.tier, v.subdomain, v.status, v.email, v.inserted_at,
+				v.hub_id.Int, v.account_id.String, v.fxa_sub.String, v.name.String, v.tier.String, v.subdomain.String, v.status.String, v.email.String, v.inserted_at.Time,
 			)
 			if err != nil {
 				internal.Logger.Sugar().Errorf("failed to insert: %v", err)
