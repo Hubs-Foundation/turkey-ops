@@ -112,7 +112,18 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 
 			// internal.Logger.Sugar().Debugf("hub: %+v\n", _hub)
 		}
-		internal.Logger.Sugar().Debugf("hubs: %+v\n", hubs)
+		// internal.Logger.Sugar().Debugf("hubs: %+v\n", hubs)
+		for _, v := range hubs {
+			_, err := internal.OrchDb.Exec(
+				context.Background(),
+				`insert into hubs (hub_id,account_id,fxa_sub,name,tier,subdomain,status,email,inserted_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+				v.hub_id, v.account_id, v.fxa_sub, v.name, v.tier, v.subdomain, v.status, v.email, v.inserted_at,
+			)
+			if err != nil {
+				internal.Logger.Sugar().Errorf("failed to insert: %v", err)
+			}
+
+		}
 
 	}
 

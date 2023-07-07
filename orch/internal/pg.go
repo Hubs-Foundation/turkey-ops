@@ -74,7 +74,10 @@ func MakeOrchDb() {
 			Logger.Sugar().Fatalf("Failed to execute %s: %v", sql, err)
 		}
 		Logger.Sugar().Infof("executed: <%v>, result: %v", sql, string(res))
-		pool.Exec(context.Background(), `insert into migration (key) values `+sql)
+		_, err = pool.Exec(context.Background(), `insert into migration (key) values ($1);`, sql)
+		if err != nil {
+			Logger.Sugar().Errorf("failed to update migration table: %v", err)
+		}
 	}
 
 	//
