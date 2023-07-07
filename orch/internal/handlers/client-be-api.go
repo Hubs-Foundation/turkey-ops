@@ -104,7 +104,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				return
 			}
 
-			acct_row := internal.DashboardDb.QueryRow(context.Background(), `select fxa_uid, email, inserted_at from accounts where account_id=`+_hub.account_id.String)
+			acct_row := internal.DashboardDb.QueryRow(context.Background(), `select fxa_uid, email, inserted_at from accounts where account_id=($1)`, _hub.account_id.Int)
 
 			acct_row.Scan(&_hub.fxa_sub, &_hub.email, &_hub.inserted_at)
 
