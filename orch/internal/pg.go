@@ -38,7 +38,7 @@ func MakeOrchDb() {
 	}
 	OrchDb = pool
 
-	lockKey := "migrationlock"
+	lockKey := "888"
 	locked := false
 	for i := 0; i < 10; i++ {
 		err := pool.QueryRow(context.Background(), "SELECT pg_try_advisory_lock($1)", lockKey).Scan(&locked)
