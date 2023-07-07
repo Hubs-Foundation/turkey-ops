@@ -90,7 +90,8 @@ func getMigrationsScriptsArray() []string {
 			ADD COLUMN IF NOT EXISTS tier TEXT,
 			ADD COLUMN IF NOT EXISTS status TEXT,
 			ADD COLUMN IF NOT EXISTS email TEXT,
-			ADD COLUMN IF NOT EXISTS subdomain TEXT;`,
+			ADD COLUMN IF NOT EXISTS subdomain TEXT,
+			ADD COLUMN IF NOT EXISTS inserted_at timestamp with time zone DEFAULT timezone('UTC', CURRENT_TIMESTAMP);`,
 	}
 }
 
@@ -108,3 +109,19 @@ func getMigrationsScriptsArray() []string {
 // 			ADD COLUMN IF NOT EXISTS subdomain TEXT;`,
 // 	}
 // }
+
+var DashboardDb *pgxpool.Pool
+
+func MakeDashboardDb() {
+	p, err := pgxpool.Connect(context.Background(), Cfg.DBconn+"/dashboard")
+	if err != nil {
+		Logger.Error("Unable to connect to database: " + err.Error())
+	}
+	DashboardDb = p
+}
+
+func MakeDbs() {
+	MakePgxPool()
+	MakeOrchDb()
+	MakeDashboardDb()
+}

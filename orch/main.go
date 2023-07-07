@@ -15,7 +15,7 @@ func main() {
 	// ############################## inits ##############################
 	internal.InitLogger()
 	internal.MakeCfg()
-	internal.MakePgxPool()
+	internal.MakeDbs()
 
 	// ### singletons and cronjobs
 	if internal.Cfg.IsRoot { // root cluster manages peers

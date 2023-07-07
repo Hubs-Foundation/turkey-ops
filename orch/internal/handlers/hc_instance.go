@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"regexp"
 
 	"net/http"
@@ -163,10 +164,18 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			if err != nil {
 				return fmt.Errorf("failed @ hc_switch: %v", err)
 			}
-		case "pause", "resume":
-			err = hc_pause(cfg.HubId, status)
+		case "collect":
+			err = hc_collect(cfg)
+			if cfg.HubId == "" || cfg.Subdomain == "" || cfg.Tier == "" {
+				return fmt.Errorf("bad cfg (requres .HubId, Subdomain, Tier): %v", cfg)
+			}
 			if err != nil {
-				return fmt.Errorf("failed @ hc_switch: %v", err)
+				return fmt.Errorf("failed @ hc_collect: %v", err)
+			}
+		case "restore":
+			err = hc_restore(cfg)
+			if err != nil {
+				return fmt.Errorf("failed @ hc_restore: %v", err)
 			}
 		default:
 			msg, err = UpdateHubsCloudInstance(cfg)
@@ -181,55 +190,58 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	return err
 }
 
-func hc_pause(hubId, status string) error {
+func hc_collect(cfg HCcfg) error {
 
-	return errors.New("not yet")
-
-	switch status {
-	case "pause":
-		// backup files
-
-		// add route
-		nsName := "hc-" + hubId
-		ns, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		subdomain := ns.Labels["subdomain"]
-		if subdomain == "" {
-			return errors.New("omg missing subdomain !!! why !!!")
-		}
-		ig, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "pausing")
-		if err != nil {
-			return err
-		}
-		pathType_prefix := networkingv1.PathTypePrefix
-		ig.Spec.Rules = append(
-			ig.Spec.Rules,
-			networkingv1.IngressRule{
-				Host: subdomain + "." + internal.Cfg.HubDomain,
-				IngressRuleValue: networkingv1.IngressRuleValue{
-					HTTP: &networkingv1.HTTPIngressRuleValue{
-						Paths: []networkingv1.HTTPIngressPath{
-							{
-								Path:     "/",
-								PathType: &pathType_prefix,
-								Backend: networkingv1.IngressBackend{
-									Service: &networkingv1.IngressServiceBackend{
-										Name: "turkeyorch",
-										Port: networkingv1.ServiceBackendPort{
-											Number: 888,
-										}}}},
-						}}}})
-
-		//delete in k8s
-		err = DeleteHubsCloudInstance(hubId, false)
-		return err
-	case "resume":
-		//restore configs
-		return nil
+	// dump db
+	dbName := "ret_" + cfg.HubId
+	pgDumpFile := dbName + ".sql"
+	cmd := exec.Command(
+		"pg_dump", internal.Cfg.DBconn+"/"+dbName,
+		"-f", pgDumpFile,
+	)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	internal.Logger.Sugar().Debugf("stdout: %v, stderr: %v", stdout.String(), stderr.String())
+	if err != nil {
+		return fmt.Errorf("failed to execute pg_dump: %v", err)
 	}
-	return errors.New("bad input: " + status)
+
+	// add route
+	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "turkey-return-center")
+	if err != nil {
+		return err
+	}
+	pathType_prefix := networkingv1.PathTypePrefix
+	trcIg.Spec.Rules = append(
+		trcIg.Spec.Rules,
+		networkingv1.IngressRule{
+			Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
+			IngressRuleValue: networkingv1.IngressRuleValue{
+				HTTP: &networkingv1.HTTPIngressRuleValue{
+					Paths: []networkingv1.HTTPIngressPath{
+						{
+							Path:     "/",
+							PathType: &pathType_prefix,
+							Backend: networkingv1.IngressBackend{
+								Service: &networkingv1.IngressServiceBackend{
+									Name: "turkeyorch",
+									Port: networkingv1.ServiceBackendPort{
+										Number: 888,
+									}}}},
+					}}}})
+
+	//delete, keepData == true
+	err = DeleteHubsCloudInstance(cfg.HubId, true)
+
+	return err
+
+}
+
+func hc_restore(cfg HCcfg) error {
+
+	return errors.New("hi")
 }
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {

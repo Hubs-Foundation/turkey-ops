@@ -13,20 +13,20 @@ import (
 	"github.com/jackc/pgtype"
 )
 
-func db_get_turkeyAccountId(fxaSub string) pgx.Rows {
-	rows, _ := internal.PgxPool.Query(context.Background(),
+func dashboardDb_get_turkeyAccountId(fxaSub string) pgx.Rows {
+	rows, _ := internal.DashboardDb.Query(context.Background(),
 		fmt.Sprintf(`select account_id from accounts where fxa_uid=%v`, fxaSub))
 	return rows
 }
 
-func db_get_Hubs(turkeyAccountId string) pgx.Rows {
-	rows, _ := internal.PgxPool.Query(context.Background(),
+func dashboardDb_get_Hubs(turkeyAccountId string) pgx.Rows {
+	rows, _ := internal.DashboardDb.Query(context.Background(),
 		fmt.Sprintf(`select * from accounts where account_id=%v`, turkeyAccountId))
 	return rows
 }
 
-func db_get_hubs_for_fxaSub(fxaSub string) pgx.Rows {
-	rows, _ := internal.PgxPool.Query(context.Background(),
+func dashboardDb_get_hubs_for_fxaSub(fxaSub string) pgx.Rows {
+	rows, _ := internal.DashboardDb.Query(context.Background(),
 		fmt.Sprintf(`SELECT h.* FROM hubs h INNER JOIN accounts a ON h.account_id = a.account_id WHERE a.fxa_uid = '%v'`, fxaSub))
 	return rows
 }
@@ -75,11 +75,25 @@ func CheckAndReadJwtToken(jwtToken string) (fxaUser, error) {
 	return fxaUser, nil
 }
 
-var dashboard_hubs struct {
+// type dashboard_hubs struct {
+// 	hub_id     pgtype.Int8
+// 	account_id pgtype.Int8
+// 	name       pgtype.Text
+// 	tier       pgtype.Text
+// 	subdomain  pgtype.Text
+// 	status     pgtype.Text
+// }
+
+type turkeyorch_hubs struct {
+	fxa_sub pgtype.Text
+
 	hub_id     pgtype.Int8
+	account_id pgtype.Text
 	name       pgtype.Text
 	tier       pgtype.Text
 	subdomain  pgtype.Text
 	status     pgtype.Text
-	account_id pgtype.Int8
+
+	email       pgtype.Text
+	inserted_at pgtype.Timestamptz
 }

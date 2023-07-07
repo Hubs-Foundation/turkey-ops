@@ -7,8 +7,6 @@ import (
 	"main/internal"
 	"net/http"
 	"strings"
-
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 // wip
@@ -88,24 +86,33 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	case "z/load_from_dashboard":
 		// fmt.Fprintf(w, "z/load_from_dashboard: %+v\n", fxaUser)
 
-		turkeydashboardPool, _ := pgxpool.Connect(context.Background(), internal.Cfg.DBconn+"/dashboard")
+		// turkeydashboardPool, _ := pgxpool.Connect(context.Background(), internal.Cfg.DBconn+"/dashboard")
 
-		rows, err := turkeydashboardPool.Query(context.Background(), "SELECT hub_id, name, tier, subdomain, status, account_id FROM hubs")
+		hubs := make(map[int64]turkeyorch_hubs)
+
+		rows, err := internal.DashboardDb.Query(context.Background(), "SELECT hub_id, name, tier, subdomain, status, account_id FROM hubs")
 		if err != nil {
 			internal.Logger.Sugar().Errorf("Query failed: %v", err)
 			return
 		}
 		defer rows.Close()
-
-		hub := dashboard_hubs
+		_hub := turkeyorch_hubs{}
 		for rows.Next() {
 
-			if err := rows.Scan(&hub.hub_id, &hub.name, &hub.tier, &hub.subdomain, &hub.status, &hub.account_id); err != nil {
+			if err := rows.Scan(&_hub.hub_id, &_hub.name, &_hub.tier, &_hub.subdomain, &_hub.status, &_hub.account_id); err != nil {
 				internal.Logger.Sugar().Errorf("Error scanning row: %v", err)
 				return
 			}
-			internal.Logger.Sugar().Debugf("hub: %+v\n", hub)
+
+			acct_row := internal.DashboardDb.QueryRow(context.Background(), `select fxa_uid, email, inserted_at from accounts where account_id=`+_hub.account_id.String)
+
+			acct_row.Scan(&_hub.fxa_sub, &_hub.email, &_hub.inserted_at)
+
+			hubs[_hub.hub_id.Int] = _hub
+
+			// internal.Logger.Sugar().Debugf("hub: %+v\n", _hub)
 		}
+		internal.Logger.Sugar().Debugf("hubs: %+v\n", hubs)
 
 	}
 
