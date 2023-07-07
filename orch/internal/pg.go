@@ -85,9 +85,9 @@ func MakeOrchDb() {
 }
 func getMigrationsScriptsArray() []string {
 	return []string{
-		`CREATE TABLE IF NOT EXISTS hubs (hub_id INT PRIMARY KEY);`,
+		`CREATE TABLE IF NOT EXISTS hubs (hub_id int8 PRIMARY KEY);`,
 		`ALTER TABLE hubs 
-			ADD COLUMN IF NOT EXISTS account_id INT, 
+			ADD COLUMN IF NOT EXISTS account_id int8, 
 			ADD COLUMN IF NOT EXISTS fxa_sub TEXT, 
 			ADD COLUMN IF NOT EXISTS hub_id INT PRIMARY KEY,
 			ADD COLUMN IF NOT EXISTS name TEXT,
