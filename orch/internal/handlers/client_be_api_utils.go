@@ -1,35 +1,33 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"main/internal"
 
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/jackc/pgx/v4"
 
 	"github.com/jackc/pgtype"
 )
 
-func dashboardDb_get_turkeyAccountId(fxaSub string) pgx.Rows {
-	rows, _ := internal.DashboardDb.Query(context.Background(),
-		fmt.Sprintf(`select account_id from accounts where fxa_uid=%v`, fxaSub))
-	return rows
-}
+// func dashboardDb_get_turkeyAccountId(fxaSub string) pgx.Rows {
+// 	rows, _ := internal.DashboardDb.Query(context.Background(),
+// 		fmt.Sprintf(`select account_id from accounts where fxa_uid=%v`, fxaSub))
+// 	return rows
+// }
 
-func dashboardDb_get_Hubs(turkeyAccountId string) pgx.Rows {
-	rows, _ := internal.DashboardDb.Query(context.Background(),
-		fmt.Sprintf(`select * from accounts where account_id=%v`, turkeyAccountId))
-	return rows
-}
+// func dashboardDb_get_Hubs(turkeyAccountId string) pgx.Rows {
+// 	rows, _ := internal.DashboardDb.Query(context.Background(),
+// 		fmt.Sprintf(`select * from accounts where account_id=%v`, turkeyAccountId))
+// 	return rows
+// }
 
-func dashboardDb_get_hubs_for_fxaSub(fxaSub string) pgx.Rows {
-	rows, _ := internal.DashboardDb.Query(context.Background(),
-		fmt.Sprintf(`SELECT h.* FROM hubs h INNER JOIN accounts a ON h.account_id = a.account_id WHERE a.fxa_uid = '%v'`, fxaSub))
-	return rows
-}
+// func dashboardDb_get_hubs_for_fxaSub(fxaSub string) pgx.Rows {
+// 	rows, _ := internal.DashboardDb.Query(context.Background(),
+// 		fmt.Sprintf(`SELECT h.* FROM hubs h INNER JOIN accounts a ON h.account_id = a.account_id WHERE a.fxa_uid = '%v'`, fxaSub))
+// 	return rows
+// }
 
 // User is the authenticated user
 type fxaUser struct {
@@ -96,4 +94,7 @@ type turkeyorch_hubs struct {
 
 	email       pgtype.Text
 	inserted_at pgtype.Timestamptz
+
+	domain pgtype.Text
+	region pgtype.Text
 }

@@ -84,9 +84,12 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		fmt.Fprintf(w, "not yet")
 
 	case "z/load_from_dashboard":
-		// fmt.Fprintf(w, "z/load_from_dashboard: %+v\n", fxaUser)
 
-		// turkeydashboardPool, _ := pgxpool.Connect(context.Background(), internal.Cfg.DBconn+"/dashboard")
+		// nss, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		// nsNameLabelsMap := map[string]map[string]string{}
+		// for _, v := range nss.Items {
+		// 	nsNameLabelsMap[v.Name] = v.Labels
+		// }
 
 		hubs := make(map[int64]turkeyorch_hubs)
 
@@ -104,21 +107,36 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 				return
 			}
 
-			acct_row := internal.DashboardDb.QueryRow(context.Background(), `select fxa_uid, email, inserted_at from accounts where account_id=($1)`, _hub.account_id.Int)
+			internal.DashboardDb.QueryRow(context.Background(),
+				`select fxa_uid, email, inserted_at from accounts where account_id=($1)`, _hub.account_id.Int).
+				Scan(&_hub.fxa_sub, &_hub.email, &_hub.inserted_at)
 
-			acct_row.Scan(&_hub.fxa_sub, &_hub.email, &_hub.inserted_at)
+			internal.DashboardDb.QueryRow(context.Background(),
+				`select domain from hub_deployments where hub_id=($1)`, _hub.hub_id.Int).
+				Scan(&_hub.domain)
+
+			_hub.region.String = "us"
 
 			hubs[_hub.hub_id.Int] = _hub
-
 			// internal.Logger.Sugar().Debugf("hub: %+v\n", _hub)
 		}
 		// internal.Logger.Sugar().Debugf("hubs: %+v\n", hubs)
 		for _, v := range hubs {
+			// nsName:= fmt.Sprintf("hc-%v", v.hub_id.Int)
+			// if _, ok := nsNameLabelsMap[nsName]; !ok{
+			// 	internal.Logger.Sugar().Warnf("nsName not found: " + nsName)
+			// 	continue
+			// }
+
+			if v.email.String == "" {
+				internal.Logger.Sugar().Warnf("bad, drop: %+v", v)
+				continue
+			}
+
 			_, err := internal.OrchDb.Exec(
 				context.Background(),
-				`insert into hubs (hub_id,account_id,fxa_sub,name,tier,subdomain,status,email,inserted_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-				v.hub_id.Int, v.account_id.Int, v.fxa_sub.String, v.name.String, v.tier.String, v.subdomain.String, v.status.String, v.email.String, v.inserted_at.Time,
-			)
+				`insert into hubs (hub_id,account_id,fxa_sub,name,tier,subdomain,status,email,domain,region,inserted_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10,$11)`,
+				v.hub_id.Int, v.account_id.Int, v.fxa_sub.String, v.name.String, v.tier.String, v.subdomain.String, v.status.String, v.email.String, v.domain.String, v.region.String, v.inserted_at.Time)
 			if err != nil {
 				internal.Logger.Sugar().Errorf("failed to insert: %v", err)
 			}

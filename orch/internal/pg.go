@@ -95,6 +95,8 @@ func getMigrationsScriptsArray() []string {
 			ADD COLUMN IF NOT EXISTS status TEXT,
 			ADD COLUMN IF NOT EXISTS email TEXT,
 			ADD COLUMN IF NOT EXISTS subdomain TEXT,
+			ADD COLUMN IF NOT EXISTS domain TEXT,
+			ADD COLUMN IF NOT EXISTS region TEXT,
 			ADD COLUMN IF NOT EXISTS inserted_at timestamp with time zone DEFAULT timezone('UTC', CURRENT_TIMESTAMP);`,
 	}
 }
