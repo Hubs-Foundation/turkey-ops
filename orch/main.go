@@ -16,7 +16,7 @@ func main() {
 	internal.InitLogger()
 	internal.MakeCfg()
 	internal.MakeDbs()
-	if internal.DashboardDb != nil {
+	if internal.Cfg.HubDomain == "myhubs.net" && internal.DashboardDb != nil {
 		cron_syncDashboardDb := internal.NewCron("cron_syncDashboardDb", 5*time.Minute)
 		cron_syncDashboardDb.Load("Cronjob_syncDashboardDb", handlers.Cronjob_syncDashboardDb)
 		cron_syncDashboardDb.Start()
