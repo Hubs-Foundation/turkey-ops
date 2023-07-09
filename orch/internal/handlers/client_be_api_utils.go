@@ -57,11 +57,11 @@ func DashboardDb_fattenHub(_hub *Turkeyorch_hubs) error {
 
 	internal.DashboardDb.QueryRow(context.Background(),
 		`select fxa_uid, email, inserted_at from accounts where account_id=($1)`, _hub.Account_id.Int).
-		Scan(_hub.Fxa_sub, _hub.Email, _hub.Inserted_at)
+		Scan(&_hub.Fxa_sub, &_hub.Email, &_hub.Inserted_at)
 
 	internal.DashboardDb.QueryRow(context.Background(),
 		`select domain from hub_deployments where hub_id=($1)`, _hub.Hub_id.Int).
-		Scan(_hub.Domain)
+		Scan(&_hub.Domain)
 
 	_hub.Region.String = "us"
 
@@ -71,15 +71,17 @@ func DashboardDb_fattenHub(_hub *Turkeyorch_hubs) error {
 func OrchDb_loadHub(hub Turkeyorch_hubs) error {
 
 	if hub.Email.String == "" {
-		internal.Logger.Sugar().Warnf("bad, drop: %+v", hub)
+		internal.Logger.Sugar().Warnf("bad (empty email), drop: %+v", hub)
 		return nil
 	}
 	_, err := internal.OrchDb.Exec(
 		context.Background(),
 		`insert into hubs (hub_id,account_id,fxa_sub,name,tier,subdomain,status,email,domain,region,inserted_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10,$11)`,
 		hub.Hub_id.Int, hub.Account_id.Int, hub.Fxa_sub.String, hub.Name.String, hub.Tier.String, hub.Subdomain.String, hub.Status.String, hub.Email.String, hub.Domain.String, hub.Region.String, hub.Inserted_at.Time)
+	if err == nil {
+		internal.Logger.Sugar().Debugf("loaded: %+v", hub)
+	}
 	return err
-
 }
 func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
 	for _, hub := range hubs {
@@ -87,7 +89,6 @@ func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to load: <%+v>", hub)
 		}
-		internal.Logger.Sugar().Debugf("loaded: %+v", hub)
 	}
 }
 
