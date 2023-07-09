@@ -89,7 +89,7 @@ func Cronjob_dummy(interval time.Duration) {
 
 var HC_Count int32
 
-func Cronjob_CountHC(interval time.Duration) {
+func Cronjob_CountHC_phonehome(interval time.Duration) {
 	tStart := time.Now()
 	nsList, err := Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{
 		LabelSelector: "hub_id",
