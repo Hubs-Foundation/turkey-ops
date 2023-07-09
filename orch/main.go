@@ -16,7 +16,7 @@ func main() {
 	internal.InitLogger()
 	internal.MakeCfg()
 	internal.MakeDbs()
-	if internal.Cfg.HubDomain == "myhubs.net" && internal.DashboardDb != nil {
+	if internal.Cfg.IsRoot && internal.DashboardDb != nil {
 		cron_syncDashboardDb := internal.NewCron("cron_syncDashboardDb", 5*time.Minute)
 		cron_syncDashboardDb.Load("Cronjob_syncDashboardDb", handlers.Cronjob_syncDashboardDb)
 		cron_syncDashboardDb.Start()
@@ -29,8 +29,8 @@ func main() {
 		// report once right now
 		internal.Cronjob_CountHC_phonehome(time.Second)
 		// then report every 15 min
-		cron_countHC := internal.NewCron("cron_countHC", 15*time.Minute)
-		cron_countHC.Load("Cronjob_CountHC", internal.Cronjob_CountHC_phonehome)
+		cron_countHC := internal.NewCron("Cronjob_CountHC_phonehome", 15*time.Minute)
+		cron_countHC.Load("Cronjob_CountHC_phonehome", internal.Cronjob_CountHC_phonehome)
 		cron_countHC.Start()
 	}
 
