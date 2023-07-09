@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"main/internal"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // wip
@@ -84,66 +84,14 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		fmt.Fprintf(w, "not yet")
 
 	case "z/load_from_dashboard":
-
-		// nss, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-		// nsNameLabelsMap := map[string]map[string]string{}
-		// for _, v := range nss.Items {
-		// 	nsNameLabelsMap[v.Name] = v.Labels
-		// }
-
-		hubs := make(map[int64]turkeyorch_hubs)
-
-		rows, err := internal.DashboardDb.Query(context.Background(), "SELECT hub_id, name, tier, subdomain, status, account_id FROM hubs")
+		t_20220101 := time.Date(2022, time.January, 1, 0, 0, 0, 0, time.UTC)
+		hubs, err := DashboardDb_getHubs(t_20220101)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("Query failed: %v", err)
+			http.Error(w, "", 404)
 			return
 		}
-		defer rows.Close()
-		_hub := turkeyorch_hubs{}
-		for rows.Next() {
-
-			if err := rows.Scan(&_hub.hub_id, &_hub.name, &_hub.tier, &_hub.subdomain, &_hub.status, &_hub.account_id); err != nil {
-				internal.Logger.Sugar().Errorf("Error scanning row: %v", err)
-				return
-			}
-
-			internal.DashboardDb.QueryRow(context.Background(),
-				`select fxa_uid, email, inserted_at from accounts where account_id=($1)`, _hub.account_id.Int).
-				Scan(&_hub.fxa_sub, &_hub.email, &_hub.inserted_at)
-
-			internal.DashboardDb.QueryRow(context.Background(),
-				`select domain from hub_deployments where hub_id=($1)`, _hub.hub_id.Int).
-				Scan(&_hub.domain)
-
-			_hub.region.String = "us"
-
-			hubs[_hub.hub_id.Int] = _hub
-			// internal.Logger.Sugar().Debugf("hub: %+v\n", _hub)
-		}
-		// internal.Logger.Sugar().Debugf("hubs: %+v\n", hubs)
-		for _, v := range hubs {
-			// nsName:= fmt.Sprintf("hc-%v", v.hub_id.Int)
-			// if _, ok := nsNameLabelsMap[nsName]; !ok{
-			// 	internal.Logger.Sugar().Warnf("nsName not found: " + nsName)
-			// 	continue
-			// }
-
-			if v.email.String == "" {
-				internal.Logger.Sugar().Warnf("bad, drop: %+v", v)
-				continue
-			}
-
-			_, err := internal.OrchDb.Exec(
-				context.Background(),
-				`insert into hubs (hub_id,account_id,fxa_sub,name,tier,subdomain,status,email,domain,region,inserted_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10,$11)`,
-				v.hub_id.Int, v.account_id.Int, v.fxa_sub.String, v.name.String, v.tier.String, v.subdomain.String, v.status.String, v.email.String, v.domain.String, v.region.String, v.inserted_at.Time)
-			if err != nil {
-				internal.Logger.Sugar().Errorf("failed to insert: %v", err)
-			}
-
-		}
+		OrchDb_loadHubs(hubs)
 
 	}
 
-	http.Error(w, "", 404)
 })

@@ -68,9 +68,9 @@ type HCcfg struct {
 	SENTRY_DSN_HUBS      string
 	SENTRY_DSN_SPOKE     string
 	//generated on the fly
-	JWK          string `json:"jwk"` // encoded from PermsKey.public
-	GuardianKey  string `json:"guardiankey"`
-	PhxKey       string `json:"phxkey"`
+	JWK          string `json:"jwk"`         // encoded from PermsKey.public
+	GuardianKey  string `json:"guardiankey"` //ret's secret_key
+	PhxKey       string `json:"phxkey"`      //ret's secret_key_base
 	HEADER_AUTHZ string `json:"headerauthz"`
 	NODE_COOKIE  string `json:"NODE_COOKIE"`
 
@@ -152,7 +152,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		if cfg.HubId == "" {
 			return fmt.Errorf("missing hcCfg.HubId, err")
 		}
-		DeleteHubsCloudInstance(cfg.HubId, false)
+		DeleteHubsCloudInstance(cfg.HubId, false, false)
 		return nil
 	case "PATCH":
 		// pause
@@ -166,14 +166,15 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			}
 		case "collect":
 			err = hc_collect(cfg)
-			if cfg.HubId == "" || cfg.Subdomain == "" || cfg.Tier == "" {
-				return fmt.Errorf("bad cfg (requres .HubId, Subdomain, Tier): %v", cfg)
+			if cfg.HubId == "" || cfg.Subdomain == "" || cfg.Tier == "" || cfg.UserEmail == "" ||
+				cfg.GuardianKey == "" || cfg.PhxKey == "" {
+				return fmt.Errorf("bad cfg : %v", cfg)
 			}
 			if err != nil {
 				return fmt.Errorf("failed @ hc_collect: %v", err)
 			}
 		case "restore":
-			err = hc_restore(cfg)
+			err = hc_restore(cfg.HubId)
 			if err != nil {
 				return fmt.Errorf("failed @ hc_restore: %v", err)
 			}
@@ -192,17 +193,29 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 
 func hc_collect(cfg HCcfg) error {
 
-	// dump db
+	nsName := "hc-" + cfg.HubId
+	hubDir := "/turkeyfs/" + nsName
+
+	cfgJsonBytes, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(hubDir+"/cfg.json", cfgJsonBytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	// dump db to pgDumpFile
 	dbName := "ret_" + cfg.HubId
 	pgDumpFile := dbName + ".sql"
 	cmd := exec.Command(
 		"pg_dump", internal.Cfg.DBconn+"/"+dbName,
-		"-f", pgDumpFile,
+		"-f", hubDir+"/"+pgDumpFile,
 	)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	internal.Logger.Sugar().Debugf("stdout: %v, stderr: %v", stdout.String(), stderr.String())
 	if err != nil {
 		return fmt.Errorf("failed to execute pg_dump: %v", err)
@@ -231,17 +244,54 @@ func hc_collect(cfg HCcfg) error {
 										Number: 888,
 									}}}},
 					}}}})
-
+	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(),
+		trcIg, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
 	//delete, keepData == true
-	err = DeleteHubsCloudInstance(cfg.HubId, true)
+	err = DeleteHubsCloudInstance(cfg.HubId, true, false)
 
 	return err
 
 }
 
-func hc_restore(cfg HCcfg) error {
+func hc_restore(hubId string) error {
 
-	return errors.New("hi")
+	nsName := "hc-" + hubId
+	hubDir := "/turkeyfs/" + nsName
+
+	// get configs
+	cfgBytes, err := ioutil.ReadFile(hubDir + "/cfg.json")
+	if err != nil {
+		return err
+	}
+	cfg := HCcfg{}
+	err = json.Unmarshal(cfgBytes, cfg)
+	if err != nil {
+		return err
+	}
+	// recreate
+	cfg, err = makeHcCfg(cfg)
+	if err != nil {
+		return fmt.Errorf("bad cfg, err: %v", err)
+	}
+	err = CreateHubsCloudInstance(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create, err: %v", err)
+	}
+	// restore db
+	dbName := "ret_" + cfg.HubId
+	pgDumpFile := dbName + ".sql"
+	dbCmd := exec.Command("psql", internal.Cfg.DBconn+"/"+dbName, "-f", pgDumpFile)
+	out, err := dbCmd.CombinedOutput()
+	// if err != nil {
+	// 	internal.Logger.Sugar().Errorf("failed: %v, %v", err, out)
+	// 	return fmt.Errorf("failed to restore db. <err>: %v, <output>: %v", err, string(out))
+	// }
+	internal.Logger.Debug("dbCmd.out: " + string(out))
+
+	return err
 }
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
@@ -299,7 +349,10 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 	}
 
 	if fileOption == "_fs" || fileOption == "_gfs" { //create folder for hub-id (hc-<hub_id>) in turkeyfs
-		os.MkdirAll("/turkeyfs/hc-"+hcCfg.HubId, 0600)
+		hubDir := "/turkeyfs/hc-" + hcCfg.HubId
+		if _, err := os.Stat(hubDir); err != nil { // create if not exist
+			os.MkdirAll(hubDir, 0600)
+		}
 	}
 
 	internal.Logger.Debug(" >>>>>> selected option: " + fileOption)
@@ -719,7 +772,7 @@ func makeHcCfg(cfg HCcfg) (HCcfg, error) {
 	return cfg, nil
 }
 
-func DeleteHubsCloudInstance(hubId string, keepData bool) error {
+func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) error {
 
 	//mark the hc- namespace for the cleanup cronjob (todo)
 	nsName := "hc-" + hubId
@@ -762,13 +815,21 @@ func DeleteHubsCloudInstance(hubId string, keepData bool) error {
 		}
 		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
 
-		if !keepData {
+		if !keepFiles {
 			// delete hc-<hub-id> folder on turkeyfs (if any)
 			if len(hubId) < 1 {
 				internal.Logger.Error("DANGER!!! empty HubId")
 			} else {
 				os.RemoveAll("/turkeyfs/hc-" + hubId)
 			}
+			// delete GCS (if any)
+			err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hubId+"."+internal.Cfg.Domain)
+			if err != nil {
+				internal.Logger.Error("delete ns failed: " + err.Error())
+				return
+			}
+		}
+		if !keepDB {
 			//delete db
 			dbName := "ret_" + hubId
 			internal.Logger.Debug("&#128024 deleting db: " + dbName)
@@ -789,12 +850,6 @@ func DeleteHubsCloudInstance(hubId string, keepData bool) error {
 				}
 			}
 			internal.Logger.Debug("&#128024 deleted db: " + dbName)
-			// delete GCS (if any)
-			err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hubId+"."+internal.Cfg.Domain)
-			if err != nil {
-				internal.Logger.Error("delete ns failed: " + err.Error())
-				return
-			}
 		}
 	}()
 	return nil

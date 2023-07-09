@@ -48,7 +48,6 @@ func MakeOrchDb() {
 		if locked {
 			break
 		}
-
 		// Sleep before retrying
 		Logger.Info("Another instance is running migrations, waiting...")
 		time.Sleep(6 * time.Second)
@@ -124,6 +123,7 @@ func MakeDashboardDb() {
 		Logger.Error("Unable to connect to database: " + err.Error())
 	}
 	DashboardDb = p
+
 }
 
 func MakeDbs() {

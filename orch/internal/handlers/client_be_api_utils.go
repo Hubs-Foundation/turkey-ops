@@ -1,13 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"main/internal"
+	"time"
 
 	"github.com/form3tech-oss/jwt-go"
-
 	"github.com/jackc/pgtype"
 )
 
@@ -28,6 +29,67 @@ import (
 // 		fmt.Sprintf(`SELECT h.* FROM hubs h INNER JOIN accounts a ON h.account_id = a.account_id WHERE a.fxa_uid = '%v'`, fxaSub))
 // 	return rows
 // }
+
+func DashboardDb_getHubs(t0 time.Time) (map[int64]Turkeyorch_hubs, error) {
+	hubs := make(map[int64]Turkeyorch_hubs)
+	rows, err := internal.DashboardDb.Query(context.Background(), "SELECT hub_id, name, tier, subdomain, status, account_id FROM hubs")
+	if err != nil {
+		internal.Logger.Sugar().Errorf("Query failed: %v", err)
+		return hubs, err
+	}
+	defer rows.Close()
+	_hub := Turkeyorch_hubs{}
+	for rows.Next() {
+
+		if err := rows.Scan(&_hub.Hub_id, &_hub.Name, &_hub.Tier, &_hub.Subdomain, &_hub.Status, &_hub.Account_id); err != nil {
+			internal.Logger.Sugar().Errorf("Error scanning row: %v", err)
+			return hubs, err
+		}
+		DashboardDb_fattenHub(&_hub)
+
+		hubs[_hub.Hub_id.Int] = _hub
+		// internal.Logger.Sugar().Debugf("hub: %+v\n", _hub)
+	}
+	return hubs, err
+}
+
+func DashboardDb_fattenHub(_hub *Turkeyorch_hubs) error {
+
+	internal.DashboardDb.QueryRow(context.Background(),
+		`select fxa_uid, email, inserted_at from accounts where account_id=($1)`, _hub.Account_id.Int).
+		Scan(_hub.Fxa_sub, _hub.Email, _hub.Inserted_at)
+
+	internal.DashboardDb.QueryRow(context.Background(),
+		`select domain from hub_deployments where hub_id=($1)`, _hub.Hub_id.Int).
+		Scan(_hub.Domain)
+
+	_hub.Region.String = "us"
+
+	return nil
+}
+
+func OrchDb_loadHub(hub Turkeyorch_hubs) error {
+
+	if hub.Email.String == "" {
+		internal.Logger.Sugar().Warnf("bad, drop: %+v", hub)
+		return nil
+	}
+	_, err := internal.OrchDb.Exec(
+		context.Background(),
+		`insert into hubs (hub_id,account_id,fxa_sub,name,tier,subdomain,status,email,domain,region,inserted_at) values ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10,$11)`,
+		hub.Hub_id.Int, hub.Account_id.Int, hub.Fxa_sub.String, hub.Name.String, hub.Tier.String, hub.Subdomain.String, hub.Status.String, hub.Email.String, hub.Domain.String, hub.Region.String, hub.Inserted_at.Time)
+	return err
+
+}
+func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
+	for _, hub := range hubs {
+		err := OrchDb_loadHub(hub)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to load: <%+v>", hub)
+		}
+		internal.Logger.Sugar().Debugf("loaded: %+v", hub)
+	}
+}
 
 // User is the authenticated user
 type fxaUser struct {
@@ -73,28 +135,32 @@ func CheckAndReadJwtToken(jwtToken string) (fxaUser, error) {
 	return fxaUser, nil
 }
 
-// type dashboard_hubs struct {
-// 	hub_id     pgtype.Int8
-// 	account_id pgtype.Int8
-// 	name       pgtype.Text
-// 	tier       pgtype.Text
-// 	subdomain  pgtype.Text
-// 	status     pgtype.Text
-// }
+type Turkeyorch_hubs struct {
+	Fxa_sub pgtype.Text
 
-type turkeyorch_hubs struct {
-	fxa_sub pgtype.Text
+	Hub_id     pgtype.Int8
+	Account_id pgtype.Int8
+	Name       pgtype.Text
+	Tier       pgtype.Text
+	Subdomain  pgtype.Text
+	Status     pgtype.Text
 
-	hub_id     pgtype.Int8
-	account_id pgtype.Int8
-	name       pgtype.Text
-	tier       pgtype.Text
-	subdomain  pgtype.Text
-	status     pgtype.Text
+	Email       pgtype.Text
+	Inserted_at pgtype.Timestamptz
 
-	email       pgtype.Text
-	inserted_at pgtype.Timestamptz
+	Domain pgtype.Text
+	Region pgtype.Text
+}
 
-	domain pgtype.Text
-	region pgtype.Text
+func Cronjob_syncDashboardDb(interval time.Duration) {
+	var orchT pgtype.Timestamptz
+	internal.OrchDb.QueryRow(context.Background(), "select inserted_at from hubs order by inserted_at desc limit 1;").Scan(&orchT)
+
+	hubs, err := DashboardDb_getHubs(orchT.Time)
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed: %v", err)
+		return
+	}
+	OrchDb_loadHubs(hubs)
+
 }
