@@ -252,6 +252,8 @@ func hc_collect(cfg HCcfg) error {
 	//delete, keepData == true
 	err = DeleteHubsCloudInstance(cfg.HubId, true, false)
 
+	OrchDb_updateHub_status(cfg.HubId, "collected")
+
 	return err
 
 }
@@ -290,6 +292,11 @@ func hc_restore(hubId string) error {
 	// 	return fmt.Errorf("failed to restore db. <err>: %v, <output>: %v", err, string(out))
 	// }
 	internal.Logger.Debug("dbCmd.out: " + string(out))
+
+	// OrchDb_updateHub_status(cfg.HubId, "updating")
+	OrchDb_updateHub_status(cfg.HubId, "ready")
+
+	// dashboardclient to ping it until ready -- it's closer to user
 
 	return err
 }

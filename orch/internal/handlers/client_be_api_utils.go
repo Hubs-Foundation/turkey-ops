@@ -91,6 +91,18 @@ func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
 	}
 }
 
+func OrchDb_getHub(hubId string) Turkeyorch_hubs {
+	hub := Turkeyorch_hubs{}
+	internal.OrchDb.QueryRow(context.Background(),
+		"select account_id,fxa_sub,name,tier,status,email,subdomain,inserted_at,domain,region from hubs where hub_id=$1", hubId).Scan(&hub)
+	return hub
+}
+
+func OrchDb_updateHub_status(hubId, status string) error {
+	_, err := internal.OrchDb.Exec(context.Background(), "update hubs set status=$2 where hub_id=$1", status, hubId)
+	return err
+}
+
 // User is the authenticated user
 type fxaUser struct {
 	Exp                  int64    `json:"exp"`
