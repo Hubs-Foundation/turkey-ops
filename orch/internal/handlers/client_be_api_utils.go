@@ -31,6 +31,7 @@ import (
 // }
 
 func DashboardDb_getHubs(t0 time.Time) (map[int64]Turkeyorch_hubs, error) {
+	internal.Logger.Sugar().Debugf("getting * since: %v", t0)
 	hubs := make(map[int64]Turkeyorch_hubs)
 	rows, err := internal.DashboardDb.Query(context.Background(), "SELECT hub_id, name, tier, subdomain, status, account_id FROM hubs")
 	if err != nil {
