@@ -283,7 +283,7 @@ func hc_restore(hubId string) error {
 	}
 	// restore db
 	dbName := "ret_" + cfg.HubId
-	pgDumpFile := dbName + ".sql"
+	pgDumpFile := hubDir + "/" + dbName + ".sql"
 	dbCmd := exec.Command("psql", internal.Cfg.DBconn+"/"+dbName, "-f", pgDumpFile)
 	out, err := dbCmd.CombinedOutput()
 	// if err != nil {
