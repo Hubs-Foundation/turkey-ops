@@ -272,6 +272,25 @@ func hc_restore(hubId string) error {
 	if err != nil {
 		return err
 	}
+
+	// create db
+	dBname := "ret_" + hubId
+	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+dBname+"\"")
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to create db: %v", err)
+		return err
+	}
+	// restore db
+	dbName := "ret_" + cfg.HubId
+	pgDumpFile := hubDir + "/" + dbName + ".sql"
+	dbCmd := exec.Command("psql", internal.Cfg.DBconn+"/"+dbName, "-f", pgDumpFile)
+	out, err := dbCmd.CombinedOutput()
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed: %v, %v", err, out)
+		return fmt.Errorf("failed to restore db. <err>: %v, <output>: %v", err, string(out))
+	}
+	internal.Logger.Debug("dbCmd.out: " + string(out))
+
 	// recreate
 	cfg, err = makeHcCfg(cfg)
 	if err != nil {
@@ -281,16 +300,6 @@ func hc_restore(hubId string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create, err: %v", err)
 	}
-	// restore db
-	dbName := "ret_" + cfg.HubId
-	pgDumpFile := hubDir + "/" + dbName + ".sql"
-	dbCmd := exec.Command("psql", internal.Cfg.DBconn+"/"+dbName, "-f", pgDumpFile)
-	out, err := dbCmd.CombinedOutput()
-	// if err != nil {
-	// 	internal.Logger.Sugar().Errorf("failed: %v, %v", err, out)
-	// 	return fmt.Errorf("failed to restore db. <err>: %v, <output>: %v", err, string(out))
-	// }
-	internal.Logger.Debug("dbCmd.out: " + string(out))
 
 	// OrchDb_updateHub_status(cfg.HubId, "updating")
 	OrchDb_updateHub_status(cfg.HubId, "ready")
