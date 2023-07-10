@@ -268,7 +268,7 @@ func hc_restore(hubId string) error {
 		return err
 	}
 	cfg := HCcfg{}
-	err = json.Unmarshal(cfgBytes, cfg)
+	err = json.Unmarshal(cfgBytes, &cfg)
 	if err != nil {
 		return err
 	}
