@@ -21,7 +21,6 @@ import (
 	"strings"
 	"time"
 
-	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
@@ -221,34 +220,34 @@ func hc_collect(cfg HCcfg) error {
 		return fmt.Errorf("failed to execute pg_dump: %v", err)
 	}
 
-	// add route
-	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "turkey-return-center")
-	if err != nil {
-		return err
-	}
-	pathType_prefix := networkingv1.PathTypePrefix
-	trcIg.Spec.Rules = append(
-		trcIg.Spec.Rules,
-		networkingv1.IngressRule{
-			Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
-			IngressRuleValue: networkingv1.IngressRuleValue{
-				HTTP: &networkingv1.HTTPIngressRuleValue{
-					Paths: []networkingv1.HTTPIngressPath{
-						{
-							Path:     "/",
-							PathType: &pathType_prefix,
-							Backend: networkingv1.IngressBackend{
-								Service: &networkingv1.IngressServiceBackend{
-									Name: "turkeyorch",
-									Port: networkingv1.ServiceBackendPort{
-										Number: 888,
-									}}}},
-					}}}})
-	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(),
-		trcIg, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
+	// // add route
+	// trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "turkey-return-center")
+	// if err != nil {
+	// 	return err
+	// }
+	// pathType_prefix := networkingv1.PathTypePrefix
+	// trcIg.Spec.Rules = append(
+	// 	trcIg.Spec.Rules,
+	// 	networkingv1.IngressRule{
+	// 		Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
+	// 		IngressRuleValue: networkingv1.IngressRuleValue{
+	// 			HTTP: &networkingv1.HTTPIngressRuleValue{
+	// 				Paths: []networkingv1.HTTPIngressPath{
+	// 					{
+	// 						Path:     "/",
+	// 						PathType: &pathType_prefix,
+	// 						Backend: networkingv1.IngressBackend{
+	// 							Service: &networkingv1.IngressServiceBackend{
+	// 								Name: "turkeyorch",
+	// 								Port: networkingv1.ServiceBackendPort{
+	// 									Number: 888,
+	// 								}}}},
+	// 				}}}})
+	// _, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(),
+	// 	trcIg, metav1.UpdateOptions{})
+	// if err != nil {
+	// 	return err
+	// }
 	//delete, keepData == true
 	err = DeleteHubsCloudInstance(cfg.HubId, true, false)
 

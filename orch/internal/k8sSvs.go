@@ -158,7 +158,7 @@ func (k8 K8sSvs) GetOrCreateTrcIngress(namespace, ingressName string) (*networki
 					Name: ingressName,
 					Annotations: map[string]string{
 						`haproxy.org/request-set-header`: `trc .`,
-						`haproxy.org/path-rewrite:`:      `/turkey-return-center`,
+						`haproxy.org/path-rewrite`:       `/turkey-return-center`,
 					},
 				},
 			},
