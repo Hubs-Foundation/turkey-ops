@@ -62,7 +62,7 @@ func Cronjob_pauseHC(interval time.Duration) {
 func orchCollect() error {
 	hub_id := strings.Split(cfg.PodNS, "-")[1]
 	data := fmt.Sprintf(`{"hub_id": "%v", "subdomain":"%v","tier":%v,"useremail":%v,"guardiankey":"%v","phxkey":"%v"}`,
-		hub_id, cfg.SubDomain, cfg.Tier, cfg.RootUserEmail, "guardiankey", "phxkey")
+		hub_id, cfg.SubDomain, cfg.Tier, cfg.RootUserEmail, cfg.Ret_guardiankey, cfg.Ret_phxkey)
 
 	req, err := http.NewRequest("PATCH", cfg.turkeyorchHost+"/hc_instance?status=collect", bytes.NewBuffer([]byte(data)))
 	if err != nil {
