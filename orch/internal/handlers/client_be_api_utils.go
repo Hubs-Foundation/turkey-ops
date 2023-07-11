@@ -69,7 +69,7 @@ func DashboardDb_fattenHub(_hub *Turkeyorch_hubs) error {
 	return nil
 }
 
-func OrchDb_loadHub(hub Turkeyorch_hubs) error {
+func OrchDb_insertHub(hub Turkeyorch_hubs) error {
 
 	if hub.Email.String == "" {
 		internal.Logger.Sugar().Warnf("bad (empty email), drop: %+v", hub)
@@ -84,11 +84,25 @@ func OrchDb_loadHub(hub Turkeyorch_hubs) error {
 	}
 	return err
 }
+func OrchDb_upsertHub(hub Turkeyorch_hubs) error {
+	sql := `
+		INSERT INTO hubs (hub_id, account_id, fxa_sub, name, tier, status,email, subdomain, inserted_at, domain, region) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+		ON CONFLICT (hub_id) 
+		DO UPDATE SET account_id=$2,fxa_sub=$3,name=$4,tier=$5,status=$6,email=$7,subdomain=$8,inserted_at=$9,domain=$10,region=$11
+		WHERE hubs.hub_id = $1;
+	`
+	_, err := internal.OrchDb.Exec(context.Background(),
+		sql,
+		hub.Hub_id, hub.Account_id, hub.Fxa_sub, hub.Name, hub.Tier, hub.Status, hub.Email, hub.Subdomain,
+		hub.Inserted_at, hub.Domain, hub.Region)
+	return err
+}
 func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
 	for _, hub := range hubs {
 		err := OrchDb_upsertHub(hub)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to load: <%+v>, err: %v", hub, err)
+			internal.Logger.Sugar().Errorf("failed to load: <%+v>, err: %+v", hub, err)
 		}
 	}
 }
@@ -125,21 +139,6 @@ func OrchDb_deleteHub(hubId string) error {
 	_, err := internal.OrchDb.Exec(context.Background(),
 		"delete from hubs where hub_id=$1",
 		hubId)
-	return err
-}
-
-func OrchDb_upsertHub(hub Turkeyorch_hubs) error {
-	sql := `
-		INSERT INTO hubs (hub_id, account_id, fxa_sub, name, tier, status,email, subdomain, inserted_at, domain, region) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
-		ON CONFLICT (hub_id) 
-		DO UPDATE SET account_id=$2,fxa_sub=$3,name=$4,tier=$5,status=$6,email=$7,subdomain=$8,inserted_at=$9,domain=$10,region=$11
-		WHERE hubs.hub_id = $1;
-	`
-	_, err := internal.OrchDb.Exec(context.Background(),
-		sql,
-		hub.Hub_id, hub.Account_id, hub.Fxa_sub, hub.Name, hub.Tier, hub.Status, hub.Email, hub.Subdomain,
-		hub.Inserted_at, hub.Domain, hub.Region)
 	return err
 }
 
