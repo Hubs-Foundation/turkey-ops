@@ -86,7 +86,7 @@ func OrchDb_loadHub(hub Turkeyorch_hubs) error {
 }
 func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
 	for _, hub := range hubs {
-		err := OrchDb_loadHub(hub)
+		err := OrchDb_upsertHub(hub)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to load: <%+v>, err: %v", hub, err)
 		}
@@ -128,9 +128,7 @@ func OrchDb_deleteHub(hubId string) error {
 	return err
 }
 
-func OrchDb_upsertHub(
-	hubId int64, account_id int64, fxa_sub, name, tier, status, email, subdomain string,
-	inserted_at time.Time, domain, region string) error {
+func OrchDb_upsertHub(hub Turkeyorch_hubs) error {
 	sql := `
 		INSERT INTO hubs (hub_id, account_id, fxa_sub, name, tier, status,email, subdomain, inserted_at, domain, region) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
@@ -140,7 +138,8 @@ func OrchDb_upsertHub(
 	`
 	_, err := internal.OrchDb.Exec(context.Background(),
 		sql,
-		hubId, account_id, fxa_sub, name, tier, status, email, subdomain, inserted_at, domain, region)
+		hub.Hub_id, hub.Account_id, hub.Fxa_sub, hub.Name, hub.Tier, hub.Status, hub.Email, hub.Subdomain,
+		hub.Inserted_at, hub.Domain, hub.Region)
 	return err
 }
 

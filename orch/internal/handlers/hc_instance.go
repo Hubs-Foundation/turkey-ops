@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgtype"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -149,9 +150,20 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 				hubId = time.Now().UnixNano()
 				internal.Logger.Sugar().Warnf("using time.Now().UnixNano() (%v)", hubId)
 			}
-			OrchDb_upsertHub(hubId, accountId,
-				cfg.FxaSub, cfg.Name,
-				cfg.Tier, "ready", cfg.UserEmail, cfg.Subdomain, time.Now(), cfg.Domain, cfg.Region)
+			OrchDb_upsertHub(
+				Turkeyorch_hubs{
+					Hub_id:      pgtype.Int8{Int: int64(hubId)},
+					Account_id:  pgtype.Int8{Int: accountId},
+					Fxa_sub:     pgtype.Text{String: cfg.FxaSub},
+					Name:        pgtype.Text{String: cfg.Name},
+					Tier:        pgtype.Text{String: cfg.Tier},
+					Status:      pgtype.Text{String: "ready"},
+					Email:       pgtype.Text{String: cfg.UserEmail},
+					Subdomain:   pgtype.Text{String: cfg.Subdomain},
+					Inserted_at: pgtype.Timestamptz{Time: time.Now()},
+					Domain:      pgtype.Text{String: cfg.Domain},
+					Region:      pgtype.Text{String: cfg.Region},
+				})
 		case "hc_delete":
 			OrchDb_deleteHub(cfg.HubId)
 		case "hc_switch_up":
