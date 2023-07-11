@@ -84,6 +84,15 @@ func OrchDb_insertHub(hub Turkeyorch_hubs) error {
 	}
 	return err
 }
+func OrchDb_insertHubs(hubs map[int64]Turkeyorch_hubs) {
+	internal.Logger.Sugar().Debugf("upserting <%v> hubs", len(hubs))
+	for _, hub := range hubs {
+		err := OrchDb_insertHub(hub)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to upsert: <%+v>, err: %+v", hub, err)
+		}
+	}
+}
 func OrchDb_upsertHub(hub Turkeyorch_hubs) error {
 	sql := `
 		INSERT INTO hubs (hub_id, account_id, fxa_sub, name, tier, status,email, subdomain, inserted_at, domain, region) 
