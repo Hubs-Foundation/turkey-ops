@@ -291,7 +291,7 @@ func hc_collect(cfg HCcfg) error {
 	//delete, keepData == true
 	err = DeleteHubsCloudInstance(cfg.HubId, true, false)
 
-	OrchDb_updateHub_status(cfg.HubId, "collected")
+	// OrchDb_updateHub_status(cfg.HubId, "collected")
 
 	return err
 
@@ -331,7 +331,25 @@ func hc_restore(hubId string) error {
 	}
 	internal.Logger.Debug("dbCmd.out: " + string(out))
 
-	// recreate
+	// drop route
+	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "turkey-return-center")
+	if err != nil {
+		return err
+	}
+
+	for idx, igRule := range trcIg.Spec.Rules {
+		if igRule.Host == cfg.Subdomain+"."+internal.Cfg.HubDomain {
+			trcIg.Spec.Rules = append(trcIg.Spec.Rules[:idx], trcIg.Spec.Rules[idx+1:]...)
+			break
+		}
+	}
+	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(),
+		trcIg, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	// recreate hub
 	cfg, err = makeHcCfg(cfg)
 	if err != nil {
 		return fmt.Errorf("bad cfg, err: %v", err)
@@ -342,7 +360,7 @@ func hc_restore(hubId string) error {
 	}
 
 	// OrchDb_updateHub_status(cfg.HubId, "updating")
-	OrchDb_updateHub_status(cfg.HubId, "ready")
+	// OrchDb_updateHub_status(cfg.HubId, "ready")
 
 	// dashboardclient to ping it until ready -- it's closer to user
 
