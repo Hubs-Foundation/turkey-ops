@@ -152,17 +152,17 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 			}
 			OrchDb_upsertHub(
 				Turkeyorch_hubs{
-					Hub_id:      pgtype.Int8{Int: int64(hubId)},
-					Account_id:  pgtype.Int8{Int: accountId},
-					Fxa_sub:     pgtype.Text{String: cfg.FxaSub},
-					Name:        pgtype.Text{String: cfg.Name},
-					Tier:        pgtype.Text{String: cfg.Tier},
-					Status:      pgtype.Text{String: "ready"},
-					Email:       pgtype.Text{String: cfg.UserEmail},
-					Subdomain:   pgtype.Text{String: cfg.Subdomain},
-					Inserted_at: pgtype.Timestamptz{Time: time.Now()},
-					Domain:      pgtype.Text{String: cfg.Domain},
-					Region:      pgtype.Text{String: cfg.Region},
+					Hub_id:      pgtype.Int8{Int: int64(hubId), Status: pgtype.Present},
+					Account_id:  pgtype.Int8{Int: accountId, Status: pgtype.Present},
+					Fxa_sub:     pgtype.Text{String: cfg.FxaSub, Status: pgtype.Present},
+					Name:        pgtype.Text{String: cfg.Name, Status: pgtype.Present},
+					Tier:        pgtype.Text{String: cfg.Tier, Status: pgtype.Present},
+					Status:      pgtype.Text{String: "ready", Status: pgtype.Present},
+					Email:       pgtype.Text{String: cfg.UserEmail, Status: pgtype.Present},
+					Subdomain:   pgtype.Text{String: cfg.Subdomain, Status: pgtype.Present},
+					Inserted_at: pgtype.Timestamptz{Time: time.Now(), Status: pgtype.Present},
+					Domain:      pgtype.Text{String: cfg.Domain, Status: pgtype.Present},
+					Region:      pgtype.Text{String: cfg.Region, Status: pgtype.Present},
 				})
 		case "hc_delete":
 			OrchDb_deleteHub(cfg.HubId)
