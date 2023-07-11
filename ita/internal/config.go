@@ -123,6 +123,8 @@ func MakeCfg() {
 	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
 
 	cfg.Ret_guardiankey, cfg.Ret_phxkey = GetRetKeys()
+	Logger.Sugar().Debugf("cfg.Ret_guardiankey: %v, cfg.Ret_phxkey: %v",
+		cfg.Ret_guardiankey, cfg.Ret_phxkey)
 
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {
