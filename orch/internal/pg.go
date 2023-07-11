@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -29,6 +30,30 @@ func MakePgxPool() {
 // 	return nil
 // }
 
+func DbLock(db *pgxpool.Pool, lockKey string, ttl time.Duration) (isFirst bool, err error) {
+	locked := false
+	isFirst = true
+	for i := 0; i < 10; i++ {
+		err := db.QueryRow(context.Background(), "SELECT pg_try_advisory_lock($1)", lockKey).Scan(&locked)
+		if err != nil {
+			return false, err
+		}
+		if locked {
+			return isFirst, nil
+		}
+		// Sleep before retrying
+		isFirst = false
+		time.Sleep(ttl / 10)
+	}
+	if !locked {
+		return false, errors.New("timeout")
+	}
+	return isFirst, err
+}
+func DbUnlock(db *pgxpool.Pool, lockKey string) {
+	db.Exec(context.Background(), `SELECT pg_advisory_unlock($1)`, lockKey)
+}
+
 var OrchDb *pgxpool.Pool
 
 func MakeOrchDb() {
@@ -38,24 +63,9 @@ func MakeOrchDb() {
 	}
 	OrchDb = pool
 
-	lockKey := "888"
-	locked := false
-	for i := 0; i < 10; i++ {
-		err := pool.QueryRow(context.Background(), "SELECT pg_try_advisory_lock($1)", lockKey).Scan(&locked)
-		if err != nil {
-			Logger.Sugar().Fatalf("Failed to try to acquire lock: %v", err)
-		}
-		if locked {
-			break
-		}
-		// Sleep before retrying
-		Logger.Info("Another instance is running migrations, waiting...")
-		time.Sleep(6 * time.Second)
-	}
-	if !locked {
-		Logger.Fatal("Failed to acquire lock for migrations")
-	}
-	defer pool.Exec(context.Background(), `SELECT pg_advisory_unlock($1)`, lockKey)
+	lockKey := "1000"
+	DbLock(pool, lockKey, 1*time.Minute)
+	defer DbUnlock(pool, lockKey)
 
 	//run migration
 	pool.Exec(context.Background(), `CREATE TABLE IF NOT EXISTS migration (key TEXT);`)

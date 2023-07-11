@@ -214,6 +214,16 @@ type Turkeyorch_hubs struct {
 }
 
 func Cronjob_syncDashboardDb(interval time.Duration) {
+
+	lastSyncStr, err := internal.Cfg.Redis.Get("syncDashboardDb")
+	if err == nil && lastSyncStr != "" {
+		lastSync, err := time.Parse(time.RFC3339, lastSyncStr)
+		if err == nil && time.Since(lastSync) < 250*time.Second {
+			internal.Logger.Sugar().Debugf("skip -- time.Since(lastSync): %v", time.Since(lastSync))
+			return
+		}
+	}
+
 	t0 := time.Now()
 	// var orchT pgtype.Timestamptz
 	// internal.OrchDb.QueryRow(context.Background(), "select inserted_at from hubs order by inserted_at desc limit 1;").Scan(&orchT)
@@ -224,4 +234,7 @@ func Cronjob_syncDashboardDb(interval time.Duration) {
 	}
 	OrchDb_upsertHubs(hubs)
 	internal.Logger.Sugar().Debugf("took: %v", time.Since(t0))
+
+	internal.Cfg.Redis.Set("syncDashboardDb", time.Now().Format(time.RFC3339))
+
 }
