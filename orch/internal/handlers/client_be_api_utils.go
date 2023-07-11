@@ -98,12 +98,12 @@ func OrchDb_upsertHub(hub Turkeyorch_hubs) error {
 		hub.Inserted_at.Time, hub.Domain.String, hub.Region.String)
 	return err
 }
-func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
-	internal.Logger.Sugar().Debugf("loading <%v> hubs", len(hubs))
+func OrchDb_upsertHubs(hubs map[int64]Turkeyorch_hubs) {
+	internal.Logger.Sugar().Debugf("upserting <%v> hubs", len(hubs))
 	for _, hub := range hubs {
 		err := OrchDb_upsertHub(hub)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to load: <%+v>, err: %+v", hub, err)
+			internal.Logger.Sugar().Errorf("failed to upsert: <%+v>, err: %+v", hub, err)
 		}
 	}
 }
@@ -205,14 +205,14 @@ type Turkeyorch_hubs struct {
 }
 
 func Cronjob_syncDashboardDb(interval time.Duration) {
-	var orchT pgtype.Timestamptz
-	internal.OrchDb.QueryRow(context.Background(), "select inserted_at from hubs order by inserted_at desc limit 1;").Scan(&orchT)
-
-	hubs, err := DashboardDb_getHubs(orchT.Time)
+	t0 := time.Now()
+	// var orchT pgtype.Timestamptz
+	// internal.OrchDb.QueryRow(context.Background(), "select inserted_at from hubs order by inserted_at desc limit 1;").Scan(&orchT)
+	hubs, err := DashboardDb_getHubs(time.Time{})
 	if err != nil {
 		internal.Logger.Sugar().Errorf("failed: %v", err)
 		return
 	}
-	OrchDb_loadHubs(hubs)
-
+	OrchDb_upsertHubs(hubs)
+	internal.Logger.Sugar().Debugf("took: %v", time.Since(t0))
 }
