@@ -99,6 +99,7 @@ func OrchDb_upsertHub(hub Turkeyorch_hubs) error {
 	return err
 }
 func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
+	internal.Logger.Sugar().Debugf("loading <%v> hubs", len(hubs))
 	for _, hub := range hubs {
 		err := OrchDb_upsertHub(hub)
 		if err != nil {
