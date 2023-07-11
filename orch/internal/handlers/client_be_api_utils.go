@@ -94,8 +94,8 @@ func OrchDb_upsertHub(hub Turkeyorch_hubs) error {
 	`
 	_, err := internal.OrchDb.Exec(context.Background(),
 		sql,
-		hub.Hub_id, hub.Account_id, hub.Fxa_sub, hub.Name, hub.Tier, hub.Status, hub.Email, hub.Subdomain,
-		hub.Inserted_at, hub.Domain, hub.Region)
+		hub.Hub_id.Int, hub.Account_id.Int, hub.Fxa_sub.String, hub.Name.String, hub.Tier.String, hub.Status.String, hub.Email.String, hub.Subdomain.String,
+		hub.Inserted_at.Time, hub.Domain.String, hub.Region.String)
 	return err
 }
 func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
