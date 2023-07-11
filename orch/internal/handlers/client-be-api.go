@@ -90,7 +90,7 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "", 404)
 			return
 		}
-		OrchDb_loadHubs(hubs)
+		OrchDb_upsertHubs(hubs)
 
 	}
 
