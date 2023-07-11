@@ -15,12 +15,14 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
@@ -32,8 +34,10 @@ type HCcfg struct {
 	UserEmail string `json:"useremail"`
 
 	//required, but with fallbacks
-	AccountId    string `json:"account_id"`    // turkey account id, fallback to random string produced by useremail seeded rnd func
-	HubId        string `json:"hub_id"`        // id of the hub instance, also used to name the hub's namespace, fallback to  random string produced by AccountId seeded rnd func
+	AccountId    string `json:"account_id"` // turkey account id, fallback to random string produced by useremail seeded rnd func
+	HubId        string `json:"hub_id"`     // id of the hub instance, also used to name the hub's namespace, fallback to  random string produced by AccountId seeded rnd func
+	FxaSub       string `json:"fxa_sub"`
+	Name         string `json:"name"`
 	Tier         string `json:"tier"`          // fallback to free
 	CcuLimit     string `json:"ccu_limit"`     // fallback to 20
 	StorageLimit string `json:"storage_limit"` // fallback to 0.5
@@ -107,34 +111,73 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// is this a multi-cluster request?
 	internal.Logger.Sugar().Debugf("cfg: %v", cfg)
 	if cfg.Region != "" || (cfg.Domain != "" && cfg.Domain != internal.Cfg.HubDomain) {
-		err := handleMultiClusterReq(w, r, cfg)
+		// multi-cluster request
+		cfg, err = handleMultiClusterReq(w, r, cfg)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed @ handleMultiClusterReq, err:= ", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-		return
+	} else {
+		// local hc_instance request
+		err = handle_hc_instance_req(r, cfg)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"result": "done",
+			"hub_id": cfg.HubId,
+			"domain": cfg.HubDomain,
+			"region": cfg.Region,
+		})
 	}
 
-	//handing hc_instance request
-	err = handle_hc_instance_req(r, cfg)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err != nil && cfg.AccountId != "" && internal.Cfg.IsRoot {
+		//update orchDb
+		task := hc_task_translator(r)
+		switch task {
+		case "hc_create":
+			accountId, err := strconv.ParseInt(cfg.AccountId, 10, 64)
+			if err != nil {
+				internal.Logger.Sugar().Errorf("accountId cannot be parsed into int64: %v", cfg.AccountId)
+				return
+			}
+			hubId, err := strconv.ParseInt(cfg.HubId, 10, 64)
+			if err != nil {
+				internal.Logger.Sugar().Warnf("failed to convert cfg.HubId(%v)", hubId)
+				hubId = time.Now().UnixNano()
+				internal.Logger.Sugar().Warnf("using time.Now().UnixNano() (%v)", hubId)
+			}
+			OrchDb_upsertHub(hubId, accountId,
+				cfg.FxaSub, cfg.Name,
+				cfg.Tier, "ready", cfg.UserEmail, cfg.Subdomain, time.Now(), cfg.Domain, cfg.Region)
+		case "hc_delete":
+			OrchDb_deleteHub(cfg.HubId)
+		case "hc_switch_up":
+			OrchDb_updateHub_status(cfg.HubId, "up")
+		case "hc_switch_down":
+			OrchDb_updateHub_status(cfg.HubId, "down")
+		case "hc_collect":
+			OrchDb_updateHub_status(cfg.HubId, "collected")
+		case "hc_restore":
+			OrchDb_updateHub_status(cfg.HubId, "ready")
+		case "hc_update":
+			if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
+				OrchDb_updateHub_tier(cfg.HubId, cfg.Tier)
+			}
+			if cfg.Subdomain != "" {
+				OrchDb_updateHub_subdomain(cfg.HubId, cfg.Subdomain)
+			}
+		}
 	}
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"result": "done",
-		"hub_id": cfg.HubId,
-		"domain": cfg.HubDomain,
-		"region": cfg.Region,
-	})
 })
 
 func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	var err error
-	switch r.Method {
-	case "POST":
+	task := hc_task_translator(r)
+	switch task {
+	case "hc_create":
 		hcCfg, err := makeHcCfg(cfg)
 		if err != nil {
 			return fmt.Errorf("bad cfg, err: %v", err)
@@ -144,48 +187,45 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			return fmt.Errorf("failed to create, err: %v", err)
 		}
 		return nil
-	case "GET":
-		return errors.New("not implemented")
-
-	case "DELETE":
+	case "hc_delete":
 		if cfg.HubId == "" {
 			return fmt.Errorf("missing hcCfg.HubId, err")
 		}
 		DeleteHubsCloudInstance(cfg.HubId, false, false)
 		return nil
-	case "PATCH":
-		// pause
-		status := r.URL.Query().Get("status")
-		msg := ""
-		switch status {
-		case "up", "down":
-			err := hc_switch(cfg.HubId, status)
-			if err != nil {
-				return fmt.Errorf("failed @ hc_switch: %v", err)
-			}
-		case "collect":
-			err = hc_collect(cfg)
-			if cfg.HubId == "" || cfg.Subdomain == "" || cfg.Tier == "" || cfg.UserEmail == "" ||
-				cfg.GuardianKey == "" || cfg.PhxKey == "" {
-				return fmt.Errorf("bad cfg : %v", cfg)
-			}
-			if err != nil {
-				return fmt.Errorf("failed @ hc_collect: %v", err)
-			}
-		case "restore":
-			err = hc_restore(cfg.HubId)
-			if err != nil {
-				return fmt.Errorf("failed @ hc_restore: %v", err)
-			}
-		default:
-			msg, err = UpdateHubsCloudInstance(cfg)
-			if err != nil {
-				return fmt.Errorf("failed to %v, err: %v", status, err)
-			}
+	case "hc_switch_up":
+		err := hc_switch(cfg.HubId, "up")
+		if err != nil {
+			return fmt.Errorf("failed @ hc_switch: %v", err)
 		}
-		// update
+	case "hc_switch_down":
+		err := hc_switch(cfg.HubId, "down")
+		if err != nil {
+			return fmt.Errorf("failed @ hc_switch: %v", err)
+		}
+	case "hc_collect":
+		err = hc_collect(cfg)
+		if cfg.HubId == "" || cfg.Subdomain == "" || cfg.Tier == "" || cfg.UserEmail == "" ||
+			cfg.GuardianKey == "" || cfg.PhxKey == "" {
+			return fmt.Errorf("bad cfg : %v", cfg)
+		}
+		if err != nil {
+			return fmt.Errorf("failed @ hc_collect: %v", err)
+		}
+	case "hc_restore":
+		err = hc_restore(cfg.HubId)
+		if err != nil {
+			return fmt.Errorf("failed @ hc_restore: %v", err)
+		}
+	case "hc_update":
+		msg, err := UpdateHubsCloudInstance(cfg)
+		if err != nil {
+			return fmt.Errorf("failed @hc_update: %v", err)
+		}
 		internal.Logger.Debug("UpdateHubsCloudInstance: " + msg)
 		return nil
+	default:
+		return errors.New("not implemented")
 	}
 	return err
 }
@@ -220,34 +260,34 @@ func hc_collect(cfg HCcfg) error {
 		return fmt.Errorf("failed to execute pg_dump: %v", err)
 	}
 
-	// // add route
-	// trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "turkey-return-center")
-	// if err != nil {
-	// 	return err
-	// }
-	// pathType_prefix := networkingv1.PathTypePrefix
-	// trcIg.Spec.Rules = append(
-	// 	trcIg.Spec.Rules,
-	// 	networkingv1.IngressRule{
-	// 		Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
-	// 		IngressRuleValue: networkingv1.IngressRuleValue{
-	// 			HTTP: &networkingv1.HTTPIngressRuleValue{
-	// 				Paths: []networkingv1.HTTPIngressPath{
-	// 					{
-	// 						Path:     "/",
-	// 						PathType: &pathType_prefix,
-	// 						Backend: networkingv1.IngressBackend{
-	// 							Service: &networkingv1.IngressServiceBackend{
-	// 								Name: "turkeyorch",
-	// 								Port: networkingv1.ServiceBackendPort{
-	// 									Number: 888,
-	// 								}}}},
-	// 				}}}})
-	// _, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(),
-	// 	trcIg, metav1.UpdateOptions{})
-	// if err != nil {
-	// 	return err
-	// }
+	// add route
+	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "turkey-return-center")
+	if err != nil {
+		return err
+	}
+	pathType_prefix := networkingv1.PathTypePrefix
+	trcIg.Spec.Rules = append(
+		trcIg.Spec.Rules,
+		networkingv1.IngressRule{
+			Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
+			IngressRuleValue: networkingv1.IngressRuleValue{
+				HTTP: &networkingv1.HTTPIngressRuleValue{
+					Paths: []networkingv1.HTTPIngressPath{
+						{
+							Path:     "/",
+							PathType: &pathType_prefix,
+							Backend: networkingv1.IngressBackend{
+								Service: &networkingv1.IngressServiceBackend{
+									Name: "turkeyorch",
+									Port: networkingv1.ServiceBackendPort{
+										Number: 888,
+									}}}},
+					}}}})
+	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(),
+		trcIg, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
 	//delete, keepData == true
 	err = DeleteHubsCloudInstance(cfg.HubId, true, false)
 
@@ -406,7 +446,7 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 
 	// #4 kubectl apply -f <file.yaml> --server-side --field-manager "turkey-userid-<cfg.UserId>"
 	internal.Logger.Debug("&#128640; --- deployment started for: " + hcCfg.HubId)
-	err = internal.Ssa_k8sChartYaml(hcCfg.AccountId, k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
+	err = internal.Ssa_k8sChartYaml(fmt.Sprintf("%v", hcCfg.AccountId), k8sChartYaml, internal.Cfg.K8ss_local.Cfg)
 	if err != nil {
 		internal.Logger.Error("error @ k8s deploy: " + err.Error())
 		return errors.New("error @ k8s deploy: " + err.Error())
@@ -639,13 +679,17 @@ func makeHcCfg(cfg HCcfg) (HCcfg, error) {
 
 	// AccountId
 	if cfg.AccountId == "" {
-		cfg.AccountId = internal.PwdGen(8, int64(hash(cfg.UserEmail)), "")
-		internal.Logger.Debug("AccountId unspecified, using: " + cfg.AccountId)
+		// cfg.AccountId = internal.PwdGen(8, int64(hash(cfg.UserEmail)), "")
+		// cfg.AccountId = 0
+		// internal.Logger.Sugar().Debugf("AccountId unspecified, using: %v", cfg.AccountId)
+		internal.Logger.Warn("AccountId unspecified, will not write orchDb")
+
 	}
 	// HubId
 	if cfg.HubId == "" {
-		cfg.HubId = internal.PwdGen(6, int64(hash(cfg.AccountId+cfg.Subdomain)), "")
-		internal.Logger.Debug("HubId unspecified, using: " + cfg.HubId)
+		return cfg, errors.New("bad cfg -- missing HubId")
+		// cfg.HubId = internal.PwdGen(6, int64(hash(cfg.AccountId+cfg.Subdomain)), "")
+		// internal.Logger.Debug("HubId unspecified, using: " + cfg.HubId)
 	}
 	//default Tier is free
 	if cfg.Tier == "" {

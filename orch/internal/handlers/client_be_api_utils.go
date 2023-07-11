@@ -101,7 +101,46 @@ func OrchDb_getHub(hubId string) Turkeyorch_hubs {
 }
 
 func OrchDb_updateHub_status(hubId, status string) error {
-	_, err := internal.OrchDb.Exec(context.Background(), "update hubs set status=$2 where hub_id=$1", status, hubId)
+	_, err := internal.OrchDb.Exec(context.Background(),
+		"update hubs set status=$2 where hub_id=$1",
+		hubId, status)
+	return err
+}
+
+func OrchDb_updateHub_tier(hubId, tier string) error {
+	_, err := internal.OrchDb.Exec(context.Background(),
+		"update hubs set tier=$2 where hub_id=$1",
+		hubId, tier)
+	return err
+}
+
+func OrchDb_updateHub_subdomain(hubId, subdomain string) error {
+	_, err := internal.OrchDb.Exec(context.Background(),
+		"update hubs set subdomain=$2 where hub_id=$1",
+		hubId, subdomain)
+	return err
+}
+
+func OrchDb_deleteHub(hubId string) error {
+	_, err := internal.OrchDb.Exec(context.Background(),
+		"delete from hubs where hub_id=$1",
+		hubId)
+	return err
+}
+
+func OrchDb_upsertHub(
+	hubId int64, account_id int64, fxa_sub, name, tier, status, email, subdomain string,
+	inserted_at time.Time, domain, region string) error {
+	sql := `
+		INSERT INTO hubs (hub_id, account_id, fxa_sub, name, tier, status,email, subdomain, inserted_at, domain, region) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+		ON CONFLICT (hub_id) 
+		DO UPDATE SET account_id=$2,fxa_sub=$3,name=$4,tier=$5,status=$6,email=$7,subdomain=$8,inserted_at=$9,domain=$10,region=$11
+		WHERE hubs.hub_id = $1;
+	`
+	_, err := internal.OrchDb.Exec(context.Background(),
+		sql,
+		hubId, account_id, fxa_sub, name, tier, status, email, subdomain, inserted_at, domain, region)
 	return err
 }
 

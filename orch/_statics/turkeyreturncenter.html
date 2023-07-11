@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+		body {
+			background-color: black;
+			color: white;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			height: 100vh;
+			flex-direction: column;
+		}
+		#pic {
+			width: 200px;
+			height: 200px;
+		}
+	</style>
+</head>
+<body>
+    <img id="duckPic" src="https://storage.googleapis.com/turkey-assets/logos/hubsduck.png"/>
+	<div id="msg_line0">this hubs' paused due to inactivity</div>
+	<div id="msg_line1"></div>
+    <div id="msg_line2">[ . ]</div>
+    <div id="msg_line3"></div>
+
+	<script>
+        var socket = new WebSocket("wss://" + window.location.host+"/websocket")
+        var countdown=10;
+        var state=0;
+
+        updateDuckRotation(countdown)
+
+        socket.onmessage = function (event) {
+            if (event.data=="hi"){
+                state=1
+            }
+            if (event.data=="_refresh_"){
+                state=2
+                document.getElementById('msg_line1').innerText = "waiting for ingress update"
+                document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"
+                
+                setInterval(async function() {
+                    const timeout = new Promise((resolve, reject) => {
+                        setTimeout(resolve, 1000, false);
+                    })
+                    const readinessCheck = Promise.all([
+                        fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
+                        fetch("https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
+                    ]).then(([status1, status2]) => status1 === 200 && status2 === 200);
+                    const ready=await Promise.race([timeout, readinessCheck])
+                    console.log("ready: ", ready)
+                    if (ready) {
+                        location.reload();
+                    }
+                }, 10000);
+                return
+            }
+            document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
+        };
+        socket.onopen = function (event) {
+            socket.send("hi")
+        };
+        window.addEventListener('keypress', function (event) {
+                socket.send("keyCode:"+event.keyCode)
+        });
+
+        unpausingLoop = setInterval(async function() {
+            switch(state) {
+                case 1:
+                    if (!document.hidden){
+                        countdown--;
+                        updateDuckRotation(countdown)
+                        document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
+                    }
+                    if (countdown <= 0 || countdown > 20) {
+                        socket.send("_r_: 1")
+                        document.getElementById('msg_line1').innerText = "unpausing"
+                        state=2
+                        clearInterval(unpausingLoop);
+                    }                    
+                    break;
+            }
+        }, 1000);
+        
+		document.getElementById('duckPic').addEventListener('click', function() {
+			countdown++;
+            updateDuckRotation(countdown)
+            if (state==2){                
+                return
+            }
+            document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + "/20 clicks ]";
+		});
+
+
+        function updateDuckRotation(countdown){
+            document.getElementById('duckPic').style.transform='rotate(' + (countdown * 18).toString() + 'deg)';
+        }
+
+        // async function checkEndpoint(ep) {
+        //     var resp
+        //     resp = await fetch(ep)
+        //     console.log(resp.status, ep)
+        //     return resp.status == 200
+        // }
+
+	</script>
+</body>
+</html>	

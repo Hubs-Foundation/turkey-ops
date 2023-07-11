@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) error {
+func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) (HCcfg, error) {
 
 	// tStart := time.Now()
 
@@ -57,7 +57,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	}
 	if len(peers) == 0 {
 		internal.Logger.Error("no appropriate peer for region: (new regional peer cluster are manually created atm)")
-		return errors.New("no appropriate peer for region: " + cfg.Region)
+		return cfg, errors.New("no appropriate peer for region: " + cfg.Region)
 	}
 	internal.Logger.Sugar().Debugf("located peers: %v", peers)
 
@@ -108,6 +108,7 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	}
 	if !done {
 		internal.Logger.Sugar().Errorf("failed on all peer clusters. %v", peers)
+		return cfg, errors.New("failed on all peer clusters")
 	}
 
 	// =============================================================
@@ -116,7 +117,10 @@ func handleMultiClusterReq(w http.ResponseWriter, r *http.Request, cfg HCcfg) er
 	internal.Logger.Sugar().Debugf("resultMap: %v", resultMap)
 	// tElapsed := time.Since(tStart)
 	json.NewEncoder(w).Encode(resultMap)
-	return nil
+
+	cfg.Domain = resultMap["domain"]
+
+	return cfg, nil
 }
 
 var Dump_peerMap = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

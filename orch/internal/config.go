@@ -66,7 +66,8 @@ type Config struct {
 
 	ImgRepo string
 
-	IsRoot bool
+	IsRoot         bool
+	RootOrchDomain string
 
 	// singletons todo -- refactor them out of cfg ... into internal.go perhaps
 	Awss       *AwsSvs
@@ -86,30 +87,6 @@ func MakeCfg() {
 
 	Cfg.RedisHost = os.Getenv("REDIS_HOST")
 	if Cfg.RedisHost != "" {
-		// Cfg.RedisPass = os.Getenv("REDIS_PASS")
-		// Cfg.Redis = redis.NewClient(&redis.Options{
-		// 	Addr:     Cfg.RedisHost,
-		// 	Password: Cfg.RedisPass,
-		// 	DB:       0,
-		// })
-
-		// //test
-		// go func() {
-		// 	go func() {
-		// 		for val, err := Cfg.Redis.LPop(context.Background(), "testkey").Result(); err == nil; {
-		// 			Logger.Sugar().Debugf("redis test -- emptying testkey, poped: %v", val)
-		// 		}
-		// 		Logger.Sugar().Debugf("redis test, pushing testkey in 3 sec, t.now: %v", time.Now())
-		// 		time.Sleep(3 * time.Second)
-		// 		Cfg.Redis.RPush(context.Background(), "testkey", "foobar")
-		// 	}()
-		// 	result, err := Cfg.Redis.BLPop(context.Background(), 6*time.Second, "testkey").Result()
-		// 	if err != nil {
-		// 		Logger.Sugar().Errorf("redis test failed -- err:%v", err)
-		// 	}
-		// 	Logger.Sugar().Debugf("redis test result: %v, t.now: %v", result, time.Now())
-
-		// }()
 		Cfg.Redis = NewRedisSvc()
 	}
 
@@ -148,15 +125,14 @@ func MakeCfg() {
 	}
 
 	Cfg.TurkeyJobsPubSubTopicName = "turkey_jobs"
-	Cfg.TurkeyJobsPubSubSubName = "turkey_jobs_sub"
-	Cfg.TurkeyJobCallback = "https://orch.myhubs.dev/webhooks/turkeyjobs"
-	Cfg.PeerReportWebhook = "https://orch.myhubs.dev/webhooks/peerreport"
+	Cfg.RootOrchDomain = "orch.myhubs.dev"
 	if Cfg.Env == "dev" {
 		Cfg.TurkeyJobsPubSubTopicName = "dev_turkey_jobs"
-		Cfg.TurkeyJobsPubSubSubName = "dev_turkey_jobs_sub"
-		Cfg.TurkeyJobCallback = "https://orch.dev.myhubs.dev/webhooks/turkeyjobs"
-		Cfg.PeerReportWebhook = "https://orch.dev.myhubs.dev/webhooks/peerreport"
+		Cfg.RootOrchDomain = "orch.dev.myhubs.dev"
 	}
+	Cfg.TurkeyJobsPubSubSubName = Cfg.TurkeyJobsPubSubTopicName + "_sub"
+	Cfg.TurkeyJobCallback = "https://" + Cfg.RootOrchDomain + "/webhooks/turkeyjobs"
+	Cfg.PeerReportWebhook = "https://" + Cfg.RootOrchDomain + "/webhooks/peerreport"
 
 	Logger.Info("Cfg.Channel: " + Cfg.Channel)
 	Cfg.Domain = os.Getenv("DOMAIN")

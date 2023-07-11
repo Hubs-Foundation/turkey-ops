@@ -39,7 +39,8 @@ require (
 	cloud.google.com/go/pubsub v1.30.0
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/gorilla/websocket v1.4.2
+	github.com/jackc/pgtype v1.8.1
 	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.1.0
 )
 
@@ -67,7 +68,6 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.1.1 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
-	github.com/jackc/pgtype v1.8.1 // indirect
 	github.com/jackc/puddle v1.1.3 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

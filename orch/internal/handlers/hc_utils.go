@@ -86,7 +86,7 @@ todo(internal only): <br>
 `
 
 // todo: put strict rate limit on this endpoint and add caching to deflect/protect against ddos
-var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+var _TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprint(w, "hi from TurkeyReturnCenter")
 	return
@@ -679,3 +679,30 @@ var HC_instance_getSignedBucketUrl = http.HandlerFunc(func(w http.ResponseWriter
 	fmt.Fprint(w, url)
 
 })
+
+func hc_task_translator(r *http.Request) string {
+	switch r.Method {
+	case "POST":
+		return "hc_create"
+	case "GET":
+		return ""
+
+	case "DELETE":
+		return "hc_delete"
+	case "PATCH":
+		status := r.URL.Query().Get("status")
+		switch status {
+		case "up":
+			return "hc_switch_up"
+		case "down":
+			return "hc_switch_down"
+		case "collect":
+			return "hc_collect"
+		case "restore":
+			return "hc_restore"
+		default:
+			return "hc_update"
+		}
+	}
+	return ""
+}
