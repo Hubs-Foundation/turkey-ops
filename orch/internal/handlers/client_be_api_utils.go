@@ -88,7 +88,7 @@ func OrchDb_loadHubs(hubs map[int64]Turkeyorch_hubs) {
 	for _, hub := range hubs {
 		err := OrchDb_loadHub(hub)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to load: <%+v>", hub)
+			internal.Logger.Sugar().Errorf("failed to load: <%+v>, err: %v", hub, err)
 		}
 	}
 }
