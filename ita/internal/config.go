@@ -44,6 +44,9 @@ type Config struct {
 	RootUserEmail       string
 	CustomDomain        string
 	CustomDomainCertExp time.Time
+
+	Ret_guardiankey string
+	Ret_phxkey      string
 }
 
 func GetCfg() *Config {
@@ -118,6 +121,8 @@ func MakeCfg() {
 
 	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
 	Logger.Sugar().Infof("cfg.RootUserEmail: %v", cfg.RootUserEmail)
+
+	cfg.Ret_guardiankey, cfg.Ret_phxkey = GetRetKeys()
 
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
 	if err != nil {

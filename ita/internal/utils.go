@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -104,13 +105,35 @@ func Get_fromNsAnnotations(key string) (string, error) {
 	return ns.Annotations[key], nil
 }
 
+func GetConfigSecret() (*corev1.Secret, error) {
+	secret, err := cfg.K8sClientSet.CoreV1().Secrets(cfg.PodNS).Get(context.Background(), "configs", metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return secret, nil
+}
+
+func GetRetKeys() (guardiankey, phxkey string) {
+
+	configSecret, err := GetConfigSecret()
+	if err != nil {
+		return "", ""
+	}
+	guardiankeyBytes := []byte{}
+	base64.StdEncoding.Decode(guardiankeyBytes, configSecret.Data["GUARDIAN_KEY"])
+	phxkeyBytes := []byte{}
+	base64.StdEncoding.Decode(phxkeyBytes, configSecret.Data["PHX_KEY"])
+
+	return string(guardiankey), string(phxkey)
+}
+
 func hash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return h.Sum32()
 }
 
-//internal request only, tls.insecureSkipVerify
+// internal request only, tls.insecureSkipVerify
 var _httpClient = &http.Client{
 	Timeout:   10 * time.Second,
 	Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},

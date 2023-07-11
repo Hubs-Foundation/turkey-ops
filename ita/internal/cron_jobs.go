@@ -1,13 +1,16 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,11 +46,42 @@ func Cronjob_pauseHC(interval time.Duration) {
 			//pause it
 			Logger.Info("Cronjob_pauseHC --- pausing -- " + cfg.PodNS)
 
-			HC_Pause()
+			// HC_Pause()
+			err := orchCollect()
+			if err != nil {
+				Logger.Sugar().Errorf("failed: %v", err)
+				return
+			}
+
 			pausing = true
 		}
 	}
 
+}
+
+func orchCollect() error {
+	hub_id := strings.Split(cfg.PodNS, "-")[1]
+	data := fmt.Sprintf(`{"hub_id": "%v", "subdomain":"%v","tier":%v,"useremail":%v,"guardiankey":"%v","phxkey":"%v"}`,
+		hub_id, cfg.SubDomain, cfg.Tier, cfg.RootUserEmail, "guardiankey", "phxkey")
+
+	req, err := http.NewRequest("PATCH", cfg.turkeyorchHost+"/hc_instance?status=collect", bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if resp == nil {
+		return errors.New("something went wrong -- resp==nil")
+	}
+	if resp.StatusCode < 299 {
+		return nil
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+
+	return fmt.Errorf("bad resp, code: %v, body: %v", resp.StatusCode, string(body))
 }
 
 func Cronjob_publishTurkeyBuildReport(interval time.Duration) {
