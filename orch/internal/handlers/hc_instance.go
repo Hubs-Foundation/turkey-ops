@@ -216,11 +216,11 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			return fmt.Errorf("failed @ hc_switch: %v", err)
 		}
 	case "hc_collect":
-		err = hc_collect(cfg)
 		if cfg.HubId == "" || cfg.Subdomain == "" || cfg.Tier == "" || cfg.UserEmail == "" ||
 			cfg.GuardianKey == "" || cfg.PhxKey == "" {
 			return fmt.Errorf("bad cfg : %v", cfg)
 		}
+		err = hc_collect(cfg)
 		if err != nil {
 			return fmt.Errorf("failed @ hc_collect: %v", err)
 		}
