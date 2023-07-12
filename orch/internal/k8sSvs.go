@@ -208,7 +208,7 @@ func (k8 K8sSvs) GetOrCreateTrcConfigmap() (*corev1.ConfigMap, error) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: cmName,
 				},
-				// Data: map[string]string{"dummy": "dummy"},
+				Data: map[string]string{"-": "-"},
 			},
 			metav1.CreateOptions{})
 	}
