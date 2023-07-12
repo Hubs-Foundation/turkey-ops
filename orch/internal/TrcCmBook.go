@@ -18,7 +18,8 @@ type trcCmBook struct {
 
 func NewTrcCmBook() *trcCmBook {
 	b := &trcCmBook{
-		book: map[string]string{},
+		book:     map[string]string{},
+		lastUsed: map[string]time.Time{},
 	}
 	// b.startWatching()
 	return b
