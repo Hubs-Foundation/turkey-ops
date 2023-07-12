@@ -151,7 +151,7 @@ func (k8 K8sSvs) GetOrCreateTrcIngress() (*networkingv1.Ingress, error) {
 	if k8.ClientSet == nil {
 		return nil, errors.New("k8.ClientSet == nil")
 	}
-	ig, err := k8.ClientSet.NetworkingV1().Ingresses(namespace).Get(context.Background(), namespace, metav1.GetOptions{})
+	ig, err := k8.ClientSet.NetworkingV1().Ingresses(namespace).Get(context.Background(), ingressName, metav1.GetOptions{})
 	if err == nil {
 		return ig, nil
 	}
