@@ -370,25 +370,24 @@ func hc_restore(subdomain string) error {
 		internal.Logger.Sugar().Errorf("failed: %v, %v", err, out)
 		return fmt.Errorf("failed to restore db. <err>: %v, <output>: %v", err, string(out))
 	}
-	internal.Logger.Debug("dbCmd.out: " + string(out))
+	// internal.Logger.Debug("dbCmd.out: " + string(out))
 
 	// drop route
-	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
-	if err != nil {
-		return err
-	}
-
-	for idx, igRule := range trcIg.Spec.Rules {
-		if igRule.Host == cfg.Subdomain+"."+internal.Cfg.HubDomain {
-			trcIg.Spec.Rules = append(trcIg.Spec.Rules[:idx], trcIg.Spec.Rules[idx+1:]...)
-			break
+	internal.RetryFunc(15*time.Second, 3*time.Second, func() error {
+		trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
+		if err != nil {
+			return err
 		}
-	}
-	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(),
-		trcIg, metav1.UpdateOptions{})
-	if err != nil {
+		for idx, igRule := range trcIg.Spec.Rules {
+			if igRule.Host == cfg.Subdomain+"."+internal.Cfg.HubDomain {
+				trcIg.Spec.Rules = append(trcIg.Spec.Rules[:idx], trcIg.Spec.Rules[idx+1:]...)
+				break
+			}
+		}
+		_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(),
+			trcIg, metav1.UpdateOptions{})
 		return err
-	}
+	})
 
 	// recreate hub
 	cfg, err = makeHcCfg(cfg)
