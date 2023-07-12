@@ -156,6 +156,7 @@ func (k8 K8sSvs) GetOrCreateTrcIngress() (*networkingv1.Ingress, error) {
 		return ig, nil
 	}
 	if k8errors.IsNotFound(err) {
+		pathType := networkingv1.PathTypeExact
 		ig, err = k8.ClientSet.NetworkingV1().Ingresses(namespace).Create(context.Background(),
 			&networkingv1.Ingress{
 				ObjectMeta: metav1.ObjectMeta{
@@ -163,6 +164,26 @@ func (k8 K8sSvs) GetOrCreateTrcIngress() (*networkingv1.Ingress, error) {
 					Annotations: map[string]string{
 						`haproxy.org/request-set-header`: `trc .`,
 						`haproxy.org/path-rewrite`:       `/turkey-return-center`,
+					},
+				},
+				Spec: networkingv1.IngressSpec{
+					Rules: []networkingv1.IngressRule{
+						{
+							Host: "orch." + Cfg.Domain,
+							IngressRuleValue: networkingv1.IngressRuleValue{
+								HTTP: &networkingv1.HTTPIngressRuleValue{
+									Paths: []networkingv1.HTTPIngressPath{
+										{
+											Path:     "/trc",
+											PathType: &pathType,
+											Backend: networkingv1.IngressBackend{
+												Service: &networkingv1.IngressServiceBackend{
+													Name: "turkeyorch",
+													Port: networkingv1.ServiceBackendPort{
+														Number: 888,
+													}}}},
+									}}},
+						},
 					},
 				},
 			},

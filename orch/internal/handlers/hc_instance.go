@@ -247,6 +247,7 @@ func hc_collect(cfg HCcfg) error {
 	nsName := "hc-" + cfg.HubId
 	hubDir := "/turkeyfs/" + nsName
 
+	// backup -- config
 	cfgJsonBytes, err := json.Marshal(cfg)
 	if err != nil {
 		return err
@@ -256,7 +257,7 @@ func hc_collect(cfg HCcfg) error {
 		return err
 	}
 
-	// dump db to pgDumpFile
+	// backup -- dump db to pgDumpFile
 	dbName := "ret_" + cfg.HubId
 	pgDumpFile := dbName + ".sql"
 	cmd := exec.Command(
@@ -272,12 +273,23 @@ func hc_collect(cfg HCcfg) error {
 		return fmt.Errorf("failed to execute pg_dump: %v", err)
 	}
 
+	// add to subdomain:hubId lookup table
+	trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
+	if err != nil {
+		return err
+	}
+	trcCm.Data[cfg.Subdomain] = cfg.HubId
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), trcCm, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
 	// add route
 	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
 	if err != nil {
 		return err
 	}
-	pathType_prefix := networkingv1.PathTypePrefix
+	pathType := networkingv1.PathTypePrefix
 	trcIg.Spec.Rules = append(
 		trcIg.Spec.Rules,
 		networkingv1.IngressRule{
@@ -287,7 +299,7 @@ func hc_collect(cfg HCcfg) error {
 					Paths: []networkingv1.HTTPIngressPath{
 						{
 							Path:     "/",
-							PathType: &pathType_prefix,
+							PathType: &pathType,
 							Backend: networkingv1.IngressBackend{
 								Service: &networkingv1.IngressServiceBackend{
 									Name: "turkeyorch",
@@ -299,16 +311,7 @@ func hc_collect(cfg HCcfg) error {
 	if err != nil {
 		return err
 	}
-	// add to subdomain:hubId lookup table
-	trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
-	if err != nil {
-		return err
-	}
-	trcCm.Data[cfg.Subdomain] = cfg.HubId
-	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), trcCm, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
+
 	//delete, keepData == true
 	err = DeleteHubsCloudInstance(cfg.HubId, true, false)
 
