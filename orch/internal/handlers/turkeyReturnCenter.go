@@ -47,8 +47,6 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 
-	watingMsg := "waiting for backends"
-
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -60,32 +58,34 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		return
 	}
 	defer conn.Close()
-	go func() {
-		//status report during HC_Resume(), incl cooldown period
-		for {
-			lastUsed := internal.TrcCmBook.GetLastUsed(subdomain)
-			timeSinceLastUsed := time.Since(lastUsed)
-			internal.Logger.Sugar().Debugf("lastUsed: %v", lastUsed)
-			time.Sleep(1 * time.Second)
-			if timeSinceLastUsed < cooldown {
-				continue
-			}
-			sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (cooldown - timeSinceLastUsed).Minutes())
-			if timeSinceLastUsed < 1*time.Minute {
-				watingMsg += "."
-				sendMsg = watingMsg
-			} else if timeSinceLastUsed < 5*time.Minute {
-				sendMsg = "_refresh_"
-			}
-			internal.Logger.Debug("sendMsg: " + sendMsg)
-			err := conn.WriteMessage(websocket.TextMessage, []byte(sendMsg))
-			if err != nil {
-				internal.Logger.Debug("err @ conn.WriteMessage:" + err.Error())
-				break
-			}
-			time.Sleep(10 * time.Second)
-		}
-	}()
+
+	// watingMsg := "waiting for backends"
+	// go func() {
+	// 	//status report during HC_Resume(), incl cooldown period
+	// 	for {
+	// 		lastUsed := internal.TrcCmBook.GetLastUsed(subdomain)
+	// 		timeSinceLastUsed := time.Since(lastUsed)
+	// 		// internal.Logger.Sugar().Debugf("lastUsed: %v", lastUsed)
+	// 		time.Sleep(1 * time.Second)
+	// 		if time.Duration(internal.TrcCmBook.GetStatus(subdomain)) == 0 {
+	// 			continue
+	// 		}
+	// 		sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (cooldown - timeSinceLastUsed).Minutes())
+	// 		if timeSinceLastUsed < 1*time.Minute {
+	// 			watingMsg += "."
+	// 			sendMsg = watingMsg
+	// 		} else if timeSinceLastUsed < 5*time.Minute {
+	// 			sendMsg = "_refresh_"
+	// 		}
+	// 		internal.Logger.Debug("sendMsg: " + sendMsg)
+	// 		err := conn.WriteMessage(websocket.TextMessage, []byte(sendMsg))
+	// 		if err != nil {
+	// 			internal.Logger.Debug("err @ conn.WriteMessage:" + err.Error())
+	// 			break
+	// 		}
+	// 		time.Sleep(10 * time.Second)
+	// 	}
+	// }()
 
 	for {
 		mt, message, err := conn.ReadMessage()

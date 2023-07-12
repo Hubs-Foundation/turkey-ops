@@ -13,6 +13,7 @@ import (
 type trcCmBook struct {
 	book     map[string]string
 	lastUsed map[string]time.Time
+	status   map[string]int
 	mu       sync.Mutex
 }
 
@@ -42,6 +43,18 @@ func (tcb *trcCmBook) GetLastUsed(subdomain string) time.Time {
 	return tcb.lastUsed[subdomain]
 }
 
+func (tcb *trcCmBook) GetStatus(subdomain string) int {
+	tcb.mu.Lock()
+	defer tcb.mu.Unlock()
+	return tcb.status[subdomain]
+}
+
+func (tcb *trcCmBook) SetStatus(subdomain string, status int) {
+	tcb.mu.Lock()
+	defer tcb.mu.Unlock()
+	tcb.status[subdomain] = status
+	return
+}
 func (tcb *trcCmBook) set(newBook map[string]string) {
 	tcb.mu.Lock()
 	defer tcb.mu.Unlock()
