@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"sync"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,8 +11,9 @@ import (
 )
 
 type trcCmBook struct {
-	book map[string]string
-	mu   sync.Mutex
+	book     map[string]string
+	lastUsed map[string]time.Time
+	mu       sync.Mutex
 }
 
 func NewTrcCmBook() *trcCmBook {
@@ -26,6 +28,17 @@ func (tcb *trcCmBook) GetHubId(subdomain string) string {
 	tcb.mu.Lock()
 	defer tcb.mu.Unlock()
 	return tcb.book[subdomain]
+}
+
+func (tcb *trcCmBook) RecUsage(subdomain string) {
+	tcb.mu.Lock()
+	defer tcb.mu.Unlock()
+	tcb.lastUsed[subdomain] = time.Now()
+}
+func (tcb *trcCmBook) GetLastUsed(subdomain string) time.Time {
+	tcb.mu.Lock()
+	defer tcb.mu.Unlock()
+	return tcb.lastUsed[subdomain]
 }
 
 func (tcb *trcCmBook) set(newBook map[string]string) {

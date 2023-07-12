@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var _resuming_status = int32(0)
+var cooldown = 12 * time.Hour
 
 var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -26,57 +26,26 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	}
 
 	if strings.HasSuffix(r.URL.Path, "/websocket") {
-		trc_ws(w, r)
+		trc_ws(w, r, subdomain, hubId)
 	}
 
 	switch r.Method {
 	case "GET":
-		// if _, ok := r.Header["Duck"]; ok {
-		// 	duckpng, _ := os.Open("./_statics/duck.png")
-		// 	defer duckpng.Close()
-		// 	img, _, _ := image.Decode(duckpng)
-		// 	rand.Seed(time.Now().UnixNano())
-		// 	rotatedImg := rotateImg(img, 25+rand.Float64()*250)
-		// 	var buffer bytes.Buffer
-		// 	_ = png.Encode(&buffer, rotatedImg)
-		// 	encoded := base64.StdEncoding.EncodeToString(buffer.Bytes())
-		// 	fmt.Fprint(w, encoded)
-		// 	return
-		// }
 		bytes, err := ioutil.ReadFile("./_statics/turkeyreturncenter.html")
 		if err != nil {
 			internal.Logger.Sugar().Errorf("%v", err)
 		}
 		fmt.Fprint(w, string(bytes))
-	case "PUT":
-		if _resuming_status != 0 {
-			http.Error(w, "", http.StatusBadRequest)
-			return
-		}
-		// err := HC_Resume()	<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-		// if err != nil {
-		// 	internal.Logger.Sugar().Errorf("err (reqId: %v): %v", w.Header().Get("X-Request-Id"), err)
-		// 	fmt.Fprintf(w, "something went wrong -- reqId=%v", w.Header().Get("X-Request-Id"))
-		// 	return
-		// }
-		fmt.Fprint(w, "resuming")
-	case "UPDATE":
-		internal.Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
-		if _resuming_status == 0 {
-			fmt.Fprint(w, "slide to fix the ducks orintation")
-			return
-		}
-		if _resuming_status < 0 {
-			fmt.Fprintf(w, "resuming, this can take a few minutes")
-			return
-		}
-		fmt.Fprintf(w, "not ready yet, try again in %v min", (_resuming_status / 60))
+	// case "PUT":
+	// 	fmt.Fprint(w, "PUT")
+	// case "UPDATE":
+	// 	fmt.Fprintf(w, "UPDATE")
 	default:
 		http.Error(w, "", 404)
 	}
 })
 
-func trc_ws(w http.ResponseWriter, r *http.Request) {
+func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 
 	watingMsg := "waiting for backends"
 
@@ -94,19 +63,18 @@ func trc_ws(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		//status report during HC_Resume(), incl cooldown period
 		for {
-			internal.Logger.Sugar().Debugf("_resuming_status: %v", _resuming_status)
+			lastUsed := internal.TrcCmBook.GetLastUsed(subdomain)
+			timeSinceLastUsed := time.Since(lastUsed)
+			internal.Logger.Sugar().Debugf("lastUsed: %v", lastUsed)
 			time.Sleep(1 * time.Second)
-			if _resuming_status == 0 {
+			if timeSinceLastUsed < cooldown {
 				continue
 			}
-			sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (_resuming_status / 60))
-			if _resuming_status < 0 {
+			sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (cooldown - timeSinceLastUsed).Minutes())
+			if timeSinceLastUsed < 1*time.Minute {
 				watingMsg += "."
 				sendMsg = watingMsg
-			}
-
-			resume_cooldown_sec := 86400 // 1 day
-			if (_resuming_status) > int32(resume_cooldown_sec-900) {
+			} else if timeSinceLastUsed < 5*time.Minute {
 				sendMsg = "_refresh_"
 			}
 			internal.Logger.Debug("sendMsg: " + sendMsg)
@@ -127,16 +95,26 @@ func trc_ws(w http.ResponseWriter, r *http.Request) {
 		}
 		strMessage := string(message)
 		internal.Logger.Sugar().Debugf("recv: type=<%v>, msg=<%v>", mt, string(strMessage))
-		if strMessage == "hi" && _resuming_status == 0 {
+		if strMessage == "hi" {
 			conn.WriteMessage(websocket.TextMessage, []byte("hi"))
 		}
-		if strings.HasPrefix(strMessage, "_r_:") && _resuming_status == 0 {
-			// HC_Resume()	<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-			err = conn.WriteMessage(mt, []byte("respawning hubs pods"))
+
+		sendMsg := "???"
+
+		lastUsed := internal.TrcCmBook.GetLastUsed(subdomain)
+		timeSinceLastUsed := time.Since(lastUsed)
+		if strings.HasPrefix(strMessage, "_r_:") {
+			if timeSinceLastUsed > cooldown {
+				sendMsg = "respawning hubs pods"
+				internal.TrcCmBook.RecUsage(subdomain)
+				hc_restore(hubId)
+			}
+			err = conn.WriteMessage(mt, []byte(sendMsg))
 			if err != nil {
 				internal.Logger.Debug("err @ conn.WriteMessage:" + err.Error())
 				break
 			}
 		}
+
 	}
 }

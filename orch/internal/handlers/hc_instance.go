@@ -329,16 +329,16 @@ func hc_collect(cfg HCcfg) error {
 
 }
 
-func hc_restore(subdomain string) error {
-	//find hubId
-	trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
-	if err != nil {
-		return err
-	}
-	hubId := trcCm.Data[subdomain]
-	if hubId == "" {
-		return errors.New("failed to get hubId for subdomain: %v" + subdomain)
-	}
+func hc_restore(hubId string) error {
+	// //find hubId
+	// trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
+	// if err != nil {
+	// 	return err
+	// }
+	// hubId := trcCm.Data[subdomain]
+	// if hubId == "" {
+	// 	return errors.New("failed to get hubId for subdomain: %v" + subdomain)
+	// }
 
 	nsName := "hc-" + hubId
 	hubDir := "/turkeyfs/" + nsName
