@@ -307,6 +307,7 @@ func hc_collect(cfg HCcfg) error {
 										Number: 888,
 									}}}},
 					}}}})
+	trcIg.ResourceVersion = ""
 	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(), trcIg, metav1.UpdateOptions{})
 	if err != nil {
 		return err
