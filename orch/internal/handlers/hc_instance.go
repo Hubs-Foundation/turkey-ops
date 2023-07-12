@@ -462,10 +462,12 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 		fileOption = hcCfg.Options
 	}
 
+	isNew := false
 	if fileOption == "_fs" || fileOption == "_gfs" { //create folder for hub-id (hc-<hub_id>) in turkeyfs
 		hubDir := "/turkeyfs/hc-" + hcCfg.HubId
 		if _, err := os.Stat(hubDir); err != nil { // create if not exist
 			os.MkdirAll(hubDir, 0600)
+			isNew = true
 		}
 	}
 
@@ -526,6 +528,10 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 		}
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			internal.Logger.Debug("db already exists: " + hcCfg.DBname)
+			if isNew {
+				internal.Logger.Error("db already exists but isNew, bad!!!, manual investigation needed")
+				isNew = false
+			}
 			break
 		}
 		if createDB_tries > 0 {
@@ -536,15 +542,17 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 	}
 	internal.Logger.Debug("&#128024; --- db : " + hcCfg.DBname)
 
-	go func() {
-		// temporary api-automation hacks for until this is properly implemented in reticulum
-		err = post_creation_hacks(hcCfg)
-		if err != nil {
-			internal.Logger.Error("post_creation_hacks FAILED: " + err.Error())
-		}
-		// #6 enforce tiers
-		hc_updateTier(hcCfg)
-	}()
+	if isNew {
+		go func() {
+			// temporary api-automation hacks for until this is properly implemented in reticulum
+			err = post_creation_hacks(hcCfg)
+			if err != nil {
+				internal.Logger.Error("post_creation_hacks FAILED: " + err.Error())
+			}
+			// #6 enforce tiers
+			hc_updateTier(hcCfg)
+		}()
+	}
 	return nil
 }
 
