@@ -361,6 +361,7 @@ func hc_restore(subdomain string) error {
 		internal.Logger.Sugar().Errorf("failed to create db: %v", err)
 		return err
 	}
+
 	// restore db
 	dbName := "ret_" + cfg.HubId
 	pgDumpFile := hubDir + "/" + dbName + ".sql"
