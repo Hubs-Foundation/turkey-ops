@@ -31,7 +31,7 @@ func main() {
 	}
 
 	if strings.HasPrefix(internal.GetCfg().PodNS, "hc-") {
-		if internal.GetCfg().Tier == "p0" {
+		if internal.GetCfg().Tier == "p0" || internal.GetCfg().Tier == "p1" {
 			hc_cron_1m := internal.NewCron("cron_1m", 1*time.Minute)
 			hc_cron_1m.Load("Cronjob_pauseHC", internal.Cronjob_pauseHC)
 			hc_cron_1m.Start()
@@ -88,7 +88,7 @@ func main() {
 
 }
 
-//check turkeyauthtoken header
+// check turkeyauthtoken header
 func chk_tat_hdr() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
