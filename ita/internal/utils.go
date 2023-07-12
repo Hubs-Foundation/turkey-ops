@@ -117,8 +117,13 @@ func GetRetKeys() (guardiankey, phxkey string) {
 
 	configSecret, err := GetConfigSecret()
 	if err != nil {
+		Logger.Error(err.Error())
 		return "", ""
 	}
+	guardiankey_b64 := string(configSecret.Data["GUARDIAN_KEY"])
+	phxkey_b64 := string(configSecret.Data["PHX_KEY"])
+	Logger.Sugar().Debugf("guardiankey_b64: %v, phxkey_b64: %v", guardiankey_b64, phxkey_b64)
+
 	guardiankeyBytes := []byte{}
 	base64.StdEncoding.Decode(guardiankeyBytes, configSecret.Data["GUARDIAN_KEY"])
 	phxkeyBytes := []byte{}
