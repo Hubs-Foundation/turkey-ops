@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -319,3 +320,21 @@ func RetryHttpReq(client *http.Client, request *http.Request, ttl time.Duration)
 /////////////////////////////////////////////////
 
 /////////////////////////////////////////////////
+
+func RetryFunc(ttl time.Duration, stepWait time.Duration, _func func() error) error {
+
+	err := errors.New("-")
+
+	for ttl > 0 {
+		err = _func()
+		if err == nil {
+			return nil
+		}
+		Logger.Sugar().Infof("err: %v; retrying in %v", err, stepWait)
+		time.Sleep(stepWait)
+		ttl -= stepWait
+	}
+	Logger.Sugar().Errorf("timeout, err: %v", err)
+
+	return err
+}

@@ -274,41 +274,48 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// add to subdomain:hubId lookup table
-	trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
-	if err != nil {
-		return err
-	}
-	trcCm.Data[cfg.Subdomain] = cfg.HubId
-	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), trcCm, metav1.UpdateOptions{})
-	if err != nil {
-		return err
-	}
 
-	// add route
-	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
+	internal.RetryFunc(15*time.Second, 3*time.Second,
+		func() error {
+			trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
+			if err != nil {
+				return err
+			}
+			trcCm.Data[cfg.Subdomain] = cfg.HubId
+			_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), trcCm, metav1.UpdateOptions{})
+			return err
+		})
 	if err != nil {
 		return err
 	}
-	pathType := networkingv1.PathTypePrefix
-	trcIg.Spec.Rules = append(
-		trcIg.Spec.Rules,
-		networkingv1.IngressRule{
-			Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
-			IngressRuleValue: networkingv1.IngressRuleValue{
-				HTTP: &networkingv1.HTTPIngressRuleValue{
-					Paths: []networkingv1.HTTPIngressPath{
-						{
-							Path:     "/",
-							PathType: &pathType,
-							Backend: networkingv1.IngressBackend{
-								Service: &networkingv1.IngressServiceBackend{
-									Name: "turkeyorch",
-									Port: networkingv1.ServiceBackendPort{
-										Number: 888,
-									}}}},
-					}}}})
-	trcIg.ResourceVersion = ""
-	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(), trcIg, metav1.UpdateOptions{})
+	// add route
+	internal.RetryFunc(15*time.Second, 3*time.Second,
+		func() error {
+			trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
+			if err != nil {
+				return err
+			}
+			pathType := networkingv1.PathTypePrefix
+			trcIg.Spec.Rules = append(
+				trcIg.Spec.Rules,
+				networkingv1.IngressRule{
+					Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
+								{
+									Path:     "/",
+									PathType: &pathType,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: "turkeyorch",
+											Port: networkingv1.ServiceBackendPort{
+												Number: 888,
+											}}}},
+							}}}})
+			_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(), trcIg, metav1.UpdateOptions{})
+			return err
+		})
 	if err != nil {
 		return err
 	}
