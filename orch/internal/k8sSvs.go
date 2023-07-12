@@ -164,6 +164,7 @@ func (k8 K8sSvs) GetOrCreateTrcIngress() (*networkingv1.Ingress, error) {
 					Annotations: map[string]string{
 						`haproxy.org/request-set-header`: `trc .`,
 						`haproxy.org/path-rewrite`:       `/turkey-return-center`,
+						`kubernetes.io/ingress.class`:    `haproxy`,
 					},
 				},
 				Spec: networkingv1.IngressSpec{
