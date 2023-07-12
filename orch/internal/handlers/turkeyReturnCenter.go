@@ -19,7 +19,8 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	internal.Logger.Sugar().Debugf("subdomain: %v", subdomain)
 
 	//check if subdomain's collected
-	if internal.HubsStatusBook.GetStatus(subdomain) != "collected" {
+	hubId := internal.TrcCmBook.GetHubId(subdomain)
+	if hubId == "" {
 		http.Error(w, "", 404)
 		return
 	}

@@ -74,7 +74,7 @@
                         updateDuckRotation(countdown)
                         document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
                     }
-                    if (countdown <= 0 || countdown > 20) {
+                    if (countdown <= 0 ) {
                         socket.send("_r_: 1")
                         document.getElementById('msg_line1').innerText = "unpausing"
                         state=2
@@ -84,16 +84,6 @@
             }
         }, 1000);
         
-		document.getElementById('duckPic').addEventListener('click', function() {
-			countdown++;
-            updateDuckRotation(countdown)
-            if (state==2){                
-                return
-            }
-            document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + "/20 clicks ]";
-		});
-
-
         function updateDuckRotation(countdown){
             document.getElementById('duckPic').style.transform='rotate(' + (countdown * 18).toString() + 'deg)';
         }
