@@ -143,7 +143,11 @@ func (k8 K8sSvs) PatchNsAnnotation(namespace string, AnnotationKey, AnnotationVa
 	return nil
 }
 
-func (k8 K8sSvs) GetOrCreateTrcIngress(namespace, ingressName string) (*networkingv1.Ingress, error) {
+func (k8 K8sSvs) GetOrCreateTrcIngress() (*networkingv1.Ingress, error) {
+
+	namespace := Cfg.PodNS
+	ingressName := "turkey-return-center"
+
 	if k8.ClientSet == nil {
 		return nil, errors.New("k8.ClientSet == nil")
 	}
@@ -166,6 +170,30 @@ func (k8 K8sSvs) GetOrCreateTrcIngress(namespace, ingressName string) (*networki
 		)
 	}
 	return ig, err
+}
+
+func (k8 K8sSvs) GetOrCreateTrcConfigmap() (*corev1.ConfigMap, error) {
+
+	namespace := Cfg.PodNS
+	cmName := "turkey-return-center"
+
+	if k8.ClientSet == nil {
+		return nil, errors.New("k8.ClientSet == nil")
+	}
+	cm, err := k8.ClientSet.CoreV1().ConfigMaps(namespace).Get(context.Background(), cmName, metav1.GetOptions{})
+	if k8errors.IsNotFound(err) {
+		cm, err = k8.ClientSet.CoreV1().ConfigMaps(namespace).Create(context.Background(),
+			&corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: cmName,
+				},
+				// Data: map[string]string{"dummy": "dummy"},
+			},
+			metav1.CreateOptions{})
+	}
+
+	return cm, err
+
 }
 
 var decUnstructured = yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)

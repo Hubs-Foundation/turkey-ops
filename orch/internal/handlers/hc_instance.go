@@ -273,7 +273,7 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// add route
-	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "turkey-return-center")
+	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
 	if err != nil {
 		return err
 	}
@@ -295,8 +295,17 @@ func hc_collect(cfg HCcfg) error {
 										Number: 888,
 									}}}},
 					}}}})
-	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).Update(context.Background(),
-		trcIg, metav1.UpdateOptions{})
+	_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(), trcIg, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	// add to subdomain:hubId lookup table
+	trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
+	if err != nil {
+		return err
+	}
+	trcCm.Data[cfg.Subdomain] = cfg.HubId
+	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().ConfigMaps(internal.Cfg.PodNS).Update(context.Background(), trcCm, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -309,7 +318,16 @@ func hc_collect(cfg HCcfg) error {
 
 }
 
-func hc_restore(hubId string) error {
+func hc_restore(subdomain string) error {
+	//find hubId
+	trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
+	if err != nil {
+		return err
+	}
+	hubId := trcCm.Data[subdomain]
+	if hubId == "" {
+		return errors.New("failed to get hubId for subdomain: %v" + subdomain)
+	}
 
 	nsName := "hc-" + hubId
 	hubDir := "/turkeyfs/" + nsName
@@ -344,7 +362,7 @@ func hc_restore(hubId string) error {
 	internal.Logger.Debug("dbCmd.out: " + string(out))
 
 	// drop route
-	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress(internal.Cfg.PodNS, "turkey-return-center")
+	trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
 	if err != nil {
 		return err
 	}

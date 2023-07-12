@@ -46,12 +46,12 @@ func Cronjob_pauseHC(interval time.Duration) {
 			//pause it
 			Logger.Info("Cronjob_pauseHC --- pausing -- " + cfg.PodNS)
 
-			// HC_Pause()
 			err := orchCollect()
 			if err != nil {
 				Logger.Sugar().Errorf("failed: %v", err)
 				return
 			}
+			// HC_Pause()
 
 			pausing = true
 		}
