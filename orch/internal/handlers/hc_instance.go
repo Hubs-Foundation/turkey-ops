@@ -343,9 +343,25 @@ func hc_restore(hubId string) error {
 	nsName := "hc-" + hubId
 	hubDir := "/turkeyfs/" + nsName
 
+	//check cooldown
+	if tsBytes, err := ioutil.ReadFile(hubDir + "/trc_ts"); err == nil {
+		t, err := time.Parse(time.RFC3339, string(tsBytes))
+		if err != nil {
+			return fmt.Errorf("failed to deserialize time: %s", err)
+		}
+		cooldownLeft := 12*time.Hour - time.Since(t)
+		if cooldownLeft > 0 {
+			return fmt.Errorf("***cooldown in progress -- try again in %v minutes", cooldownLeft/1000)
+		}
+	}
+
 	// get configs
 	cfgBytes, err := ioutil.ReadFile(hubDir + "/cfg.json")
 	if err != nil {
+		if _, err := os.Stat(hubDir + "/cfg.json.wip"); err == nil {
+			internal.Logger.Warn("hc_restore already in progress (started by another orch instance?)")
+			return fmt.Errorf("restoring hub instance, this may take a few minutes")
+		}
 		return err
 	}
 	cfg := HCcfg{}
@@ -353,6 +369,7 @@ func hc_restore(hubId string) error {
 	if err != nil {
 		return err
 	}
+	os.Rename(hubDir+"/cfg.json", hubDir+"/cfg.json.wip")
 
 	// create db
 	dBname := "ret_" + hubId
@@ -400,12 +417,12 @@ func hc_restore(hubId string) error {
 		return fmt.Errorf("failed to create, err: %v", err)
 	}
 
-	// OrchDb_updateHub_status(cfg.HubId, "updating")
-	// OrchDb_updateHub_status(cfg.HubId, "ready")
+	err = ioutil.WriteFile("trc_ts", []byte(time.Now().Format(time.RFC3339)), 0644)
+	if err != nil {
+		return fmt.Errorf("Failed writing trc_ts file: %s", err)
+	}
 
-	// dashboardclient to ping it until ready -- it's closer to user
-
-	return err
+	return nil
 }
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {

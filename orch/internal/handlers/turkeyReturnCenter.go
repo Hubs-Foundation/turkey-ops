@@ -6,12 +6,9 @@ import (
 	"main/internal"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
-
-var cooldown = 12 * time.Hour
 
 var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -99,16 +96,16 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 			conn.WriteMessage(websocket.TextMessage, []byte("hi"))
 		}
 
-		sendMsg := "???"
+		sendMsg := "..."
 
-		lastUsed := internal.TrcCmBook.GetLastUsed(subdomain)
-		timeSinceLastUsed := time.Since(lastUsed)
 		if strings.HasPrefix(strMessage, "_r_:") {
-			if timeSinceLastUsed > cooldown {
-				sendMsg = "respawning hubs pods"
-				internal.TrcCmBook.RecUsage(subdomain)
-				hc_restore(hubId)
+			err := hc_restore(hubId)
+			if err == nil {
+				sendMsg = "restoring hub instance, this may take a few minutes"
+			} else if strings.HasPrefix(err.Error(), "***") {
+				sendMsg = err.Error()
 			}
+
 			err = conn.WriteMessage(mt, []byte(sendMsg))
 			if err != nil {
 				internal.Logger.Debug("err @ conn.WriteMessage:" + err.Error())

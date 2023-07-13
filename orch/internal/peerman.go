@@ -33,7 +33,7 @@ func NewPeerMan() *PeerMan {
 	return pm
 }
 
-const redisKey = "turkeyorchPeerBook"
+const redisKey_peerBook = "turkeyorchPeerBook"
 
 func (pm *PeerMan) GetPeerMap() map[string]PeerReport {
 	pm.Mu.Lock()
@@ -64,7 +64,7 @@ func peerReports_addBy_hcCnt(reports []PeerReport, report PeerReport) []PeerRepo
 }
 
 func (pm *PeerMan) download() {
-	mapStr, err := Cfg.Redis.Get(redisKey)
+	mapStr, err := Cfg.Redis.Get(redisKey_peerBook)
 	if err != nil {
 		Logger.Sugar().Errorf("failed to get from redis: %v", err)
 	}
@@ -100,7 +100,7 @@ func (pm *PeerMan) upload() {
 	if err != nil {
 		Logger.Error("failed to marshal peerMap: " + err.Error())
 	}
-	err = Cfg.Redis.Set(redisKey, string(peerMapBytes))
+	err = Cfg.Redis.Set(redisKey_peerBook, string(peerMapBytes))
 	if err != nil {
 		Logger.Error("failed @ Cfg.Redis.Set: " + err.Error())
 	} else {
