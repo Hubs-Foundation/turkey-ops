@@ -355,6 +355,14 @@ func hc_restore(hubId string) error {
 		}
 	}
 
+	// create db
+	dBname := "ret_" + hubId
+	_, err := internal.PgxPool.Exec(context.Background(), "create database \""+dBname+"\"")
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to create db: %v", err)
+		return err
+	}
+
 	// get configs
 	cfgBytes, err := ioutil.ReadFile(hubDir + "/cfg.json")
 	if err != nil {
@@ -370,14 +378,6 @@ func hc_restore(hubId string) error {
 		return err
 	}
 	os.Rename(hubDir+"/cfg.json", hubDir+"/cfg.json.wip")
-
-	// create db
-	dBname := "ret_" + hubId
-	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+dBname+"\"")
-	if err != nil {
-		internal.Logger.Sugar().Errorf("failed to create db: %v", err)
-		return err
-	}
 
 	// restore db
 	dbName := "ret_" + cfg.HubId
