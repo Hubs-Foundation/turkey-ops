@@ -34,7 +34,7 @@
         updateDuckRotation(countdown)
 
         socket.onmessage = function (event) {
-            if (event.data.startWith("token:")){
+            if (event.data.startsWith("token:")){
                 state=1
                 tokenStr=event.data
                 event.data = "."
