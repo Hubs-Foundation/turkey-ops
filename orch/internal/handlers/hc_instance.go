@@ -972,7 +972,10 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	go func() {
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
-		deleting <- "scaling down " + nsName
+		select {
+		case deleting <- "scaling down " + nsName:
+		default:
+		}
 		hc_switch(hubId, "down")
 		err := internal.Cfg.K8ss_local.WaitForPodKill(nsName, 60*time.Minute, 1)
 		if err != nil {
@@ -981,7 +984,10 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 			return
 		}
 		//delete ns
-		deleting <- "deleting ns" + nsName
+		select {
+		case deleting <- "deleting ns" + nsName:
+		default:
+		}
 		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
 			nsName,
 			metav1.DeleteOptions{})
@@ -993,7 +999,10 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
 
 		if !keepFiles {
-			deleting <- "deleting files"
+			select {
+			case deleting <- "deleting files":
+			default:
+			}
 			if len(hubId) < 1 {
 				internal.Logger.Error("DANGER!!! empty HubId")
 			} else {
@@ -1007,7 +1016,10 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 			}
 		}
 		if !keepDB {
-			deleting <- "deleting db"
+			select {
+			case deleting <- "deleting db":
+			default:
+			}
 			dbName := "ret_" + hubId
 			internal.Logger.Debug("&#128024 deleting db: " + dbName)
 			force := true
@@ -1030,7 +1042,10 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 			}
 			internal.Logger.Debug("&#128024 deleted db: " + dbName)
 		}
-		deleting <- "done deleting: " + nsName
+		select {
+		case deleting <- "done deleting: " + nsName:
+		default:
+		}
 		close(deleting)
 	}()
 	return deleting, nil
