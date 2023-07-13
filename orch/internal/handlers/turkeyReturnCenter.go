@@ -66,6 +66,7 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		internal.Logger.Sugar().Debugf("recv: type=<%v>, msg=<%v>", mt, string(strMessage))
 		if strMessage == "hi" {
 			conn.WriteMessage(websocket.TextMessage, []byte(tokenStr))
+			continue
 		}
 
 		sendMsg := "..."
