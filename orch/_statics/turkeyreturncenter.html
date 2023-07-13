@@ -29,12 +29,14 @@
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
         var countdown=10;
         var state=0;
+        var tokenStr=""
 
         updateDuckRotation(countdown)
 
         socket.onmessage = function (event) {
-            if (event.data=="hi"){
+            if (event.data.startWith=="token:"){
                 state=1
+                tokenStr=event.data
             }
             if (event.data=="_refresh_"){
                 state=2
@@ -75,7 +77,7 @@
                         document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
                     }
                     if (countdown <= 0 ) {
-                        socket.send("_r_: 1")
+                        socket.send(tokenStr)
                         document.getElementById('msg_line1').innerText = "unpausing"
                         state=2
                         clearInterval(unpausingLoop);

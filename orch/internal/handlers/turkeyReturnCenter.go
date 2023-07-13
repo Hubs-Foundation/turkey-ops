@@ -6,6 +6,7 @@ import (
 	"main/internal"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -33,10 +34,6 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 			internal.Logger.Sugar().Errorf("%v", err)
 		}
 		fmt.Fprint(w, string(bytes))
-	// case "PUT":
-	// 	fmt.Fprint(w, "PUT")
-	// case "UPDATE":
-	// 	fmt.Fprintf(w, "UPDATE")
 	default:
 		http.Error(w, "", 404)
 	}
@@ -56,33 +53,8 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 	}
 	defer conn.Close()
 
-	// watingMsg := "waiting for backends"
-	// go func() {
-	// 	//status report during HC_Resume(), incl cooldown period
-	// 	for {
-	// 		lastUsed := internal.TrcCmBook.GetLastUsed(subdomain)
-	// 		timeSinceLastUsed := time.Since(lastUsed)
-	// 		// internal.Logger.Sugar().Debugf("lastUsed: %v", lastUsed)
-	// 		time.Sleep(1 * time.Second)
-	// 		if time.Duration(internal.TrcCmBook.GetStatus(subdomain)) == 0 {
-	// 			continue
-	// 		}
-	// 		sendMsg := fmt.Sprintf("cooldown in progress -- try again in %v min", (cooldown - timeSinceLastUsed).Minutes())
-	// 		if timeSinceLastUsed < 1*time.Minute {
-	// 			watingMsg += "."
-	// 			sendMsg = watingMsg
-	// 		} else if timeSinceLastUsed < 5*time.Minute {
-	// 			sendMsg = "_refresh_"
-	// 		}
-	// 		internal.Logger.Debug("sendMsg: " + sendMsg)
-	// 		err := conn.WriteMessage(websocket.TextMessage, []byte(sendMsg))
-	// 		if err != nil {
-	// 			internal.Logger.Debug("err @ conn.WriteMessage:" + err.Error())
-	// 			break
-	// 		}
-	// 		time.Sleep(10 * time.Second)
-	// 	}
-	// }()
+	ctl_t0 := time.Now().UnixNano()
+	tokenStr := fmt.Sprintf("token:%v", ctl_t0)
 
 	for {
 		mt, message, err := conn.ReadMessage()
@@ -93,24 +65,30 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		strMessage := string(message)
 		internal.Logger.Sugar().Debugf("recv: type=<%v>, msg=<%v>", mt, string(strMessage))
 		if strMessage == "hi" {
-			conn.WriteMessage(websocket.TextMessage, []byte("hi"))
+			conn.WriteMessage(websocket.TextMessage, []byte(tokenStr))
 		}
 
 		sendMsg := "..."
 
-		if strings.HasPrefix(strMessage, "_r_:") {
-			err := hc_restore(hubId)
-			if err == nil {
-				sendMsg = "restoring hub instance, this may take a few minutes"
-			} else if strings.HasPrefix(err.Error(), "***") {
-				sendMsg = err.Error()
+		if strings.HasPrefix(strMessage, "token:") {
+			dt := time.Since(time.Unix(ctl_t0/int64(time.Second), 0))
+			internal.Logger.Sugar().Debugf("dt: %v", dt)
+			if strMessage == tokenStr && dt > 8*time.Second {
+				err := hc_restore(hubId)
+				if err == nil {
+					sendMsg = "restoring hub instance, this may take a few minutes"
+				} else if strings.HasPrefix(err.Error(), "***") {
+					sendMsg = err.Error()
+				}
+			} else {
+				sendMsg = "-_-"
+				internal.Logger.Sugar().Debugf("strMessage=<%v>, (need) tokenStr=<%v>", strMessage, tokenStr)
 			}
-
-			err = conn.WriteMessage(mt, []byte(sendMsg))
-			if err != nil {
-				internal.Logger.Debug("err @ conn.WriteMessage:" + err.Error())
-				break
-			}
+		}
+		err = conn.WriteMessage(mt, []byte(sendMsg))
+		if err != nil {
+			internal.Logger.Debug("err @ conn.WriteMessage:" + err.Error())
+			break
 		}
 
 	}
