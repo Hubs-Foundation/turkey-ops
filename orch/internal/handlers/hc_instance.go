@@ -360,7 +360,7 @@ func hc_restore(hubId string) error {
 	if err != nil {
 		if _, err := os.Stat(hubDir + "/cfg.json.wip"); err == nil {
 			internal.Logger.Warn("hc_restore already in progress (started by another orch instance?)")
-			return fmt.Errorf("restoring hub instance, this may take a few minutes")
+			return fmt.Errorf("***restoring hub instance, this may take a few minutes")
 		}
 		return err
 	}
@@ -414,13 +414,16 @@ func hc_restore(hubId string) error {
 	}
 	err = CreateHubsCloudInstance(cfg)
 	if err != nil {
+		internal.Logger.Sugar().Errorf("Failed to recreate: %s", err)
 		return fmt.Errorf("failed to create, err: %v", err)
 	}
 
 	err = ioutil.WriteFile("trc_ts", []byte(time.Now().Format(time.RFC3339)), 0644)
 	if err != nil {
-		return fmt.Errorf("Failed writing trc_ts file: %s", err)
+		internal.Logger.Sugar().Errorf("Failed writing trc_ts file: %s", err)
+		return fmt.Errorf("failed writing trc_ts file: %s", err)
 	}
+	os.Remove(hubDir + "/cfg.json.wip")
 
 	return nil
 }
