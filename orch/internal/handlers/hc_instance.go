@@ -247,6 +247,11 @@ func hc_collect(cfg HCcfg) error {
 	nsName := "hc-" + cfg.HubId
 	hubDir := "/turkeyfs/" + nsName
 
+	err := ioutil.WriteFile(hubDir+"/collecting", []byte(time.Now().Format(time.RFC3339)), 0644)
+	if err != nil {
+		return err
+	}
+
 	// backup -- config
 	cfgJsonBytes, err := json.Marshal(cfg)
 	if err != nil {
@@ -321,12 +326,22 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	//delete, keepData == true
-	err = DeleteHubsCloudInstance(cfg.HubId, true, false)
+	deleting, err := DeleteHubsCloudInstance(cfg.HubId, true, false)
+	if err != nil {
+		return err
+	}
+	for m := range deleting {
+		internal.Logger.Debug(m)
+	}
+	err = os.Remove(hubDir + "/collecting")
+	if err != nil {
+		return err
+	}
 
+	// todo -- multi-cluster status mgmt
 	// OrchDb_updateHub_status(cfg.HubId, "collected")
 
-	return err
-
+	return nil
 }
 
 func hc_restore(hubId string) error {
@@ -342,6 +357,16 @@ func hc_restore(hubId string) error {
 
 	nsName := "hc-" + hubId
 	hubDir := "/turkeyfs/" + nsName
+
+	waitTtl := 15 * time.Minute
+	for {
+		_, err := os.Stat(hubDir + "/collecting")
+		if os.IsNotExist(err) {
+			break
+		}
+		time.Sleep(1 * time.Minute)
+		waitTtl -= 1 * time.Minute
+	}
 
 	//check cooldown
 	if tsBytes, err := ioutil.ReadFile(hubDir + "/trc_ts"); err == nil {
@@ -919,14 +944,14 @@ func makeHcCfg(cfg HCcfg) (HCcfg, error) {
 	return cfg, nil
 }
 
-func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) error {
+func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (string), error) {
 
 	//mark the hc- namespace for the cleanup cronjob (todo)
 	nsName := "hc-" + hubId
 	err := internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
 	if err != nil {
 		internal.Logger.Error("failed @PatchNsAnnotation, err: " + err.Error())
-		return errors.New("failed @PatchNsAnnotation, err: " + err.Error())
+		return nil, errors.New("failed @PatchNsAnnotation, err: " + err.Error())
 	}
 	//remove ingress route
 	err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{})
@@ -943,41 +968,46 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) error {
 		}
 	}
 
+	deleting := make(chan string)
 	go func() {
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
+		deleting <- "scaling down " + nsName
 		hc_switch(hubId, "down")
 		err := internal.Cfg.K8ss_local.WaitForPodKill(nsName, 60*time.Minute, 1)
 		if err != nil {
 			internal.Logger.Error("error @WaitForPodKill: " + err.Error())
+			close(deleting)
 			return
 		}
 		//delete ns
+		deleting <- "deleting ns" + nsName
 		err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Delete(context.TODO(),
 			nsName,
 			metav1.DeleteOptions{})
 		if err != nil {
 			internal.Logger.Error("delete ns failed: " + err.Error())
+			close(deleting)
 			return
 		}
 		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
 
 		if !keepFiles {
-			// delete hc-<hub-id> folder on turkeyfs (if any)
+			deleting <- "deleting files"
 			if len(hubId) < 1 {
 				internal.Logger.Error("DANGER!!! empty HubId")
 			} else {
 				os.RemoveAll("/turkeyfs/hc-" + hubId)
 			}
-			// delete GCS (if any)
 			err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hubId+"."+internal.Cfg.Domain)
 			if err != nil {
 				internal.Logger.Error("delete ns failed: " + err.Error())
+				close(deleting)
 				return
 			}
 		}
 		if !keepDB {
-			//delete db
+			deleting <- "deleting db"
 			dbName := "ret_" + hubId
 			internal.Logger.Debug("&#128024 deleting db: " + dbName)
 			force := true
@@ -987,19 +1017,23 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) error {
 					err = pg_kick_all(dbName)
 					if err != nil {
 						internal.Logger.Error(err.Error())
+						close(deleting)
 						return
 					}
 					_, err = internal.PgxPool.Exec(context.Background(), "drop database "+dbName)
 				}
 				if err != nil {
 					internal.Logger.Error(err.Error())
+					close(deleting)
 					return
 				}
 			}
 			internal.Logger.Debug("&#128024 deleted db: " + dbName)
 		}
+		deleting <- "done deleting: " + nsName
+		close(deleting)
 	}()
-	return nil
+	return deleting, nil
 }
 
 func pg_kick_all(dbName string) error {
