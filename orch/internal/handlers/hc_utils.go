@@ -534,14 +534,16 @@ func hc_updateTier(cfg HCcfg) error {
 
 	// reousrce quotas, in: {"cpu req", "ram req", "cpu limit", "ram limit"}
 	map_tiers_retCpuRam := map[string][]string{
-		"p0": []string{"250m", "250Mi", "500m", "500Mi"},
-		"p1": []string{"250m", "250Mi", "500m", "500Mi"},
-		"b1": []string{"2500m", "2500Mi", "3500m", "3500Mi"},
+		"p0": {"250m", "250Mi", "500m", "500Mi"},
+		"p1": {"250m", "250Mi", "500m", "500Mi"},
+		"b0": {"750m", "750Mi", "1500m", "1500Mi"},
+		"b1": {"2500m", "2500Mi", "3500m", "3500Mi"},
 	}
 	// pod counts
 	map_tiers_retPodCnt := map[string]int{
 		"p0": 1,
 		"p1": 2,
+		"b0": 2,
 		"b1": 2,
 	}
 
