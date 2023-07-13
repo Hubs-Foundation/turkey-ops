@@ -64,11 +64,12 @@ func orchCollect() error {
 	data := fmt.Sprintf(`{"hub_id": "%v", "subdomain":"%v","tier":%v,"useremail":%v,"guardiankey":"%v","phxkey":"%v"}`,
 		hub_id, cfg.SubDomain, cfg.Tier, cfg.RootUserEmail, cfg.Ret_guardiankey, cfg.Ret_phxkey)
 
-	req, err := http.NewRequest("PATCH", cfg.turkeyorchHost+"/hc_instance?status=collect", bytes.NewBuffer([]byte(data)))
+	req, err := http.NewRequest("PATCH", "http://"+cfg.turkeyorchHost+"/hc_instance?status=collect", bytes.NewBuffer([]byte(data)))
 	if err != nil {
 		return err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	var httpClient = &http.Client{Timeout: 300 * time.Second}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
