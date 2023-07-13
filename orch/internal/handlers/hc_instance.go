@@ -418,7 +418,7 @@ func hc_restore(hubId string) error {
 		return fmt.Errorf("failed to create, err: %v", err)
 	}
 
-	err = ioutil.WriteFile("trc_ts", []byte(time.Now().Format(time.RFC3339)), 0644)
+	err = ioutil.WriteFile(hubDir+"/trc_ts", []byte(time.Now().Format(time.RFC3339)), 0644)
 	if err != nil {
 		internal.Logger.Sugar().Errorf("Failed writing trc_ts file: %s", err)
 		return fmt.Errorf("failed writing trc_ts file: %s", err)
