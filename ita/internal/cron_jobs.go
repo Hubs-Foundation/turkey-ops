@@ -61,10 +61,19 @@ func Cronjob_pauseHC(interval time.Duration) {
 
 func orchCollect() error {
 	hub_id := strings.Split(cfg.PodNS, "-")[1]
-	data := fmt.Sprintf(`{"hub_id": "%v", "subdomain":"%v","tier":%v,"useremail":%v,"guardiankey":"%v","phxkey":"%v"}`,
-		hub_id, cfg.SubDomain, cfg.Tier, cfg.RootUserEmail, cfg.Ret_guardiankey, cfg.Ret_phxkey)
+	// data := fmt.Sprintf(`{"hub_id": "%v", "subdomain":"%v","tier":"%v","useremail":"%v","guardiankey":"%v","phxkey":"%v"}`,
+	// 	hub_id, cfg.SubDomain, cfg.Tier, cfg.RootUserEmail, cfg.Ret_guardiankey, cfg.Ret_phxkey)
 
-	req, err := http.NewRequest("PATCH", "http://"+cfg.turkeyorchHost+"/hc_instance?status=collect", bytes.NewBuffer([]byte(data)))
+	data, _ := json.Marshal(map[string]string{
+		"hub_id":      hub_id,
+		"subdomain":   cfg.SubDomain,
+		"tier":        cfg.Tier,
+		"useremail":   cfg.RootUserEmail,
+		"guardiankey": cfg.Ret_guardiankey,
+		"phxkey":      cfg.Ret_phxkey,
+	})
+
+	req, err := http.NewRequest("PATCH", "http://"+cfg.turkeyorchHost+"/hc_instance?status=collect", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
