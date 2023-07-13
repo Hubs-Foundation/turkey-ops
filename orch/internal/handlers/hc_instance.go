@@ -423,9 +423,10 @@ func hc_restore(hubId string) error {
 		internal.Logger.Sugar().Errorf("Failed writing trc_ts file: %s", err)
 		return fmt.Errorf("failed writing trc_ts file: %s", err)
 	}
-	os.Remove(hubDir + "/cfg.json.wip")
 
-	return nil
+	err = os.Remove(hubDir + "/cfg.json.wip")
+
+	return err
 }
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
