@@ -376,7 +376,7 @@ func hc_restore(hubId string) error {
 		}
 		cooldownLeft := 12*time.Hour - time.Since(t)
 		if cooldownLeft > 0 {
-			return fmt.Errorf("***cooldown in progress -- try again in %v", strings.Split(cooldownLeft.String(), ".")[0])
+			return fmt.Errorf("***cooldown in progress -- try again in %vs", strings.Split(cooldownLeft.String(), ".")[0])
 		}
 	}
 
