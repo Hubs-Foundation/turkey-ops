@@ -62,21 +62,23 @@
                         state=2
                         // clearInterval(unpausingLoop);
                         console.log("state:", state)
-                        const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 45000, false);})
+                        await new Promise(r => setTimeout(r, 45000));
+                        console.log("start poking")
                         
+                        const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 5000, false);})
                         document.getElementById('msg_line1').innerText = "waiting for backend"
                         document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"                        
                         setInterval(async function() {
                             const readinessCheck = Promise.all([
                                 fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
                                 fetch("https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
-                            ]).then(([status1, status2]) => status1 === 200 && status2 === 200);
+                            ]).then(([status1, status2]) => status1 < 300 && status2 < 300);
                             const ready=await Promise.race([timeout, readinessCheck])
                             console.log("ready: ", ready)
                             if (ready) {
                                 location.reload();
                             }
-                        }, 15000);
+                        }, 10000);
                     }                    
                     break;        
             }
