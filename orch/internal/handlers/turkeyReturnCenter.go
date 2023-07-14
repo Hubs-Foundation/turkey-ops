@@ -101,7 +101,7 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 				if err == nil {
 					sendMsg = "_ok_"
 				} else {
-					internal.Logger.Sugar().Errorf("failed @hc_restore: %v", err)
+					internal.Logger.Sugar().Warn("failed @hc_restore: %v", err)
 					if strings.HasPrefix(err.Error(), "***") {
 						sendMsg = err.Error()[3:]
 					}

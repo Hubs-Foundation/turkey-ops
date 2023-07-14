@@ -408,8 +408,12 @@ func hc_restore(hubId string) error {
 	dBname := "ret_" + hubId
 	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+dBname+"\"")
 	if err != nil {
-		internal.Logger.Sugar().Errorf("failed to create db: %v", err)
-		return err
+		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
+			internal.Logger.Sugar().Warn("db already exists: %v", err)
+		} else {
+			internal.Logger.Sugar().Errorf("unexpected error @ create db: %v", err)
+			return err
+		}
 	}
 
 	cfg := HCcfg{}
