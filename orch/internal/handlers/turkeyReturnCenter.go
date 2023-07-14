@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"main/internal"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,9 +55,6 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 	}
 	defer conn.Close()
 
-	ctl_t0 := time.Now().UnixNano()
-	tokenStr := fmt.Sprintf("token:%v", ctl_t0)
-
 	for {
 		mt, message, err := conn.ReadMessage()
 		if err != nil {
@@ -65,6 +64,9 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		strMessage := string(message)
 		internal.Logger.Sugar().Debugf("recv: type=<%v>, msg=<%v>", mt, string(strMessage))
 		if strMessage == "hi" {
+			ctl_t0 := time.Now().UnixNano()
+			tokenStr := fmt.Sprintf("token:%v", ctl_t0)
+			internal.Cfg.Redis.Client().Set(context.Background(), "trc_"+subdomain, tokenStr, 1*time.Hour)
 			conn.WriteMessage(websocket.TextMessage, []byte(tokenStr))
 			continue
 		}
@@ -72,9 +74,16 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		sendMsg := "..."
 
 		if strings.HasPrefix(strMessage, "token:") {
+			tokenStr, _ := internal.Cfg.Redis.Client().Get(context.Background(), "trc_"+subdomain).Result()
+			if tokenStr != strMessage {
+				internal.Logger.Sugar().Debugf("bad token, want <%v>, get <%v>", tokenStr, strMessage)
+				break
+			}
+			ctl_t0_str := strings.TrimPrefix(tokenStr, "token:")
+			ctl_t0, _ := strconv.ParseInt(ctl_t0_str, 10, 64)
 			dt := time.Since(time.Unix(ctl_t0/int64(time.Second), 0))
-			internal.Logger.Sugar().Debugf("dt: %v", dt)
-			if strMessage == tokenStr && dt > 8*time.Second {
+
+			if dt > 9*time.Second {
 				err := hc_restore(hubId)
 				if err == nil {
 					sendMsg = "restoring hub instance, this may take a few minutes"
@@ -82,6 +91,7 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 					sendMsg = err.Error()[3:]
 				}
 			} else {
+				internal.Logger.Sugar().Debugf("bad dt: %v", dt)
 				sendMsg = "-_-"
 				internal.Logger.Sugar().Debugf("strMessage=<%v>, (need) tokenStr=<%v>", strMessage, tokenStr)
 			}
