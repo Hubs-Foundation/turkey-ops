@@ -29,6 +29,7 @@
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
         var countdown=10;
         var state=0;
+        var wait=60;
         var tokenStr=""
 
         updateDuckRotation(countdown)
@@ -67,15 +68,19 @@
                     }
                     break
                 case 2:
-                    document.getElementById('msg_line1').innerText = "waiting for backend"
-                    document.getElementById('msg_line2').innerText = "[ may take a few minutes ]"
+                    wait--
+                    document.getElementById('msg_line1').innerText = "waiting for backend ( "+wait+" )"
+                    document.getElementById('msg_line2').innerText += "."
+                    await new Promise(r => setTimeout(r, 1000));
+                    if (wait <=0){
+                        state=3
+                    }
                     break
                 case 3:
-                    document.getElementById('msg_line1').innerText += "."
-                    clearInterval(unpausingLoop);
-
-                    await new Promise(r => setTimeout(r, 45000));
                     console.log("poking")
+                    state=4
+                    document.getElementById('msg_line1').innerText = "refreshing"
+                    document.getElementById('msg_line2').innerText = ""
                     setInterval(async function() {                            
                         const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 2000, false);})
                         const readinessCheck = Promise.all([
