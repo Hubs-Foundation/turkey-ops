@@ -21,6 +21,8 @@ type key int
 
 var Healthy int32
 
+var RunningTask int32
+
 type Server struct {
 	port         int
 	isHttps      bool
@@ -97,10 +99,16 @@ func (s *Server) Start() {
 	go func() {
 		<-quit
 		Logger.Debug("Server is shutting down...")
+
+		for RunningTask > 0 {
+			Logger.Sugar().Debugf("waiting, RunningTask: %v", RunningTask)
+			time.Sleep(5 * time.Second)
+		}
+
 		atomic.StoreInt32(&Healthy, 0)
 
 		ctx, cancel := context.WithTimeout(context.Background(),
-			10*time.Minute) //30 sec or longer probably i guess depends on the thing
+			5*time.Minute) //30 sec or longer probably i guess depends on the thing
 		defer cancel()
 
 		server.SetKeepAlivesEnabled(false)

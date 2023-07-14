@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+	"sync/atomic"
 
 	"net/http"
 	"net/url"
@@ -243,6 +244,8 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 }
 
 func hc_collect(cfg HCcfg) error {
+	atomic.AddInt32(&internal.RunningTask, 1)
+	defer atomic.AddInt32(&internal.RunningTask, -1)
 
 	nsName := "hc-" + cfg.HubId
 	hubDir := "/turkeyfs/" + nsName
@@ -346,6 +349,8 @@ func hc_collect(cfg HCcfg) error {
 var hc_restore_cooldown = 6 * time.Hour
 
 func hc_restore(hubId string) error {
+	atomic.AddInt32(&internal.RunningTask, 1)
+	defer atomic.AddInt32(&internal.RunningTask, -1)
 	// //find hubId
 	// trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
 	// if err != nil {
@@ -465,6 +470,8 @@ func hc_restore(hubId string) error {
 }
 
 func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
+	atomic.AddInt32(&internal.RunningTask, 1)
+	defer atomic.AddInt32(&internal.RunningTask, -1)
 
 	// tier change
 	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
@@ -500,6 +507,8 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 }
 
 func CreateHubsCloudInstance(hcCfg HCcfg) error {
+	atomic.AddInt32(&internal.RunningTask, 1)
+	defer atomic.AddInt32(&internal.RunningTask, -1)
 	// #1.1 pre-deployment checks
 	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
 		metav1.ListOptions{LabelSelector: "hub_id=" + hcCfg.HubId})
@@ -955,6 +964,8 @@ func makeHcCfg(cfg HCcfg) (HCcfg, error) {
 }
 
 func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (string), error) {
+	atomic.AddInt32(&internal.RunningTask, 1)
+	defer atomic.AddInt32(&internal.RunningTask, -1)
 
 	//mark the hc- namespace for the cleanup cronjob (todo)
 	nsName := "hc-" + hubId
@@ -1083,6 +1094,8 @@ func pg_kick_all(dbName string) error {
 }
 
 func hc_switch(HubId, status string) error {
+	atomic.AddInt32(&internal.RunningTask, 1)
+	defer atomic.AddInt32(&internal.RunningTask, -1)
 
 	ns := "hc-" + HubId
 
