@@ -63,6 +63,7 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		}
 		strMessage := string(message)
 		internal.Logger.Sugar().Debugf("recv: type=<%v>, msg=<%v>", mt, strMessage)
+
 		if strMessage == "hi" {
 			ctl_t0 := time.Now().UnixNano()
 			tokenStr := fmt.Sprintf("token:%v", ctl_t0)
@@ -80,11 +81,11 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 			tokenStr, err := internal.Cfg.Redis.Client().Get(context.Background(), "trc_"+subdomain).Result()
 			if err != nil {
 				internal.Logger.Sugar().Errorf("failed to retrieve tokenStr: %v", err)
-				break
+				continue
 			}
 			if tokenStr != strMessage {
 				internal.Logger.Sugar().Debugf("bad token, want <%v>, get <%v>", tokenStr, strMessage)
-				break
+				continue
 			}
 			ctl_t0_str := strings.TrimPrefix(tokenStr, "token:")
 			ctl_t0, _ := strconv.ParseInt(ctl_t0_str, 10, 64)
