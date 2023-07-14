@@ -71,11 +71,12 @@
                     break
                 case 2:
                     document.getElementById('msg_line2').innerText += "'";
+                    break
                 case 3:
                     console.log("start poking")
                     state=4
                     setInterval(async function() {     
-                        document.getElementById('msg_line1').innerText = "waiting for backend ( "+wait+" )"
+                        document.getElementById('msg_line1').innerText = "waiting for backend"
                         document.getElementById('msg_line2').innerText += "."                       
                         const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 2000, false);})
                         const readinessCheck = Promise.all([
@@ -87,7 +88,7 @@
                         if (ready) {
                             location.reload();
                         }
-                    }, 10000);
+                    }, 15000);
                     break
             }
         }, 1000);
