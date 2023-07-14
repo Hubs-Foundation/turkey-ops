@@ -330,7 +330,7 @@ func hc_collect(cfg HCcfg) error {
 	if err != nil {
 		return err
 	}
-	for m := range deleting {
+	for m := range deleting { //wait for completion
 		internal.Logger.Debug(m)
 	}
 	err = os.Remove(hubDir + "/collecting")
@@ -360,14 +360,19 @@ func hc_restore(hubId string) error {
 	nsName := "hc-" + hubId
 	hubDir := "/turkeyfs/" + nsName
 
-	waitTtl := 15 * time.Minute
-	for {
-		_, err := os.Stat(hubDir + "/collecting")
-		if os.IsNotExist(err) {
-			break
-		}
-		time.Sleep(1 * time.Minute)
-		waitTtl -= 1 * time.Minute
+	// waitTtl := 15 * time.Minute
+	// for {
+	// 	_, err := os.Stat(hubDir + "/collecting")
+	// 	if os.IsNotExist(err) {
+	// 		break
+	// 	}
+	// 	time.Sleep(1 * time.Minute)
+	// 	waitTtl -= 1 * time.Minute
+	// }
+
+	_, err := os.Stat(hubDir + "/collecting")
+	if err == nil {
+		return errors.New("***busy ... try again later")
 	}
 
 	//check cooldown
