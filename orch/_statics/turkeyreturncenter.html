@@ -41,6 +41,20 @@
             }
             if (event.data == "_ok_"){
                 state=3
+                await new Promise(r => setTimeout(r, 45000));
+                console.log("poking")
+                setInterval(async function() {                            
+                    const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 2000, false);})
+                    const readinessCheck = Promise.all([
+                        fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
+                        fetch("https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
+                    ]).then(([status1, status2]) => status1 < 300 && status2 < 300);                            
+                    const ready=await Promise.race([timeout, readinessCheck])
+                    console.log("ready: ", ready)
+                    if (ready) {
+                        location.reload();
+                    }
+                }, 10000);
                 return
             }
             document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
@@ -63,30 +77,14 @@
                     if (countdown <= 0 ) {
                         socket.send(tokenStr)
                         state=2
-                        document.getElementById('msg_line1').innerText = "unpausing"
-                        clearInterval(unpausingLoop);
-                        console.log("state:", state)
-                        await new Promise(r => setTimeout(r, 45000));
-                        console.log("state:", state)
-                        if (state!=3){
-                            break
-                        }                                                
-                        document.getElementById('msg_line1').innerText = "waiting for backend"
-                        document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"                        
-                        setInterval(async function() {                            
-                            const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 2000, false);})
-                            const readinessCheck = Promise.all([
-                                fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
-                                fetch("https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
-                            ]).then(([status1, status2]) => status1 < 300 && status2 < 300);                            
-                            const ready=await Promise.race([timeout, readinessCheck])
-                            console.log("ready: ", ready)
-                            if (ready) {
-                                location.reload();
-                            }
-                        }, 10000);
-                    }                    
-                    break;        
+                        document.getElementById('msg_line1').innerText = "unpausing requested"
+                    }
+                case 2:
+                    document.getElementById('msg_line1').innerText = "waiting for backend"
+                    document.getElementById('msg_line2').innerText = "[ may take a few minutes ]"
+                case 3:
+                    document.getElementById('msg_line1').innerText += "."
+                    // clearInterval(unpausingLoop);
             }
         }, 1000);
         
