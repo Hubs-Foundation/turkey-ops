@@ -387,7 +387,7 @@ func hc_restore(hubId string) error {
 		}
 
 		if time.Since(t) < 10*time.Minute {
-			return fmt.Errorf("***_refresh")
+			return fmt.Errorf("***_ok_")
 		}
 		cooldownLeft := hc_restore_cooldown - time.Since(t)
 		if cooldownLeft > 0 {
