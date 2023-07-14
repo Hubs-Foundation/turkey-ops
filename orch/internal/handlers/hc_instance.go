@@ -370,7 +370,7 @@ func hc_restore(hubId string) error {
 	// }
 
 	if _, err := os.Stat(hubDir + "/collecting"); err == nil {
-		return errors.New("***busy ... try again later")
+		return errors.New("***blocked ... try again later")
 	}
 
 	//check cooldown
