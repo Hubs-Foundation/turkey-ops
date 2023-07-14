@@ -65,9 +65,11 @@
                         state=2
                         document.getElementById('msg_line1').innerText = "unpausing requested"
                     }
+                    break
                 case 2:
                     document.getElementById('msg_line1').innerText = "waiting for backend"
                     document.getElementById('msg_line2').innerText = "[ may take a few minutes ]"
+                    break
                 case 3:
                     document.getElementById('msg_line1').innerText += "."
                     clearInterval(unpausingLoop);
@@ -86,7 +88,7 @@
                             location.reload();
                         }
                     }, 10000);
-                    
+                    break
             }
         }, 1000);
         
