@@ -369,8 +369,7 @@ func hc_restore(hubId string) error {
 	// 	waitTtl -= 1 * time.Minute
 	// }
 
-	_, err := os.Stat(hubDir + "/collecting")
-	if err == nil {
+	if _, err := os.Stat(hubDir + "/collecting"); err == nil {
 		return errors.New("***busy ... try again later")
 	}
 

@@ -100,8 +100,11 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 				err := hc_restore(hubId)
 				if err == nil {
 					sendMsg = "restoring hub instance, this may take a few minutes"
-				} else if strings.HasPrefix(err.Error(), "***") {
-					sendMsg = err.Error()[3:]
+				} else {
+					internal.Logger.Sugar().Errorf("failed @hc_restore: %v", err)
+					if strings.HasPrefix(err.Error(), "***") {
+						sendMsg = err.Error()[3:]
+					}
 				}
 			} else {
 				internal.Logger.Sugar().Debugf("bad dt: %v", dt)
