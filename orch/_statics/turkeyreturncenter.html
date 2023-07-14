@@ -64,15 +64,21 @@
                         console.log("state:", state)
                         await new Promise(r => setTimeout(r, 45000));
                         console.log("start poking")
-                        
-                        const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 5000, false);})
+                                                
+                        const timeout = new Promise((resolve, reject) => {
+                            setTimeout(resolve, 1000, false);
+                        })
                         document.getElementById('msg_line1').innerText = "waiting for backend"
                         document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"                        
                         setInterval(async function() {
+                            const timeout = new Promise((resolve, reject) => {
+                                setTimeout(resolve, 1000, false);
+                            })
                             const readinessCheck = Promise.all([
                                 fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
                                 fetch("https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
-                            ]).then(([status1, status2]) => status1 < 300 && status2 < 300);
+                            ]).then(([status1, status2]) => status1 === 200 && status2 === 200);
+                            console.log("readinessCheck: ", readinessCheck)
                             const ready=await Promise.race([timeout, readinessCheck])
                             console.log("ready: ", ready)
                             if (ready) {
@@ -87,13 +93,6 @@
         function updateDuckRotation(countdown){
             document.getElementById('duckPic').style.transform='rotate(' + (countdown * 18).toString() + 'deg)';
         }
-
-        // async function checkEndpoint(ep) {
-        //     var resp
-        //     resp = await fetch(ep)
-        //     console.log(resp.status, ep)
-        //     return resp.status == 200
-        // }
 
 	</script>
 </body>
