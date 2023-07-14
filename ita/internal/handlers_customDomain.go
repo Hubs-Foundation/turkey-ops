@@ -28,8 +28,9 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
-		if current, _ := Deployment_getLabel("custom-domain"); fromDomain != current {
-			http.Error(w, fmt.Sprintf("mismatch: from_domain %v, current: %v", fromDomain, current), http.StatusBadRequest)
+		currentDomain, _ := Deployment_getLabel("custom-domain")
+		if fromDomain != currentDomain {
+			http.Error(w, fmt.Sprintf("mismatch: from_domain %v, current: %v", fromDomain, currentDomain), http.StatusBadRequest)
 			return
 		}
 
