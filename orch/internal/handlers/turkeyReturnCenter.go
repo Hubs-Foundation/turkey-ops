@@ -78,13 +78,13 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		sendMsg := "..."
 
 		if strings.HasPrefix(strMessage, "token:") {
-			internal.Logger.Debug("strMessage: " + strMessage)
+			// internal.Logger.Debug("strMessage: " + strMessage)
 			tokenStr, err := internal.Cfg.Redis.Client().Get(context.Background(), "trc_"+subdomain).Result()
 			if err != nil {
 				internal.Logger.Sugar().Errorf("failed to retrieve tokenStr: %v", err)
 				continue
 			}
-			internal.Logger.Debug("tokenStr: " + tokenStr)
+			// internal.Logger.Debug("tokenStr: " + tokenStr)
 
 			if tokenStr != strMessage {
 				internal.Logger.Sugar().Debugf("bad token, want <%v>, get <%v>", tokenStr, strMessage)
@@ -95,8 +95,7 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 			ctl_t0, _ := strconv.ParseInt(ctl_t0_str, 10, 64)
 			dt := time.Since(time.Unix(ctl_t0/int64(time.Second), 0))
 
-			internal.Logger.Sugar().Debugf("dt:%v", dt)
-
+			internal.Logger.Sugar().Debugf("dt:%v, dt > 9*time.Second %v", dt, (dt > 9*time.Second))
 			if dt > 9*time.Second {
 				err := hc_restore(hubId)
 				if err == nil {
