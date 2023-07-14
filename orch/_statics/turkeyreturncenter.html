@@ -39,6 +39,10 @@
                 tokenStr=event.data
                 return
             }
+            if (event.data == "_ok_"){
+                state=2
+                return
+            }
             document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
         };
         socket.onopen = function (event) {
@@ -59,7 +63,6 @@
                     if (countdown <= 0 ) {
                         socket.send(tokenStr)
                         document.getElementById('msg_line1').innerText = "unpausing"
-                        state=2
                         // clearInterval(unpausingLoop);
                         console.log("state:", state)
                         await new Promise(r => setTimeout(r, 45000));
