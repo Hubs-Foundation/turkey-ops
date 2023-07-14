@@ -39,6 +39,11 @@
                 tokenStr=event.data
                 return
             }
+            if (event.data == "..."){
+                await new Promise(r => setTimeout(r, 3000));
+                location.reload();
+                return
+            }
             document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
         };
         socket.onopen = function (event) {
