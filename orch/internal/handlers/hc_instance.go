@@ -355,9 +355,9 @@ func hc_restore(hubId string) error {
 	// if hubId == "" {
 	// 	return errors.New("failed to get hubId for subdomain: %v" + subdomain)
 	// }
-
 	nsName := "hc-" + hubId
 	hubDir := "/turkeyfs/" + nsName
+	internal.Logger.Sugar().Debugf("nsName: %v, hubDir: %v", nsName, hubDir)
 
 	// waitTtl := 15 * time.Minute
 	// for {
