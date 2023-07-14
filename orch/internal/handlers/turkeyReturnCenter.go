@@ -67,7 +67,7 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		if strMessage == "hi" {
 			ctl_t0 := time.Now().UnixNano()
 			tokenStr := fmt.Sprintf("token:%v", ctl_t0)
-			err := internal.Cfg.Redis.Client().Set(context.Background(), "trc_"+subdomain, tokenStr, 1*time.Hour).Err()
+			err := internal.Cfg.Redis.Client().Set(context.Background(), "trc_"+subdomain, tokenStr, 1*time.Minute).Err()
 			if err != nil {
 				internal.Logger.Sugar().Errorf("failed to cache tokenStr: %v", err)
 			}

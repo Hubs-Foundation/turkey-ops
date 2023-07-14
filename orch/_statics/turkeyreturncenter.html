@@ -40,7 +40,7 @@
                 return
             }
             if (event.data == "_ok_"){
-                state=2
+                state=3
                 return
             }
             document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
@@ -62,13 +62,15 @@
                     }
                     if (countdown <= 0 ) {
                         socket.send(tokenStr)
+                        state=2
                         document.getElementById('msg_line1').innerText = "unpausing"
-                        // clearInterval(unpausingLoop);
+                        clearInterval(unpausingLoop);
                         console.log("state:", state)
                         await new Promise(r => setTimeout(r, 45000));
-                        console.log("start poking")
-                        
-                        
+                        console.log("state:", state)
+                        if (state!=3){
+                            break
+                        }                                                
                         document.getElementById('msg_line1').innerText = "waiting for backend"
                         document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"                        
                         setInterval(async function() {                            
@@ -82,7 +84,7 @@
                             if (ready) {
                                 location.reload();
                             }
-                        }, 15000);
+                        }, 10000);
                     }                    
                     break;        
             }
