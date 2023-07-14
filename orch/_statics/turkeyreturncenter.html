@@ -60,8 +60,8 @@
                         socket.send(tokenStr)
                         document.getElementById('msg_line1').innerText = "unpausing"
                         state=2
-                        clearInterval(unpausingLoop);
-
+                        // clearInterval(unpausingLoop);
+                        console.log("state:", state)
                         const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 45000, false);})
                         
                         document.getElementById('msg_line1').innerText = "waiting for backend"
