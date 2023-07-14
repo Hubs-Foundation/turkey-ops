@@ -377,32 +377,33 @@ func hc_restore(hubId string) error {
 			internal.Logger.Sugar().Errorf("failed to deserialize time: %s", err)
 			return fmt.Errorf("failed to deserialize time: %s", err)
 		}
-		cooldownLeft := hc_restore_cooldown - time.Since(t)
-		if hc_restore_cooldown-cooldownLeft < 10*time.Minute {
+
+		if time.Since(t) < 10*time.Minute {
 			return fmt.Errorf("***_refresh")
 		}
+		cooldownLeft := hc_restore_cooldown - time.Since(t)
 		if cooldownLeft > 0 {
 			return fmt.Errorf("***cooldown in progress -- try again in %vs", strings.Split(cooldownLeft.String(), ".")[0])
 		}
 	}
-
-	// create db
-	dBname := "ret_" + hubId
-	_, err := internal.PgxPool.Exec(context.Background(), "create database \""+dBname+"\"")
-	if err != nil {
-		internal.Logger.Sugar().Errorf("failed to create db: %v", err)
-		return err
-	}
-
 	// get configs
 	cfgBytes, err := ioutil.ReadFile(hubDir + "/cfg.json")
 	if err != nil {
 		if _, err := os.Stat(hubDir + "/cfg.json.wip"); err == nil {
 			internal.Logger.Warn("hc_restore already in progress (started by another orch instance?)")
-			return fmt.Errorf("***restoring hub instance, this may take a few minutes")
+			return fmt.Errorf("***working on it")
 		}
 		return err
 	}
+
+	// create db
+	dBname := "ret_" + hubId
+	_, err = internal.PgxPool.Exec(context.Background(), "create database \""+dBname+"\"")
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to create db: %v", err)
+		return err
+	}
+
 	cfg := HCcfg{}
 	err = json.Unmarshal(cfgBytes, &cfg)
 	if err != nil {
