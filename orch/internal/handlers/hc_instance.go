@@ -346,7 +346,7 @@ func hc_collect(cfg HCcfg) error {
 	return nil
 }
 
-var hc_restore_cooldown = 6 * time.Hour
+var hc_restore_cooldown = 30 * time.Minute
 
 func hc_restore(hubId string) error {
 	atomic.AddInt32(&internal.RunningTask, 1)

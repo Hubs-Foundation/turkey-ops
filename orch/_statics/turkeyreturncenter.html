@@ -29,7 +29,7 @@
         var socket = new WebSocket("wss://" + window.location.host+"/websocket")
         var countdown=10;
         var state=0;
-        var wait=60;
+        var wait=30;
         var tokenStr=""
 
         updateDuckRotation(countdown)
@@ -42,6 +42,7 @@
             }
             if (event.data == "_ok_"){
                 state=3
+                document.getElementById('msg_line1').innerText = "unpausing"
                 return
             }
             document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
@@ -65,23 +66,17 @@
                         socket.send(tokenStr)
                         state=2
                         document.getElementById('msg_line1').innerText = "unpausing requested"
+                        document.getElementById('msg_line2').innerText = "";
                     }
                     break
                 case 2:
-                    wait--
-                    document.getElementById('msg_line1').innerText = "waiting for backend ( "+wait+" )"
-                    document.getElementById('msg_line2').innerText += "."
-                    await new Promise(r => setTimeout(r, 1000));
-                    if (wait <=0){
-                        state=3
-                    }
-                    break
+                    document.getElementById('msg_line2').innerText += "'";
                 case 3:
-                    console.log("poking")
+                    console.log("start poking")
                     state=4
-                    document.getElementById('msg_line1').innerText = "refreshing"
-                    document.getElementById('msg_line2').innerText = ""
-                    setInterval(async function() {                            
+                    setInterval(async function() {     
+                        document.getElementById('msg_line1').innerText = "waiting for backend ( "+wait+" )"
+                        document.getElementById('msg_line2').innerText += "."                       
                         const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 2000, false);})
                         const readinessCheck = Promise.all([
                             fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
