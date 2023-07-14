@@ -76,8 +76,7 @@
                     console.log("start poking")
                     state=4
                     setInterval(async function() {     
-                        document.getElementById('msg_line1').innerText = "waiting for backend"
-                        document.getElementById('msg_line2').innerText += "."                       
+                        document.getElementById('msg_line1').innerText = "waiting for backend"                   
                         const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 2000, false);})
                         const readinessCheck = Promise.all([
                             fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
@@ -90,6 +89,9 @@
                         }
                     }, 15000);
                     break
+                case 4:
+                    document.getElementById('msg_line2').innerText += "."
+
             }
         }, 1000);
         
