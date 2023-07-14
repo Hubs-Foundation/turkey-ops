@@ -37,11 +37,11 @@
             if (event.data.startsWith("token:")){
                 state=1
                 tokenStr=event.data
-                event.data = "."
+                return
             }
             if (event.data=="_refresh_"){
                 state=2
-                document.getElementById('msg_line1').innerText = "waiting for ingress update"
+                document.getElementById('msg_line1').innerText = "waiting for backend"
                 document.getElementById('msg_line2').innerText = "[ infra components may take a few more minutes to fully sync ]"
                 
                 setInterval(async function() {

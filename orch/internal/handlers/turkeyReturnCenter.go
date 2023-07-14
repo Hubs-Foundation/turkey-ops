@@ -79,7 +79,7 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 				if err == nil {
 					sendMsg = "restoring hub instance, this may take a few minutes"
 				} else if strings.HasPrefix(err.Error(), "***") {
-					sendMsg = err.Error()
+					sendMsg = err.Error()[3:]
 				}
 			} else {
 				sendMsg = "-_-"

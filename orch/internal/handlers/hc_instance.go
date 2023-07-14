@@ -344,6 +344,8 @@ func hc_collect(cfg HCcfg) error {
 	return nil
 }
 
+var hc_restore_cooldown = 6 * time.Hour
+
 func hc_restore(hubId string) error {
 	// //find hubId
 	// trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
@@ -372,9 +374,13 @@ func hc_restore(hubId string) error {
 	if tsBytes, err := ioutil.ReadFile(hubDir + "/trc_ts"); err == nil {
 		t, err := time.Parse(time.RFC3339, string(tsBytes))
 		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to deserialize time: %s", err)
 			return fmt.Errorf("failed to deserialize time: %s", err)
 		}
-		cooldownLeft := 12*time.Hour - time.Since(t)
+		cooldownLeft := hc_restore_cooldown - time.Since(t)
+		if hc_restore_cooldown-cooldownLeft < 10*time.Minute {
+			return fmt.Errorf("***_refresh")
+		}
 		if cooldownLeft > 0 {
 			return fmt.Errorf("***cooldown in progress -- try again in %vs", strings.Split(cooldownLeft.String(), ".")[0])
 		}
