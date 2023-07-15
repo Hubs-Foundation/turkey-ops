@@ -41,7 +41,8 @@
                 return
             }
             if (event.data == "_ok_"){
-                state=3
+                state=3                
+                document.getElementById('msg_line2').innerText += "|";
                 document.getElementById('msg_line1').innerText = "unpausing"
                 return
             }
@@ -87,10 +88,15 @@
                         if (ready) {
                             location.reload();
                         }
-                    }, 15000);
+                    document.getElementById('msg_line2').innerText += "0"
+                    }, 10000);
                     break
                 case 4:
-                    document.getElementById('msg_line2').innerText += "."
+                    l2text=document.getElementById('msg_line2').innerText
+                    l2text+="."
+                    msg2.replace('.....', 'v')
+                    msg2.replace('v', 'x')
+                    document.getElementById('msg_line2').innerText =msg2
 
             }
         }, 1000);
