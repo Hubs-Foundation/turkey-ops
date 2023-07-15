@@ -434,23 +434,6 @@ func hc_restore(hubId string) error {
 	}
 	// internal.Logger.Debug("dbCmd.out: " + string(out))
 
-	// drop route
-	internal.RetryFunc(15*time.Second, 3*time.Second, func() error {
-		trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
-		if err != nil {
-			return err
-		}
-		for idx, igRule := range trcIg.Spec.Rules {
-			if igRule.Host == cfg.Subdomain+"."+internal.Cfg.HubDomain {
-				trcIg.Spec.Rules = append(trcIg.Spec.Rules[:idx], trcIg.Spec.Rules[idx+1:]...)
-				break
-			}
-		}
-		_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(),
-			trcIg, metav1.UpdateOptions{})
-		return err
-	})
-
 	// recreate hub
 	cfg, err = makeHcCfg(cfg)
 	if err != nil {
@@ -467,6 +450,25 @@ func hc_restore(hubId string) error {
 		internal.Logger.Sugar().Errorf("Failed writing trc_ts file: %s", err)
 		return fmt.Errorf("failed writing trc_ts file: %s", err)
 	}
+
+	go func() { // drop route after 10 sec
+		time.Sleep(10 * time.Second)
+		internal.RetryFunc(15*time.Second, 3*time.Second, func() error {
+			trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
+			if err != nil {
+				return err
+			}
+			for idx, igRule := range trcIg.Spec.Rules {
+				if igRule.Host == cfg.Subdomain+"."+internal.Cfg.HubDomain {
+					trcIg.Spec.Rules = append(trcIg.Spec.Rules[:idx], trcIg.Spec.Rules[idx+1:]...)
+					break
+				}
+			}
+			_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(),
+				trcIg, metav1.UpdateOptions{})
+			return err
+		})
+	}()
 
 	err = os.Remove(hubDir + "/cfg.json.wip")
 
