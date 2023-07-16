@@ -708,3 +708,21 @@ func hc_task_translator(r *http.Request) string {
 	}
 	return ""
 }
+
+func getHCcfgFromHubDir(hubId string) (HCcfg, error) {
+	hubDir := "hc-" + hubId
+	cfg := HCcfg{}
+	cfgBytes, err := ioutil.ReadFile(hubDir + "/cfg.json")
+	if err != nil {
+		if _, err := os.Stat(hubDir + "/cfg.json.wip"); err == nil {
+			internal.Logger.Warn("hc_restore already in progress (started by another orch instance?)")
+			return cfg, fmt.Errorf("***working on it")
+		}
+		return cfg, err
+	}
+	err = json.Unmarshal(cfgBytes, &cfg)
+	if err != nil {
+		return cfg, err
+	}
+	return cfg, nil
+}

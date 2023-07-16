@@ -193,6 +193,27 @@ func (k8 K8sSvs) GetOrCreateTrcIngress() (*networkingv1.Ingress, error) {
 	return ig, err
 }
 
+func (k8 K8sSvs) TrcIg_deleteHost(host string) error {
+	RetryFunc(
+		15*time.Second, 3*time.Second,
+		func() error {
+			trcIg, err := k8.GetOrCreateTrcIngress()
+			if err != nil {
+				return err
+			}
+			for idx, igRule := range trcIg.Spec.Rules {
+				if igRule.Host == host {
+					trcIg.Spec.Rules = append(trcIg.Spec.Rules[:idx], trcIg.Spec.Rules[idx+1:]...)
+					break
+				}
+			}
+			_, err = k8.ClientSet.NetworkingV1().Ingresses(Cfg.PodNS).Update(context.Background(),
+				trcIg, metav1.UpdateOptions{})
+			return err
+		})
+	return nil
+}
+
 func (k8 K8sSvs) GetOrCreateTrcConfigmap() (*corev1.ConfigMap, error) {
 
 	namespace := Cfg.PodNS

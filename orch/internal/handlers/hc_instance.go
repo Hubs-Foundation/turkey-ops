@@ -396,13 +396,9 @@ func hc_restore(hubId string) error {
 		}
 	}
 	// get configs
-	cfgBytes, err := ioutil.ReadFile(hubDir + "/cfg.json")
+	cfg, err := getHCcfgFromHubDir(hubId)
 	if err != nil {
-		if _, err := os.Stat(hubDir + "/cfg.json.wip"); err == nil {
-			internal.Logger.Warn("hc_restore already in progress (started by another orch instance?)")
-			return fmt.Errorf("***working on it")
-		}
-		return err
+		return fmt.Errorf("failed @getHCcfgFromHubDir: ", err)
 	}
 
 	// create db
@@ -417,11 +413,6 @@ func hc_restore(hubId string) error {
 		}
 	}
 
-	cfg := HCcfg{}
-	err = json.Unmarshal(cfgBytes, &cfg)
-	if err != nil {
-		return err
-	}
 	os.Rename(hubDir+"/cfg.json", hubDir+"/cfg.json.wip")
 
 	// restore db
@@ -452,24 +443,13 @@ func hc_restore(hubId string) error {
 		return fmt.Errorf("failed writing trc_ts file: %s", err)
 	}
 
-	go func() { // drop route after 10 sec
-		time.Sleep(10 * time.Second)
-		internal.RetryFunc(15*time.Second, 3*time.Second, func() error {
-			trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
-			if err != nil {
-				return err
-			}
-			for idx, igRule := range trcIg.Spec.Rules {
-				if igRule.Host == cfg.Subdomain+"."+internal.Cfg.HubDomain {
-					trcIg.Spec.Rules = append(trcIg.Spec.Rules[:idx], trcIg.Spec.Rules[idx+1:]...)
-					break
-				}
-			}
-			_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(),
-				trcIg, metav1.UpdateOptions{})
-			return err
-		})
-	}()
+	// go func() { // drop route after 10 sec
+	// 	time.Sleep(10 * time.Second)
+	err = internal.Cfg.K8ss_local.TrcIg_deleteHost(cfg.Subdomain + "." + internal.Cfg.HubDomain)
+	if err != nil {
+		internal.Logger.Sugar().Errorf("Failed @ TrcIg_deleteHost: %s", err)
+	}
+	// }()
 
 	err = os.Remove(hubDir + "/cfg.json.wip")
 
@@ -995,6 +975,15 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	// 		break
 	// 	}
 	// }
+
+	//remove trc ingress if exists
+	trc_cfg, _ := getHCcfgFromHubDir(hubId)
+	if trc_cfg.Subdomain != "" {
+		err := internal.Cfg.K8ss_local.TrcIg_deleteHost(trc_cfg.Subdomain + "." + internal.Cfg.HubDomain)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed @getHCcfgFromHubDir: ", err)
+		}
+	}
 
 	deleting := make(chan string)
 	go func() {
