@@ -295,7 +295,21 @@ func hc_collect(cfg HCcfg) error {
 	if err != nil {
 		return err
 	}
-	// add route
+
+	//delete, keepData == true
+	deleting, err := DeleteHubsCloudInstance(cfg.HubId, true, false)
+	if err != nil {
+		return err
+	}
+	for m := range deleting { //wait for completion
+		internal.Logger.Debug(m)
+	}
+	err = os.Remove(hubDir + "/collecting")
+	if err != nil {
+		return err
+	}
+
+	// all done -- add route
 	internal.RetryFunc(15*time.Second, 3*time.Second,
 		func() error {
 			trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
@@ -323,19 +337,6 @@ func hc_collect(cfg HCcfg) error {
 			_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(), trcIg, metav1.UpdateOptions{})
 			return err
 		})
-	if err != nil {
-		return err
-	}
-
-	//delete, keepData == true
-	deleting, err := DeleteHubsCloudInstance(cfg.HubId, true, false)
-	if err != nil {
-		return err
-	}
-	for m := range deleting { //wait for completion
-		internal.Logger.Debug(m)
-	}
-	err = os.Remove(hubDir + "/collecting")
 	if err != nil {
 		return err
 	}

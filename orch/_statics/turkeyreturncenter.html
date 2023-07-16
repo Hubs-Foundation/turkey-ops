@@ -46,7 +46,10 @@
                 document.getElementById('msg_line1').innerText = "unpausing"
                 return
             }
-            document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
+            if (event.data == "..."){
+                document.getElementById('msg_line2').innerText = "[ error, sry, please contact support ]"
+                return
+            }
         };
         socket.onopen = function (event) {
             socket.send("hi")
@@ -94,8 +97,8 @@
                 case 4:
                     msg2=document.getElementById('msg_line2').innerText
                     msg2+="."
-                    msg2.replace('.....', 'v')
-                    msg2.replace('vv', 'x')
+                    msg2=msg2.replace('.....', 'v')
+                    msg2=msg2.replace('vv', 'x')
                     document.getElementById('msg_line2').innerText =msg2
 
             }
