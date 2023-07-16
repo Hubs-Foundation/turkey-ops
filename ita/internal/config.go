@@ -133,7 +133,7 @@ func MakeCfg() {
 		if cfg.Tier == "p1" {
 			cfg.FreeTierIdleMax = 72 * time.Hour
 		}
-		if strings.HasPrefix(cfg.HubDomain, "dev.") {
+		if strings.HasSuffix(cfg.HubDomain, "dev.myhubs.net") {
 			cfg.FreeTierIdleMax = 15 * time.Minute
 		}
 	}
