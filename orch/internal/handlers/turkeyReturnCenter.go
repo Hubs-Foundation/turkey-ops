@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"main/internal"
@@ -55,6 +54,8 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 	}
 	defer conn.Close()
 
+	ctl_t0 := time.Now().UnixNano()
+	tokenStr := fmt.Sprintf("token:%v", ctl_t0)
 	for {
 		mt, message, err := conn.ReadMessage()
 		if err != nil {
@@ -65,12 +66,11 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		internal.Logger.Sugar().Debugf("recv: type=<%v>, msg=<%v>", mt, strMessage)
 
 		if strMessage == "hi" {
-			ctl_t0 := time.Now().UnixNano()
-			tokenStr := fmt.Sprintf("token:%v", ctl_t0)
-			err := internal.Cfg.Redis.Client().Set(context.Background(), "trc_"+subdomain, tokenStr, 1*time.Minute).Err()
-			if err != nil {
-				internal.Logger.Sugar().Errorf("failed to cache tokenStr: %v", err)
-			}
+			// err := internal.Cfg.Redis.Client().Set(context.Background(), "trc_"+subdomain, tokenStr, 1*time.Minute).Err()
+			// if err != nil {
+			// 	internal.Logger.Sugar().Errorf("failed to cache tokenStr: %v", err)
+			// 	return
+			// }
 			conn.WriteMessage(websocket.TextMessage, []byte(tokenStr))
 			continue
 		}
@@ -78,13 +78,13 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		sendMsg := "..."
 
 		if strings.HasPrefix(strMessage, "token:") {
-			// internal.Logger.Debug("strMessage: " + strMessage)
-			tokenStr, err := internal.Cfg.Redis.Client().Get(context.Background(), "trc_"+subdomain).Result()
-			if err != nil {
-				internal.Logger.Sugar().Errorf("failed to retrieve tokenStr: %v", err)
-				continue
-			}
-			// internal.Logger.Debug("tokenStr: " + tokenStr)
+			// // internal.Logger.Debug("strMessage: " + strMessage)
+			// tokenStr, err := internal.Cfg.Redis.Client().Get(context.Background(), "trc_"+subdomain).Result()
+			// if err != nil {
+			// 	internal.Logger.Sugar().Errorf("failed to retrieve tokenStr: %v", err)
+			// 	continue
+			// }
+			// // internal.Logger.Debug("tokenStr: " + tokenStr)
 
 			if tokenStr != strMessage {
 				internal.Logger.Sugar().Debugf("bad token, want <%v>, get <%v>", tokenStr, strMessage)
