@@ -50,6 +50,7 @@
                 document.getElementById('msg_line2').innerText = "[ error, sry, please contact support ]"
                 return
             }
+                document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
         };
         socket.onopen = function (event) {
             socket.send("hi")
