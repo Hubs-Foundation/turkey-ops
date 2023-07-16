@@ -138,6 +138,8 @@ func MakeDashboardDb() {
 
 func MakeDbs() {
 	MakePgxPool()
-	MakeOrchDb()
-	MakeDashboardDb()
+	if Cfg.IsRoot {
+		MakeOrchDb()
+		MakeDashboardDb()
+	}
 }
