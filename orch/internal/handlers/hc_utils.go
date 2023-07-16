@@ -710,7 +710,7 @@ func hc_task_translator(r *http.Request) string {
 }
 
 func getHCcfgFromHubDir(hubId string) (HCcfg, error) {
-	hubDir := "hc-" + hubId
+	hubDir := "/turkeyfs/hc-" + hubId
 	cfg := HCcfg{}
 	cfgBytes, err := ioutil.ReadFile(hubDir + "/cfg.json")
 	if err != nil {
