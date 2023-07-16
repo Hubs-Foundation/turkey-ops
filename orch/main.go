@@ -15,7 +15,7 @@ func main() {
 	// ############################## inits ##############################
 	internal.InitLogger()
 	internal.MakeCfg()
-	internal.MakeDbs()
+	internal.MakeDbs(internal.Cfg.IsRoot)
 	internal.TrcCmBook.StartWatching()
 	if internal.Cfg.IsRoot && internal.DashboardDb != nil {
 		cron_syncDashboardDb := internal.NewCron("cron_syncDashboardDb", 5*time.Minute)

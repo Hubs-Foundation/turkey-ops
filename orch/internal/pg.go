@@ -136,9 +136,9 @@ func MakeDashboardDb() {
 
 }
 
-func MakeDbs() {
+func MakeDbs(isRootCluster bool) {
 	MakePgxPool()
-	if Cfg.IsRoot {
+	if isRootCluster {
 		MakeOrchDb()
 		MakeDashboardDb()
 	}
