@@ -978,23 +978,23 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	nsName := "hc-" + hubId
 	err := internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
 	if err != nil {
-		internal.Logger.Error("failed @PatchNsAnnotation, err: " + err.Error())
-		return nil, errors.New("failed @PatchNsAnnotation, err: " + err.Error())
+		internal.Logger.Warn("failed @PatchNsAnnotation, err: " + err.Error())
+		// return nil, errors.New("failed @PatchNsAnnotation, err: " + err.Error())
 	}
-	//remove ingress route
-	err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{})
-	if err != nil {
-		internal.Logger.Error("failed @k8s.ingress.DeleteCollection, err: " + err.Error())
-	}
-	ttl := 1 * time.Minute
-	wait := 5 * time.Second
-	for il, _ := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).List(context.Background(), metav1.ListOptions{}); len(il.Items) > 0; {
-		time.Sleep(5 * time.Second)
-		if ttl -= wait; ttl < 0 {
-			internal.Logger.Error("timeout @ remove ingress")
-			break
-		}
-	}
+	// //remove ingress route
+	// err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{})
+	// if err != nil {
+	// 	internal.Logger.Error("failed @k8s.ingress.DeleteCollection, err: " + err.Error())
+	// }
+	// ttl := 1 * time.Minute
+	// wait := 5 * time.Second
+	// for il, _ := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).List(context.Background(), metav1.ListOptions{}); len(il.Items) > 0; {
+	// 	time.Sleep(5 * time.Second)
+	// 	if ttl -= wait; ttl < 0 {
+	// 		internal.Logger.Error("timeout @ remove ingress")
+	// 		break
+	// 	}
+	// }
 
 	deleting := make(chan string)
 	go func() {
@@ -1008,8 +1008,8 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 		err := internal.Cfg.K8ss_local.WaitForPodKill(nsName, 60*time.Minute, 1)
 		if err != nil {
 			internal.Logger.Error("error @WaitForPodKill: " + err.Error())
-			close(deleting)
-			return
+			// close(deleting)
+			// return
 		}
 		//delete ns
 		select {
@@ -1021,8 +1021,8 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 			metav1.DeleteOptions{})
 		if err != nil {
 			internal.Logger.Error("delete ns failed: " + err.Error())
-			close(deleting)
-			return
+			// close(deleting)
+			// return
 		}
 		internal.Logger.Debug("&#127754 deleted ns: " + nsName)
 
@@ -1039,8 +1039,8 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 			err = internal.Cfg.Gcps.GCS_DeleteObjects("turkeyfs", "hc-"+hubId+"."+internal.Cfg.Domain)
 			if err != nil {
 				internal.Logger.Error("delete ns failed: " + err.Error())
-				close(deleting)
-				return
+				// close(deleting)
+				// return
 			}
 		}
 		if !keepDB {
@@ -1064,8 +1064,8 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 				}
 				if err != nil {
 					internal.Logger.Error(err.Error())
-					close(deleting)
-					return
+					// close(deleting)
+					// return
 				}
 			}
 			internal.Logger.Debug("&#128024 deleted db: " + dbName)
