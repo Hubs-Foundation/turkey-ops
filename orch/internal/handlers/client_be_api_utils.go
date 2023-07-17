@@ -235,7 +235,7 @@ func Cronjob_syncDashboardDb(interval time.Duration) {
 		return
 	}
 	OrchDb_upsertHubs(hubs)
-	internal.Logger.Sugar().Debugf("took: %v", time.Since(t0))
+	internal.Logger.Sugar().Debugf("synced (%v) hubs, took: %v", len(hubs), time.Since(t0))
 
 	internal.Cfg.Redis.Set("syncDashboardDb", time.Now().Format(time.RFC3339))
 
