@@ -98,7 +98,6 @@ func getMigrationsScriptsArray() []string {
 		`ALTER TABLE hubs 
 			ADD COLUMN IF NOT EXISTS account_id int8, 
 			ADD COLUMN IF NOT EXISTS fxa_sub TEXT, 
-			ADD COLUMN IF NOT EXISTS hub_id INT PRIMARY KEY,
 			ADD COLUMN IF NOT EXISTS name TEXT,
 			ADD COLUMN IF NOT EXISTS tier TEXT,
 			ADD COLUMN IF NOT EXISTS status TEXT,
