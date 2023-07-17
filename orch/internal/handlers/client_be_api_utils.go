@@ -225,9 +225,11 @@ func Cronjob_syncDashboardDb(interval time.Duration) {
 	}
 
 	t0 := time.Now()
-	// var orchT pgtype.Timestamptz
-	// internal.OrchDb.QueryRow(context.Background(), "select inserted_at from hubs order by inserted_at desc limit 1;").Scan(&orchT)
-	hubs, err := DashboardDb_getHubs(time.Time{})
+
+	var orchT pgtype.Timestamptz
+	internal.OrchDb.QueryRow(context.Background(), "select inserted_at from hubs order by inserted_at desc limit 1;").Scan(&orchT)
+
+	hubs, err := DashboardDb_getHubs(orchT.Time)
 	if err != nil {
 		internal.Logger.Sugar().Errorf("failed: %v", err)
 		return
