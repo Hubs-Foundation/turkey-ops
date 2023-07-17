@@ -100,7 +100,14 @@ func chk_tat_hdr() func(http.Handler) http.Handler {
 				http.NotFound(w, r)
 				return
 			}
-			resp, err := http.Get("http://turkeyauth.turkey-services:9001/chk_token?token=" + token)
+
+			// turkeyauthHost := "http://turkeyauth.turkey-services:9001"
+			turkeyauthHost := "https://auth.myhubs.net"
+			if strings.HasSuffix(internal.GetCfg().HubDomain, "dev.myhubs.net") {
+				turkeyauthHost = "https://auth.dev.myhubs.net"
+			}
+
+			resp, err := http.Get(turkeyauthHost + "/chk_token?token=" + token)
 			if err != nil {
 				internal.Logger.Sugar().Debugf("reject -- err@chk_token: %v", err)
 				internal.Handle_NotFound(w, r)

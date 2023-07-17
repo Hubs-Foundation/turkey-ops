@@ -981,7 +981,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	if trc_cfg.Subdomain != "" {
 		err := internal.Cfg.K8ss_local.TrcIg_deleteHost(trc_cfg.Subdomain + "." + internal.Cfg.HubDomain)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed @getHCcfgFromHubDir: ", err)
+			internal.Logger.Sugar().Errorf("failed @TrcIg_deleteHost: ", err)
 		}
 	}
 
