@@ -102,7 +102,7 @@ func chk_tat_hdr() func(http.Handler) http.Handler {
 			}
 
 			// turkeyauthHost := "http://turkeyauth.turkey-services:9001"
-			turkeyauthHost := "https://auth.myhubs.net"
+			turkeyauthHost := "https://auth.myhubs.dev"
 			if strings.HasSuffix(internal.GetCfg().HubDomain, "dev.myhubs.net") {
 				turkeyauthHost = "https://auth.dev.myhubs.net"
 			}

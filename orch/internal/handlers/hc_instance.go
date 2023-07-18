@@ -28,6 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
+	"main/pkg/kubelocker"
 )
 
 type HCcfg struct {
@@ -204,6 +205,12 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		if cfg.HubId == "" {
 			return fmt.Errorf("missing hcCfg.HubId, err")
 		}
+		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
+		if err != nil {
+			fmt.Println("[ERROR] -- " + err.Error())
+		}
+		locker.Lock()
+
 		DeleteHubsCloudInstance(cfg.HubId, false, false)
 		return nil
 	case "hc_switch_up":
