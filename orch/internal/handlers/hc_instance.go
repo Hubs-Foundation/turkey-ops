@@ -198,7 +198,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
 			return err
 		}
-		internal.Logger.Sugar().Debugf("locker: %v \n", locker)
+		internal.Logger.Sugar().Debugf("locked acquired. locker: %v \n", locker)
 
 		err = locker.Lock()
 		if err != nil {
