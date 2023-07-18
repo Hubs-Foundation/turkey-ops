@@ -460,7 +460,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 	atomic.AddInt32(&internal.RunningTask, 1)
 	defer atomic.AddInt32(&internal.RunningTask, -1)
 
-	locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, "hc-"+cfg.HubId)
+	// locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, "hc-"+cfg.HubId)
 	// tier change
 	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
 		currentTier, err := internal.Cfg.K8ss_local.GetFromHubNsLabel(cfg.HubId, "tier")
@@ -470,7 +470,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
 
 		go func() {
-			defer locker.Unlock()
+			// defer locker.Unlock()
 			if cfg.Tier == "p0" && cfg.Subdomain != "" {
 
 				if strings.HasPrefix(currentTier, "b") {
@@ -999,7 +999,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	defer atomic.AddInt32(&internal.RunningTask, -1)
 
 	nsName := "hc-" + hubId
-	locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, nsName)
+	// locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, nsName)
 
 	//mark the hc- namespace for the cleanup cronjob (todo)
 	err := internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
@@ -1033,7 +1033,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 
 	deleting := make(chan string)
 	go func() {
-		defer locker.Unlock()
+		// defer locker.Unlock()
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
 		select {
@@ -1142,10 +1142,10 @@ func hc_switch(HubId, status string) error {
 
 	ns := "hc-" + HubId
 
-	locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, ns)
-	defer locker.Unlock()
+	// locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, ns)
 
-	locker.Lock()
+	// locker.Lock()
+	// defer locker.Unlock()
 
 	Replicas := 0
 	if status == "up" {
