@@ -253,7 +253,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		/////////// lockerrrrrrrrrrrrrr
 		locker, err := localkl.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
-			fmt.Println("[ERROR] -- " + err.Error())
+			fmt.Printf("[ERROR] -- %v, locker==nil: %v, locker: %v", err.Error(), (locker == nil), locker)
 		}
 		err = locker.Lock()
 		if err != nil {
