@@ -26,6 +26,8 @@ var Logger *zap.Logger
 var AtomLvl zap.AtomicLevel
 
 func InitLogger() {
+
+	//make Logger
 	AtomLvl = zap.NewAtomicLevel()
 	if os.Getenv("LOG_LEVEL") == "warn" {
 		AtomLvl.SetLevel(zap.WarnLevel)
@@ -34,7 +36,6 @@ func InitLogger() {
 	} else {
 		AtomLvl.SetLevel(zap.InfoLevel)
 	}
-
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.TimeKey = "t"
 	encoderCfg.EncodeTime = zapcore.TimeEncoderOfLayout("060102.03:04:05MST")
@@ -60,10 +61,11 @@ func InitLogger() {
 			enc.AppendString("EMERGENCY")
 		}
 	}
-
 	Logger = zap.New(zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), zapcore.Lock(os.Stdout), AtomLvl), zap.AddCaller())
-
 	defer Logger.Sync()
+
+	//
+	zap.ReplaceGlobals(Logger)
 
 }
 

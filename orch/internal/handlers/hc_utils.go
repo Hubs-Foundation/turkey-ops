@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -88,6 +89,7 @@ todo(internal only): <br>
 // todo: put strict rate limit on this endpoint and add caching to deflect/protect against ddos
 var _TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+	zap.L().Warn("_TurkeyReturnCenter should not be accessable")
 	fmt.Fprint(w, "hi from TurkeyReturnCenter")
 	return
 
