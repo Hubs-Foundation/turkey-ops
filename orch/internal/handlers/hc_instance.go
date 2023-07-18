@@ -206,6 +206,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		if cfg.HubId == "" {
 			return fmt.Errorf("missing hcCfg.HubId, err")
 		}
+		/////////// lockerrrrrrrrrrrrrr
 		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
 			fmt.Println("[ERROR] -- " + err.Error())
@@ -214,22 +215,56 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		if err != nil {
 			fmt.Println("[ERROR] -- " + err.Error())
 		}
+		defer func() {
+			err = locker.Unlock()
+			if err != nil {
+				fmt.Println("[ERROR] -- " + err.Error())
+			}
+		}()
+		/////////// lockerrrrrrrrrrrrrr
 
 		DeleteHubsCloudInstance(cfg.HubId, false, false)
 
-		err = locker.Unlock()
+		return nil
+	case "hc_switch_up":
+		/////////// lockerrrrrrrrrrrrrr
+		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
 			fmt.Println("[ERROR] -- " + err.Error())
 		}
-
-		return nil
-	case "hc_switch_up":
-		err := hc_switch(cfg.HubId, "up")
+		err = locker.Lock()
+		if err != nil {
+			fmt.Println("[ERROR] -- " + err.Error())
+		}
+		defer func() {
+			err = locker.Unlock()
+			if err != nil {
+				fmt.Println("[ERROR] -- " + err.Error())
+			}
+		}()
+		/////////// lockerrrrrrrrrrrrrr
+		err = hc_switch(cfg.HubId, "up")
 		if err != nil {
 			return fmt.Errorf("failed @ hc_switch: %v", err)
 		}
 	case "hc_switch_down":
-		err := hc_switch(cfg.HubId, "down")
+		/////////// lockerrrrrrrrrrrrrr
+		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
+		if err != nil {
+			fmt.Println("[ERROR] -- " + err.Error())
+		}
+		err = locker.Lock()
+		if err != nil {
+			fmt.Println("[ERROR] -- " + err.Error())
+		}
+		defer func() {
+			err = locker.Unlock()
+			if err != nil {
+				fmt.Println("[ERROR] -- " + err.Error())
+			}
+		}()
+		/////////// lockerrrrrrrrrrrrrr
+		err = hc_switch(cfg.HubId, "down")
 		if err != nil {
 			return fmt.Errorf("failed @ hc_switch: %v", err)
 		}
