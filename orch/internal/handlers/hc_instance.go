@@ -211,8 +211,9 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		/////////// lockerrrrrrrrrrrrrr
 		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
-			fmt.Println("[ERROR] -- " + err.Error())
+			return err
 		}
+		fmt.Printf("locker: %v \n", locker)
 		err = locker.Lock()
 		if err != nil {
 			fmt.Println("[ERROR] -- " + err.Error())
@@ -253,8 +254,9 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		/////////// lockerrrrrrrrrrrrrr
 		locker, err := localkl.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
-			fmt.Printf("[ERROR] -- %v, locker==nil: %v, locker: %v", err.Error(), (locker == nil), locker)
+			return err
 		}
+		fmt.Printf("locker: %v \n", locker)
 		err = locker.Lock()
 		if err != nil {
 			fmt.Println("[ERROR] -- " + err.Error())
