@@ -209,9 +209,18 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		if err != nil {
 			fmt.Println("[ERROR] -- " + err.Error())
 		}
-		locker.Lock()
+		err = locker.Lock()
+		if err != nil {
+			fmt.Println("[ERROR] -- " + err.Error())
+		}
 
 		DeleteHubsCloudInstance(cfg.HubId, false, false)
+
+		err = locker.Unlock()
+		if err != nil {
+			fmt.Println("[ERROR] -- " + err.Error())
+		}
+
 		return nil
 	case "hc_switch_up":
 		err := hc_switch(cfg.HubId, "up")
