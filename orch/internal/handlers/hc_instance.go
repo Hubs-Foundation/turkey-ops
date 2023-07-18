@@ -198,7 +198,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
 			return err
 		}
-		internal.Logger.Sugar().Debugf("locked acquired. locker: %v \n", locker)
+		internal.Logger.Sugar().Debugf("acquired locker: %v \n", locker)
 
 		err = locker.Lock()
 		if err != nil {
@@ -1088,13 +1088,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 			internal.Logger.Sugar().Errorf("failed to lock: %v", err)
 			return
 		}
-
-		defer func() {
-			err = locker.Unlock()
-			if err != nil {
-				internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
-			}
-		}()
+		// ns deleted ... no need to unlock
 
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
