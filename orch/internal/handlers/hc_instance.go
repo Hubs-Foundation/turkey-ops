@@ -191,27 +191,29 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	var err error
 
-	locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
-	if err != nil {
-		internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
-		return err
-	}
-	internal.Logger.Sugar().Debugf("locker: %v \n", locker)
-
-	err = locker.Lock()
-	if err != nil {
-		internal.Logger.Sugar().Errorf("failed to lock: %v", err)
-		return err
-	}
-
-	defer func() {
-		err = locker.Unlock()
-		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
-		}
-	}()
-
 	task := hc_task_translator(r)
+	if task != "hc_create" {
+		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
+			return err
+		}
+		internal.Logger.Sugar().Debugf("locker: %v \n", locker)
+
+		err = locker.Lock()
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to lock: %v", err)
+			return err
+		}
+
+		defer func() {
+			err = locker.Unlock()
+			if err != nil {
+				internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
+			}
+		}()
+	}
+
 	switch task {
 	case "hc_create":
 		hcCfg, err := makeHcCfg(cfg)
