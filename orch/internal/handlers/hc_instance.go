@@ -195,16 +195,16 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	if task != "hc_create" {
 		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
+			internal.Logger.Sugar().Errorf("failed to create locker for hubId: %v", cfg.HubId)
 			return err
 		}
-		internal.Logger.Sugar().Debugf("acquired locker: %v \n", locker)
 
 		err = locker.Lock()
 		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to lock: %v", err)
+			internal.Logger.Sugar().Errorf("failed to lock: err:%v, id: %v, worklog: %v", err, locker.Id(), strings.Join(locker.WorkLog(), ";"))
 			return err
 		}
+		internal.Logger.Sugar().Debugf("acquired locker: %v \n", locker.Id())
 
 		defer func() {
 			err = locker.Unlock()

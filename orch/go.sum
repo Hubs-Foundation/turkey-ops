@@ -488,8 +488,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
-github.com/tanfarming/goutils v0.0.11 h1:EN6VyTGfqOqjZsbyq4tjNmxDGvpRbFwVrqDvu4y90pc=
-github.com/tanfarming/goutils v0.0.11/go.mod h1:GgckCv59fQ7dAL1lzTSOa8n/3C/2sI2TN9vPe5lZlug=
+github.com/tanfarming/goutils v0.0.13 h1:H7trbFjH+WqOtxovmoiMkVAs8DM5galrG9Jmq6ejBnQ=
+github.com/tanfarming/goutils v0.0.13/go.mod h1:GgckCv59fQ7dAL1lzTSOa8n/3C/2sI2TN9vPe5lZlug=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
