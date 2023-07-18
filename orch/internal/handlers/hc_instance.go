@@ -28,7 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
-	"main/pkg/kubelocker"
+
+	"github.com/tanfarming/goutils/pkg/kubelocker"
 )
 
 type HCcfg struct {
