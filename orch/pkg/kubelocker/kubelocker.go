@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -54,6 +53,7 @@ func Newkubelocker(kubeClientset *kubernetes.Clientset, namespace string, cfgs .
 	_, err := leaseClient.Get(context.TODO(), cfg.name, metav1.GetOptions{})
 	if err != nil {
 		if !k8errors.IsNotFound(err) {
+			fmt.Println("!k8errors.IsNotFound: " + err.Error())
 			return nil, err
 		}
 		lease := &coordinationv1.Lease{
@@ -66,9 +66,12 @@ func Newkubelocker(kubeClientset *kubernetes.Clientset, namespace string, cfgs .
 		}
 		_, err := leaseClient.Create(context.TODO(), lease, metav1.CreateOptions{})
 		if err != nil {
+			fmt.Println("leaseClient.Create err: " + err.Error())
 			return nil, err
 		}
 	}
+
+	fmt.Println("returning &kubelocker")
 
 	return &kubelocker{
 		clientset:   kubeClientset,
@@ -96,7 +99,7 @@ func (l *kubelocker) Lock() error {
 
 		if lease.Spec.HolderIdentity != nil {
 			if lease.Spec.LeaseDurationSeconds == nil {
-				log.Printf("waiting for %v (no expiry), ttl: %v", lease.Spec.HolderIdentity, ttl)
+				fmt.Printf("waiting for %v (no expiry), ttl: %v", lease.Spec.HolderIdentity, ttl)
 				time.Sleep(l.cfg.retryWait)
 				ttl -= l.cfg.retryWait
 				continue
@@ -106,7 +109,7 @@ func (l *kubelocker) Lock() error {
 			leaseDuration := time.Duration(*lease.Spec.LeaseDurationSeconds) * time.Second
 			exp := acquireTime.Add(leaseDuration)
 			if exp.After(time.Now()) {
-				log.Printf("waiting for %v (exp in: %v), ttl: %v", lease.Spec.HolderIdentity, time.Until(exp), ttl)
+				fmt.Printf("waiting for %v (exp in: %v), ttl: %v", lease.Spec.HolderIdentity, time.Until(exp), ttl)
 				time.Sleep(l.cfg.retryWait)
 				ttl -= l.cfg.retryWait
 				continue
@@ -136,7 +139,7 @@ func (l *kubelocker) Lock() error {
 		}
 
 		// Another client beat us to the lock
-		log.Printf("beaten by another client, will retry, ttl: %v", ttl)
+		fmt.Printf("beaten by another client, will retry, ttl: %v", ttl)
 		time.Sleep(l.cfg.retryWait)
 		ttl -= l.cfg.retryWait
 	}
@@ -180,7 +183,7 @@ func (l *kubelocker) Util_watiForDeployments(nsName string, timeout time.Duratio
 	for ttl > 0 {
 		time.Sleep(wait)
 		ttl -= wait
-		log.Printf("ttl: %v (%v)", ttl, nsName)
+		fmt.Printf("ttl: %v (%v)", ttl, nsName)
 		ds, err := l.clientset.AppsV1().Deployments(nsName).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			return err
@@ -191,11 +194,11 @@ func (l *kubelocker) Util_watiForDeployments(nsName string, timeout time.Duratio
 				d.Status.Replicas != d.Status.ReadyReplicas ||
 				d.Status.Replicas != d.Status.UpdatedReplicas {
 				done = false
-				log.Printf("waiting for: %v (%v)", d.Name, nsName)
+				fmt.Printf("waiting for: %v (%v)", d.Name, nsName)
 			}
 		}
 		if done {
-			log.Printf("waited: %v", timeout-ttl)
+			fmt.Printf("waited: %v", timeout-ttl)
 			return nil
 		}
 	}
