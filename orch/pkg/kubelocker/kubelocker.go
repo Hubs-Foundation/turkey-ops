@@ -84,6 +84,8 @@ func Newkubelocker(kubeClientset *kubernetes.Clientset, namespace string, cfgs .
 
 // Lock will block until the client is the holder of the Lease resource
 func (l *kubelocker) Lock() error {
+
+	fmt.Println("~~~~~~~~~~~~~~Lock~~~~~~~~~~~~~~~~~~")
 	ttl := l.cfg.maxWait
 
 	// block until we get a lock
