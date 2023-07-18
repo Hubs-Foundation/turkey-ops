@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/square/go-jose v2.6.0+incompatible
-	github.com/tanfarming/goutils v0.0.9
+	github.com/tanfarming/goutils v0.0.7
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
 	golang.org/x/oauth2 v0.6.0
