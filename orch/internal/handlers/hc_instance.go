@@ -29,6 +29,8 @@ import (
 
 	"main/internal"
 
+	localkl "main/pkg/kubelocker"
+
 	"github.com/tanfarming/goutils/pkg/kubelocker"
 )
 
@@ -249,7 +251,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		}
 	case "hc_switch_down":
 		/////////// lockerrrrrrrrrrrrrr
-		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
+		locker, err := localkl.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
 			fmt.Println("[ERROR] -- " + err.Error())
 		}
