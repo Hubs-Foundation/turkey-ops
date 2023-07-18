@@ -28,8 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
-
-	"github.com/tanfarming/goutils/pkg/kubelocker"
 )
 
 type HCcfg struct {
@@ -462,7 +460,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 	atomic.AddInt32(&internal.RunningTask, 1)
 	defer atomic.AddInt32(&internal.RunningTask, -1)
 
-	locker := kubelocker.Newkubelocker(internal.NewK8sSvs_local().ClientSet, "hc-"+cfg.HubId)
+	locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, "hc-"+cfg.HubId)
 	// tier change
 	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
 		currentTier, err := internal.Cfg.K8ss_local.GetFromHubNsLabel(cfg.HubId, "tier")
@@ -1001,7 +999,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	defer atomic.AddInt32(&internal.RunningTask, -1)
 
 	nsName := "hc-" + hubId
-	locker := kubelocker.Newkubelocker(internal.NewK8sSvs_local().ClientSet, nsName)
+	locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, nsName)
 
 	//mark the hc- namespace for the cleanup cronjob (todo)
 	err := internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
@@ -1144,7 +1142,7 @@ func hc_switch(HubId, status string) error {
 
 	ns := "hc-" + HubId
 
-	locker := kubelocker.Newkubelocker(internal.NewK8sSvs_local().ClientSet, ns)
+	locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, ns)
 	defer locker.Unlock()
 
 	locker.Lock()
