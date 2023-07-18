@@ -29,8 +29,6 @@ import (
 
 	"main/internal"
 
-	localkl "main/pkg/kubelocker"
-
 	"github.com/tanfarming/goutils/pkg/kubelocker"
 )
 
@@ -192,6 +190,27 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	var err error
+
+	locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
+		return err
+	}
+	internal.Logger.Sugar().Debugf("locker: %v \n", locker)
+
+	err = locker.Lock()
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to lock: %v", err)
+		return err
+	}
+
+	defer func() {
+		err = locker.Unlock()
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
+		}
+	}()
+
 	task := hc_task_translator(r)
 	switch task {
 	case "hc_create":
@@ -208,66 +227,16 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		if cfg.HubId == "" {
 			return fmt.Errorf("missing hcCfg.HubId, err")
 		}
-		/////////// lockerrrrrrrrrrrrrr
-		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("locker: %v \n", locker)
-		err = locker.Lock()
-		if err != nil {
-			fmt.Println("[ERROR] -- " + err.Error())
-		}
-		defer func() {
-			err = locker.Unlock()
-			if err != nil {
-				fmt.Println("[ERROR] -- " + err.Error())
-			}
-		}()
-		/////////// lockerrrrrrrrrrrrrr
 
 		DeleteHubsCloudInstance(cfg.HubId, false, false)
 
 		return nil
 	case "hc_switch_up":
-		/////////// lockerrrrrrrrrrrrrr
-		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
-		if err != nil {
-			fmt.Println("[ERROR] -- " + err.Error())
-		}
-		err = locker.Lock()
-		if err != nil {
-			fmt.Println("[ERROR] -- " + err.Error())
-		}
-		defer func() {
-			err = locker.Unlock()
-			if err != nil {
-				fmt.Println("[ERROR] -- " + err.Error())
-			}
-		}()
-		/////////// lockerrrrrrrrrrrrrr
 		err = hc_switch(cfg.HubId, "up")
 		if err != nil {
 			return fmt.Errorf("failed @ hc_switch: %v", err)
 		}
 	case "hc_switch_down":
-		/////////// lockerrrrrrrrrrrrrr
-		locker, err := localkl.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("locker: %v \n", locker)
-		err = locker.Lock()
-		if err != nil {
-			fmt.Println("[ERROR] -- " + err.Error())
-		}
-		defer func() {
-			err = locker.Unlock()
-			if err != nil {
-				fmt.Println("[ERROR] -- " + err.Error())
-			}
-		}()
-		/////////// lockerrrrrrrrrrrrrr
 		err = hc_switch(cfg.HubId, "down")
 		if err != nil {
 			return fmt.Errorf("failed @ hc_switch: %v", err)
@@ -526,44 +495,73 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
 
 		go func() {
-			// defer locker.Unlock()
-			if cfg.Tier == "p0" && cfg.Subdomain != "" {
+			locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
+			if err != nil {
+				internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
+				return
+			}
+			internal.Logger.Sugar().Debugf("locker: %v \n", locker)
 
-				if strings.HasPrefix(currentTier, "b") {
-					itaHost := "ita.hc-" + cfg.HubId + ":6000"
-					//undeploy custom client
-					res, err := http.Get(itaHost + "/undeploy/hubs")
-					if err != nil || res == nil {
-						internal.Logger.Sugar().Errorf("failed to send undeploy custom hubs req: %v", err)
-					} else if res.StatusCode > 299 {
-						internal.Logger.Sugar().Errorf("failed to undeploy custom hubs, resp.code: %v", res.StatusCode)
-					}
-					//wait for ns to settle down
-					res, err = http.Get(itaHost + "/undeploy/spoke")
-					if err != nil || res == nil {
-						internal.Logger.Sugar().Errorf("failed to send undeploy custom spoke req: %v", err)
-					} else if res.StatusCode > 299 {
-						internal.Logger.Sugar().Errorf("failed to undeploy custom spoke, resp.code: %v", res.StatusCode)
-					}
-					//wait for ns to settle down
+			err = locker.Lock()
+			if err != nil {
+				internal.Logger.Sugar().Errorf("failed to lock: %v", err)
+				return
+			}
 
-					//undeploy custom domain
-					customDomain, err := internal.Cfg.K8ss_local.GetFromHubsItaLabel("hc-"+cfg.HubId, "custom-domain")
-					if customDomain != "" {
-						req, err := http.NewRequest("PATCH", itaHost+"/customDomain?from_domain="+customDomain, bytes.NewBuffer([]byte{}))
-						if err != nil {
-							internal.Logger.Sugar().Errorf("failed to construct unset custom domain req: %v", err)
-						}
-						res, err := http.DefaultClient.Do(req)
-						if err != nil || res == nil {
-							internal.Logger.Sugar().Errorf("failed to send unset custom domain req: %v", err)
-						} else if res.StatusCode > 299 {
-							internal.Logger.Sugar().Errorf("failed to unset custom domain, resp.code: %v", res.StatusCode)
-						}
-					}
-					//wait for ns to settle down
+			defer func() {
+				err = locker.Unlock()
+				if err != nil {
+					internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
 				}
+			}()
 
+			if strings.HasPrefix(currentTier, "b") && !strings.HasPrefix(cfg.Tier, "b") {
+				itaHost := "ita.hc-" + cfg.HubId + ":6000"
+				//undeploy custom client
+				res, err := http.Get(itaHost + "/undeploy/hubs")
+				if err != nil || res == nil {
+					internal.Logger.Sugar().Errorf("failed to send undeploy custom hubs req: %v", err)
+					return
+				} else if res.StatusCode > 299 {
+					internal.Logger.Sugar().Errorf("failed to undeploy custom hubs, resp.code: %v", res.StatusCode)
+					return
+				}
+				//wait for ns to settle down
+				res, err = http.Get(itaHost + "/undeploy/spoke")
+				if err != nil || res == nil {
+					internal.Logger.Sugar().Errorf("failed to send undeploy custom spoke req: %v", err)
+					return
+				} else if res.StatusCode > 299 {
+					internal.Logger.Sugar().Errorf("failed to undeploy custom spoke, resp.code: %v", res.StatusCode)
+					return
+				}
+				//wait for ns to settle down
+
+				//undeploy custom domain
+				customDomain, err := internal.Cfg.K8ss_local.GetFromHubsItaLabel("hc-"+cfg.HubId, "custom-domain")
+				if err != nil {
+					internal.Logger.Sugar().Errorf("failed to get custom-domain from ita label: %v", err)
+					return
+				}
+				if customDomain != "" {
+					req, err := http.NewRequest("PATCH", itaHost+"/customDomain?from_domain="+customDomain, bytes.NewBuffer([]byte{}))
+					if err != nil {
+						internal.Logger.Sugar().Errorf("failed to construct unset custom domain req: %v", err)
+						return
+					}
+					res, err := http.DefaultClient.Do(req)
+					if err != nil || res == nil {
+						internal.Logger.Sugar().Errorf("failed to send unset custom domain req: %v", err)
+						return
+					} else if res.StatusCode > 299 {
+						internal.Logger.Sugar().Errorf("failed to unset custom domain, resp.code: %v", res.StatusCode)
+						return
+					}
+				}
+				//wait for ns to settle down
+			}
+
+			if cfg.Tier == "p0" && cfg.Subdomain != "" {
 				internal.Logger.Sugar().Debugf("hc_updateTier[p0] / hc_patch_subdomain, hub_id: %v, subdomain: %v", cfg.HubId, cfg.Subdomain)
 				err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
 				if err != nil {
@@ -571,7 +569,8 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 				}
 				time.Sleep(3 * time.Second)
 			}
-			err := hc_updateTier(cfg)
+
+			err = hc_updateTier(cfg)
 			if err != nil {
 				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
 			}
@@ -1062,20 +1061,6 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 		internal.Logger.Warn("failed @PatchNsAnnotation, err: " + err.Error())
 		// return nil, errors.New("failed @PatchNsAnnotation, err: " + err.Error())
 	}
-	// //remove ingress route
-	// err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).DeleteCollection(context.Background(), metav1.DeleteOptions{}, metav1.ListOptions{})
-	// if err != nil {
-	// 	internal.Logger.Error("failed @k8s.ingress.DeleteCollection, err: " + err.Error())
-	// }
-	// ttl := 1 * time.Minute
-	// wait := 5 * time.Second
-	// for il, _ := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).List(context.Background(), metav1.ListOptions{}); len(il.Items) > 0; {
-	// 	time.Sleep(5 * time.Second)
-	// 	if ttl -= wait; ttl < 0 {
-	// 		internal.Logger.Error("timeout @ remove ingress")
-	// 		break
-	// 	}
-	// }
 
 	//remove trc ingress if exists
 	trc_cfg, _ := getHCcfgFromHubDir(hubId)
@@ -1089,6 +1074,26 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	deleting := make(chan string)
 	go func() {
 
+		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+hubId)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
+			return
+		}
+		internal.Logger.Sugar().Debugf("locker: %v \n", locker)
+
+		err = locker.Lock()
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to lock: %v", err)
+			return
+		}
+
+		defer func() {
+			err = locker.Unlock()
+			if err != nil {
+				internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
+			}
+		}()
+
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
 		select {
@@ -1096,7 +1101,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 		default:
 		}
 		hc_switch(hubId, "down")
-		err := internal.Cfg.K8ss_local.WaitForPodKill(nsName, 60*time.Minute, 1)
+		err = internal.Cfg.K8ss_local.WaitForPodKill(nsName, 60*time.Minute, 1)
 		if err != nil {
 			internal.Logger.Error("error @WaitForPodKill: " + err.Error())
 			// close(deleting)
