@@ -999,7 +999,6 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	defer atomic.AddInt32(&internal.RunningTask, -1)
 
 	nsName := "hc-" + hubId
-	// locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, nsName)
 
 	//mark the hc- namespace for the cleanup cronjob (todo)
 	err := internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
@@ -1033,7 +1032,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 
 	deleting := make(chan string)
 	go func() {
-		// defer locker.Unlock()
+
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
 		select {
@@ -1182,6 +1181,8 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	// 	internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
 	// }
 
+	// hc_switch(HubId, "down")
+
 	//update secret
 	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(nsName).Get(context.Background(), "configs", metav1.GetOptions{})
 	if err != nil {
@@ -1227,17 +1228,7 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 			return err
 		}
 	}
-	// ^^^ rolling restart seems to sometimes cause haproxy to take a long time to refresh backend pods
-	pods, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(nsName).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, pod := range pods.Items {
-		err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(nsName).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-	}
+
 	// update ingress
 	time.Sleep(5 * time.Second)
 	ingresses, err := internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(nsName).List(context.Background(), metav1.ListOptions{})
@@ -1278,6 +1269,19 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 	_, err = internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Update(context.Background(), ns, metav1.UpdateOptions{})
 	if err != nil {
 		return err
+	}
+	// hc_switch(HubId, "up")
+
+	// force respawn pods -- rolling restart seems to sometimes cause haproxy to take a long time to refresh backend pods
+	pods, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(nsName).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, pod := range pods.Items {
+		err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Pods(nsName).Delete(context.Background(), pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
