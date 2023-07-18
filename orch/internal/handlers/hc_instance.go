@@ -28,6 +28,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
+
+	"github.com/tanfarming/goutils/pkg/kubelocker"
 )
 
 type HCcfg struct {
@@ -282,7 +284,7 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// add to subdomain:hubId lookup table
-	internal.RetryFunc(15*time.Second, 3*time.Second,
+	internal.RetryFunc(60*time.Second, 3*time.Second,
 		func() error {
 			trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
 			if err != nil {
@@ -310,7 +312,7 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// all done -- add route
-	internal.RetryFunc(15*time.Second, 3*time.Second,
+	internal.RetryFunc(60*time.Second, 3*time.Second,
 		func() error {
 			trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
 			if err != nil {
@@ -460,10 +462,54 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 	atomic.AddInt32(&internal.RunningTask, 1)
 	defer atomic.AddInt32(&internal.RunningTask, -1)
 
+	locker := kubelocker.Newkubelocker(internal.NewK8sSvs_local().ClientSet, "hc-"+cfg.HubId)
 	// tier change
 	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
+		currentTier, err := internal.Cfg.K8ss_local.GetFromHubNsLabel(cfg.HubId, "tier")
+		if err != nil {
+			return "bad hubId, hubNs not found", err
+		}
+		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
+
 		go func() {
+			defer locker.Unlock()
 			if cfg.Tier == "p0" && cfg.Subdomain != "" {
+
+				if strings.HasPrefix(currentTier, "b") {
+					itaHost := "ita.hc-" + cfg.HubId + ":6000"
+					//undeploy custom client
+					res, err := http.Get(itaHost + "/undeploy/hubs")
+					if err != nil || res == nil {
+						internal.Logger.Sugar().Errorf("failed to send undeploy custom hubs req: %v", err)
+					} else if res.StatusCode > 299 {
+						internal.Logger.Sugar().Errorf("failed to undeploy custom hubs, resp.code: %v", res.StatusCode)
+					}
+					//wait for ns to settle down
+					res, err = http.Get(itaHost + "/undeploy/spoke")
+					if err != nil || res == nil {
+						internal.Logger.Sugar().Errorf("failed to send undeploy custom spoke req: %v", err)
+					} else if res.StatusCode > 299 {
+						internal.Logger.Sugar().Errorf("failed to undeploy custom spoke, resp.code: %v", res.StatusCode)
+					}
+					//wait for ns to settle down
+
+					//undeploy custom domain
+					customDomain, err := internal.Cfg.K8ss_local.GetFromHubsItaLabel("hc-"+cfg.HubId, "custom-domain")
+					if customDomain != "" {
+						req, err := http.NewRequest("PATCH", itaHost+"/customDomain?from_domain="+customDomain, bytes.NewBuffer([]byte{}))
+						if err != nil {
+							internal.Logger.Sugar().Errorf("failed to construct unset custom domain req: %v", err)
+						}
+						res, err := http.DefaultClient.Do(req)
+						if err != nil || res == nil {
+							internal.Logger.Sugar().Errorf("failed to send unset custom domain req: %v", err)
+						} else if res.StatusCode > 299 {
+							internal.Logger.Sugar().Errorf("failed to unset custom domain, resp.code: %v", res.StatusCode)
+						}
+					}
+					//wait for ns to settle down
+				}
+
 				internal.Logger.Sugar().Debugf("hc_updateTier[p0] / hc_patch_subdomain, hub_id: %v, subdomain: %v", cfg.HubId, cfg.Subdomain)
 				err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
 				if err != nil {
@@ -954,8 +1000,10 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	atomic.AddInt32(&internal.RunningTask, 1)
 	defer atomic.AddInt32(&internal.RunningTask, -1)
 
-	//mark the hc- namespace for the cleanup cronjob (todo)
 	nsName := "hc-" + hubId
+	locker := kubelocker.Newkubelocker(internal.NewK8sSvs_local().ClientSet, nsName)
+
+	//mark the hc- namespace for the cleanup cronjob (todo)
 	err := internal.Cfg.K8ss_local.PatchNsAnnotation(nsName, "deleting", "true")
 	if err != nil {
 		internal.Logger.Warn("failed @PatchNsAnnotation, err: " + err.Error())
@@ -987,6 +1035,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 
 	deleting := make(chan string)
 	go func() {
+		defer locker.Unlock()
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
 		select {
@@ -1095,12 +1144,8 @@ func hc_switch(HubId, status string) error {
 
 	ns := "hc-" + HubId
 
-	//acquire lock
-	locker, err := internal.NewK8Locker(internal.NewK8sSvs_local().Cfg, ns)
-	if err != nil {
-		internal.Logger.Error("faild to acquire locker ... err: " + err.Error())
-		return err
-	}
+	locker := kubelocker.Newkubelocker(internal.NewK8sSvs_local().ClientSet, ns)
+	defer locker.Unlock()
 
 	locker.Lock()
 
@@ -1126,7 +1171,6 @@ func hc_switch(HubId, status string) error {
 		}
 	}
 
-	locker.Unlock()
 	return nil
 }
 

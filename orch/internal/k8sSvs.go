@@ -10,12 +10,10 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 
@@ -29,9 +27,7 @@ import (
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/cache"
 
-	coordinationv1 "k8s.io/api/coordination/v1"
 	k8errors "k8s.io/apimachinery/pkg/api/errors"
-	coordinationclientv1 "k8s.io/client-go/kubernetes/typed/coordination/v1"
 )
 
 type K8sSvs struct {
@@ -141,6 +137,21 @@ func (k8 K8sSvs) PatchNsAnnotation(namespace string, AnnotationKey, AnnotationVa
 		return err
 	}
 	return nil
+}
+
+func (k8 K8sSvs) GetFromHubNsLabel(hubId string, label string) (string, error) {
+	ns, err := k8.ClientSet.CoreV1().Namespaces().Get(context.Background(), "hc-"+hubId, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return ns.Labels[label], nil
+}
+func (k8 K8sSvs) GetFromHubsItaLabel(hubId string, label string) (string, error) {
+	d, err := k8.ClientSet.AppsV1().Deployments("hc-"+hubId).Get(context.Background(), "ita", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return d.Labels[label], nil
 }
 
 func (k8 K8sSvs) GetOrCreateTrcIngress() (*networkingv1.Ingress, error) {
@@ -415,167 +426,167 @@ func K8s_getNs(cfg *rest.Config) (*corev1.NamespaceList, error) {
 
 }
 
-// ########################## k8Locker ##########################
+// // ########################## k8Locker ##########################
 
-type k8Locker struct {
-	leaseClient coordinationclientv1.LeaseInterface
-	namespace   string
-	name        string
-	clientID    string
-	retryWait   time.Duration
-	maxWait     time.Duration
-	ttl         time.Duration
-}
+// type k8Locker struct {
+// 	leaseClient coordinationclientv1.LeaseInterface
+// 	namespace   string
+// 	name        string
+// 	clientID    string
+// 	retryWait   time.Duration
+// 	maxWait     time.Duration
+// 	ttl         time.Duration
+// }
 
-// NewLocker creates a Locker
-func NewK8Locker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
-	name := "turkey-ops"
+// // NewLocker creates a Locker
+// func NewK8Locker(k8Cfg *rest.Config, namespace string) (*k8Locker, error) {
+// 	name := "turkey-ops"
 
-	// create the Lease if it doesn't exist
-	leaseClient := Cfg.K8ss_local.ClientSet.CoordinationV1().Leases(namespace)
-	_, err := leaseClient.Get(context.TODO(), name, metav1.GetOptions{})
-	if err != nil {
-		if !k8errors.IsNotFound(err) {
-			return nil, err
-		}
-		lease := &coordinationv1.Lease{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-			},
-			Spec: coordinationv1.LeaseSpec{
-				LeaseTransitions: pointer.Int32Ptr(0),
-			},
-		}
-		_, err := leaseClient.Create(context.TODO(), lease, metav1.CreateOptions{})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &k8Locker{
-		name:        name,
-		namespace:   namespace,
-		clientID:    uuid.New().String(),
-		retryWait:   500 * time.Millisecond,
-		maxWait:     30 * time.Second,
-		leaseClient: leaseClient,
-	}, nil
-}
+// 	// create the Lease if it doesn't exist
+// 	leaseClient := Cfg.K8ss_local.ClientSet.CoordinationV1().Leases(namespace)
+// 	_, err := leaseClient.Get(context.TODO(), name, metav1.GetOptions{})
+// 	if err != nil {
+// 		if !k8errors.IsNotFound(err) {
+// 			return nil, err
+// 		}
+// 		lease := &coordinationv1.Lease{
+// 			ObjectMeta: metav1.ObjectMeta{
+// 				Name: name,
+// 			},
+// 			Spec: coordinationv1.LeaseSpec{
+// 				LeaseTransitions: pointer.Int32Ptr(0),
+// 			},
+// 		}
+// 		_, err := leaseClient.Create(context.TODO(), lease, metav1.CreateOptions{})
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+// 	return &k8Locker{
+// 		name:        name,
+// 		namespace:   namespace,
+// 		clientID:    uuid.New().String(),
+// 		retryWait:   500 * time.Millisecond,
+// 		maxWait:     30 * time.Second,
+// 		leaseClient: leaseClient,
+// 	}, nil
+// }
 
-// Lock will block until the client is the holder of the Lease resource
-func (l *k8Locker) Lock() {
-	ttl := l.maxWait
+// // Lock will block until the client is the holder of the Lease resource
+// func (l *k8Locker) Lock() {
+// 	ttl := l.maxWait
 
-	// block until we get a lock
-	for {
-		if ttl < 0 {
-			panic(fmt.Sprintf("timeout while trying to get a lease for lock: %v", l))
-		}
-		// get the Lease
-		lease, err := l.leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
-		if err != nil {
-			panic(fmt.Sprintf("could not get Lease resource for lock: %v", err))
-		}
+// 	// block until we get a lock
+// 	for {
+// 		if ttl < 0 {
+// 			panic(fmt.Sprintf("timeout while trying to get a lease for lock: %v", l))
+// 		}
+// 		// get the Lease
+// 		lease, err := l.leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
+// 		if err != nil {
+// 			panic(fmt.Sprintf("could not get Lease resource for lock: %v", err))
+// 		}
 
-		if lease.Spec.HolderIdentity != nil {
-			if lease.Spec.LeaseDurationSeconds == nil {
-				// The lock is already held and has no expiry
-				time.Sleep(l.retryWait)
-				ttl -= l.retryWait
-				continue
-			}
+// 		if lease.Spec.HolderIdentity != nil {
+// 			if lease.Spec.LeaseDurationSeconds == nil {
+// 				// The lock is already held and has no expiry
+// 				time.Sleep(l.retryWait)
+// 				ttl -= l.retryWait
+// 				continue
+// 			}
 
-			acquireTime := lease.Spec.AcquireTime.Time
-			leaseDuration := time.Duration(*lease.Spec.LeaseDurationSeconds) * time.Second
+// 			acquireTime := lease.Spec.AcquireTime.Time
+// 			leaseDuration := time.Duration(*lease.Spec.LeaseDurationSeconds) * time.Second
 
-			if acquireTime.Add(leaseDuration).After(time.Now()) {
-				// The lock is already held and hasn't expired yet
-				time.Sleep(l.retryWait)
-				ttl -= l.retryWait
-				continue
-			}
-		}
+// 			if acquireTime.Add(leaseDuration).After(time.Now()) {
+// 				// The lock is already held and hasn't expired yet
+// 				time.Sleep(l.retryWait)
+// 				ttl -= l.retryWait
+// 				continue
+// 			}
+// 		}
 
-		// nobody holds the lock, try and lock it
-		lease.Spec.HolderIdentity = pointer.StringPtr(l.clientID)
-		if lease.Spec.LeaseTransitions != nil {
-			lease.Spec.LeaseTransitions = pointer.Int32Ptr((*lease.Spec.LeaseTransitions) + 1)
-		} else {
-			lease.Spec.LeaseTransitions = pointer.Int32Ptr((*lease.Spec.LeaseTransitions) + 1)
-		}
-		lease.Spec.AcquireTime = &metav1.MicroTime{time.Now()}
-		if l.ttl.Seconds() > 0 {
-			lease.Spec.LeaseDurationSeconds = pointer.Int32Ptr(int32(l.ttl.Seconds()))
-		}
-		_, err = l.leaseClient.Update(context.TODO(), lease, metav1.UpdateOptions{})
-		if err == nil {
-			// we got the lock, break the loop
-			break
-		}
+// 		// nobody holds the lock, try and lock it
+// 		lease.Spec.HolderIdentity = pointer.StringPtr(l.clientID)
+// 		if lease.Spec.LeaseTransitions != nil {
+// 			lease.Spec.LeaseTransitions = pointer.Int32Ptr((*lease.Spec.LeaseTransitions) + 1)
+// 		} else {
+// 			lease.Spec.LeaseTransitions = pointer.Int32Ptr((*lease.Spec.LeaseTransitions) + 1)
+// 		}
+// 		lease.Spec.AcquireTime = &metav1.MicroTime{time.Now()}
+// 		if l.ttl.Seconds() > 0 {
+// 			lease.Spec.LeaseDurationSeconds = pointer.Int32Ptr(int32(l.ttl.Seconds()))
+// 		}
+// 		_, err = l.leaseClient.Update(context.TODO(), lease, metav1.UpdateOptions{})
+// 		if err == nil {
+// 			// we got the lock, break the loop
+// 			break
+// 		}
 
-		if !k8errors.IsConflict(err) {
-			// if the error isn't a conflict then something went horribly wrong
-			panic(fmt.Sprintf("lock: error when trying to update Lease: %v", err))
-		}
+// 		if !k8errors.IsConflict(err) {
+// 			// if the error isn't a conflict then something went horribly wrong
+// 			panic(fmt.Sprintf("lock: error when trying to update Lease: %v", err))
+// 		}
 
-		// Another client beat us to the lock
-		time.Sleep(l.retryWait)
-		ttl -= l.retryWait
-	}
-}
+// 		// Another client beat us to the lock
+// 		time.Sleep(l.retryWait)
+// 		ttl -= l.retryWait
+// 	}
+// }
 
-// Unlock will remove the client as the holder of the Lease resource
-func (l *k8Locker) Unlock() {
+// // Unlock will remove the client as the holder of the Lease resource
+// func (l *k8Locker) Unlock() {
 
-	lease, err := l.leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
-	if err != nil {
-		panic(fmt.Sprintf("could not get Lease resource for lock: %v", err))
-	}
+// 	lease, err := l.leaseClient.Get(context.TODO(), l.name, metav1.GetOptions{})
+// 	if err != nil {
+// 		panic(fmt.Sprintf("could not get Lease resource for lock: %v", err))
+// 	}
 
-	// the holder has to have a value and has to be our ID for us to be able to unlock
-	if lease.Spec.HolderIdentity == nil {
-		panic("unlock: no lock holder value")
-	}
+// 	// the holder has to have a value and has to be our ID for us to be able to unlock
+// 	if lease.Spec.HolderIdentity == nil {
+// 		panic("unlock: no lock holder value")
+// 	}
 
-	if *lease.Spec.HolderIdentity != l.clientID {
-		panic("unlock: not the lock holder")
-	}
+// 	if *lease.Spec.HolderIdentity != l.clientID {
+// 		panic("unlock: not the lock holder")
+// 	}
 
-	lease.Spec.HolderIdentity = nil
-	lease.Spec.AcquireTime = nil
-	lease.Spec.LeaseDurationSeconds = nil
-	_, err = l.leaseClient.Update(context.TODO(), lease, metav1.UpdateOptions{})
-	if err != nil {
-		panic(fmt.Sprintf("unlock: error when trying to update Lease: %v", err))
-	}
-}
+// 	lease.Spec.HolderIdentity = nil
+// 	lease.Spec.AcquireTime = nil
+// 	lease.Spec.LeaseDurationSeconds = nil
+// 	_, err = l.leaseClient.Update(context.TODO(), lease, metav1.UpdateOptions{})
+// 	if err != nil {
+// 		panic(fmt.Sprintf("unlock: error when trying to update Lease: %v", err))
+// 	}
+// }
 
-func (k8 K8sSvs) WatiForDeployments(nsName string, timeout time.Duration) error {
-	ttl := timeout
-	wait := 5 * time.Second
-	for ttl > 0 {
-		time.Sleep(wait)
-		ttl -= wait
-		Logger.Sugar().Debugf("ttl: %v (%v)", ttl, nsName)
-		ds, err := k8.ClientSet.AppsV1().Deployments(nsName).List(context.Background(), metav1.ListOptions{})
-		if err != nil {
-			return err
-		}
-		alldone := true
-		for _, d := range ds.Items {
-			if d.Status.Replicas != d.Status.AvailableReplicas ||
-				d.Status.Replicas != d.Status.ReadyReplicas ||
-				d.Status.Replicas != d.Status.UpdatedReplicas {
-				alldone = false
-				Logger.Sugar().Debugf("waiting for: %v (%v)", d.Name, nsName)
-			}
-		}
-		if alldone {
-			Logger.Sugar().Debugf("waited: %v", timeout-ttl)
-			return nil
-		}
-	}
-	return errors.New("timeout")
-}
+// func (k8 K8sSvs) WatiForDeployments(nsName string, timeout time.Duration) error {
+// 	ttl := timeout
+// 	wait := 5 * time.Second
+// 	for ttl > 0 {
+// 		time.Sleep(wait)
+// 		ttl -= wait
+// 		Logger.Sugar().Debugf("ttl: %v (%v)", ttl, nsName)
+// 		ds, err := k8.ClientSet.AppsV1().Deployments(nsName).List(context.Background(), metav1.ListOptions{})
+// 		if err != nil {
+// 			return err
+// 		}
+// 		alldone := true
+// 		for _, d := range ds.Items {
+// 			if d.Status.Replicas != d.Status.AvailableReplicas ||
+// 				d.Status.Replicas != d.Status.ReadyReplicas ||
+// 				d.Status.Replicas != d.Status.UpdatedReplicas {
+// 				alldone = false
+// 				Logger.Sugar().Debugf("waiting for: %v (%v)", d.Name, nsName)
+// 			}
+// 		}
+// 		if alldone {
+// 			Logger.Sugar().Debugf("waited: %v", timeout-ttl)
+// 			return nil
+// 		}
+// 	}
+// 	return errors.New("timeout")
+// }
 
 // func (k8 K8sSvs) Init_LeaseBasedLock(namespaceName, lockName string) (*apiCoordV1.Lease, error) {
 // 		//try 3 times to create one
