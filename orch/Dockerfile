@@ -1,4 +1,4 @@
-FROM golang:1.17 as buildEnv
+FROM golang:1.20 as buildEnv
 WORKDIR /app
 COPY . .
 RUN GOOS=linux GOARCH=amd64 go build -ldflags "-c -w -s -linkmode external -extldflags -static"

@@ -1,6 +1,6 @@
 
 
-FROM golang:1.18
+FROM golang:1.20
 WORKDIR /app
 COPY . .
 RUN GOOS=linux GOARCH=amd64 go build -ldflags "-c -w -s -linkmode external -extldflags -static" -a main
