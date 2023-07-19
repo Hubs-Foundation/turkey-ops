@@ -29,6 +29,10 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if r.URL.Path == "/api-internal/v1/storage" {
+		fmt.Fprint(w, `{"storage_mb":-1}`)
+		return
+	}
 	if strings.HasSuffix(r.URL.Path, "/websocket") {
 		trc_ws(w, r, subdomain, hubId)
 	}
