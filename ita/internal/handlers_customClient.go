@@ -8,13 +8,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tanfarming/goutils/pkg/kubelocker"
 	corev1 "k8s.io/api/core/v1"
 )
 
-//curl -X PATCH ita:6000/deploy?app=hubs?file=<name-of-the-file-under-/storage/ita-uploads>
+// curl -X PATCH ita:6000/deploy?app=hubs?file=<name-of-the-file-under-/storage/ita-uploads>
 var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	features := cfg.Features.Get()
-	if !features.customClient || (r.URL.Path != "/deploy" && r.URL.Path != "/api/ita/deploy") {
+	if !features.customClient ||
+		(r.URL.Path != "/deploy" && r.URL.Path != "/api/ita/deploy") ||
+		(r.Method != "PATCH" && r.Method != "POST") {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
@@ -25,9 +28,28 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	app := r.URL.Query().Get("app")
 	if app != "hubs" && app != "spoke" {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
+
+	locker, err := kubelocker.Newkubelocker(cfg.K8sClientSet, cfg.PodNS)
+	if err != nil {
+		Logger.Sugar().Errorf("failed to create locker for namespace: %v", cfg.PodNS)
+		return
+	}
+	err = locker.Lock()
+	if err != nil {
+		Logger.Sugar().Errorf("failed to lock: err:%v, id: %v, worklog: %v", err, locker.Id(), strings.Join(locker.WorkLog(), ";"))
+		return
+	}
+	Logger.Sugar().Debugf("acquired locker: %v \n", locker.Id())
+
+	defer func() {
+		err = locker.Unlock()
+		if err != nil {
+			Logger.Sugar().Errorf("failed to unlock " + err.Error())
+		}
+	}()
 
 	switch r.Method {
 	case "PATCH":
@@ -67,7 +89,7 @@ var Deploy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	Deployment_setLabel("custom-client", "T")
+	Deployment_setLabel("custom-client", "yes")
 	go func() {
 		wait := 35 * time.Second
 		Logger.Sugar().Debugf("respawning %v pods in %v", app, wait)

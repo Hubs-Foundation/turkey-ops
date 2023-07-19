@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/tanfarming/goutils/pkg/kubelocker"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,6 +29,26 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
+
+		locker, err := kubelocker.Newkubelocker(cfg.K8sClientSet, cfg.PodNS)
+		if err != nil {
+			Logger.Sugar().Errorf("failed to create locker for namespace: %v", cfg.PodNS)
+			return
+		}
+		err = locker.Lock()
+		if err != nil {
+			Logger.Sugar().Errorf("failed to lock: err:%v, id: %v, worklog: %v", err, locker.Id(), strings.Join(locker.WorkLog(), ";"))
+			return
+		}
+		Logger.Sugar().Debugf("acquired locker: %v \n", locker.Id())
+
+		defer func() {
+			err = locker.Unlock()
+			if err != nil {
+				Logger.Sugar().Errorf("failed to unlock " + err.Error())
+			}
+		}()
+
 		currentDomain, _ := Deployment_getLabel("custom-domain")
 		if fromDomain != currentDomain {
 			http.Error(w, fmt.Sprintf("mismatch: from_domain %v, current: %v", fromDomain, currentDomain), http.StatusBadRequest)
@@ -55,7 +76,7 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			fromDomain = cfg.SubDomain + "." + cfg.HubDomain
 		}
 		Logger.Sugar().Debugf("setting custom domain with fromDomain: %v, toDomain: %v", fromDomain, toDomain)
-		err := setCustomDomain(fromDomain, toDomain)
+		err = setCustomDomain(fromDomain, toDomain)
 		if err != nil {
 			http.Error(w, "failed @ setCustomDomain: "+err.Error(), http.StatusInternalServerError)
 			return

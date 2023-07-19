@@ -192,7 +192,9 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	var err error
 
 	task := hc_task_translator(r)
+
 	if task != "hc_create" {
+
 		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to create locker for hubId: %v", cfg.HubId)
@@ -425,7 +427,7 @@ func hc_restore(hubId string) error {
 	// get configs
 	cfg, err := getHCcfgFromHubDir(hubId)
 	if err != nil {
-		return fmt.Errorf("failed @getHCcfgFromHubDir: ", err)
+		return fmt.Errorf("failed @getHCcfgFromHubDir: %v", err)
 	}
 
 	// create db
