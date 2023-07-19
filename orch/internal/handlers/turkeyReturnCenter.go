@@ -25,7 +25,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 	}
 
 	if r.URL.Path == "/api-internal/v1/presence" {
-		fmt.Fprint(w, `{"count":"0"}`)
+		fmt.Fprint(w, `{"count":"-1"}`)
 		return
 	}
 
