@@ -1217,6 +1217,7 @@ func hc_switch(HubId, status string) error {
 
 	Replicas := 0
 	if status == "up" {
+		time.Sleep(50 * time.Second)
 		// scale up to 1 and let hpa to manage scaling
 		Replicas = 1
 	}
