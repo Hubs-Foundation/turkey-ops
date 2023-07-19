@@ -30,6 +30,7 @@ import (
 	"main/internal"
 
 	"github.com/tanfarming/goutils/pkg/kubelocker"
+	k8errors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 type HCcfg struct {
@@ -194,6 +195,15 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	task := hc_task_translator(r)
 
 	if task != "hc_create" {
+
+		// restore if the instance's collected
+		if _, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(),
+			"hc-"+cfg.HubId, metav1.GetOptions{}); k8errors.IsNotFound(err) {
+			err := hc_restore(cfg.HubId)
+			if err != nil {
+				return fmt.Errorf("failed @ hc_restore: %v", err)
+			}
+		}
 
 		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
