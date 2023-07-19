@@ -5,7 +5,7 @@ go 1.20
 require (
 	cloud.google.com/go/storage v1.10.0
 	github.com/gorilla/websocket v1.4.2
-	github.com/tanfarming/goutils v0.0.13
+	github.com/tanfarming/goutils v0.0.15
 	go.uber.org/zap v1.19.1
 	k8s.io/api v0.27.3
 	k8s.io/apimachinery v0.27.3
