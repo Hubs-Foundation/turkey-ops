@@ -241,10 +241,16 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		if cfg.HubId == "" {
 			return fmt.Errorf("missing hcCfg.HubId, err")
 		}
-
-		DeleteHubsCloudInstance(cfg.HubId, false, false)
-
+		// todo -- add async delete (does not wait for deleting chan) when needed
+		deleting, err := DeleteHubsCloudInstance(cfg.HubId, false, false)
+		if err != nil {
+			return err
+		}
+		for m := range deleting { //wait for completion
+			internal.Logger.Debug(m)
+		}
 		return nil
+
 	case "hc_switch_up":
 		err = hc_switch(cfg.HubId, "up")
 		if err != nil {
@@ -1087,20 +1093,6 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 
 	deleting := make(chan string)
 	go func() {
-
-		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+hubId)
-		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
-			return
-		}
-		internal.Logger.Sugar().Debugf("locker: %v \n", locker)
-
-		err = locker.Lock()
-		if err != nil {
-			internal.Logger.Sugar().Errorf("failed to lock: %v", err)
-			return
-		}
-		// ns deleted ... no need to unlock
 
 		internal.Logger.Debug("&#128024 deleting ns: " + nsName)
 		// scale down the namespace before deletion to avoid pod/ns "stuck terminating"
