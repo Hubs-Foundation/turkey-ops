@@ -24,6 +24,11 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if r.URL.Path == "/api-internal/v1/presence" {
+		fmt.Fprint(w, `{"count":"0"}`)
+		return
+	}
+
 	if strings.HasSuffix(r.URL.Path, "/websocket") {
 		trc_ws(w, r, subdomain, hubId)
 	}
