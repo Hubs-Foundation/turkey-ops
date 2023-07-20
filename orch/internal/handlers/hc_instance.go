@@ -327,7 +327,7 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// add to subdomain:hubId lookup table
-	internal.RetryFunc(600*time.Second, 3*time.Second,
+	internal.RetryFunc(200*time.Second, 3*time.Second,
 		func() error {
 			trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
 			if err != nil {
