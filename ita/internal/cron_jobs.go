@@ -66,7 +66,6 @@ func Cronjob_pauseHC(interval time.Duration) {
 		retccu = 1
 	}
 	Logger.Sugar().Debugf("retCcu: %v", retccu)
-	// resp, err := http.Client{Timeout:5*time.Millisecond, }
 	if retccu != 0 {
 		pauseJob_idleCnt = 0
 	} else {
