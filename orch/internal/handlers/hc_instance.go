@@ -355,7 +355,7 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// all done -- add route
-	internal.RetryFunc(60*time.Second, 3*time.Second,
+	internal.RetryFunc(600*time.Second, 3*time.Second,
 		func() error {
 			trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
 			if err != nil {
@@ -383,6 +383,8 @@ func hc_collect(cfg HCcfg) error {
 			return err
 		})
 	if err != nil {
+		internal.Logger.Sugar().Errorf(
+			"hc_collect failed to add ingress route !!! err: %v, cfg: %+v", err, cfg)
 		return err
 	}
 
