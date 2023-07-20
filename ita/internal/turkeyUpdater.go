@@ -76,6 +76,8 @@ func (u *TurkeyUpdater) Start() error {
 	mu_updater.Lock()
 	defer mu_updater.Unlock()
 
+	time.Sleep(2 * time.Minute)
+
 	channel, err := Deployment_getLabel("CHANNEL")
 	if err != nil {
 		Logger.Warn("failed to get channel: " + err.Error())
