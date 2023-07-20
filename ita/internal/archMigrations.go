@@ -27,7 +27,8 @@ func ArchMigrations() error {
 		if !strings.HasPrefix(pod.Name, "ita-") {
 			return nil
 		}
-		orchCollect()
+		// orchCollect()
+		Logger.Warn("collect now: " + cfg.PodNS)
 	}
 	return nil
 }
