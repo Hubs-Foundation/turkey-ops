@@ -157,6 +157,9 @@ func MakeCfg() {
 	cfg.Features = New_featureMan()
 	cfg.Features.determineFeatures()
 	Logger.Sugar().Infof("cfg.Features: %+v", cfg.Features.Get())
+
+	ArchMigrations()
+
 	cfg.Features.setupFeatures()
 
 }
