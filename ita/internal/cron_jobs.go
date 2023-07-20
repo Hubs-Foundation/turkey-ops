@@ -24,12 +24,33 @@ func Cronjob_dummy(interval string) {
 }
 
 var pauseJob_idleCnt time.Duration
-var pausing bool
+
+// var pausing bool
 
 func Cronjob_pauseHC(interval time.Duration) {
-	if pausing {
-		return
+	// if pausing {
+	// 	return
+	// }
+	shouldPause := false
+
+	// ~~~~~~~~~~~~ tmp ~~~~~~~~~~~~
+	if tPaused_str, err := Deployment_getLabel("paused"); err == nil {
+		Deployment_setLabel("paused", "")
+		Logger.Debug("tPaused_str: " + tPaused_str)
+		if tPaused_str != "" {
+			if tPaused, err := time.Parse("060102", tPaused_str); err == nil {
+				Logger.Sugar().Debugf("tPaused: %v", tPaused)
+				shouldPause = true
+
+				rand.Seed(int64(cfg.HostnameHash))
+				waitSec := rand.Intn(600)
+				Logger.Sugar().Debugf("~~~tmp~~~pausing~~~start in %v secs", waitSec)
+				time.Sleep(time.Duration(waitSec) * time.Second)
+			}
+		}
 	}
+	// ~~~~~~~~~~~~ tmp ~~~~~~~~~~~~
+
 	//get ret_ccu
 	retccu, err := getRetCcu()
 	if err != nil {
@@ -44,37 +65,18 @@ func Cronjob_pauseHC(interval time.Duration) {
 		pauseJob_idleCnt += interval
 		Logger.Sugar().Debugf("new pauseJob_idle: %v, time to pause: %v", pauseJob_idleCnt, (cfg.FreeTierIdleMax - pauseJob_idleCnt))
 
-		shouldPause := pauseJob_idleCnt >= cfg.FreeTierIdleMax
+		shouldPause = pauseJob_idleCnt >= cfg.FreeTierIdleMax
+	}
 
-		// ~~~~~~~~~~~~ tmp ~~~~~~~~~~~~
-		if tPaused_str, err := Deployment_getLabel("paused"); err == nil {
-			Deployment_setLabel("paused", "")
-			Logger.Debug("tPaused_str: " + tPaused_str)
-			if tPaused_str != "" {
-				if tPaused, err := time.Parse("060102", tPaused_str); err == nil {
-					Logger.Sugar().Debugf("tPaused: %v", tPaused)
-					shouldPause = true
+	if shouldPause {
+		Logger.Info("Cronjob_pauseHC --- pausing -- " + cfg.PodNS)
 
-					rand.Seed(int64(cfg.HostnameHash))
-					waitSec := rand.Intn(600)
-					Logger.Sugar().Debugf("~~~tmp~~~pausing~~~start in %v secs", waitSec)
-					time.Sleep(time.Duration(waitSec) * time.Second)
-				}
-			}
+		err := orchCollect()
+		if err != nil {
+			Logger.Sugar().Errorf("failed: %v", err)
+			return
 		}
-		// ~~~~~~~~~~~~ tmp ~~~~~~~~~~~~
-
-		if shouldPause {
-			Logger.Info("Cronjob_pauseHC --- pausing -- " + cfg.PodNS)
-
-			err := orchCollect()
-			if err != nil {
-				Logger.Sugar().Errorf("failed: %v", err)
-				return
-			}
-
-			pausing = true
-		}
+		// pausing = true
 	}
 
 }
