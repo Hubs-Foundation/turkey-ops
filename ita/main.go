@@ -75,6 +75,8 @@ func main() {
 	router.Handle("/z/pause", internal.Z_Pause)
 	router.Handle("/z/resume", internal.Z_Resume)
 
+	router.Handle("/z/CollectNow", internal.CollectNow)
+
 	//turkeyauth protected public api endpoints
 	router.Handle("/api/ita/refresh", chk_tat_hdr()(internal.Refresh))
 	router.Handle("/api/ita/upload", chk_tat_hdr()(internal.Upload))

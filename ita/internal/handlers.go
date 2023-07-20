@@ -47,12 +47,10 @@ var Ita_cfg_ret_ps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 	return
 })
 
-func CollectNow() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := orchCollect()
-		fmt.Fprintf(w, "done, orchCollect err: %+v", err)
-	})
-}
+var CollectNow = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := orchCollect()
+	fmt.Fprintf(w, "done, orchCollect err: %+v", err)
+})
 
 // var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 // 	if r.URL.Path != "/hc_launch_fallback" || r.Method != "GET" {
