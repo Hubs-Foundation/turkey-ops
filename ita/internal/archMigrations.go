@@ -17,6 +17,7 @@ func ArchMigrations() error {
 		return err
 	}
 	for _, pod := range pods.Items {
+		Logger.Info("pod.Name: " + pod.Name)
 		if !strings.HasPrefix(pod.Name, "ita-") {
 			return nil
 		}
