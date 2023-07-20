@@ -91,9 +91,9 @@ func MakeCfg() {
 
 	cfg.HubDomain = getDomainFromOrch()
 	if cfg.HubDomain == "" {
-		Logger.Error("failed to getDomainFromOrch")
+		Logger.Fatal("failed to getDomainFromOrch")
 	}
-	Logger.Fatal("cfg.HubDomain: " + cfg.HubDomain)
+	Logger.Info("cfg.HubDomain: " + cfg.HubDomain)
 
 	Hostname, err := os.Hostname()
 	if err != nil {
@@ -118,12 +118,18 @@ func MakeCfg() {
 	if err != nil {
 		Logger.Fatal("failed to get subdomain with NS_getLabel: " + err.Error())
 	}
+	Logger.Info("cfg.SubDomain: " + cfg.SubDomain)
 
-	cfg.RootUserEmail, _ = Get_fromNsAnnotations("adm")
-	Logger.Sugar().Fatal("cfg.RootUserEmail: %v", cfg.RootUserEmail)
+	cfg.RootUserEmail, err = Get_fromNsAnnotations("adm")
+	if err != nil {
+		Logger.Fatal("failed @Get_fromNsAnnotations: " + err.Error())
+	}
+	Logger.Info("cfg.RootUserEmail: " + cfg.RootUserEmail)
+
+	Logger.Sugar().Info("cfg.RootUserEmail: %v", cfg.RootUserEmail)
 
 	cfg.Ret_guardiankey, cfg.Ret_phxkey = GetRetKeys()
-	Logger.Sugar().Fatal("cfg.Ret_guardiankey: %v, cfg.Ret_phxkey: %v",
+	Logger.Sugar().Info("cfg.Ret_guardiankey: %v, cfg.Ret_phxkey: %v",
 		cfg.Ret_guardiankey, cfg.Ret_phxkey)
 
 	cfg.FreeTierIdleMax, err = time.ParseDuration(os.Getenv("FreeTierIdleMax"))
