@@ -1,8 +1,24 @@
 package internal
 
+import (
+	"context"
+	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 func ArchMigrations() error {
 
 	Logger.Debug("placeholder")
+
+	pods, _ := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).List(context.Background(), metav1.ListOptions{})
+
+	if len(pods.Items) == 1 && strings.HasPrefix(pods.Items[0].Name, "ita-") {
+		orchCollect()
+	}
+
+	// AppsV1().Deployments(cfg.PodNS).Get(context.Background(), "reticulum", v1.GetOptions{})
+
 	// // if pausingLable != "yes" {
 	// // 	return nil
 	// // }
