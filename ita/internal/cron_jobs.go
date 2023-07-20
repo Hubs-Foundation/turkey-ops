@@ -42,18 +42,29 @@ func Cronjob_pauseHC(interval time.Duration) {
 	} else {
 		pauseJob_idleCnt += interval
 		Logger.Sugar().Debugf("new pauseJob_idle: %v, time to pause: %v", pauseJob_idleCnt, (cfg.FreeTierIdleMax - pauseJob_idleCnt))
-		if pauseJob_idleCnt >= cfg.FreeTierIdleMax {
-			//pause it
+
+		shouldPause := pauseJob_idleCnt >= cfg.FreeTierIdleMax
+
+		// ~~~~~~~~~~~~ tmp ~~~~~~~~~~~~
+		if tPaused_str, err := Deployment_getLabel("paused"); err == nil {
+			Deployment_setLabel("paused", "")
+			Logger.Debug("tPaused_str: " + tPaused_str)
+			if tPaused_str != "" {
+				if tPaused, err := time.Parse("060102", tPaused_str); err == nil {
+					Logger.Sugar().Debugf("tPaused: %v", tPaused)
+					shouldPause = true
+				}
+			}
+		}
+		// ~~~~~~~~~~~~ tmp ~~~~~~~~~~~~
+
+		if shouldPause {
 			Logger.Info("Cronjob_pauseHC --- pausing -- " + cfg.PodNS)
 
-			if strings.HasSuffix(cfg.HubDomain, "dev.myhubs.net") {
-				err := orchCollect()
-				if err != nil {
-					Logger.Sugar().Errorf("failed: %v", err)
-					return
-				}
-			} else {
-				HC_Pause()
+			err := orchCollect()
+			if err != nil {
+				Logger.Sugar().Errorf("failed: %v", err)
+				return
 			}
 
 			pausing = true
