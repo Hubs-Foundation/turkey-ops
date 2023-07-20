@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
@@ -32,32 +31,6 @@ func Cronjob_pauseHC(interval time.Duration) {
 	// 	return
 	// }
 	shouldPause := false
-
-	// ~~~~~~~~~~~~ tmp ~~~~~~~~~~~~
-	if tPaused_str, err := Deployment_getLabel("paused"); err == nil {
-		Deployment_setLabel("paused", "")
-		Logger.Debug("tPaused_str: " + tPaused_str)
-		if tPaused_str != "" {
-			if tPaused, err := time.Parse("060102", tPaused_str); err == nil {
-				Logger.Sugar().Debugf("tPaused: %v", tPaused)
-
-				rand.Seed(int64(cfg.HostnameHash))
-				waitSec := rand.Intn(600)
-				Logger.Sugar().Debugf("~~~tmp~~~pausing~~~start in %v secs", waitSec)
-				time.Sleep(time.Duration(waitSec) * time.Second)
-
-				Logger.Info("Cronjob_pauseHC --- pausing -- " + cfg.PodNS)
-
-				err := orchCollect()
-				if err != nil {
-					Logger.Sugar().Errorf("failed: %v", err)
-					return
-				}
-
-			}
-		}
-	}
-	// ~~~~~~~~~~~~ tmp ~~~~~~~~~~~~
 
 	//get ret_ccu
 	retccu, err := getRetCcu()

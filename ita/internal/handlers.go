@@ -47,6 +47,13 @@ var Ita_cfg_ret_ps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 	return
 })
 
+func CollectNow() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		err := orchCollect()
+		fmt.Fprintf(w, "done, orchCollect err: %+v", err)
+	})
+}
+
 // var HC_launch_fallback = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 // 	if r.URL.Path != "/hc_launch_fallback" || r.Method != "GET" {
 // 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -58,11 +65,11 @@ var Ita_cfg_ret_ps = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 // 	return
 // })
 
-// var supportedChannels = map[string]bool{
-// 	"dev":    true,
-// 	"beta":   true,
-// 	"stable": true,
-// }
+//	var supportedChannels = map[string]bool{
+//		"dev":    true,
+//		"beta":   true,
+//		"stable": true,
+//	}
 var Updater = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/updater" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
