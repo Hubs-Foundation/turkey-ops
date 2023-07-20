@@ -327,7 +327,7 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// add to subdomain:hubId lookup table
-	internal.RetryFunc(60*time.Second, 3*time.Second,
+	internal.RetryFunc(600*time.Second, 3*time.Second,
 		func() error {
 			trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
 			if err != nil {
@@ -338,6 +338,8 @@ func hc_collect(cfg HCcfg) error {
 			return err
 		})
 	if err != nil {
+		internal.Logger.Sugar().Errorf(
+			"hc_collect failed to add to configmap lookup table! err: %v, cfg: %+v", err, cfg)
 		return err
 	}
 
