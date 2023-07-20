@@ -207,7 +207,7 @@ func (k8 K8sSvs) GetOrCreateTrcIngress() (*networkingv1.Ingress, error) {
 func (k8 K8sSvs) TrcIg_deleteHost(host string) error {
 	Logger.Debug("TrcIg_deleteHost, host: " + host)
 	RetryFunc(
-		15*time.Second, 3*time.Second,
+		600*time.Second, 3*time.Second,
 		func() error {
 			trcIg, err := k8.GetOrCreateTrcIngress()
 			if err != nil {
