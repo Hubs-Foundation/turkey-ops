@@ -62,7 +62,7 @@ func Cronjob_pauseHC(interval time.Duration) {
 	//get ret_ccu
 	retccu, err := getRetCcu()
 	if err != nil {
-		Logger.Sugar().Debugf("retCcuReq err (%v), using retccu=1", err.Error())
+		// Logger.Sugar().Debugf("retCcuReq err (%v), using retccu=1", err.Error())
 		retccu = 1
 	}
 	Logger.Sugar().Debugf("retCcu: %v", retccu)
@@ -70,7 +70,7 @@ func Cronjob_pauseHC(interval time.Duration) {
 		pauseJob_idleCnt = 0
 	} else {
 		pauseJob_idleCnt += interval
-		Logger.Sugar().Debugf("new pauseJob_idle: %v, time to pause: %v", pauseJob_idleCnt, (cfg.FreeTierIdleMax - pauseJob_idleCnt))
+		Logger.Sugar().Debugf("idle: %v, time to pause: %v", pauseJob_idleCnt, (cfg.FreeTierIdleMax - pauseJob_idleCnt))
 
 		shouldPause = pauseJob_idleCnt >= cfg.FreeTierIdleMax
 	}
