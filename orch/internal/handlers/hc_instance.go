@@ -348,13 +348,6 @@ func hc_collect(cfg HCcfg) error {
 	if err != nil {
 		return err
 	}
-	for m := range deleting { //wait for completion
-		internal.Logger.Debug(m)
-	}
-	err = os.Remove(hubDir + "/collecting")
-	if err != nil {
-		return err
-	}
 
 	// all done -- add route
 	internal.RetryFunc(600*time.Second, 3*time.Second,
@@ -387,6 +380,14 @@ func hc_collect(cfg HCcfg) error {
 	if err != nil {
 		internal.Logger.Sugar().Errorf(
 			"hc_collect failed to add ingress route !!! err: %v, cfg: %+v", err, cfg)
+		return err
+	}
+
+	for m := range deleting { //wait for delete to complete
+		internal.Logger.Debug(m)
+	}
+	err = os.Remove(hubDir + "/collecting")
+	if err != nil {
 		return err
 	}
 
