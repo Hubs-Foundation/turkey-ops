@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgtype"
-	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
@@ -349,39 +348,39 @@ func hc_collect(cfg HCcfg) error {
 		return err
 	}
 
-	// all done -- add route
-	internal.RetryFunc(22*time.Second, 3*time.Second,
-		func() error {
-			trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
-			if err != nil {
-				return err
-			}
-			pathType := networkingv1.PathTypePrefix
-			trcIg.Spec.Rules = append(
-				trcIg.Spec.Rules,
-				networkingv1.IngressRule{
-					Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
-					IngressRuleValue: networkingv1.IngressRuleValue{
-						HTTP: &networkingv1.HTTPIngressRuleValue{
-							Paths: []networkingv1.HTTPIngressPath{
-								{
-									Path:     "/",
-									PathType: &pathType,
-									Backend: networkingv1.IngressBackend{
-										Service: &networkingv1.IngressServiceBackend{
-											Name: "turkeyorch",
-											Port: networkingv1.ServiceBackendPort{
-												Number: 888,
-											}}}},
-							}}}})
-			_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(), trcIg, metav1.UpdateOptions{})
-			return err
-		})
-	if err != nil {
-		internal.Logger.Sugar().Errorf(
-			"hc_collect failed to add ingress route !!! err: %v, cfg: %+v", err, cfg)
-		return err
-	}
+	// // all done -- add route
+	// internal.RetryFunc(22*time.Second, 3*time.Second,
+	// 	func() error {
+	// 		trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 		pathType := networkingv1.PathTypePrefix
+	// 		trcIg.Spec.Rules = append(
+	// 			trcIg.Spec.Rules,
+	// 			networkingv1.IngressRule{
+	// 				Host: cfg.Subdomain + "." + internal.Cfg.HubDomain,
+	// 				IngressRuleValue: networkingv1.IngressRuleValue{
+	// 					HTTP: &networkingv1.HTTPIngressRuleValue{
+	// 						Paths: []networkingv1.HTTPIngressPath{
+	// 							{
+	// 								Path:     "/",
+	// 								PathType: &pathType,
+	// 								Backend: networkingv1.IngressBackend{
+	// 									Service: &networkingv1.IngressServiceBackend{
+	// 										Name: "turkeyorch",
+	// 										Port: networkingv1.ServiceBackendPort{
+	// 											Number: 888,
+	// 										}}}},
+	// 						}}}})
+	// 		_, err = internal.Cfg.K8ss_local.ClientSet.NetworkingV1().Ingresses(internal.Cfg.PodNS).Update(context.Background(), trcIg, metav1.UpdateOptions{})
+	// 		return err
+	// 	})
+	// if err != nil {
+	// 	internal.Logger.Sugar().Errorf(
+	// 		"hc_collect failed to add ingress route !!! err: %v, cfg: %+v", err, cfg)
+	// 	return err
+	// }
 
 	for m := range deleting { //wait for delete to complete
 		internal.Logger.Debug(m)
@@ -493,13 +492,13 @@ func hc_restore(hubId string) error {
 		return fmt.Errorf("failed writing trc_ts file: %s", err)
 	}
 
-	// go func() { // drop route after 10 sec
-	// 	time.Sleep(10 * time.Second)
-	err = internal.Cfg.K8ss_local.TrcIg_deleteHost(cfg.Subdomain + "." + internal.Cfg.HubDomain)
-	if err != nil {
-		internal.Logger.Sugar().Errorf("Failed @ TrcIg_deleteHost: %s", err)
-	}
-	// }()
+	// // go func() { // drop route after 10 sec
+	// // 	time.Sleep(10 * time.Second)
+	// err = internal.Cfg.K8ss_local.TrcIg_deleteHost(cfg.Subdomain + "." + internal.Cfg.HubDomain)
+	// if err != nil {
+	// 	internal.Logger.Sugar().Errorf("Failed @ TrcIg_deleteHost: %s", err)
+	// }
+	// // }()
 
 	err = os.Remove(hubDir + "/cfg.json.wip")
 
