@@ -411,6 +411,12 @@ func hc_restore(hubId string) error {
 	// 	return errors.New("failed to get hubId for subdomain: %v" + subdomain)
 	// }
 	nsName := "hc-" + hubId
+
+	_, err := internal.NewK8sSvs_local().ClientSet.CoreV1().Namespaces().Get(context.Background(), nsName, metav1.GetOptions{})
+	if err == nil {
+		return fmt.Errorf("won't restore -- namespace (%v) already exist", nsName)
+	}
+
 	hubDir := "/turkeyfs/" + nsName
 	internal.Logger.Sugar().Debugf("nsName: %v, hubDir: %v", nsName, hubDir)
 
@@ -456,9 +462,10 @@ func hc_restore(hubId string) error {
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists (SQLSTATE 42P04)") {
 			internal.Logger.Sugar().Warn("db already exists: %v", err)
+			return fmt.Errorf("won't restore -- db already exists: %v", err)
 		} else {
 			internal.Logger.Sugar().Errorf("unexpected error @ create db: %v", err)
-			return err
+			return fmt.Errorf("won't restore -- unexpected error @ create db: %v", err)
 		}
 	}
 
