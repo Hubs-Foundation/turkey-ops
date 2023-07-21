@@ -22,5 +22,6 @@ func ArchMigrations() error {
 	// 	// orchCollect()
 	// 	Logger.Warn("collect now: " + cfg.PodNS)
 	// }
-	// return nil
+	return nil
+
 }

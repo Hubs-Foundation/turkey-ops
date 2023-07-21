@@ -327,7 +327,7 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// add to subdomain:hubId lookup table
-	internal.RetryFunc(200*time.Second, 3*time.Second,
+	internal.RetryFunc(11*time.Second, 3*time.Second,
 		func() error {
 			trcCm, err := internal.Cfg.K8ss_local.GetOrCreateTrcConfigmap()
 			if err != nil {
@@ -350,7 +350,7 @@ func hc_collect(cfg HCcfg) error {
 	}
 
 	// all done -- add route
-	internal.RetryFunc(600*time.Second, 3*time.Second,
+	internal.RetryFunc(22*time.Second, 3*time.Second,
 		func() error {
 			trcIg, err := internal.Cfg.K8ss_local.GetOrCreateTrcIngress()
 			if err != nil {
