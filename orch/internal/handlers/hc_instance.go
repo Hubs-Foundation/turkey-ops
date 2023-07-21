@@ -204,7 +204,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			}
 		}
 
-		locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
+		locker, err := kubelocker.NewDefault(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to create locker for hubId: %v", cfg.HubId)
 			return err
@@ -325,6 +325,18 @@ func hc_collect(cfg HCcfg) error {
 		return fmt.Errorf("failed to execute pg_dump: %v", err)
 	}
 
+	locker, err := kubelocker.NewNamed(internal.Cfg.K8ss_local.ClientSet, internal.Cfg.PodNS, "trc_cm")
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to create locker for hubId: %v", cfg.HubId)
+		return err
+	}
+
+	err = locker.Lock()
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to lock: err:%v, id: %v, worklog: %v", err, locker.Id(), strings.Join(locker.WorkLog(), ";"))
+		return err
+	}
+	internal.Logger.Sugar().Debugf("acquired locker: %v \n", locker.Id())
 	// add to subdomain:hubId lookup table
 	internal.RetryFunc(11*time.Second, 3*time.Second,
 		func() error {
@@ -341,7 +353,11 @@ func hc_collect(cfg HCcfg) error {
 			"hc_collect failed to add to configmap lookup table! err: %v, cfg: %+v", err, cfg)
 		return err
 	}
-
+	err = locker.Unlock()
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
+		return err
+	}
 	//delete, keepData == true
 	deleting, err := DeleteHubsCloudInstance(cfg.HubId, true, false)
 	if err != nil {
@@ -525,98 +541,77 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		}
 		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
 
-		go func() {
-			locker, err := kubelocker.Newkubelocker(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
-			if err != nil {
-				internal.Logger.Sugar().Errorf("failed to create locker: %v \n", locker)
-				return
+		if strings.HasPrefix(currentTier, "b") && !strings.HasPrefix(cfg.Tier, "b") {
+			itaHost := "ita.hc-" + cfg.HubId + ":6000"
+			//undeploy custom client
+			res, err := http.Get(itaHost + "/undeploy/hubs")
+			if err != nil || res == nil {
+				internal.Logger.Sugar().Errorf("failed to send undeploy custom hubs req: %v", err)
+				return "failed to send undeploy custom hubs req", err
+			} else if res.StatusCode > 299 {
+				internal.Logger.Sugar().Errorf("failed to undeploy custom hubs, resp.code: %v", res.StatusCode)
+				return "failed to undeploy custom hubs", err
 			}
-			internal.Logger.Sugar().Debugf("locker: %v \n", locker)
-
-			err = locker.Lock()
-			if err != nil {
-				internal.Logger.Sugar().Errorf("failed to lock: %v", err)
-				return
+			//wait for ns to settle down?
+			res, err = http.Get(itaHost + "/undeploy/spoke")
+			if err != nil || res == nil {
+				internal.Logger.Sugar().Errorf("failed to send undeploy custom spoke req: %v", err)
+				return "failed to send undeploy custom spoke req", err
+			} else if res.StatusCode > 299 {
+				internal.Logger.Sugar().Errorf("failed to undeploy custom spoke, resp.code: %v", res.StatusCode)
+				return "failed to undeploy custom spoke", err
 			}
+			//wait for ns to settle down?
 
-			defer func() {
-				err = locker.Unlock()
+			//undeploy custom domain
+			customDomain, err := internal.Cfg.K8ss_local.GetFromHubsItaLabel("hc-"+cfg.HubId, "custom-domain")
+			if err != nil {
+				internal.Logger.Sugar().Errorf("failed to get custom-domain from ita label: %v", err)
+				return "failed to get custom-domain from ita label", err
+			}
+			if customDomain != "" {
+				req, err := http.NewRequest("PATCH", itaHost+"/customDomain?from_domain="+customDomain, bytes.NewBuffer([]byte{}))
 				if err != nil {
-					internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
+					internal.Logger.Sugar().Errorf("failed to construct unset custom domain req: %v", err)
+					return "failed to construct unset custom domain req", err
 				}
-			}()
-
-			if strings.HasPrefix(currentTier, "b") && !strings.HasPrefix(cfg.Tier, "b") {
-				itaHost := "ita.hc-" + cfg.HubId + ":6000"
-				//undeploy custom client
-				res, err := http.Get(itaHost + "/undeploy/hubs")
+				res, err := http.DefaultClient.Do(req)
 				if err != nil || res == nil {
-					internal.Logger.Sugar().Errorf("failed to send undeploy custom hubs req: %v", err)
-					return
+					internal.Logger.Sugar().Errorf("failed to send unset custom domain req: %v", err)
+					return "failed to send unset custom domain req", err
 				} else if res.StatusCode > 299 {
-					internal.Logger.Sugar().Errorf("failed to undeploy custom hubs, resp.code: %v", res.StatusCode)
-					return
+					internal.Logger.Sugar().Errorf("failed to unset custom domain, resp.code: %v", res.StatusCode)
+					return "failed to unset custom domain, resp.code", err
 				}
-				//wait for ns to settle down
-				res, err = http.Get(itaHost + "/undeploy/spoke")
-				if err != nil || res == nil {
-					internal.Logger.Sugar().Errorf("failed to send undeploy custom spoke req: %v", err)
-					return
-				} else if res.StatusCode > 299 {
-					internal.Logger.Sugar().Errorf("failed to undeploy custom spoke, resp.code: %v", res.StatusCode)
-					return
-				}
-				//wait for ns to settle down
-
-				//undeploy custom domain
-				customDomain, err := internal.Cfg.K8ss_local.GetFromHubsItaLabel("hc-"+cfg.HubId, "custom-domain")
-				if err != nil {
-					internal.Logger.Sugar().Errorf("failed to get custom-domain from ita label: %v", err)
-					return
-				}
-				if customDomain != "" {
-					req, err := http.NewRequest("PATCH", itaHost+"/customDomain?from_domain="+customDomain, bytes.NewBuffer([]byte{}))
-					if err != nil {
-						internal.Logger.Sugar().Errorf("failed to construct unset custom domain req: %v", err)
-						return
-					}
-					res, err := http.DefaultClient.Do(req)
-					if err != nil || res == nil {
-						internal.Logger.Sugar().Errorf("failed to send unset custom domain req: %v", err)
-						return
-					} else if res.StatusCode > 299 {
-						internal.Logger.Sugar().Errorf("failed to unset custom domain, resp.code: %v", res.StatusCode)
-						return
-					}
-				}
-				//wait for ns to settle down
 			}
+			//wait for ns to settle down
+		}
 
-			if cfg.Tier == "p0" && cfg.Subdomain != "" {
-				internal.Logger.Sugar().Debugf("hc_updateTier[p0] / hc_patch_subdomain, hub_id: %v, subdomain: %v", cfg.HubId, cfg.Subdomain)
-				err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
-				if err != nil {
-					internal.Logger.Error("hc_updateTier[p0] / hc_patch_subdomain FAILED: " + err.Error())
-				}
-				time.Sleep(3 * time.Second)
-			}
-
-			err = hc_updateTier(cfg)
+		if cfg.Tier == "p0" && cfg.Subdomain != "" {
+			internal.Logger.Sugar().Debugf("hc_updateTier[p0] / hc_patch_subdomain, hub_id: %v, subdomain: %v", cfg.HubId, cfg.Subdomain)
+			err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
 			if err != nil {
-				internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
+				internal.Logger.Error("hc_updateTier[p0] / hc_patch_subdomain FAILED: " + err.Error())
 			}
-		}()
-		return "tier update started for: " + cfg.HubId, nil
+			time.Sleep(3 * time.Second)
+		}
+
+		err = hc_updateTier(cfg)
+		if err != nil {
+			internal.Logger.Error("hc_updateTier FAILED: " + err.Error())
+		}
+
+		return "tier update completed for: " + cfg.HubId, nil
 	}
 
 	// subdomain updates
 	if cfg.Subdomain != "" {
-		go func() {
-			err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
-			if err != nil {
-				internal.Logger.Error("hc_patch_subdomain FAILED: " + err.Error())
-			}
-		}()
+
+		err := hc_patch_subdomain(cfg.HubId, cfg.Subdomain)
+		if err != nil {
+			internal.Logger.Error("hc_patch_subdomain FAILED: " + err.Error())
+		}
+
 		return "subdomain update started for: " + cfg.HubId, nil
 	}
 
