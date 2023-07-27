@@ -278,7 +278,7 @@ func hc_collect(cfg HCcfg) error {
 		return fmt.Errorf("failed to execute pg_dump: %v", err)
 	}
 
-	locker, err := kubelocker.NewNamed(internal.Cfg.K8ss_local.ClientSet, internal.Cfg.PodNS, "trc_cm")
+	locker, err := kubelocker.NewNamed(internal.Cfg.K8ss_local.ClientSet, internal.Cfg.PodNS, "trc-cm")
 	if err != nil {
 		internal.Logger.Sugar().Errorf("failed to create locker for hubId: %v", cfg.HubId)
 		return err

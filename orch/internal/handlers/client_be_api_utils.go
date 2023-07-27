@@ -243,7 +243,7 @@ type Turkeyorch_hubs struct {
 
 func Cronjob_syncDashboardDb(interval time.Duration) {
 
-	locker, err := kubelocker.NewNamed(internal.Cfg.K8ss_local.ClientSet, internal.Cfg.PodNS, "sync_dashboard_db")
+	locker, err := kubelocker.NewNamed(internal.Cfg.K8ss_local.ClientSet, internal.Cfg.PodNS, "sync-dashboard-db")
 	if err != nil {
 		internal.Logger.Sugar().Errorf("failed to create locker for sync_dashboard_db: %v", err)
 	} else {

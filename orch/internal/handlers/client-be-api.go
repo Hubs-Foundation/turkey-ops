@@ -82,6 +82,11 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 		)
 	case "events/fxa":
 		fmt.Fprintf(w, "not yet")
+		err := handleFxaEvent(w, r)
+		if err != nil {
+			fmt.Fprintf(w, err.Error())
+			return
+		}
 
 	case "z/load_from_dashboard":
 		t_20220101 := time.Date(2022, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -95,3 +100,8 @@ var DashboardApi = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 	}
 
 })
+
+func handleFxaEvent(w http.ResponseWriter, r *http.Request) error {
+
+	return fmt.Errorf("not yet")
+}
