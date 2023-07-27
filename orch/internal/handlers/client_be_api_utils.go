@@ -121,6 +121,30 @@ func OrchDb_upsertHubs(hubs map[int64]Turkeyorch_hubs) {
 	}
 }
 
+func OrchDb_upsertAcct(hub Turkeyorch_hubs) error {
+	sql := `
+		INSERT INTO accounts (account_id, fxa_sub, email, inserted_at) 
+		VALUES ($1, $2, $3, $4) 
+		ON CONFLICT (account_id) 
+		DO UPDATE SET account_id=$1,fxa_sub=$2,email=$3,inserted_at=$4
+		WHERE accounts.account_id = $1;
+	`
+	_, err := internal.OrchDb.Exec(context.Background(),
+		sql,
+		hub.Account_id.Int, hub.Fxa_sub.String, hub.Email.String, hub.Inserted_at.Time)
+	return err
+}
+
+func OrchDb_upsertAccts(hubs map[int64]Turkeyorch_hubs) {
+	internal.Logger.Sugar().Debugf("upserting <%v> hubs", len(hubs))
+	for _, hub := range hubs {
+		err := OrchDb_upsertAcct(hub)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to upsert: <%+v>, err: %+v", hub, err)
+		}
+	}
+}
+
 func OrchDb_getHub(hubId string) Turkeyorch_hubs {
 	hub := Turkeyorch_hubs{}
 	internal.OrchDb.QueryRow(context.Background(),
@@ -256,6 +280,8 @@ func Cronjob_syncDashboardDb(interval time.Duration) {
 		return
 	}
 	OrchDb_upsertHubs(hubs)
+	OrchDb_upsertAccts(hubs)
+
 	internal.Logger.Sugar().Debugf("synced (%v) hubs, took: %v", len(hubs), time.Since(t0))
 
 	internal.Cfg.Redis.Set("syncDashboardDb", time.Now().Format(time.RFC3339))
