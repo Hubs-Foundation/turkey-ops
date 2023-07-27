@@ -171,9 +171,11 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		internal.Logger.Sugar().Debugf("acquired locker: %v \n", locker.Id())
 
 		defer func() {
-			err = locker.Unlock()
-			if err != nil {
-				internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
+			if task != "hc_delete" {
+				err = locker.Unlock()
+				if err != nil {
+					internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
+				}
 			}
 		}()
 	}
