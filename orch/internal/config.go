@@ -68,6 +68,7 @@ type Config struct {
 
 	IsRoot         bool
 	RootOrchDomain string
+	HOSTNAME       string
 
 	// singletons todo -- refactor them out of cfg? into internal.go and initialize in main?
 	Awss       *AwsSvs
@@ -89,6 +90,8 @@ func MakeCfg() {
 	if Cfg.RedisHost != "" {
 		Cfg.Redis = NewRedisSvc()
 	}
+
+	Cfg.HOSTNAME = os.Getenv("HOSTNAME")
 
 	Cfg.Region = getEnv("REGION", "us-central1")
 
