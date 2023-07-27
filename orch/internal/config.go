@@ -92,6 +92,7 @@ func MakeCfg() {
 	}
 
 	Cfg.HOSTNAME = os.Getenv("HOSTNAME")
+	Logger.Debug("Cfg.HOSTNAME: " + Cfg.HOSTNAME)
 
 	Cfg.Region = getEnv("REGION", "us-central1")
 
