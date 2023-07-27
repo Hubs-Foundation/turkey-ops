@@ -69,7 +69,7 @@ type Config struct {
 	IsRoot         bool
 	RootOrchDomain string
 
-	// singletons todo -- refactor them out of cfg ... into internal.go perhaps
+	// singletons todo -- refactor them out of cfg? into internal.go and initialize in main?
 	Awss       *AwsSvs
 	Gcps       *GcpSvs
 	K8ss_local *K8sSvs

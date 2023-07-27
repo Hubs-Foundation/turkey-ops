@@ -95,6 +95,7 @@ func MakeOrchDb() {
 func getMigrationsScriptsArray() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS hubs (hub_id int8 PRIMARY KEY);`,
+
 		`ALTER TABLE hubs 
 			ADD COLUMN IF NOT EXISTS account_id int8, 
 			ADD COLUMN IF NOT EXISTS fxa_sub TEXT, 
@@ -106,6 +107,40 @@ func getMigrationsScriptsArray() []string {
 			ADD COLUMN IF NOT EXISTS domain TEXT,
 			ADD COLUMN IF NOT EXISTS region TEXT,
 			ADD COLUMN IF NOT EXISTS inserted_at timestamp with time zone DEFAULT timezone('UTC', CURRENT_TIMESTAMP);`,
+
+		`CREATE SEQUENCE IF NOT EXISTS table_id_seq;`,
+
+		`
+		CREATE OR REPLACE FUNCTION next_id(OUT result bigint) AS $$
+		DECLARE
+		our_epoch bigint := 1648150338000;
+		seq_id bigint;
+		now_millis bigint;
+		shard_id int := 0;
+		BEGIN
+		SELECT nextval('table_id_seq') % 1024 INTO seq_id;
+		SELECT FLOOR(EXTRACT(EPOCH FROM clock_timestamp()) * 1000) INTO now_millis;
+		result := (now_millis - our_epoch) << 23;
+		result := result | (shard_id << 10);
+		result := result | (seq_id);
+		END;
+		$$ LANGUAGE PLPGSQL;
+		`,
+
+		`ALTER TABLE HUBS
+			ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone DEFAULT timezone('UTC', CURRENT_TIMESTAMP);`,
+
+		`ALTER TABLE HUBS 
+			ALTER COLUMN hub_id SET DEFAULT next_id();`,
+
+		`CREATE TABLE IF NOT EXISTS accounts (
+			account_id BIGINT DEFAULT next_id(),
+			fxa_uid VARCHAR,
+			email VARCHAR,
+			inserted_at timestamp with time zone DEFAULT timezone('UTC', CURRENT_TIMESTAMP),
+			updated_at timestamp with time zone DEFAULT timezone('UTC', CURRENT_TIMESTAMP),
+			PRIMARY KEY (account_id)
+		);`,
 	}
 }
 

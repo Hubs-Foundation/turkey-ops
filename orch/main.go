@@ -15,6 +15,7 @@ func main() {
 	// ############################## inits ##############################
 	internal.InitLogger()
 	internal.MakeCfg()
+	internal.InitSingletons()
 	internal.MakeDbs(internal.Cfg.IsRoot)
 	internal.TrcCmBook.StartWatching()
 	if internal.Cfg.IsRoot && internal.DashboardDb != nil {

@@ -6,10 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"main/internal"
+	mrand "math/rand"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/jackc/pgtype"
+	"github.com/tanfarming/goutils/pkg/kubelocker"
 )
 
 // func dashboardDb_get_turkeyAccountId(fxaSub string) pgx.Rows {
@@ -215,6 +219,23 @@ type Turkeyorch_hubs struct {
 
 func Cronjob_syncDashboardDb(interval time.Duration) {
 
+	locker, err := kubelocker.NewNamed(internal.Cfg.K8ss_local.ClientSet, internal.Cfg.PodNS, "sync_dashboard_db")
+	if err != nil {
+		internal.Logger.Sugar().Errorf("failed to create locker for sync_dashboard_db: %v", err)
+	} else {
+		err = locker.Lock()
+		if err != nil {
+			internal.Logger.Sugar().Errorf("failed to lock: err:%v, id: %v, worklog: %v", err, locker.Id(), strings.Join(locker.WorkLog(), ";"))
+		}
+		internal.Logger.Sugar().Debugf("acquired locker: %v \n", locker.Id())
+		defer func() {
+			err = locker.Unlock()
+			if err != nil {
+				internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
+			}
+		}()
+	}
+
 	lastSyncStr, err := internal.Cfg.Redis.Get("syncDashboardDb")
 	if err == nil && lastSyncStr != "" {
 		lastSync, err := time.Parse(time.RFC3339, lastSyncStr)
@@ -239,4 +260,60 @@ func Cronjob_syncDashboardDb(interval time.Duration) {
 
 	internal.Cfg.Redis.Set("syncDashboardDb", time.Now().Format(time.RFC3339))
 
+}
+
+func UpdateOrchDb(task string, cfg HCcfg) {
+
+	//update orchDb
+	switch task {
+	case "hc_create":
+		accountId, err := strconv.ParseInt(cfg.AccountId, 10, 64)
+		if err != nil {
+			internal.Logger.Sugar().Errorf("accountId cannot be parsed into int64: %v", cfg.AccountId)
+			return
+		}
+		hubId, err := strconv.ParseInt(cfg.HubId, 10, 64)
+		if err != nil {
+			internal.Logger.Sugar().Warnf("failed to convert cfg.HubId(%v)", hubId)
+			hubId = time.Now().UnixNano()
+			internal.Logger.Sugar().Warnf("using time.Now().UnixNano() (%v)", hubId)
+		}
+		OrchDb_upsertHub(
+			Turkeyorch_hubs{
+				Hub_id:      pgtype.Int8{Int: int64(hubId)},
+				Account_id:  pgtype.Int8{Int: accountId},
+				Fxa_sub:     pgtype.Text{String: cfg.FxaSub},
+				Name:        pgtype.Text{String: cfg.Name},
+				Tier:        pgtype.Text{String: cfg.Tier},
+				Status:      pgtype.Text{String: "ready"},
+				Email:       pgtype.Text{String: cfg.UserEmail},
+				Subdomain:   pgtype.Text{String: cfg.Subdomain},
+				Inserted_at: pgtype.Timestamptz{Time: time.Now()},
+				Domain:      pgtype.Text{String: cfg.Domain},
+				Region:      pgtype.Text{String: cfg.Region},
+			})
+	case "hc_delete":
+		OrchDb_deleteHub(cfg.HubId)
+	case "hc_switch_up":
+		OrchDb_updateHub_status(cfg.HubId, "up")
+	case "hc_switch_down":
+		OrchDb_updateHub_status(cfg.HubId, "down")
+	case "hc_collect":
+		OrchDb_updateHub_status(cfg.HubId, "collected")
+	case "hc_restore":
+		OrchDb_updateHub_status(cfg.HubId, "ready")
+	case "hc_update":
+		if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
+			OrchDb_updateHub_tier(cfg.HubId, cfg.Tier)
+		}
+		if cfg.Subdomain != "" {
+			OrchDb_updateHub_subdomain(cfg.HubId, cfg.Subdomain)
+		}
+	}
+}
+
+func AccountIdGen() int64 {
+
+	// internal.Cfg.PodIp
+	return time.Now().UnixNano() - 1690000000000000000 + mrand.Int63n(100)
 }

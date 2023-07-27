@@ -15,7 +15,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"sync/atomic"
 
 	"net/http"
@@ -23,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgtype"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"main/internal"
@@ -138,53 +136,8 @@ var HC_instance = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if err != nil && cfg.AccountId != "" && internal.Cfg.IsRoot {
-		//update orchDb
 		task := hc_task_translator(r)
-		switch task {
-		case "hc_create":
-			accountId, err := strconv.ParseInt(cfg.AccountId, 10, 64)
-			if err != nil {
-				internal.Logger.Sugar().Errorf("accountId cannot be parsed into int64: %v", cfg.AccountId)
-				return
-			}
-			hubId, err := strconv.ParseInt(cfg.HubId, 10, 64)
-			if err != nil {
-				internal.Logger.Sugar().Warnf("failed to convert cfg.HubId(%v)", hubId)
-				hubId = time.Now().UnixNano()
-				internal.Logger.Sugar().Warnf("using time.Now().UnixNano() (%v)", hubId)
-			}
-			OrchDb_upsertHub(
-				Turkeyorch_hubs{
-					Hub_id:      pgtype.Int8{Int: int64(hubId)},
-					Account_id:  pgtype.Int8{Int: accountId},
-					Fxa_sub:     pgtype.Text{String: cfg.FxaSub},
-					Name:        pgtype.Text{String: cfg.Name},
-					Tier:        pgtype.Text{String: cfg.Tier},
-					Status:      pgtype.Text{String: "ready"},
-					Email:       pgtype.Text{String: cfg.UserEmail},
-					Subdomain:   pgtype.Text{String: cfg.Subdomain},
-					Inserted_at: pgtype.Timestamptz{Time: time.Now()},
-					Domain:      pgtype.Text{String: cfg.Domain},
-					Region:      pgtype.Text{String: cfg.Region},
-				})
-		case "hc_delete":
-			OrchDb_deleteHub(cfg.HubId)
-		case "hc_switch_up":
-			OrchDb_updateHub_status(cfg.HubId, "up")
-		case "hc_switch_down":
-			OrchDb_updateHub_status(cfg.HubId, "down")
-		case "hc_collect":
-			OrchDb_updateHub_status(cfg.HubId, "collected")
-		case "hc_restore":
-			OrchDb_updateHub_status(cfg.HubId, "ready")
-		case "hc_update":
-			if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
-				OrchDb_updateHub_tier(cfg.HubId, cfg.Tier)
-			}
-			if cfg.Subdomain != "" {
-				OrchDb_updateHub_subdomain(cfg.HubId, cfg.Subdomain)
-			}
-		}
+		UpdateOrchDb(task, cfg)
 	}
 })
 
@@ -532,7 +485,6 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 	atomic.AddInt32(&internal.RunningTask, 1)
 	defer atomic.AddInt32(&internal.RunningTask, -1)
 
-	// locker, _ := internal.NewK8Locker(internal.Cfg.K8ss_local.Cfg, "hc-"+cfg.HubId)
 	// tier change
 	if cfg.Tier != "" && cfg.CcuLimit != "" && cfg.StorageLimit != "" {
 		currentTier, err := internal.Cfg.K8ss_local.GetFromHubNsLabel(cfg.HubId, "tier")
