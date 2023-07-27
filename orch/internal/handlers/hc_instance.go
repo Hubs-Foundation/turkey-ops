@@ -669,7 +669,7 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 			return errors.New("error @ create db: " + err.Error())
 		}
 	}
-	internal.Logger.Debug("&#128024; --- db : " + hcCfg.DBname)
+	internal.Logger.Sugar().Debugf("&#128024; --- db : %v, isNew: %v", hcCfg.DBname, isNew)
 
 	if isNew {
 		go func() {
