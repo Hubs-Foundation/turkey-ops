@@ -42,7 +42,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/jackc/pgtype v1.8.1
 	github.com/kubernetes-csi/external-snapshotter/client/v6 v6.1.0
-	github.com/tanfarming/goutils v0.0.17
+	github.com/tanfarming/goutils v0.0.18
 )
 
 require (
