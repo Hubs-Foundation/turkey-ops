@@ -501,7 +501,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 
 			itaHost := "http://ita.hc-" + cfg.HubId + ":6000"
 			//undeploy custom client
-			res, err := http.Get(itaHost + "/undeploy/hubs")
+			res, err := http.Get(itaHost + "/undeploy?app=hubs")
 			if err != nil || res == nil {
 				internal.Logger.Sugar().Errorf("failed to send undeploy custom hubs req: %v", err)
 				return "failed to send undeploy custom hubs req", err
@@ -510,7 +510,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 				return "failed to undeploy custom hubs", err
 			}
 			//wait for ns to settle down?
-			res, err = http.Get(itaHost + "/undeploy/spoke")
+			res, err = http.Get(itaHost + "/undeploy?app=spoke")
 			if err != nil || res == nil {
 				internal.Logger.Sugar().Errorf("failed to send undeploy custom spoke req: %v", err)
 				return "failed to send undeploy custom spoke req", err
@@ -522,7 +522,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 
 			internal.Logger.Sugar().Debugf("downgrading from b tier to P tier: undeploying custom domain")
 			//undeploy custom domain
-			customDomain, err := internal.Cfg.K8ss_local.GetFromHubsItaLabel("hc-"+cfg.HubId, "custom-domain")
+			customDomain, err := internal.Cfg.K8ss_local.GetFromHubsItaLabel(cfg.HubId, "custom-domain")
 			if err != nil {
 				internal.Logger.Sugar().Errorf("failed to get custom-domain from ita label: %v", err)
 				return "failed to get custom-domain from ita label", err
