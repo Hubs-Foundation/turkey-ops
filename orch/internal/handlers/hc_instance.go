@@ -528,7 +528,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 				return "failed to get custom-domain from ita label", err
 			}
 			if customDomain != "" {
-				req, err := http.NewRequest("PATCH", itaHost+"/customDomain?from_domain="+customDomain, bytes.NewBuffer([]byte{}))
+				req, err := http.NewRequest("PATCH", itaHost+"/custom-domain?from_domain="+customDomain, bytes.NewBuffer([]byte{}))
 				if err != nil {
 					internal.Logger.Sugar().Errorf("failed to construct unset custom domain req: %v", err)
 					return "failed to construct unset custom domain req", err
