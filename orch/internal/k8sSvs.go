@@ -149,6 +149,7 @@ func (k8 K8sSvs) GetFromHubNsLabel(hubId string, label string) (string, error) {
 func (k8 K8sSvs) GetFromHubsItaLabel(hubId string, label string) (string, error) {
 	d, err := k8.ClientSet.AppsV1().Deployments("hc-"+hubId).Get(context.Background(), "ita", metav1.GetOptions{})
 	if err != nil {
+		Logger.Sugar().Errorf("failed, hubId:%v, label:%v", hubId, label)
 		return "", err
 	}
 	return d.Labels[label], nil
