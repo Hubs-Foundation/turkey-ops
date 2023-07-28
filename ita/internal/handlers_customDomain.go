@@ -108,6 +108,7 @@ var CustomDomain = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "failed to set customDomain to NS: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		cfg.CustomDomain = toDomain
 
 		cfg.Features.enableCustomClient()
 		defer cfg.Features.setupFeatures()
