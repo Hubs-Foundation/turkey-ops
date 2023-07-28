@@ -496,7 +496,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
 
 		if strings.HasPrefix(currentTier, "b") && !strings.HasPrefix(cfg.Tier, "b") {
-			itaHost := "ita.hc-" + cfg.HubId + ":6000"
+			itaHost := "http://ita.hc-" + cfg.HubId + ":6000"
 			//undeploy custom client
 			res, err := http.Get(itaHost + "/undeploy/hubs")
 			if err != nil || res == nil {
