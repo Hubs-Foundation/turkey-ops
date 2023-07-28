@@ -146,9 +146,9 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 
 	task := hc_task_translator(r)
 
-	if task != "hc_create" {
+	if task != "hc_create" && task != "hc_delete" {
 
-		// restore if the instance's collected
+		// restore first if the instance's collected
 		if _, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(),
 			"hc-"+cfg.HubId, metav1.GetOptions{}); k8errors.IsNotFound(err) {
 			err := hc_restore(cfg.HubId)
@@ -157,6 +157,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			}
 		}
 
+		// lock
 		locker, err := kubelocker.NewDefault(internal.Cfg.K8ss_local.ClientSet, "hc-"+cfg.HubId)
 		if err != nil {
 			internal.Logger.Sugar().Errorf("failed to create locker for hubId: %v", cfg.HubId)
@@ -171,12 +172,11 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 		internal.Logger.Sugar().Debugf("acquired locker: %v \n", locker.Id())
 
 		defer func() {
-			if task != "hc_delete" {
-				err = locker.Unlock()
-				if err != nil {
-					internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
-				}
+			err = locker.Unlock()
+			if err != nil {
+				internal.Logger.Sugar().Errorf("failed to unlock " + err.Error())
 			}
+
 		}()
 	}
 
