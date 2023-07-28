@@ -538,7 +538,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 					return "failed to unset custom domain, resp.code", err
 				}
 			}
-			//wait for ns to settle down
+			//wait for ns to settle down?
 		}
 
 		if cfg.Tier == "p0" && cfg.Subdomain != "" {
@@ -1197,13 +1197,14 @@ func hc_patch_subdomain(HubId, Subdomain string) error {
 
 	nsName := "hc-" + HubId
 
-	// //waits
-	// err := internal.Cfg.K8ss_local.WatiForDeployments(nsName, 15*time.Minute)
-	// if err != nil {
-	// 	internal.Logger.Sugar().Errorf("failed @ WatiForDeployments: %v", err)
-	// }
-
-	// hc_switch(HubId, "down")
+	// safty check since we don't yet have it enforced on dashbaord -- not available for custom-domain enabled instances
+	ita_d, err := internal.Cfg.K8ss_local.ClientSet.AppsV1().Deployments(nsName).Get(context.Background(), "ita", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if ita_d.Labels["custom-domain"] != "" {
+		return fmt.Errorf("not available for custom-domain enabled instances")
+	}
 
 	//update secret
 	secret_configs, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Secrets(nsName).Get(context.Background(), "configs", metav1.GetOptions{})
