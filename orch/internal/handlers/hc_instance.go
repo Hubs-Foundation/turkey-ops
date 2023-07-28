@@ -496,6 +496,9 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
 
 		if strings.HasPrefix(currentTier, "b") && !strings.HasPrefix(cfg.Tier, "b") {
+
+			internal.Logger.Sugar().Debugf("downgrading from b tier to P tier: undeploying custom client")
+
 			itaHost := "http://ita.hc-" + cfg.HubId + ":6000"
 			//undeploy custom client
 			res, err := http.Get(itaHost + "/undeploy/hubs")
@@ -517,6 +520,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 			}
 			//wait for ns to settle down?
 
+			internal.Logger.Sugar().Debugf("downgrading from b tier to P tier: undeploying custom domain")
 			//undeploy custom domain
 			customDomain, err := internal.Cfg.K8ss_local.GetFromHubsItaLabel("hc-"+cfg.HubId, "custom-domain")
 			if err != nil {
