@@ -495,9 +495,13 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		}
 		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
 
+		if currentTier == cfg.Tier {
+			return "currentTier == cfg.Tier", errors.New("duplicate request")
+		}
+
 		if strings.HasPrefix(currentTier, "b") && !strings.HasPrefix(cfg.Tier, "b") {
 
-			internal.Logger.Sugar().Debugf("downgrading from b tier to P tier: undeploying custom client")
+			internal.Logger.Sugar().Debugf("downgrading from b tier to non-b tier: undeploying custom client")
 
 			itaHost := "http://ita.hc-" + cfg.HubId + ":6000"
 			//undeploy custom client

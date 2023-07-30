@@ -135,7 +135,7 @@ func getMigrationsScriptsArray() []string {
 
 		`CREATE TABLE IF NOT EXISTS accounts (
 			account_id BIGINT DEFAULT next_id(),
-			fxa_uid VARCHAR,
+			fxa_sub VARCHAR,
 			email VARCHAR,
 			inserted_at timestamp with time zone DEFAULT timezone('UTC', CURRENT_TIMESTAMP),
 			updated_at timestamp with time zone DEFAULT timezone('UTC', CURRENT_TIMESTAMP),
