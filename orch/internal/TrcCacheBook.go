@@ -9,7 +9,7 @@ import (
 	"github.com/tanfarming/goutils/pkg/filelocker"
 )
 
-type trcCacheBook struct {
+type trcCache struct {
 	File       string
 	Book       map[string]TrcCacheData
 	Updated_at time.Time
@@ -23,9 +23,9 @@ type TrcCacheData struct {
 	Collected_at time.Time `json:"collected_at"`
 }
 
-func NewTrcCacheBook(File string) *trcCacheBook {
+func NewTrcCache(File string) *trcCache {
 
-	b := &trcCacheBook{
+	b := &trcCache{
 		File: File,
 		Book: map[string]TrcCacheData{},
 	}
@@ -38,13 +38,13 @@ func NewTrcCacheBook(File string) *trcCacheBook {
 
 }
 
-func (b *trcCacheBook) Get(subdomain string) TrcCacheData {
+func (b *trcCache) Get(subdomain string) TrcCacheData {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	return b.Book[subdomain]
 }
 
-func (b *trcCacheBook) Set(subdomain string, data TrcCacheData) {
+func (b *trcCache) Set(subdomain string, data TrcCacheData) {
 
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -54,7 +54,7 @@ func (b *trcCacheBook) Set(subdomain string, data TrcCacheData) {
 }
 
 // set to file
-func (b *trcCacheBook) UpdateFile() error {
+func (b *trcCache) UpdateFile() error {
 	f, err := os.OpenFile(b.File, os.O_WRONLY, 0600)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func (b *trcCacheBook) UpdateFile() error {
 	return err
 }
 
-func (b *trcCacheBook) getFromFile() (map[string]TrcCacheData, error) {
+func (b *trcCache) getFromFile() (map[string]TrcCacheData, error) {
 
 	f, err := os.OpenFile(b.File, os.O_RDONLY, 0600)
 	if err != nil {
@@ -128,32 +128,3 @@ func (b *trcCacheBook) getFromFile() (map[string]TrcCacheData, error) {
 
 	return m, err
 }
-
-// func Cronjob_trcCacheBookDownload(interval time.Duration) {
-// 	// TrcCacheBook.Download()
-// }
-
-// func Cronjob_trcCacheBookSurvey(interval time.Duration) {
-// 	rootDir := "/turkeyfs"
-// 	prefix := "hc-"
-
-// 	cutoffTime := TrcCacheBook.Updated_at.Add(-12 * time.Hour)
-
-// 	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		if info.IsDir() && strings.HasPrefix(info.Name(), prefix) && info.ModTime().After(cutoffTime) {
-// 			fmt.Println("hc- dir:", path)
-// 		}
-
-// 		return nil
-// 	})
-
-// 	if err != nil {
-// 		fmt.Println("Error walking the directory:", err)
-// 		return
-// 	}
-
-// }

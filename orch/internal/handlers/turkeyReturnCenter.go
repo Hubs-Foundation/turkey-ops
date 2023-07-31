@@ -1,15 +1,21 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"main/internal"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/tanfarming/goutils/pkg/filelocker"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -129,4 +135,111 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 		}
 
 	}
+}
+
+func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
+	t0 := time.Now()
+	rootDir := "/turkeyfs"
+	prefix := "hc-"
+
+	// lock with a file, only 1 instance needed
+	surveyorlockfile := rootDir + "/surveyorlock"
+	f_surveyorlock, err := os.OpenFile(surveyorlockfile, os.O_WRONLY|os.O_CREATE, 0600)
+	if filelocker.Lock(f_surveyorlock); err != nil {
+		internal.Logger.Debug("failed to lock on the surveyorlock file: bail")
+		return
+	}
+	defer func() {
+		f_surveyorlock.Truncate(0)
+		err := os.WriteFile(surveyorlockfile, []byte(time.Now().Format(internal.CONST_DEFAULT_TIME_FORMAT)), 0600)
+		if err != nil {
+			internal.Logger.Error("failed to update surveyorlockfile")
+		}
+		f_surveyorlock.Close()
+	}()
+	surveyorlockfileBytes, err := os.ReadFile(surveyorlockfile)
+	if err != nil {
+		internal.Logger.Error("failed to read the surveyorlock file: bail")
+		return
+	}
+	lastSurvey, err := time.Parse(internal.CONST_DEFAULT_TIME_FORMAT, string(surveyorlockfileBytes))
+	if err != nil {
+		internal.Logger.Error("failed to parse timestamp in surveyorlockfile " + err.Error())
+	}
+	if time.Since(lastSurvey) < 10*time.Minute {
+		internal.Logger.Sugar().Debugf("skipping -- last surveyed within %v minutes", time.Since(lastSurvey).Minutes())
+		return
+	}
+
+	hcNsList, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{
+		LabelSelector: "hub_id",
+	})
+	if err != nil {
+		internal.Logger.Error("failed to get hcNsList")
+	}
+	nsMap := map[string]map[string]string{}
+	for _, ns := range hcNsList.Items {
+		nsMap[ns.Labels["hub_id"]] = ns.Labels
+	}
+
+	cutoffTime := internal.TrcCache.Updated_at.Add(-12 * time.Hour)
+	_book := map[string]internal.TrcCacheData{}
+	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		pathArr := strings.Split(path, "/")
+		if len(pathArr) < 1 || !strings.HasPrefix(pathArr[1], "hc-") {
+			return nil
+		}
+		if info.IsDir() && strings.HasPrefix(info.Name(), prefix) && info.ModTime().After(cutoffTime) {
+			fmt.Println("walking dir:", path)
+			// get cfg
+			hubId, _ := strings.CutPrefix(pathArr[1], "hc-")
+			trc_cfg, err := GetHCcfgFromHubDir(hubId)
+			if err != nil {
+				internal.Logger.Sugar().Errorf("faild to get trc_cfg for hubId: %v", hubId)
+
+			}
+			IsHubRunning := nsMap[hubId] == nil
+			_book[trc_cfg.Subdomain] = internal.TrcCacheData{
+				HubId:        trc_cfg.HubId,
+				OwnerEmail:   trc_cfg.UserEmail,
+				IsRunning:    IsHubRunning,
+				Collected_at: info.ModTime(),
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		internal.Logger.Error("unexpected err during filepath.Walk: " + err.Error())
+	}
+
+	_bookBytes, err := json.Marshal(_book)
+	if err != nil {
+		internal.Logger.Error("failed to marshal _book: " + err.Error())
+		return
+	}
+
+	// update the trcCache file
+	f, err := os.OpenFile(internal.TrcCache.File, os.O_WRONLY, 0600)
+	if err != nil {
+		internal.Logger.Error("failed to open trcCache file")
+		return
+	}
+	if err := filelocker.Lock(f); err != nil {
+		internal.Logger.Error("failed to lock the trcCache file: " + err.Error())
+		return
+	}
+	defer f.Close()
+	f.Truncate(0)
+	err = os.WriteFile(internal.TrcCache.File, _bookBytes, 0600)
+
+	if err != nil {
+		internal.Logger.Error("failed to write trcCache file: %" + err.Error())
+		return
+	}
+
+	internal.Logger.Sugar().Debugf("took: %v", time.Since(t0))
+
 }

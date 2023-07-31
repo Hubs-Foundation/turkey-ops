@@ -422,7 +422,7 @@ func hc_restore(hubId string) error {
 		}
 	}
 	// get configs
-	cfg, err := getHCcfgFromHubDir(hubId)
+	cfg, err := GetHCcfgFromHubDir(hubId)
 	if err != nil {
 		return fmt.Errorf("failed @getHCcfgFromHubDir: %v", err)
 	}
@@ -1051,7 +1051,7 @@ func DeleteHubsCloudInstance(hubId string, keepFiles bool, keepDB bool) (chan (s
 	}
 
 	//remove trc ingress if exists
-	trc_cfg, _ := getHCcfgFromHubDir(hubId)
+	trc_cfg, _ := GetHCcfgFromHubDir(hubId)
 	if trc_cfg.Subdomain != "" {
 		err := internal.Cfg.K8ss_local.TrcIg_deleteHost(trc_cfg.Subdomain + "." + internal.Cfg.HubDomain)
 		if err != nil {

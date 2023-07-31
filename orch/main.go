@@ -24,7 +24,6 @@ func main() {
 		cron_syncDashboardDb.Start()
 	}
 
-	// ### singletons and cronjobs
 	if internal.Cfg.IsRoot { // root cluster manages peers
 		internal.Cfg.PeerMan = internal.NewPeerMan()
 	} else { // peer cluster report to root cluster
@@ -35,6 +34,10 @@ func main() {
 		cron_countHC.Load("Cronjob_CountHC_phonehome", internal.Cronjob_CountHC_phonehome)
 		cron_countHC.Start()
 	}
+
+	cron_15m := internal.NewCron("cron_15m", 15*time.Minute)
+	cron_15m.Load("Cronjob_trcCacheBookSurveyor", handlers.Cronjob_trcCacheBookSurveyor)
+	cron_15m.Start()
 
 	// ############################## gcp-pubsub (deprecated) ##############################
 	// handlers.HandleTurkeyJobs()

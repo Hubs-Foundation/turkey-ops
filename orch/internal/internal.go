@@ -7,11 +7,11 @@ const CONST_SESSION_TOKEN_NAME = "session_token"
 var CACHE CacheBox
 var TokenBook *tokenBook
 var TrcCmBook *trcCmBook
-var TrcCacheBook *trcCacheBook
+var TrcCache *trcCache
 
 func InitSingletons() {
 	CACHE = NewCacheBox()
 	TokenBook = NewTokenBook(5)
 	TrcCmBook = NewTrcCmBook()
-	TrcCacheBook = NewTrcCacheBook("trcCacheBook_" + Cfg.Domain)
+	TrcCache = NewTrcCache("trcCache")
 }

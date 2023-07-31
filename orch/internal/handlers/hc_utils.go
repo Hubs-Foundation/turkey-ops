@@ -711,7 +711,7 @@ func hc_task_translator(r *http.Request) string {
 	return ""
 }
 
-func getHCcfgFromHubDir(hubId string) (HCcfg, error) {
+func GetHCcfgFromHubDir(hubId string) (HCcfg, error) {
 	hubDir := "/turkeyfs/hc-" + hubId
 	cfg := HCcfg{}
 	cfgBytes, err := ioutil.ReadFile(hubDir + "/cfg.json")
