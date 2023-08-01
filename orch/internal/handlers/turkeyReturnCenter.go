@@ -140,7 +140,6 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 	t0 := time.Now()
 	rootDir := "/turkeyfs"
-	prefix := "hc-"
 
 	// lock with a file, only 1 instance needed
 	surveyorlockfile := rootDir + "/surveyorlock"
@@ -182,12 +181,13 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		if err != nil {
 			return err
 		}
+		fmt.Println("walking dir:", path)
 		pathArr := strings.Split(path, "/")
-		if len(pathArr) < 1 || !strings.HasPrefix(pathArr[1], "hc-") {
+		if !info.IsDir() || !strings.HasPrefix(pathArr[1], "hc-") {
 			return nil
 		}
-		if info.IsDir() && strings.HasPrefix(info.Name(), prefix) && info.ModTime().After(cutoffTime) {
-			fmt.Println("walking dir:", path)
+		fmt.Println("processing dir:", path)
+		if info.ModTime().After(cutoffTime) {
 			// get cfg
 			hubId, _ := strings.CutPrefix(pathArr[1], "hc-")
 			trc_cfg, err := GetHCcfgFromHubDir(hubId)

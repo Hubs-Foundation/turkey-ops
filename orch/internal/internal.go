@@ -13,5 +13,5 @@ func InitSingletons() {
 	CACHE = NewCacheBox()
 	TokenBook = NewTokenBook(5)
 	TrcCmBook = NewTrcCmBook()
-	TrcCache = NewTrcCache("trcCache")
+	TrcCache = NewTrcCache("/turkeyfs/trcCache")
 }
