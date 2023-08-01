@@ -161,7 +161,7 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		lastSurvey = time.Time{}
 	}
 	if time.Since(lastSurvey) < 10*time.Minute {
-		internal.Logger.Sugar().Debugf("skipping -- last surveyed within %v minutes", time.Since(lastSurvey).Minutes())
+		internal.Logger.Sugar().Debugf("skipping -- last surveyed (%v) is within %v", lastSurvey, time.Since(lastSurvey))
 		return
 	}
 
