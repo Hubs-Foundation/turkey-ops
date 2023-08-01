@@ -208,6 +208,12 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		Logger.Error("failed to get deployments <" + containerInfo.parentDeploymentName + "> in ns <" + cfg.PodNS + ">, err: " + err.Error())
 		return err
 	}
+
+	if d.Labels["ita_noUpdate "] != "" {
+		Logger.Sugar().Debugf("skipping: deployment %v. because: non-empty ita_noUpdate found (%v)", d.Name, d.Labels["ita_noUpdate "])
+		return nil
+	}
+
 	if retriesRemaining > 1 {
 		pods, err := cfg.K8sClientSet.CoreV1().Pods(d.Namespace).List(context.Background(), metav1.ListOptions{})
 		if err != nil {
