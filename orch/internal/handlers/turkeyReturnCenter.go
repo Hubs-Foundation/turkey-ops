@@ -181,12 +181,15 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		if err != nil {
 			return err
 		}
-		fmt.Println("walking dir:", path)
+		if info.IsDir() && filepath.Dir(path) != path {
+			return filepath.SkipDir
+		}
+		internal.Logger.Sugar().Debugf("walking dir: %v", path)
 		pathArr := strings.Split(path, "/")
 		if !info.IsDir() || !strings.HasPrefix(pathArr[1], "hc-") {
 			return nil
 		}
-		fmt.Println("processing dir:", path)
+		internal.Logger.Sugar().Debugf("processing dir: %v", path)
 		if info.ModTime().After(cutoffTime) {
 			// get cfg
 			hubId, _ := strings.CutPrefix(pathArr[1], "hc-")
