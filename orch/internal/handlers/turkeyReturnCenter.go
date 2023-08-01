@@ -149,14 +149,7 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		internal.Logger.Debug("failed to lock on the surveyorlock file: bail")
 		return
 	}
-	defer func() {
-		f_surveyorlock.Truncate(0)
-		err := os.WriteFile(surveyorlockfile, []byte(time.Now().Format(internal.CONST_DEFAULT_TIME_FORMAT)), 0600)
-		if err != nil {
-			internal.Logger.Error("failed to update surveyorlockfile")
-		}
-		f_surveyorlock.Close()
-	}()
+	defer f_surveyorlock.Close()
 	surveyorlockfileBytes, err := os.ReadFile(surveyorlockfile)
 	if err != nil {
 		internal.Logger.Error("failed to read the surveyorlock file: bail")
@@ -242,5 +235,11 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 	}
 
 	internal.Logger.Sugar().Debugf("took: %v", time.Since(t0))
+
+	f_surveyorlock.Truncate(0)
+	err = os.WriteFile(surveyorlockfile, []byte(time.Now().Format(internal.CONST_DEFAULT_TIME_FORMAT)), 0600)
+	if err != nil {
+		internal.Logger.Error("failed to update surveyorlockfile")
+	}
 
 }
