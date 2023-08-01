@@ -139,7 +139,7 @@ func trc_ws(w http.ResponseWriter, r *http.Request, subdomain, hubId string) {
 
 func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 	t0 := time.Now()
-	rootDir := "/turkeyfs"
+	rootDir := "/turkeyfs/"
 
 	// lock with a file, only 1 instance needed
 	surveyorlockfile := rootDir + "/surveyorlock"
