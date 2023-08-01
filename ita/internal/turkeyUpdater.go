@@ -209,6 +209,7 @@ func (u *TurkeyUpdater) deployNewContainer(repo, newTag string, containerInfo tu
 		return err
 	}
 
+	Logger.Sugar().Debugf("d(%v).Labels: %+v", d.Name, d.Labels)
 	if d.Labels["ita_noUpdate "] != "" {
 		Logger.Sugar().Debugf("skipping: deployment %v. because: non-empty ita_noUpdate found (%v)", d.Name, d.Labels["ita_noUpdate "])
 		return nil
