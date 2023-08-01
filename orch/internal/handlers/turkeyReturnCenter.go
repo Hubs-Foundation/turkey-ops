@@ -181,6 +181,8 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		if err != nil {
 			return err
 		}
+
+		internal.Logger.Sugar().Debugf("path: %v, info.IsDir(): %v, filepath.Dir(path): %v", path, info.IsDir(), filepath.Dir(path))
 		if info.IsDir() && filepath.Dir(path) != path {
 			return filepath.SkipDir
 		}
