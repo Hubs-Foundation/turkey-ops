@@ -183,6 +183,8 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		}
 
 		internal.Logger.Sugar().Debugf("path: %v, info.IsDir(): %v, filepath.Dir(path): %v", path, info.IsDir(), filepath.Dir(path))
+		internal.Logger.Sugar().Debugf("strings.Count(filepath.Dir(path), string(os.PathSeparator)): %v", strings.Count(filepath.Dir(path), string(os.PathSeparator)))
+
 		if info.IsDir() && filepath.Dir(path) != path {
 			return filepath.SkipDir
 		}
