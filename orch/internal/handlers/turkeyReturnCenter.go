@@ -197,7 +197,12 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		internal.Logger.Sugar().Debugf("walking dir: %v", path)
 		walkDirCnt++
 		pathArr := strings.Split(path, "/")
-		if !info.IsDir() || !strings.HasPrefix(pathArr[1], "hc-") {
+		if !info.IsDir() {
+			internal.Logger.Sugar().Debugf("skip -- not Dir, path : %v", path)
+			return nil
+		}
+		if len(pathArr) < 2 || !strings.HasPrefix(pathArr[2], "hc-") {
+			internal.Logger.Sugar().Debugf("skip -- pathArr: %v", pathArr)
 			return nil
 		}
 		internal.Logger.Sugar().Debugf("processing dir: %v", path)
