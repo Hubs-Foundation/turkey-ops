@@ -157,7 +157,7 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 	lastSurvey, err := time.Parse(time.RFC1123Z, string(surveyorlockfileBytes))
 	if err != nil {
 		internal.Logger.Warn("failed to parse timestamp in surveyorlockfile " + err.Error())
-		lastSurvey = time.Time{}
+		lastSurvey = time.Now().Add(-100 * time.Hour)
 	}
 	if time.Since(lastSurvey) < 10*time.Minute {
 		internal.Logger.Sugar().Debugf("skipping -- last surveyed (%v) is within (%v)", lastSurvey, time.Since(lastSurvey))

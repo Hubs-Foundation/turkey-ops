@@ -35,6 +35,7 @@ func main() {
 		cron_countHC.Start()
 	}
 
+	handlers.Cronjob_trcCacheBookSurveyor(time.Second)
 	cron_15m := internal.NewCron("cron_15m", 2*time.Minute)
 	cron_15m.Load("Cronjob_trcCacheBookSurveyor", handlers.Cronjob_trcCacheBookSurveyor)
 	cron_15m.Start()
