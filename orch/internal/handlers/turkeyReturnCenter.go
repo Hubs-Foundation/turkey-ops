@@ -208,7 +208,7 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		internal.Logger.Sugar().Debugf("processing dir: %v", path)
 		if info.ModTime().After(cutoffTime) {
 			// get cfg
-			hubId, _ := strings.CutPrefix(pathArr[1], "hc-")
+			hubId, _ := strings.CutPrefix(pathArr[2], "hc-")
 			trc_cfg, err := GetHCcfgFromHubDir(hubId)
 			if err != nil {
 				internal.Logger.Sugar().Errorf("faild to get trc_cfg for hubId: %v", hubId)
