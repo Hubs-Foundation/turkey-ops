@@ -68,6 +68,7 @@ func main() {
 	router.Handle("/deploy", internal.Deploy)
 	router.Handle("/undeploy", internal.Undeploy)
 	router.Handle("/custom-domain", internal.CustomDomain)
+	router.Handle("/update-cert", internal.UpdateCert)
 	router.Handle("/restore", internal.Restore)
 
 	router.Handle("/z/pause", internal.Z_Pause)
