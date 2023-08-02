@@ -15,7 +15,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/tanfarming/goutils/pkg/filelocker"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -171,9 +170,12 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 	if err != nil {
 		internal.Logger.Error("failed to get hcNsList")
 	}
-	nsMap := map[string]*corev1.Namespace{}
+	nsMap := map[string][]string{}
 	for _, ns := range hcNsList.Items {
-		nsMap[ns.Labels["hub_id"]] = &ns
+		nsMap[ns.Labels["hub_id"]] = []string{
+			ns.Labels["subdomain"],
+			ns.Annotations["adm"],
+		}
 	}
 
 	cutoffTime := internal.TrcCache.Updated_at.Add(-12 * time.Hour)
@@ -214,9 +216,9 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 			if err != nil {
 				internal.Logger.Sugar().Warn("faild to get trc_cfg for hubId: %v (never paused?)", hubId)
 
-				if ns, ok := nsMap[hubId]; ok {
-					subdomain := ns.Labels["subdomain"]
-					adm := ns.Annotations["adm"]
+				if nsDataArr, ok := nsMap[hubId]; ok {
+					subdomain := nsDataArr[0]
+					adm := nsDataArr[1]
 					if subdomain == "" {
 						internal.Logger.Sugar().Warn("skip -- subdomain not found on hc-%v's label: %v", hubId)
 						return nil
