@@ -216,19 +216,19 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 
 				if ns, ok := nsMap[hubId]; ok {
 					subdomain := ns.Labels["subdomain"]
-					userEmail := ns.Annotations["adm"]
+					adm := ns.Annotations["adm"]
 					if subdomain == "" {
 						internal.Logger.Sugar().Warn("skip -- subdomain not found on hc-%v's label: %v", hubId)
 						return nil
 					}
-					if userEmail == "" {
-						internal.Logger.Sugar().Warn("skip -- userEmail not found on hc-%v's label: %v", hubId)
+					if adm == "" {
+						internal.Logger.Sugar().Warn("skip -- adm not found on hc-%v's annotation: %v", hubId)
 						return nil
 					}
-
+					internal.Logger.Sugar().Debugf("adding: %v: %v, %v", subdomain, hubId, adm)
 					_book[subdomain] = internal.TrcCacheData{
 						HubId:        hubId,
-						OwnerEmail:   userEmail,
+						OwnerEmail:   adm,
 						IsRunning:    true,
 						Collected_at: info.ModTime(),
 					}
@@ -239,6 +239,8 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 				}
 			}
 			IsHubRunning := nsMap[hubId] != nil
+
+			internal.Logger.Sugar().Debugf("adding: %v: %v, %v", trc_cfg.Subdomain, trc_cfg.HubId, trc_cfg.UserEmail)
 			_book[trc_cfg.Subdomain] = internal.TrcCacheData{
 				HubId:        trc_cfg.HubId,
 				OwnerEmail:   trc_cfg.UserEmail,
@@ -261,7 +263,7 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 	// update the trcCache file
 	f, err := os.OpenFile(internal.TrcCache.File, os.O_WRONLY, 0600)
 	if err != nil {
-		internal.Logger.Error("failed to open trcCache file")
+		internal.Logger.Error("failed to open trcCache file: " + err.Error())
 		return
 	}
 	if err := filelocker.Lock(f); err != nil {
