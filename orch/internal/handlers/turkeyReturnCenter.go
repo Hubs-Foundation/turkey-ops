@@ -177,13 +177,14 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 
 	cutoffTime := internal.TrcCache.Updated_at.Add(-12 * time.Hour)
 	_book := map[string]internal.TrcCacheData{}
+	walkDirCnt := 0
 	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		internal.Logger.Sugar().Debugf("path: %v, info.IsDir(): %v, filepath.Dir(path): %v", path, info.IsDir(), filepath.Dir(path))
-		internal.Logger.Sugar().Debugf("strings.Count(filepath.Dir(path), string(os.PathSeparator)): %v", strings.Count(filepath.Dir(path), string(os.PathSeparator)))
+		// internal.Logger.Sugar().Debugf("path: %v, info.IsDir(): %v, filepath.Dir(path): %v", path, info.IsDir(), filepath.Dir(path))
+		// internal.Logger.Sugar().Debugf("strings.Count(filepath.Dir(path), string(os.PathSeparator)): %v", strings.Count(filepath.Dir(path), string(os.PathSeparator)))
 
 		if strings.Count(filepath.Dir(path), string(os.PathSeparator)) > 1 {
 			return filepath.SkipDir
@@ -194,6 +195,7 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		// }
 
 		internal.Logger.Sugar().Debugf("walking dir: %v", path)
+		walkDirCnt++
 		pathArr := strings.Split(path, "/")
 		if !info.IsDir() || !strings.HasPrefix(pathArr[1], "hc-") {
 			return nil
@@ -246,7 +248,7 @@ func Cronjob_trcCacheBookSurveyor(interval time.Duration) {
 		return
 	}
 
-	internal.Logger.Sugar().Debugf("took: %v", time.Since(t0))
+	internal.Logger.Sugar().Debugf("walkDirCnt %v, took: %v", walkDirCnt, time.Since(t0))
 
 	f_surveyorlock.Truncate(0)
 	err = os.WriteFile(surveyorlockfile, []byte(time.Now().Format(internal.CONST_DEFAULT_TIME_FORMAT)), 0600)
