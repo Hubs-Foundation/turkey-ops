@@ -19,7 +19,7 @@ func main() {
 	internal.MakeDbs(internal.Cfg.IsRoot)
 	internal.TrcCmBook.StartWatching()
 	if internal.Cfg.IsRoot && internal.DashboardDb != nil {
-		cron_syncDashboardDb := internal.NewCron("cron_syncDashboardDb", 5*time.Minute)
+		cron_syncDashboardDb := internal.NewCron("cron_syncDashboardDb", 2*time.Minute)
 		cron_syncDashboardDb.Load("Cronjob_syncDashboardDb", handlers.Cronjob_syncDashboardDb)
 		cron_syncDashboardDb.Start()
 	}
