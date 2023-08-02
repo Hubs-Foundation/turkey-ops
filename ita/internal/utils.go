@@ -56,13 +56,13 @@ func InitLogger() {
 var listeningChannelLabelName = "CHANNEL"
 
 func Deployment_getLabel(key string) (string, error) {
-	if cfg.PodDeploymentName == "" {
-		return "", errors.New("cfg.PodDeploymentName is empty")
+	dName := cfg.PodDeploymentName
+	if dName == "" {
+		dName = "ita"
 	}
-	//do we have channel labled on deployment?
-	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), cfg.PodDeploymentName, metav1.GetOptions{})
+	d, err := cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Get(context.Background(), dName, metav1.GetOptions{})
 	if err != nil {
-		Logger.Sugar().Debugf("Deployment_getLabel failed: %v (cfg.PodDeploymentName: %v)", err, cfg.PodDeploymentName)
+		Logger.Sugar().Debugf("Deployment_getLabel failed: %v (dName: %v)", err, dName)
 		return "", err
 	}
 	return d.Labels[key], nil
@@ -586,11 +586,15 @@ func pickLetsencryptAccountForHubId() string {
 
 func runCertbotbotpod(letsencryptAcct, customDomain string) error {
 
+	var err error
 	if customDomain == "" {
-		customDomain, _ = Deployment_getLabel("custom_domain")
+		customDomain, err = Deployment_getLabel("custom-domain")
+		if err != nil {
+			return fmt.Errorf("failed to get customDomain from ita's deployment label: %v", err)
+		}
 	}
 
-	_, err := cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Create(
+	_, err = cfg.K8sClientSet.CoreV1().Pods(cfg.PodNS).Create(
 		context.Background(),
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
