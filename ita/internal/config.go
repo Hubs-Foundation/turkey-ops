@@ -20,6 +20,7 @@ type Config struct {
 	PodDeploymentName string
 	SubDomain         string
 	HubDomain         string
+	ClusterDomain     string
 	Tier              string
 	FreeTierIdleMax   time.Duration
 
@@ -89,11 +90,16 @@ func MakeCfg() {
 	cfg.RetApiKey = getEnv("RET_API_KEY", "probably not this")
 	cfg.turkeyorchHost = getEnv("TURKEYORCH_HOST", "turkeyorch.turkey-services:888")
 
-	cfg.HubDomain = getDomainFromOrch()
+	cfg.HubDomain = getFromOrch("/hub_domain")
 	if cfg.HubDomain == "" {
-		Logger.Fatal("failed to getDomainFromOrch")
+		Logger.Fatal("failed to get HubDomain FromOrch")
 	}
 	Logger.Info("cfg.HubDomain: " + cfg.HubDomain)
+	cfg.ClusterDomain = getFromOrch("/cl_domain")
+	if cfg.ClusterDomain == "" {
+		Logger.Fatal("failed to get ClusterDomain FromOrch")
+	}
+	Logger.Info("cfg.ClusterDomain: " + cfg.ClusterDomain)
 
 	Hostname, err := os.Hostname()
 	if err != nil {
@@ -171,8 +177,8 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func getDomainFromOrch() string {
-	resp, err := http.Get("http://" + cfg.turkeyorchHost + "/hub_domain")
+func getFromOrch(endpoint string) string {
+	resp, err := http.Get("http://" + cfg.turkeyorchHost + endpoint)
 	if err != nil {
 		Logger.Error("err@getDomainFromOrch: " + err.Error())
 		return ""

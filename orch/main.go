@@ -93,6 +93,9 @@ func main() {
 	router.Handle("/hub_domain", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, internal.Cfg.HubDomain)
 	}))
+	router.Handle("/cl_domain", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, internal.Cfg.Domain)
+	}))
 
 	router.Handle("/letsencrypt-account-collect", handlers.LetsencryptAccountCollect)
 	// router.Handle("/dump_hcnstable", pvtEpEnforcer.Filter([]string{"*"})(handlers.Dump_HcNsTable))

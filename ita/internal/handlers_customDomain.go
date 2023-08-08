@@ -235,7 +235,7 @@ func setCustomDomain(fromDomain, toDomain string) error {
 		}
 		for i, env := range d.Spec.Template.Spec.Containers[0].Env {
 			val := strings.Replace(env.Value, fromDomain, toDomain, -1)
-			val = strings.Replace(val, "hubs-proxy.com", cfg.SubDomain+".cors."+cfg.HubDomain, -1)
+			val = strings.Replace(val, "hubs-proxy.com", cfg.SubDomain+".cors."+cfg.ClusterDomain, -1)
 			d.Spec.Template.Spec.Containers[0].Env[i].Value = val
 		}
 		_, err = cfg.K8sClientSet.AppsV1().Deployments(cfg.PodNS).Update(context.Background(), d, metav1.UpdateOptions{})
