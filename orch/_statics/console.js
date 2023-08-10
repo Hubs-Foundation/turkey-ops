@@ -214,10 +214,12 @@ document.getElementById("btn_sampleCfg_tandemProd").onclick = function(){
 
 
 document.getElementById("downgrade_cfg").onclick = function(){
+
   document.getElementById("cfg").value = `{
     "hub_id": "changeMe",
     "tier": "p0",
     "ccu_limit": "10",
-    "storage_limit": "0.5"
+    "storage_limit": "0.5",
+    "subdomain": "changeMe"
 }`
 }
