@@ -214,7 +214,7 @@ document.getElementById("btn_sampleCfg_tandemProd").onclick = function(){
 
 
 document.getElementById("downgrade_cfg").onclick = function(){
-  document.getElementById("cluster_cfg").value = `{
+  document.getElementById("cfg").value = `{
     "hub_id": "changeMe",
     "tier": "p0",
     "ccu_limit": "10",
