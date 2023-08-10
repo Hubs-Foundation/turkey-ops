@@ -46,27 +46,32 @@
     <div class="tab-content">
       <div id="hubs_cloud" class="container tab-pane active"><br>
         <div class = "container">
-          <div class="row" id="console">          
-            <div class="col-sm-5">              
-              <p><b>manual:</b><br>
+          <div class="row" id="console">
+            <div class="col-sm-5">
+              <p><b>manual:</b>
+                <br>
                 put "config" in "configBox" and click a button:
                 <br>
                 <button type="button" class="btn btn-success btn-sm" id="hc_deploy" >deploy</button>
                 <!-- <button type="button" class="btn btn-primary btn-sm" id="hc_get" >get</button> -->
-                <button type="button" class="btn btn-danger btn-sm" id="hc_del" >delete</button>                
+                <button type="button" class="btn btn-danger btn-sm" id="hc_del" >delete</button>
                 <button type="button" class="btn btn-secondary btn-sm" id="hc_pause" >pause</button>
                 <button type="button" class="btn btn-secondary btn-sm" id="hc_resume" >resume</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="hc_patch" >patch</button>
+                <p><b>config templates:</b>
+                  <br>
+                  <button type="button" class="btn btn-success btn-sm" id="downgrade_cfg" >downgrade_cfg</button>
             </div>
             <div class="col-sm-7">
               <label for="input"><b>configBox:</b></label>
               <textarea class="form-control text-warning bg-dark" rows="10" id="cfg" style="font-size:smaller; white-space:pre" spellcheck="false">
 {
     "useremail": "gtan@mozilla.com",
-    "hub_id": "123456",
+    "hub_id": "changeMe",
     "subdomain": "",
-    "tier": "fre",
-    "ccu_limit": "88",
-    "storage_limit": "0.88"
+    "tier": "p0",
+    "ccu_limit": "10",
+    "storage_limit": "0.5"
 }</textarea> 
             </div>
           </div>

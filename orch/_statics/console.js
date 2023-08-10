@@ -49,6 +49,12 @@ function hc_deploy(){ orcReq("POST", "/hc_instance","cfg") }
 document.getElementById("hc_del").addEventListener("click", hc_del, false);
 function hc_del(){ orcReq("DELETE", "/hc_instance","cfg") }
 
+
+document.getElementById("hc_patch").addEventListener("click", hc_patch, false);
+function hc_downgrade(){ 
+  orcReq("PATCH", "/hc_patch","cfg") 
+}
+
 document.getElementById("hc_pause").addEventListener("click", hc_pause, false);
 function hc_pause(){ orcReq("PATCH", "/hc_instance?status=down","cfg") }
 
@@ -203,5 +209,15 @@ document.getElementById("btn_sampleCfg_tandemProd").onclick = function(){
   "env":"prod",
   "VPC":"myhubsdevacn55",
   "DASHBOARD_ACCESS_KEY":"<COPY>"
+}`
+}
+
+
+document.getElementById("downgrade_cfg").onclick = function(){
+  document.getElementById("cluster_cfg").value = `{
+    "hub_id": "changeMe",
+    "tier": "p0",
+    "ccu_limit": "10",
+    "storage_limit": "0.5"
 }`
 }
