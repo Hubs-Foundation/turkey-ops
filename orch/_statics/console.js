@@ -51,7 +51,7 @@ function hc_del(){ orcReq("DELETE", "/hc_instance","cfg") }
 
 
 document.getElementById("hc_patch").addEventListener("click", hc_patch, false);
-function hc_downgrade(){ 
+function hc_patch(){ 
   orcReq("PATCH", "/hc_patch","cfg") 
 }
 
