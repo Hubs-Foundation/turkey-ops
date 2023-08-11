@@ -52,7 +52,7 @@ function hc_del(){ orcReq("DELETE", "/hc_instance","cfg") }
 
 document.getElementById("hc_patch").addEventListener("click", hc_patch, false);
 function hc_patch(){ 
-  orcReq("PATCH", "/hc_patch","cfg") 
+  orcReq("PATCH", "/hc_instance","cfg") 
 }
 
 document.getElementById("hc_pause").addEventListener("click", hc_pause, false);
