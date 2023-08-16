@@ -269,6 +269,12 @@ def ytdl_api_info():
     }
     if "youtube" in url:
         redis_client.zincrby(rkey, 1, inst_ip)
+        result = {
+            'url': url,
+            'info': {
+                'url':result['info']['url']
+            }
+        }
     
     #update ip usage count, redeploy at high usage
     cnt = redis_client.zscore(rkey, inst_ip)
