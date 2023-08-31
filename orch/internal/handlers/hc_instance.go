@@ -232,6 +232,10 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	case "hc_update":
 		msg, err := UpdateHubsCloudInstance(cfg)
 		if err != nil {
+			if strings.HasPrefix(err.Error(), "SAME_TIER_NOUPDATE") {
+				internal.Logger.Warn(err.Error())
+				return nil
+			}
 			return fmt.Errorf("failed @hc_update: %v", err)
 		}
 		internal.Logger.Debug("UpdateHubsCloudInstance: " + msg)
@@ -496,7 +500,7 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
 
 		if currentTier == cfg.Tier {
-			return "currentTier == cfg.Tier", errors.New("duplicate request")
+			return "currentTier == cfg.Tier", errors.New("SAME_TIER_NOUPDATE")
 		}
 
 		if strings.HasPrefix(currentTier, "b") && !strings.HasPrefix(cfg.Tier, "b") {
