@@ -147,6 +147,11 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 	task := hc_task_translator(r)
 
 	if task != "hc_create" && task != "hc_delete" {
+		//@@@@@@@@@ hack @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		if cfg.HubId == "307686470544523724" {
+			return nil
+		}
+		//@@@@@@@@@ hack @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 		// restore first if the instance's collected
 		if _, err := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().Get(context.Background(),
