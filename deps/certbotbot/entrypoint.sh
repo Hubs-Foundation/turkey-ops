@@ -66,7 +66,7 @@ EOF
 )
   echo "${CERTBOTING}"|kubectl apply -f -
 
-  echo "start nginx and wait 60 sec for ingress to pick up the pod" && nginx && sleep 120
+  echo "start nginx and wait $INGRESS_WAIT sec for ingress to pick up the pod" && nginx && sleep $INGRESS_WAIT
   
   echo "requesting cert"
   retries=10
@@ -129,6 +129,7 @@ echo "CERTBOT_EMAIL=$CERTBOT_EMAIL"
 echo "CERT_NAME=$CERT_NAME"
 echo "CP_TO_NS=$CP_TO_NS"
 echo "LETSENCRYPT_ACCOUNT=$LETSENCRYPT_ACCOUNT"
+if [ -z $INGRESS_WAIT ]; then INGRESS_WAIT="30"
 
 if ! [ -z $LETSENCRYPT_ACCOUNT ]; then 
   acctDir="/etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/"
@@ -169,5 +170,3 @@ fi
 if ! [[ $? ]]; then echo "[ERROR],[certbotbot], wtb manual help pls"; err_exit; fi
 
 # letsencrypt_acct=$(cat /etc/letsencrypt/accounts/acme*/directory/*/regr.json | jq '.uri')
-
-sleep 900
