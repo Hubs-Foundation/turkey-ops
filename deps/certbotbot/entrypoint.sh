@@ -170,3 +170,4 @@ fi
 if ! [[ $? ]]; then echo "[ERROR],[certbotbot], wtb manual help pls"; err_exit; fi
 
 # letsencrypt_acct=$(cat /etc/letsencrypt/accounts/acme*/directory/*/regr.json | jq '.uri')
+sleep 1
