@@ -129,7 +129,7 @@ echo "CERTBOT_EMAIL=$CERTBOT_EMAIL"
 echo "CERT_NAME=$CERT_NAME"
 echo "CP_TO_NS=$CP_TO_NS"
 echo "LETSENCRYPT_ACCOUNT=$LETSENCRYPT_ACCOUNT"
-if [ -z $INGRESS_WAIT ]; then INGRESS_WAIT="30"
+if [ -z $INGRESS_WAIT ]; then INGRESS_WAIT="30"; fi
 
 if ! [ -z $LETSENCRYPT_ACCOUNT ]; then 
   acctDir="/etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/"
