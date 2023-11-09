@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"main/internal"
 	"net/http"
 	"os"
@@ -46,7 +45,7 @@ var TurkeyReturnCenter = http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 	switch r.Method {
 	case "GET":
-		bytes, err := ioutil.ReadFile("./_statics/turkeyreturncenter.html")
+		bytes, err := os.ReadFile("./_statics/turkeyreturncenter.html")
 		if err != nil {
 			internal.Logger.Sugar().Errorf("%v", err)
 		}

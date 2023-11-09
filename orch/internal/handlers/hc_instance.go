@@ -230,7 +230,7 @@ func handle_hc_instance_req(r *http.Request, cfg HCcfg) error {
 			return fmt.Errorf("failed @ hc_collect: %v", err)
 		}
 	case "hc_restore":
-		err = hc_restore(cfg.Subdomain)
+		err = hc_restore(cfg.HubId)
 		if err != nil {
 			return fmt.Errorf("failed @ hc_restore: %v", err)
 		}
