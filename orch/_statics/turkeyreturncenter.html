@@ -1,121 +1,239 @@
-
 <!DOCTYPE html>
 <html>
+
 <head>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+		rel="stylesheet">
 	<style>
 		body {
-			background-color: black;
-			color: white;
+			background: linear-gradient(107.97deg,
+					#489cbe 6.73%,
+					#5427c9 39.4%,
+					#a8527c 77.18%,
+					#a67878 104.75%);
+			font-family: 'Inter', sans-serif;
+			font-family: 'Space Grotesk', sans-serif;
+			font-size: 18px;
+			margin: 0;
+			padding: 0;
+			position: relative;
+		}
+
+
+		h1 {
+			padding: 0;
+			margin: 0 0 12px 0;
+		}
+
+		p {
+			margin: 0;
+		}
+
+		.contents {
 			display: flex;
 			justify-content: center;
 			align-items: center;
 			height: 100vh;
-			flex-direction: column;
+			padding: 0 20px;
 		}
-		#pic {
+
+		.logo {
 			width: 200px;
-			height: 200px;
+			position: absolute;
+			left: 20px;
+			top: 20px;
+		}
+
+		.card {
+			background: #fff;
+			border-radius: 20px;
+			color: #000;
+			padding: 20px;
+			text-align: center;
+			max-width: 560px;
+		}
+
+
+		.loader {
+			display: flex;
+			justify-content: center;
+			margin-top: 40px;
+		}
+
+		.dot_pulse_wrapper {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			position: relative;
+			overflow: hidden;
+			width: 50px;
+			height: 20px;
+		}
+
+		/**
+ * ==============================================
+ * Dot Pulse
+ * ==============================================
+ */
+
+		.dot_pulse {
+			position: relative; 
+			left: -9999px; 
+			width: 8px;
+			height: 8px;
+			border-radius: 8px;
+			background-color: #3624c2;
+			color: #3624c2;
+			box-shadow: 9999px 0 0 -5px #3624c2;
+			animation: dotPulse 4s infinite linear;
+			animation-delay: 0.25s;
+
+		}
+
+		.dot_pulse::before,
+		.dot_pulse::after {
+			content: '';
+			display: inline-block;
+			position: absolute;
+			top: 0;
+			width: 8px;
+			height: 8px;
+			border-radius: 8px;
+			background-color: #1700c7;
+			color: #1700c7;
+			left: -1px;
+		}
+
+		.dot_pulse::before {
+			box-shadow: 9984px 0 0 -5px #1700c7;
+			animation: dotPulseBefore 4s infinite linear;
+			animation-delay: 0s;
+		}
+
+		.dot_pulse::after {
+			box-shadow: 10014px 0 0 -5px #5749be;
+			animation: dotPulseAfter 4s infinite linear;
+			animation-delay: 0.5s;
+		}
+
+
+		@keyframes dotPulseBefore {
+			0% {
+				box-shadow: 9984px 0 0 -5px #1700c7;
+			}
+
+			30% {
+				box-shadow: 9984px 0 0 2px #1700c7;
+			}
+
+			60%,
+			100% {
+				box-shadow: 9984px 0 0 -5px #1700c7;
+			}
+		}
+
+		@keyframes dotPulse {
+			0% {
+				box-shadow: 9999px 0 0 -5px #3624c2;
+			}
+
+			30% {
+				box-shadow: 9999px 0 0 2px #3624c2;
+			}
+
+			60%,
+			100% {
+				box-shadow: 9999px 0 0 -5px #3624c2;
+			}
+		}
+
+		@keyframes dotPulseAfter {
+			0% {
+				box-shadow: 10014px 0 0 -5px #5749be;
+			}
+
+			30% {
+				box-shadow: 10014px 0 0 2px #5749be;
+			}
+
+			60%,
+			100% {
+				box-shadow: 10014px 0 0 -5px #5749be;
+			}
 		}
 	</style>
 </head>
+
 <body>
-    <img id="duckPic" src="https://storage.googleapis.com/turkey-assets/logos/hubsduck.png"/>
-	<div id="msg_line0">this hubs' paused due to inactivity</div>
-	<div id="msg_line1"></div>
-    <div id="msg_line2">[ . ]</div>
-    <div id="msg_line3"></div>
-
+	<img id="logo" class="logo" src="https://storage.googleapis.com/turkey-assets/logos/logos_hubs-dark-logo.png" />
+	<div class="contents">
+		<div class="card">
+			<h1>Reactivating Your Hub</h1>
+			<p>Your hub was paused to do inactivity. Please give us a moment to reactivate, estimate time for reactivation is 3 to 5 minuts.</p>
+			<div class="loader">
+				<div class="dot_pulse_wrapper">
+					<div class="dot_pulse"></div>
+				</div>
+			</div>
+		</div>
+	</div>
 	<script>
-        var socket = new WebSocket("wss://" + window.location.host+"/websocket")
-        var countdown=10;
-        var state=0;
-        var wait=30;
-        var tokenStr=""
+		var socket = new WebSocket("wss://" + window.location.host + "/websocket")
+		var countdown = 10;
+		var state = 0;
 
-        updateDuckRotation(countdown)
 
-        socket.onmessage = function (event) {
-            if (event.data.startsWith("token:")){
-                state=1
-                tokenStr=event.data
-                return
-            }
-            if (event.data == "_ok_"){
-                state=3                
-                document.getElementById('msg_line2').innerText += ":";
-                document.getElementById('msg_line1').innerText = "unpausing"
-                return
-            }
-            if (event.data == "..."){
-                document.getElementById('msg_line2').innerText = "[ error, sry, please contact support ]"
-                return
-            }
-                document.getElementById('msg_line2').innerText = "[ "+event.data+" ]"
-        };
-        socket.onopen = function (event) {
-            socket.send("hi")
-        };
-        window.addEventListener('keypress', function (event) {
-                socket.send("keyCode:"+event.keyCode)
-        });
+		/**
+		Watch for ready
+		**/
+		socket.onmessage = function (event) {
+			if (event.data == "_refresh_") {
+				setInterval(async function () {
+					const timeout = new Promise((resolve, reject) => {
+						setTimeout(resolve, 1000, false);
+					})
+					const readinessCheck = Promise.all([
+						fetch("https://" + window.location.host + "/manifest.webmanifest").then(response => response.status),
+						fetch("https://" + window.location.host + "/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
+					]).then(([status1, status2]) => status1 === 200 && status2 === 200);
+					const ready = await Promise.race([timeout, readinessCheck])
+					console.log("ready: ", ready)
+					if (ready) {
+						location.reload();
+					}
+				}, 10000);
+				return
+			}
 
-        unpausingLoop = setInterval(async function() {
-            switch(state) {
-                case 1:
-                    if (!document.hidden){
-                        countdown--;
-                        updateDuckRotation(countdown)
-                        document.getElementById('msg_line2').innerText = "[ unpausing start in: " + countdown + " sec ]";
-                    }
-                    if (countdown <= 0 ) {
-                        socket.send(tokenStr)
-                        state=2
-                        document.getElementById('msg_line1').innerText = "unpausing requested"
-                        document.getElementById('msg_line2').innerText = "";
-                    }
-                    break
-                case 2:
-                    document.getElementById('msg_line2').innerText += "'";
-                    break
-                case 3:
-                    console.log("start poking")
-                    state=4
-                    setInterval(async function() {     
-                        document.getElementById('msg_line1').innerText = "waiting for backend"                   
-                        const timeout = new Promise((resolve, reject) => { setTimeout(resolve, 2000, false);})
-                        const readinessCheck = Promise.all([
-                            fetch("https://"+window.location.host+"/manifest.webmanifest").then(response => response.status),
-                            fetch("https://"+window.location.host+"/api/v1/media/search?source=rooms&filter=public&cursor=0").then(response => response.status)
-                        ]).then(([status1, status2]) => status1 < 300 && status2 < 300);                            
-                        const ready=await Promise.race([timeout, readinessCheck])
-                        console.log("ready: ", ready)
-                        if (ready) {
-                            location.reload();
-                        }
-                    document.getElementById('msg_line2').innerText += "0"
-                    }, 15000);
-                    break
-                case 4:
-                    msg2=document.getElementById('msg_line2').innerText
-                    msg2+="."
-                    msg2=msg2.replace('.....', 'v')
-                    msg2=msg2.replace('vv', 'x')
-                    document.getElementById('msg_line2').innerText =msg2
+		};
 
-            }
-        }, 1000);
-        
-        function updateDuckRotation(countdown){
-            document.getElementById('duckPic').style.transform='rotate(' + (countdown * 18).toString() + 'deg)';
-        }
+		socket.onopen = function (event) {
+			socket.send("hi")
+		};
 
-        // async function checkEndpoint(ep) {
-        //     var resp
-        //     resp = await fetch(ep)
-        //     console.log(resp.status, ep)
-        //     return resp.status == 200
-        // }
+		window.addEventListener('keypress', function (event) {
+			socket.send("keyCode:" + event.keyCode)
+		});
+
+		unpausingLoop = setInterval(async function () {
+			switch (state) {
+				case 1:
+					if (!document.hidden) {
+						countdown--;
+					}
+					if (countdown <= 0 || countdown > 20) {
+						socket.send("_r_: 1")
+						state = 2
+						clearInterval(unpausingLoop);
+					}
+					break;
+			}
+		}, 1000);
 
 	</script>
 </body>
-</html>	
+
+</html>
