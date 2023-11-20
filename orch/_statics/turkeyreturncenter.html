@@ -204,7 +204,9 @@
                 return
             }
             if (event.data == "_ok_"){
-                state=3                
+                state=3           
+				
+                document.getElementById('msg_line0').innerText = ""     
                 document.getElementById('msg_line2').innerText += ":";
                 document.getElementById('msg_line1').innerText = "unpausing"
                 return
