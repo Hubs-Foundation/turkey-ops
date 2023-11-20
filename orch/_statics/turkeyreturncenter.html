@@ -182,9 +182,9 @@
 	</div>
 	<div id="dev" class="contents" style="display:none">
 		<img id="duckPic" src="https://storage.googleapis.com/turkey-assets/logos/hubsduck.png"/>
-		<div id="msg_line0">this hubs' paused due to inactivity</div>
+		<div id="msg_line0">this hubs' paused due to inactivity. </div>
 		<div id="msg_line1"></div>
-		<div id="msg_line2">[ . ]</div>
+		<div id="msg_line2">[]</div>
 		<div id="msg_line3"></div>		
 	</div>
 
@@ -204,11 +204,9 @@
                 return
             }
             if (event.data == "_ok_"){
-                state=3           
-				
-                document.getElementById('msg_line0').innerText = ""     
+                state=3
                 document.getElementById('msg_line2').innerText += ":";
-                document.getElementById('msg_line1').innerText = "unpausing"
+                document.getElementById('msg_line1').innerText = "unpausing."
                 return
             }
             if (event.data == "..."){
@@ -236,7 +234,8 @@
                     if (countdown <= 0 ) {
                         socket.send(tokenStr)
                         state=2
-                        document.getElementById('msg_line1').innerText = "unpausing requested"
+                		document.getElementById('msg_line0').innerText = ""   
+                        document.getElementById('msg_line1').innerText = "unpausing requested."
                         document.getElementById('msg_line2').innerText = "";
                     }
                     break
