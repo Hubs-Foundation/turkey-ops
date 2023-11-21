@@ -505,7 +505,9 @@ func UpdateHubsCloudInstance(cfg HCcfg) (string, error) {
 		internal.Logger.Sugar().Debugf("updating tier %v --> %v", currentTier, cfg.Tier)
 
 		if currentTier == cfg.Tier {
-			return "currentTier == cfg.Tier", errors.New("SAME_TIER_NOUPDATE")
+			internal.Logger.Warn("currentTier == cfg.Tier")
+			// return "currentTier == cfg.Tier", errors.New("SAME_TIER_NOUPDATE")
+			return "currentTier == cfg.Tier, no update", nil
 		}
 
 		if strings.HasPrefix(currentTier, "b") && !strings.HasPrefix(cfg.Tier, "b") {
