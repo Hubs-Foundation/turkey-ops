@@ -596,8 +596,9 @@ func CreateHubsCloudInstance(hcCfg HCcfg) error {
 	nsList, _ := internal.Cfg.K8ss_local.ClientSet.CoreV1().Namespaces().List(context.Background(),
 		metav1.ListOptions{LabelSelector: "hub_id=" + hcCfg.HubId})
 	if len(nsList.Items) != 0 {
-		internal.Logger.Error("hub_id already exists: " + hcCfg.HubId)
-		return fmt.Errorf("bounce -- hub_id already exists")
+		internal.Logger.Warn("hub_id already exists: " + hcCfg.HubId)
+		// return fmt.Errorf("bounce -- hub_id already exists")
+		return nil
 	}
 
 	// #2 render turkey-k8s-chart by apply cfg to hc.yam
