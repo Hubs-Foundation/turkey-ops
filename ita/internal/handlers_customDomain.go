@@ -286,7 +286,7 @@ func ingress_addCustomDomainRule(fromDomain, customDomain string) error {
 
 	if !ingressContainsRetCorsRule(ig) {
 		customDomainCorsRule := retRootRules[0].DeepCopy()
-		customDomainCorsRule.Host = cfg.SubDomain + ".cors." + cfg.HubDomain
+		customDomainCorsRule.Host = cfg.SubDomain + ".cors." + cfg.ClusterDomain
 		ig.Spec.Rules = append(ig.Spec.Rules, *customDomainCorsRule)
 	}
 
@@ -365,7 +365,7 @@ func ingress_cleanupByDomain(ig *networkingv1.Ingress, domain string) (int, int)
 
 func ingressContainsRetCorsRule(ig *networkingv1.Ingress) bool {
 	for _, rule := range ig.Spec.Rules {
-		if rule.Host == cfg.SubDomain+".cors."+cfg.HubDomain {
+		if rule.Host == cfg.SubDomain+".cors."+cfg.ClusterDomain {
 			return true
 		}
 	}
