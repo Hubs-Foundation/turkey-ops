@@ -540,6 +540,7 @@ func hc_updateTier(cfg HCcfg) error {
 		"p1": {"250m", "250Mi", "500m", "500Mi"},
 		"b0": {"750m", "750Mi", "1500m", "1500Mi"},
 		"b1": {"2500m", "2500Mi", "3500m", "3500Mi"},
+		"b2": {"5000m", "5000Mi", "7000m", "7000Mi"},
 	}
 	// pod counts
 	map_tiers_retPodCnt := map[string]int{
@@ -547,6 +548,7 @@ func hc_updateTier(cfg HCcfg) error {
 		"p1": 2,
 		"b0": 2,
 		"b1": 2,
+		"b2": 3,
 	}
 
 	if _, ok := map_tiers_retPodCnt[cfg.Tier]; !ok {

@@ -53,7 +53,7 @@ func (fm *featureMan) determineFeatures() {
 		fm._features.updater = true
 	}
 
-	if slices.Contains([]string{"pro", "business", "b0", "b1"}, cfg.Tier) {
+	if slices.Contains([]string{"pro", "business", "b0", "b1", "b2"}, cfg.Tier) {
 		fm._features.customDomain = true
 		fm._features.customClient = true
 
