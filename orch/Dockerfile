@@ -10,7 +10,7 @@ run openssl req -newkey rsa:2048 -nodes -keyout key.pem -subj "/CN=turkeyorch" -
 run printf "subjectAltName=DNS:turkeyorch,DNS:*.turkeyorch,DNS:turkeyorch.turkey-services.svc.cluster.local" > f
 run openssl x509 -req -extfile f -days 36500 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out cert.pem
 
-from alpine:latest
+from alpine:3.18
 run apk add curl terraform postgresql
 WORKDIR /app
 COPY --from=buildEnv /app/. /app/.
