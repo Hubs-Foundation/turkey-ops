@@ -322,6 +322,15 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 })
 
+var RewriteAssets = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := ret_rewrite_assets(r.Header.Get("old_domain"), r.Header.Get("new_domain"))
+	if err != nil {
+		http.Error(w, "failed", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, "done")
+})
+
 var Z_dummy = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "req: %v, rAdr: %v, xff: %v", w.Header().Get("X-Request-Id"), r.RemoteAddr, r.Header["X-Forwarded_for"])
 })

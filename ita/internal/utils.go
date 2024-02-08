@@ -3,6 +3,7 @@ package internal
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/tls"
@@ -12,6 +13,7 @@ import (
 	"hash/fnv"
 	"image"
 	"io"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -154,6 +156,21 @@ func getRetCcu() (int, error) {
 		Logger.Error("retCcuReq err: " + err.Error())
 	}
 	return retCcuResp["count"], nil
+}
+
+func ret_rewrite_assets(oldDomain, newDomain string) error {
+	retCcuReq, _ := http.NewRequest("GET", "https://ret."+cfg.PodNS+":4000/api-internal/v1/rewrite_assets",
+		bytes.NewBuffer([]byte(
+			`{"old_domain":"`+oldDomain+`","new_domain":"`+newDomain+`"}`)))
+	retCcuReq.Header.Add("x-ret-dashboard-access-key", cfg.RetApiKey)
+
+	resp, err := _httpClient.Do(retCcuReq)
+
+	if err != nil {
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println("resp", string(body))
+	}
+	return err
 }
 
 func waitRetCcu() error {
