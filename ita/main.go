@@ -76,6 +76,8 @@ func main() {
 
 	router.Handle("/z/CollectNow", internal.CollectNow)
 
+	router.Handle("/rewrite_assets", internal.RewriteAssets)
+
 	//turkeyauth protected public api endpoints
 	router.Handle("/api/ita/refresh", chk_tat_hdr()(internal.Refresh))
 	router.Handle("/api/ita/upload", chk_tat_hdr()(internal.Upload))
