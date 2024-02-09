@@ -13,7 +13,6 @@ import (
 	"hash/fnv"
 	"image"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -166,10 +165,9 @@ func ret_rewrite_assets(oldDomain, newDomain string) error {
 
 	resp, err := _httpClient.Do(retCcuReq)
 
-	if err != nil {
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("resp", string(body))
-	}
+	body, _ := io.ReadAll(resp.Body)
+	Logger.Sugar().Debugf("resp %v", string(body))
+
 	return err
 }
 
