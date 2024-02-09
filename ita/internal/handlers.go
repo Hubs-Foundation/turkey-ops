@@ -323,7 +323,7 @@ var Restore = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 })
 
 var RewriteAssets = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	err := ret_rewrite_assets(r.Header.Get("old_domain"), r.Header.Get("new_domain"))
+	err := ret_rewrite_assets(r.URL.Query().Get("old_domain"), r.URL.Query().Get("new_domain"))
 	if err != nil {
 		http.Error(w, "failed", http.StatusInternalServerError)
 		return
