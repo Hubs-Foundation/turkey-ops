@@ -158,6 +158,7 @@ func getRetCcu() (int, error) {
 }
 
 func ret_rewrite_assets(oldDomain, newDomain string) error {
+	Logger.Debug(oldDomain + "->" + newDomain)
 	jsonBody, _ := json.Marshal(map[string]string{
 		"old_domain": oldDomain,
 		"new_domain": newDomain,
