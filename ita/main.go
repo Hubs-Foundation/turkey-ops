@@ -85,6 +85,7 @@ func main() {
 	router.Handle("/api/ita/undeploy", chk_tat_hdr()(internal.Undeploy))
 	router.Handle("/api/ita/custom-domain", chk_tat_hdr()(internal.CustomDomain))
 	router.Handle("/api/ita/restore", chk_tat_hdr()(internal.Restore))
+	router.Handle("/api/ita/rewrite_assets", chk_tat_hdr()(internal.RewriteAssets))
 
 	go internal.StartNewServer(router, 6000, false)
 	internal.StartNewServer(router, 6001, true)
@@ -103,7 +104,6 @@ func chk_tat_hdr() func(http.Handler) http.Handler {
 				http.NotFound(w, r)
 				return
 			}
-
 			// turkeyauthHost := "http://turkeyauth.turkey-services:9001"
 			turkeyauthHost := "https://auth.myhubs.dev"
 			if strings.HasSuffix(internal.GetCfg().HubDomain, "dev.myhubs.net") {
@@ -113,11 +113,13 @@ func chk_tat_hdr() func(http.Handler) http.Handler {
 			resp, err := http.Get(turkeyauthHost + "/chk_token?token=" + token)
 			if err != nil {
 				internal.Logger.Sugar().Debugf("reject -- err@chk_token: %v", err)
-				internal.Handle_NotFound(w, r)
+				// internal.Handle_NotFound(w, r)
+				http.Error(w, "bad token?", http.StatusForbidden)
 				return
 			} else if resp.StatusCode != http.StatusOK {
 				internal.Logger.Sugar().Debugf("reject -- bad resp.StatusCode: %v", resp.StatusCode)
-				internal.Handle_NotFound(w, r)
+				// internal.Handle_NotFound(w, r)
+				http.Error(w, "bad token", http.StatusForbidden)
 				return
 			}
 			email := resp.Header.Get("verified-UserEmail")
@@ -125,7 +127,8 @@ func chk_tat_hdr() func(http.Handler) http.Handler {
 			internal.Logger.Sugar().Debugf("verified-UserEmail: %v, rootUserEmail: %v", resp.StatusCode, rootUserEmail)
 			if email != rootUserEmail {
 				internal.Logger.Sugar().Debugf("reject -- bad verified-UserEmail -- has: %v, need: %v", email, rootUserEmail)
-				internal.Handle_NotFound(w, r)
+				// internal.Handle_NotFound(w, r)
+				http.Error(w, "unauthorized user", http.StatusForbidden)
 				return
 			}
 
